@@ -36,7 +36,7 @@
     }
 
     .search-up {
-      margin-top: 10px !important;
+      margin-top: 5px !important;
     }
 
     #searchBox {
@@ -197,10 +197,10 @@
 
         for (const f of Object.values(files)) {
           if (f.name.toLowerCase().includes(query.toLowerCase())) {
-            return f; // found matching file
+            return f;
           }
         }
-        return null; // not found
+        return null;
       } catch (err) {
         console.error('Gofile check error:', err);
         return null;
@@ -211,26 +211,26 @@
       const query = document.getElementById('searchBox').value.trim();
       if (!query) return alert("Please type something to search.");
 
-      // Clear previous results
       document.getElementById('webResults').innerHTML = "";
       document.getElementById('imageResults').innerHTML = '';
       document.getElementById('videoResults').innerHTML = '';
       document.getElementById('bookResults').innerHTML = '';
       document.getElementById('books').style.display = 'none';
 
-      // STEP 1: Check Gofile
       const found = await checkGofile(query);
+      let foundInStorage = false;
+
       if (found) {
+        foundInStorage = true;
         document.getElementById('webResults').innerHTML = `
           <div class="fcards">
             <h4>${found.name}</h4>
             <p>Found in storage.</p>
             <a href="${found.link}" target="_blank">${found.link}</a>
           </div>`;
-        return;
       }
 
-      // STEP 2: Send to Render
+      // Proceed to Render regardless (to follow your new logic)
       try {
         const res = await fetch('https://fweb-backend.onrender.com/search', {
           method: 'POST',
@@ -240,22 +240,21 @@
 
         const data = await res.json();
 
-        // Web results
-        document.getElementById('webResults').innerHTML = (data.web || [])
-          .map(item => `<div class="fcards"><h4>${item.title}</h4><p>${item.snippet}</p><a href="${item.url}" target="_blank">${item.url}</a></div>`)
-          .join('');
+        // Only update web if nothing was found in storage
+        if (!foundInStorage) {
+          document.getElementById('webResults').innerHTML = (data.web || [])
+            .map(item => `<div class="fcards"><h4>${item.title}</h4><p>${item.snippet}</p><a href="${item.url}" target="_blank">${item.url}</a></div>`)
+            .join('');
+        }
 
-        // Images
         document.getElementById('imageResults').innerHTML = (data.images || [])
           .map(url => `<img src="${url}" alt="Image result"/>`)
           .join('');
 
-        // Videos
         document.getElementById('videoResults').innerHTML = (data.videos || [])
           .map(link => `<iframe src="${link}" frameborder="0" allowfullscreen></iframe>`)
           .join('');
 
-        // Books
         if (data.books && data.books.length) {
           document.getElementById('books').style.display = 'block';
           if (!document.querySelector('[data-tab="books"]')) {
