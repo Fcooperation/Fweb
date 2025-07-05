@@ -2,51 +2,312 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FWEB Account</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>FWEB | African Search Engine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700&display=swap" rel="stylesheet">
   <style>
-    body {
+    * {
+      margin: 0;
+      padding: 0;
       font-family: 'Montserrat', sans-serif;
-      background: #fff;
-      color: #000;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      background-color: #ffffff;
+      color: #000000;
+      height: 100%;
+      width: 100%;
+      overflow-x: hidden;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
       padding: 2rem;
+      position: relative;
+    }
+
+    header {
+      font-size: 3rem;
+      font-weight: 700;
+      margin-bottom: 2rem;
       text-align: center;
     }
 
-    h1 {
-      font-size: 2.5rem;
-      margin-bottom: 1rem;
+    .account-icon {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 40px;
+      height: 40px;
+      cursor: pointer;
     }
 
-    p {
-      font-size: 1.1rem;
-      margin-bottom: 2rem;
-      color: #444;
-    }
-
-    .back-link {
-      display: inline-block;
-      margin-top: 2rem;
-      text-decoration: none;
-      color: #000;
-      font-weight: bold;
+    .account-icon img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
       border: 2px solid #000;
-      padding: 0.75rem 1.5rem;
-      border-radius: 8px;
-      transition: all 0.2s ease;
+      background: #fff;
     }
 
-    .back-link:hover {
-      background: #000;
+    .search-box {
+      display: flex;
+      gap: 0.5rem;
+      width: 100%;
+      max-width: 600px;
+      margin-bottom: 2rem;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 1rem;
+      font-size: 1rem;
+      border: 1px solid #000;
+      border-radius: 8px;
+    }
+
+    button {
+      background-color: #000;
       color: #fff;
+      padding: 1rem 1.5rem;
+      font-size: 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    button:hover {
+      background-color: #1e1e1e;
+    }
+
+    .tagline {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-top: 1.5rem;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .footer {
+      position: fixed;
+      bottom: 20px;
+      width: 100%;
+      text-align: center;
+      font-size: 0.85rem;
+      color: #999;
+    }
+
+    #results {
+      margin-top: 2rem;
+      max-width: 700px;
+      width: 100%;
+    }
+
+    .section {
+      margin-bottom: 2rem;
+    }
+
+    .section h3 {
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 5px;
+    }
+
+    .fcards {
+      border-bottom: 1px solid #ddd;
+      padding: 10px 0;
+    }
+
+    .fcards-title {
+      font-weight: bold;
+      color: #0000ee;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    .fcards-snippet {
+      margin: 5px 0;
+    }
+
+    .image-grid img, .video-grid iframe {
+      width: 100%;
+      max-width: 300px;
+      margin: 5px;
+      border-radius: 6px;
+    }
+
+    .image-grid, .video-grid, .book-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    @media (max-width: 600px) {
+      header {
+        font-size: 2.2rem;
+      }
+
+      .search-box {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+
+      .tagline {
+        font-size: 2rem;
+      }
     }
   </style>
 </head>
 <body>
-  <h1>Your Account</h1>
-  <p>This is where login, create account, and profile settings will go.</p>
 
-  <a class="back-link" href="index.html">← Back to FWEB</a>
+  <a href="account.html" class="account-icon" title="Your Account">
+    <img src="https://www.svgrepo.com/show/506700/user-circle.svg" alt="Account" />
+  </a>
+
+  <header>FWEB</header>
+
+  <div class="search-box">
+    <input type="text" id="searchBox" placeholder="What are you searching for?" />
+    <button onclick="sendSearch()">Search</button>
+  </div>
+
+  <div class="tagline">MEANT FOR AFRICA</div>
+
+  <div id="results"></div>
+
+  <div class="footer">© 2025 F_COOPERATION</div>
+
+  <script>
+    const gofileToken = "e1LOiRxizCSLqTmyZ27AeZuN10qu0wfO";
+
+    function renderWeb(results) {
+      return `
+        <div class="section">
+          <h3>Web</h3>
+          ${results.map(r => `
+            <div class="fcards">
+              <div class="fcards-title" onclick="window.open('${r.url}', '_blank')">${r.title}</div>
+              <div class="fcards-snippet">${r.snippet}</div>
+              <div style="font-size: 0.9em; color: #555;">${r.url}</div>
+            </div>
+          `).join('')}
+        </div>`;
+    }
+
+    function renderImages(images) {
+      return `
+        <div class="section">
+          <h3>Images</h3>
+          <div class="image-grid">
+            ${images.map(src => `<img src="${src}" alt="Image"/>`).join('')}
+          </div>
+        </div>`;
+    }
+
+    function renderVideos(videos) {
+      return `
+        <div class="section">
+          <h3>Videos</h3>
+          <div class="video-grid">
+            ${videos.map(link => `<iframe src="${link}" frameborder="0" allowfullscreen></iframe>`).join('')}
+          </div>
+        </div>`;
+    }
+
+    function renderBooks(books) {
+      return `
+        <div class="section">
+          <h3>Books</h3>
+          <div class="book-grid">
+            ${books.map(book => `
+              <div>
+                <strong>${book.title}</strong><br>
+                <a href="${book.url}" target="_blank">View</a>
+              </div>`).join('')}
+          </div>
+        </div>`;
+    }
+
+    async function searchGofileFiles(query) {
+      try {
+        const res = await fetch(`https://api.gofile.io/getAccountDetails?token=${gofileToken}`);
+        const data = await res.json();
+        if (data.status !== 'ok') return [];
+
+        return Object.values(data.data.files || {}).filter(f =>
+          f.name.toLowerCase().includes(query.toLowerCase())
+        );
+      } catch {
+        return [];
+      }
+    }
+
+    async function fetchFileContent(fileId) {
+      try {
+        const res = await fetch(`https://api.gofile.io/getContent?fileId=${fileId}`);
+        const data = await res.json();
+        return data.status === 'ok' ? data.data : null;
+      } catch {
+        return null;
+      }
+    }
+
+    async function sendSearch() {
+      const query = document.getElementById('searchBox').value.trim();
+      if (!query) return alert("Please type something to search.");
+      document.getElementById('results').innerHTML = `<p>Searching for "<strong>${query}</strong>"...</p>`;
+
+      const gofileFiles = await searchGofileFiles(query);
+      if (gofileFiles.length) {
+        const file = gofileFiles.find(f => f.name.endsWith('.json'));
+        const content = file ? await fetchFileContent(file.id) : null;
+
+        if (content) {
+          const parsed = JSON.parse(content.contents);
+          let resultHtml = '';
+          if (parsed.web) resultHtml += renderWeb(parsed.web);
+          if (parsed.images) resultHtml += renderImages(parsed.images);
+          if (parsed.videos) resultHtml += renderVideos(parsed.videos);
+          if (parsed.books) resultHtml += renderBooks(parsed.books);
+
+          document.getElementById('results').innerHTML = resultHtml || "<p>No content in Gofile file.</p>";
+          return;
+        }
+      }
+
+      // Fallback to Render backend
+      try {
+        const res = await fetch('https://fweb-backend.onrender.com/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query })
+        });
+        const data = await res.json();
+
+        let resultHtml = '';
+        if (data.web) resultHtml += renderWeb(data.web);
+        if (data.images) resultHtml += renderImages(data.images);
+        if (data.videos) resultHtml += renderVideos(data.videos);
+        if (data.books) resultHtml += renderBooks(data.books);
+
+        document.getElementById('results').innerHTML = resultHtml || "<p>No results found.</p>";
+      } catch (err) {
+        document.getElementById('results').innerHTML = `<p style="color:red;">Error: ${err.message}</p>`;
+      }
+    }
+  </script>
+
 </body>
 </html>
