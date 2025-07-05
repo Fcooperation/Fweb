@@ -14,7 +14,8 @@
 
     header {
       text-align: center;
-      padding: 30px 10px 10px;
+      padding: 40px 10px 10px;
+      transition: all 0.4s ease;
     }
 
     #title {
@@ -30,7 +31,12 @@
 
     .search-container {
       text-align: center;
-      margin: 20px auto;
+      margin: 30px auto;
+      transition: all 0.4s ease;
+    }
+
+    .search-up {
+      margin-top: 10px !important;
     }
 
     #searchBox {
@@ -58,7 +64,7 @@
       display: none;
       justify-content: center;
       flex-wrap: wrap;
-      margin-top: 30px;
+      margin-top: 10px;
       border-bottom: 1px solid #000;
     }
 
@@ -128,10 +134,10 @@
 </head>
 <body>
 
-  <header>
+  <header id="header">
     <h1 id="title">Fweb</h1>
-    <div class="search-container">
-      <input type="text" id="searchBox" placeholder="Search the web..." onfocus="showTabsAndHideTitle()" />
+    <div class="search-container" id="searchContainer">
+      <input type="text" id="searchBox" placeholder="Search the web..." onfocus="prepareSearchUI()" />
       <button id="searchButton" onclick="sendSearch()">Search</button>
     </div>
   </header>
@@ -167,9 +173,10 @@
     const resultTabs = document.querySelectorAll('.result-tab');
     const gofileToken = "e1LOiRxizCSLqTmyZ27AeZuN10qu0wfO";
 
-    function showTabsAndHideTitle() {
+    function prepareSearchUI() {
       document.getElementById('title').classList.add('hidden');
       document.getElementById('tabs').classList.add('active');
+      document.getElementById('searchContainer').classList.add('search-up');
     }
 
     tabButtons.forEach(btn => {
@@ -205,7 +212,7 @@
       if (!query) return alert("Please type something to search.");
 
       // Clear previous results
-      document.getElementById('webResults').innerHTML = `Searching for "<strong>${query}</strong>"...`;
+      document.getElementById('webResults').innerHTML = "";
       document.getElementById('imageResults').innerHTML = '';
       document.getElementById('videoResults').innerHTML = '';
       document.getElementById('bookResults').innerHTML = '';
@@ -214,11 +221,16 @@
       // STEP 1: Check Gofile
       const found = await checkGofile(query);
       if (found) {
-        document.getElementById('webResults').innerHTML = `<p><strong>Found in storage:</strong> <a href="${found.link}" target="_blank">${found.name}</a></p>`;
+        document.getElementById('webResults').innerHTML = `
+          <div class="fcards">
+            <h4>${found.name}</h4>
+            <p>Found in storage.</p>
+            <a href="${found.link}" target="_blank">${found.link}</a>
+          </div>`;
         return;
       }
 
-      // STEP 2: Send to Render if not found
+      // STEP 2: Send to Render
       try {
         const res = await fetch('https://fweb-backend.onrender.com/search', {
           method: 'POST',
@@ -231,7 +243,7 @@
         // Web results
         document.getElementById('webResults').innerHTML = (data.web || [])
           .map(item => `<div class="fcards"><h4>${item.title}</h4><p>${item.snippet}</p><a href="${item.url}" target="_blank">${item.url}</a></div>`)
-          .join('') || "No results found.";
+          .join('');
 
         // Images
         document.getElementById('imageResults').innerHTML = (data.images || [])
@@ -266,7 +278,7 @@
         }
 
       } catch (err) {
-        document.getElementById('webResults').innerHTML = `<p style="color:red;">Error: ${err.message}</p>`;
+        console.error('Render error:', err);
       }
     }
   </script>
