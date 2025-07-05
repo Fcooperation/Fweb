@@ -2,243 +2,355 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>FWEB | African Search Engine</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fweb</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      font-family: 'Montserrat', sans-serif;
-      box-sizing: border-box;
-    }
-    html, body {
-      background-color: #ffffff;
-      color: #000000;
-      height: 100%;
-      width: 100%;
-      overflow-x: hidden;
-    }
     body {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      padding: 2rem;
-      position: relative;
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      background: #fff;
+      color: #000;
     }
     header {
-      font-size: 3rem;
+      text-align: center;
+      padding: 40px 10px 10px;
+      transition: all 0.4s ease;
+    }
+    #title {
+      font-size: 3em;
       font-weight: 700;
-      margin-bottom: 2rem;
-      text-align: center;
-    }
-    .account-icon {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      width: 40px;
-      height: 40px;
-      cursor: pointer;
-    }
-    .account-icon img {
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      border: 2px solid #000;
-      background: #fff;
-    }
-    .search-box {
-      display: flex;
-      gap: 0.5rem;
-      width: 100%;
-      max-width: 600px;
-      margin-bottom: 2rem;
-    }
-    input[type="text"] {
-      flex: 1;
-      padding: 1rem;
-      font-size: 1rem;
-      border: 1px solid #000;
-      border-radius: 8px;
-    }
-    button {
-      background-color: #000;
-      color: #fff;
-      padding: 1rem 1.5rem;
-      font-size: 1rem;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background 0.2s ease;
-    }
-    button:hover {
-      background-color: #1e1e1e;
-    }
-    .tagline {
-      font-size: 2.5rem;
-      font-weight: 800;
-      margin-top: 1.5rem;
-      text-align: center;
-      text-transform: uppercase;
       letter-spacing: 1px;
+      transition: opacity 0.3s ease;
     }
-    .footer {
-      position: fixed;
-      bottom: 20px;
-      width: 100%;
+    .hidden {
+      display: none !important;
+    }
+    .search-container {
       text-align: center;
-      font-size: 0.85rem;
-      color: #999;
-    }
-    #results {
-      margin-top: 1.5rem;
+      margin: 30px auto;
+      transition: all 0.4s ease;
       max-width: 600px;
-      width: 100%;
-      text-align: center;
     }
-    .fcards {
-      text-align: left;
-      padding: 10px;
+    .search-up {
+      margin: 5px auto !important;
+      position: fixed;
+      top: 5px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 90%;
+      max-width: 600px;
+      background: #fff;
+      padding: 10px 0 0 0;
+      z-index: 999;
+      box-sizing: border-box;
       border-bottom: 1px solid #ddd;
     }
-    .fcards h4 {
-      margin: 0 0 5px 0;
-      font-size: 1.1em;
-    }
-    .fcards p {
-      margin: 0 0 3px 0;
-      font-size: 0.95em;
-    }
-    .fcards a {
-      font-size: 0.9em;
-      color: blue;
-      word-break: break-all;
-    }
-    img.preview {
+    #searchBox {
       width: 100%;
-      max-height: 200px;
-      object-fit: cover;
+      padding: 12px;
+      font-size: 16px;
+      border: 1px solid #000;
+      border-radius: 5px;
+      outline: none;
+      box-sizing: border-box;
+    }
+    #searchButton {
+      margin-top: 10px;
+      width: 90%;
+      max-width: 100%;
+      padding: 12px 0;
+      background: #000;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+      box-sizing: border-box;
+    }
+    nav.tabs {
+      display: none;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 80px; /* enough space below fixed search bar */
+      border-bottom: 1px solid #000;
+    }
+    nav.tabs.active {
+      display: flex;
+    }
+    nav.tabs button {
+      padding: 10px 20px;
+      font-size: 15px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-weight: bold;
+      color: #555;
+    }
+    nav.tabs button.active {
+      border-bottom: 3px solid #000;
+      color: #000;
+    }
+    section.result-tab {
+      display: none;
+      padding: 20px;
+      max-width: 900px;
+      margin: auto;
+      margin-top: 10px;
+    }
+    section.result-tab.active {
+      display: block;
+    }
+    .fcards {
+      border-bottom: 1px solid #ddd;
+      padding: 10px 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .fcards img.thumb {
+      width: 48px;
+      height: 48px;
+      object-fit: contain;
       border-radius: 6px;
-      margin: 10px 0;
+      border: 1px solid #ccc;
+      background: #f0f0f0;
+    }
+    .fcards .fcards-content {
+      flex-grow: 1;
+    }
+    .fcards .fcards-title {
+      margin: 0 0 5px 0;
+      font-weight: bold;
+      font-size: 1.1em;
+      cursor: pointer;
+      color: #0000ee;
+      text-decoration: underline;
+    }
+    .fcards .fcards-link {
+      font-size: 0.9em;
+      color: #555;
+      cursor: pointer;
+      user-select: none;
+    }
+    .images-grid, .books-grid, .videos-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 15px;
+      padding-top: 10px;
+    }
+    .images-grid img,
+    .videos-grid iframe,
+    .books-grid .book-item {
+      width: 100%;
+      height: auto;
+      border-radius: 5px;
+    }
+    .books-grid .book-item {
+      text-align: center;
+      font-size: 14px;
+      padding: 5px;
+    }
+    footer {
+      margin-top: 40px;
+      text-align: center;
+      font-size: 12px;
+      color: #777;
     }
   </style>
 </head>
 <body>
 
-<a href="account.html" class="account-icon" title="Your Account">
-  <img src="https://www.svgrepo.com/show/506700/user-circle.svg" alt="Account" />
-</a>
+  <header id="header">
+    <h1 id="title">Fweb</h1>
+    <div class="search-container" id="searchContainer">
+      <input type="text" id="searchBox" placeholder="Search the web..." />
+      <button id="searchButton" onclick="sendSearch()">Search</button>
+    </div>
+  </header>
 
-<header>FWEB</header>
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-tab="web">Web</button>
+    <button class="tab" data-tab="images">Images</button>
+    <button class="tab" data-tab="videos">Videos</button>
+  </nav>
 
-<div class="search-box">
-  <input type="text" id="searchBox" placeholder="What are you searching for?" />
-  <button onclick="sendSearch()">Search</button>
-</div>
+  <section class="result-tab active" id="web">
+    <div id="sentenceCrawl" style="font-weight:bold; font-size:1.2em; margin-bottom: 15px;"></div>
+    <div id="webResults">No results yet.</div>
+  </section>
 
-<div class="tagline">MEANT FOR AFRICA</div>
+  <section class="result-tab" id="images">
+    <div class="images-grid" id="imageResults"></div>
+  </section>
 
-<div id="results">Results will appear here...</div>
+  <section class="result-tab" id="videos">
+    <div class="videos-grid" id="videoResults"></div>
+  </section>
 
-<div class="footer">© 2025 F_COOPERATION</div>
+  <section class="result-tab" id="books" style="display: none;">
+    <div class="books-grid" id="bookResults"></div>
+  </section>
+
+  <footer>
+    <p>© 2025 Fcooperation • Meant for Africa</p>
+  </footer>
 
 <script>
+  const tabButtons = document.querySelectorAll('.tab');
+  const resultTabs = document.querySelectorAll('.result-tab');
   const gofileToken = "e1LOiRxizCSLqTmyZ27AeZuN10qu0wfO";
 
-  function copyLink(link) {
-    navigator.clipboard.writeText(link).then(() => alert("Link copied!"));
+  tabButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelector('.tab.active')?.classList.remove('active');
+      btn.classList.add('active');
+
+      resultTabs.forEach(tab => tab.classList.remove('active'));
+      document.getElementById(btn.getAttribute('data-tab')).classList.add('active');
+    });
+  });
+
+  // Helper: Copy text to clipboard
+  function copyToClipboard(text) {
+    navigator.clipboard.writeText(text)
+      .then(() => alert("Link copied to clipboard!"))
+      .catch(() => alert("Failed to copy link"));
+  }
+
+  // Fetch file content by fileId from Gofile
+  async function fetchFileContent(fileId) {
+    try {
+      const res = await fetch(`https://api.gofile.io/getContent?fileId=${fileId}`);
+      const data = await res.json();
+      if (data.status === 'ok') return data.data;
+      else return null;
+    } catch(e) {
+      console.error("Error fetching file content:", e);
+      return null;
+    }
+  }
+
+  // Search files on Gofile matching query
+  async function searchGofileFiles(query) {
+    try {
+      // Get account files
+      const res = await fetch(`https://api.gofile.io/getAccountDetails?token=${gofileToken}`);
+      const data = await res.json();
+      if (data.status !== 'ok') return null;
+
+      // Filter files by name including query (case insensitive)
+      const files = data.data.files || {};
+      const matchedFiles = Object.values(files).filter(f =>
+        f.name.toLowerCase().includes(query.toLowerCase())
+      );
+
+      return matchedFiles;
+    } catch(e) {
+      console.error("Gofile search error:", e);
+      return null;
+    }
   }
 
   async function sendSearch() {
     const query = document.getElementById('searchBox').value.trim();
     if (!query) return alert("Please type something to search.");
 
-    document.getElementById('results').innerHTML = `<p>Searching for "<strong>${query}</strong>"...</p>`;
+    // Hide Fweb title and move search bar/button up
+    document.getElementById('title').classList.add('hidden');
+    const searchContainer = document.getElementById('searchContainer');
+    searchContainer.classList.add('search-up');
 
-    // Step 1: Check Gofile for match
-    try {
-      const accountRes = await fetch(`https://api.gofile.io/getAccountDetails?token=${gofileToken}`);
-      const accountData = await accountRes.json();
-      if (accountData.status === "ok") {
-        const files = Object.values(accountData.data.files);
-        const match = files.find(f => f.name.toLowerCase().includes(query.toLowerCase()));
-        if (match) {
-          document.getElementById('results').innerHTML = `
-            <div class="fcards">
-              <h4 onclick="copyLink('${match.link}')">${match.name}</h4>
-              <p><a href="${match.link}" target="_blank">${match.link}</a></p>
-            </div>`;
-          return; // ✅ Stop here if found in Gofile
+    // Show tabs
+    document.getElementById('tabs').classList.add('active');
+
+    // Clear previous results
+    document.getElementById('sentenceCrawl').textContent = "";
+    document.getElementById('webResults').innerHTML = "";
+    document.getElementById('imageResults').innerHTML = '';
+    document.getElementById('videoResults').innerHTML = '';
+    document.getElementById('bookResults').innerHTML = '';
+    document.getElementById('books').style.display = 'none';
+
+    // Check Gofile for files matching query
+    const gofileFiles = await searchGofileFiles(query);
+
+    if (gofileFiles && gofileFiles.length > 0) {
+      // Find sentence crawling file (assumed contains 'sentence' or 'crawl' keyword)
+      const sentenceFile = gofileFiles.find(f => /sentence|crawl/i.test(f.name));
+      if (sentenceFile) {
+        // fetch content of sentence crawling file
+        const content = await fetchFileContent(sentenceFile.id);
+        if (content) {
+          document.getElementById('sentenceCrawl').textContent = content.slice(0, 500) + (content.length > 500 ? '...' : '');
         }
       }
-    } catch (e) {
-      console.warn("Gofile check failed:", e.message);
+
+      // Build fcards for other files excluding sentence crawling file
+      const otherFiles = gofileFiles.filter(f => !sentenceFile || f.id !== sentenceFile.id);
+
+      document.getElementById('webResults').innerHTML = otherFiles.map(f => {
+        // Use file icon if available else fallback icon
+        const iconUrl = f.icon || 'https://cdn-icons-png.flaticon.com/512/2306/2306203.png';
+
+        // On clicking title or icon, copy link to clipboard
+        return `
+          <div class="fcards">
+            <img class="thumb" src="${iconUrl}" alt="Site icon"/>
+            <div class="fcards-content">
+              <h4 class="fcards-title" onclick="copyToClipboard('${f.link}')">${f.name}</h4>
+              <div class="fcards-link" onclick="copyToClipboard('${f.link}')">${f.link}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+      return; // Don't query render if found in Gofile
     }
 
-    // Step 2: If not found in Gofile, call backend on Render
+    // If not found in Gofile, send to Render backend
     try {
-      const response = await fetch('https://fweb-backend.onrender.com/search', {
+      const res = await fetch('https://fweb-backend.onrender.com/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query })
       });
 
-      const data = await response.json();
-      if (!data || Object.keys(data).length === 0) {
-        document.getElementById('results').innerHTML = "None found.";
-        return;
-      }
+      const data = await res.json();
 
-      let output = "";
+      document.getElementById('webResults').innerHTML = (data.web || [])
+        .map(item => `<div class="fcards"><h4>${item.title}</h4><p>${item.snippet}</p><a href="${item.url}" target="_blank">${item.url}</a></div>`)
+        .join('');
 
-      // Web Results
-      if (data.web && data.web.length) {
-        output += `<h3>Web Results</h3>`;
-        data.web.forEach(item => {
-          output += `
-            <div class="fcards">
-              <h4>${item.title}</h4>
-              <p>${item.snippet}</p>
-              <a href="${item.url}" target="_blank">${item.url}</a>
-            </div>`;
-        });
-      }
+      document.getElementById('imageResults').innerHTML = (data.images || [])
+        .map(url => `<img src="${url}" alt="Image result"/>`)
+        .join('');
 
-      // Images
-      if (data.images && data.images.length) {
-        output += `<h3>Images</h3>`;
-        data.images.forEach(img => {
-          output += `<img class="preview" src="${img}" alt="Image"/>`;
-        });
-      }
+      document.getElementById('videoResults').innerHTML = (data.videos || [])
+        .map(link => `<iframe src="${link}" frameborder="0" allowfullscreen></iframe>`)
+        .join('');
 
-      // Videos
-      if (data.videos && data.videos.length) {
-        output += `<h3>Videos</h3>`;
-        data.videos.forEach(video => {
-          output += `<iframe class="preview" src="${video}" frameborder="0" allowfullscreen></iframe>`;
-        });
-      }
-
-      // Books
       if (data.books && data.books.length) {
-        output += `<h3>Books</h3>`;
-        data.books.forEach(book => {
-          output += `
-            <div class="fcards">
-              <strong>${book.title}</strong><br>
-              <a href="${book.url}" target="_blank">Read</a>
-            </div>`;
-        });
+        document.getElementById('books').style.display = 'block';
+
+        if (!document.querySelector('[data-tab="books"]')) {
+          const bookTab = document.createElement('button');
+          bookTab.className = 'tab';
+          bookTab.setAttribute('data-tab', 'books');
+          bookTab.innerText = 'Books';
+          bookTab.addEventListener('click', () => {
+            document.querySelector('.tab.active')?.classList.remove('active');
+            bookTab.classList.add('active');
+            resultTabs.forEach(tab => tab.classList.remove('active'));
+            document.getElementById('books').classList.add('active');
+          });
+          document.getElementById('tabs').appendChild(bookTab);
+        }
+
+        document.getElementById('bookResults').innerHTML = data.books
+          .map(book => `<div class="book-item"><strong>${book.title}</strong><br><a href="${book.url}" target="_blank">View</a></div>`)
+          .join('');
       }
-
-      if (output === "") output = "None found.";
-      document.getElementById('results').innerHTML = output;
-
-    } catch (error) {
-      document.getElementById('results').innerHTML = `<p style="color:red;">Error: ${error.message}</p>`;
+    } catch (err) {
+      console.error('Render error:', err);
     }
   }
 </script>
