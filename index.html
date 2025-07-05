@@ -137,7 +137,7 @@
   <header id="header">
     <h1 id="title">Fweb</h1>
     <div class="search-container" id="searchContainer">
-      <input type="text" id="searchBox" placeholder="Search the web..." onfocus="prepareSearchUI()" />
+      <input type="text" id="searchBox" placeholder="Search the web..." />
       <button id="searchButton" onclick="sendSearch()">Search</button>
     </div>
   </header>
@@ -173,12 +173,6 @@
     const resultTabs = document.querySelectorAll('.result-tab');
     const gofileToken = "e1LOiRxizCSLqTmyZ27AeZuN10qu0wfO";
 
-    function prepareSearchUI() {
-      document.getElementById('title').classList.add('hidden');
-      document.getElementById('tabs').classList.add('active');
-      document.getElementById('searchContainer').classList.add('search-up');
-    }
-
     tabButtons.forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelector('.tab.active')?.classList.remove('active');
@@ -211,17 +205,21 @@
       const query = document.getElementById('searchBox').value.trim();
       if (!query) return alert("Please type something to search.");
 
+      // Move search bar up and show tabs ONLY AFTER hitting search
+      document.getElementById('title').classList.add('hidden');
+      document.getElementById('tabs').classList.add('active');
+      document.getElementById('searchContainer').classList.add('search-up');
+
+      // Clear previous results
       document.getElementById('webResults').innerHTML = "";
       document.getElementById('imageResults').innerHTML = '';
       document.getElementById('videoResults').innerHTML = '';
       document.getElementById('bookResults').innerHTML = '';
       document.getElementById('books').style.display = 'none';
 
+      // Check Gofile storage first
       const found = await checkGofile(query);
-      let foundInStorage = false;
-
       if (found) {
-        foundInStorage = true;
         document.getElementById('webResults').innerHTML = `
           <div class="fcards">
             <h4>${found.name}</h4>
@@ -230,7 +228,7 @@
           </div>`;
       }
 
-      // Proceed to Render regardless (to follow your new logic)
+      // Always send query to Render backend regardless of Gofile result
       try {
         const res = await fetch('https://fweb-backend.onrender.com/search', {
           method: 'POST',
@@ -240,8 +238,8 @@
 
         const data = await res.json();
 
-        // Only update web if nothing was found in storage
-        if (!foundInStorage) {
+        // Show Render web results only if nothing found in storage
+        if (!found) {
           document.getElementById('webResults').innerHTML = (data.web || [])
             .map(item => `<div class="fcards"><h4>${item.title}</h4><p>${item.snippet}</p><a href="${item.url}" target="_blank">${item.url}</a></div>`)
             .join('');
@@ -257,6 +255,8 @@
 
         if (data.books && data.books.length) {
           document.getElementById('books').style.display = 'block';
+
+          // Add books tab only if it doesn't exist
           if (!document.querySelector('[data-tab="books"]')) {
             const bookTab = document.createElement('button');
             bookTab.className = 'tab';
