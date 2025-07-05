@@ -17,11 +17,15 @@
       padding: 30px 10px 10px;
     }
 
-    header h1 {
+    #title {
       font-size: 3em;
-      margin: 0;
       font-weight: 700;
       letter-spacing: 1px;
+      transition: opacity 0.3s ease;
+    }
+
+    .hidden {
+      display: none !important;
     }
 
     .search-container {
@@ -51,11 +55,15 @@
     }
 
     nav.tabs {
-      display: flex;
+      display: none;
       justify-content: center;
       flex-wrap: wrap;
       margin-top: 30px;
       border-bottom: 1px solid #000;
+    }
+
+    nav.tabs.active {
+      display: flex;
     }
 
     nav.tabs button {
@@ -121,9 +129,9 @@
 <body>
 
   <header>
-    <h1>Fweb</h1>
+    <h1 id="title">Fweb</h1>
     <div class="search-container">
-      <input type="text" id="searchBox" placeholder="Search the web..." />
+      <input type="text" id="searchBox" placeholder="Search the web..." onfocus="showTabsAndHideTitle()" />
       <button id="searchButton" onclick="sendSearch()">Search</button>
     </div>
   </header>
@@ -132,7 +140,6 @@
     <button class="tab active" data-tab="web">Web</button>
     <button class="tab" data-tab="images">Images</button>
     <button class="tab" data-tab="videos">Videos</button>
-    <!-- dynamic tabs like Books will be injected here -->
   </nav>
 
   <section class="result-tab active" id="web">
@@ -147,7 +154,6 @@
     <div class="videos-grid" id="videoResults"></div>
   </section>
 
-  <!-- Dynamic Book tab -->
   <section class="result-tab" id="books" style="display: none;">
     <div class="books-grid" id="bookResults"></div>
   </section>
@@ -159,20 +165,40 @@
   <script>
     const tabButtons = document.querySelectorAll('.tab');
     const resultTabs = document.querySelectorAll('.result-tab');
+    const gofileToken = "e1LOiRxizCSLqTmyZ27AeZuN10qu0wfO";
+
+    function showTabsAndHideTitle() {
+      document.getElementById('title').classList.add('hidden');
+      document.getElementById('tabs').classList.add('active');
+    }
 
     tabButtons.forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelector('.tab.active')?.classList.remove('active');
         btn.classList.add('active');
 
-        resultTabs.forEach(tab => {
-          tab.classList.remove('active');
-        });
-
-        const selectedTab = btn.getAttribute('data-tab');
-        document.getElementById(selectedTab).classList.add('active');
+        resultTabs.forEach(tab => tab.classList.remove('active'));
+        document.getElementById(btn.getAttribute('data-tab')).classList.add('active');
       });
     });
+
+    async function checkGofile(query) {
+      try {
+        const res = await fetch(`https://api.gofile.io/getAccountDetails?token=${gofileToken}`);
+        const data = await res.json();
+        const files = data.data?.files ?? [];
+
+        for (const f of Object.values(files)) {
+          if (f.name.toLowerCase().includes(query.toLowerCase())) {
+            return f; // found matching file
+          }
+        }
+        return null; // not found
+      } catch (err) {
+        console.error('Gofile check error:', err);
+        return null;
+      }
+    }
 
     async function sendSearch() {
       const query = document.getElementById('searchBox').value.trim();
@@ -183,12 +209,17 @@
       document.getElementById('imageResults').innerHTML = '';
       document.getElementById('videoResults').innerHTML = '';
       document.getElementById('bookResults').innerHTML = '';
-
-      // Always show Web, Images, Videos. Hide others until found
       document.getElementById('books').style.display = 'none';
 
+      // STEP 1: Check Gofile
+      const found = await checkGofile(query);
+      if (found) {
+        document.getElementById('webResults').innerHTML = `<p><strong>Found in storage:</strong> <a href="${found.link}" target="_blank">${found.name}</a></p>`;
+        return;
+      }
+
+      // STEP 2: Send to Render if not found
       try {
-        // Check Render backend for results
         const res = await fetch('https://fweb-backend.onrender.com/search', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -197,22 +228,22 @@
 
         const data = await res.json();
 
-        // === Web results ===
+        // Web results
         document.getElementById('webResults').innerHTML = (data.web || [])
           .map(item => `<div class="fcards"><h4>${item.title}</h4><p>${item.snippet}</p><a href="${item.url}" target="_blank">${item.url}</a></div>`)
           .join('') || "No results found.";
 
-        // === Image results ===
+        // Images
         document.getElementById('imageResults').innerHTML = (data.images || [])
           .map(url => `<img src="${url}" alt="Image result"/>`)
           .join('');
 
-        // === Video results ===
+        // Videos
         document.getElementById('videoResults').innerHTML = (data.videos || [])
           .map(link => `<iframe src="${link}" frameborder="0" allowfullscreen></iframe>`)
           .join('');
 
-        // === Book results ===
+        // Books
         if (data.books && data.books.length) {
           document.getElementById('books').style.display = 'block';
           if (!document.querySelector('[data-tab="books"]')) {
