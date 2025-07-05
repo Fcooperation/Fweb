@@ -33,38 +33,54 @@
       text-align: center;
       margin: 30px auto;
       transition: all 0.4s ease;
+      max-width: 600px;
     }
 
+    /* New styles for search bar & button when moved up */
     .search-up {
-      margin-top: 5px !important;
+      margin: 5px auto !important;
+      position: fixed;
+      top: 5px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 90%;
+      max-width: 600px;
+      background: #fff;
+      padding: 10px 0 0 0;
+      z-index: 999;
+      box-sizing: border-box;
+      border-bottom: 1px solid #ddd;
     }
 
     #searchBox {
-      width: 70%;
-      max-width: 500px;
+      width: 100%;
       padding: 12px;
       font-size: 16px;
       border: 1px solid #000;
       border-radius: 5px;
       outline: none;
+      box-sizing: border-box;
     }
 
     #searchButton {
-      margin-left: 10px;
-      padding: 12px 18px;
+      margin-top: 10px;
+      width: 90%;
+      max-width: 100%;
+      padding: 12px 0;
       background: #000;
       color: #fff;
       border: none;
       border-radius: 5px;
       font-weight: bold;
       cursor: pointer;
+      box-sizing: border-box;
     }
 
     nav.tabs {
       display: none;
       justify-content: center;
       flex-wrap: wrap;
-      margin-top: 10px;
+      margin-top: 80px; /* enough space below fixed search bar */
       border-bottom: 1px solid #000;
     }
 
@@ -92,6 +108,7 @@
       padding: 20px;
       max-width: 900px;
       margin: auto;
+      margin-top: 10px;
     }
 
     section.result-tab.active {
@@ -171,7 +188,6 @@
   <script>
     const tabButtons = document.querySelectorAll('.tab');
     const resultTabs = document.querySelectorAll('.result-tab');
-    const gofileToken = "e1LOiRxizCSLqTmyZ27AeZuN10qu0wfO";
 
     tabButtons.forEach(btn => {
       btn.addEventListener('click', () => {
@@ -183,32 +199,17 @@
       });
     });
 
-    async function checkGofile(query) {
-      try {
-        const res = await fetch(`https://api.gofile.io/getAccountDetails?token=${gofileToken}`);
-        const data = await res.json();
-        const files = data.data?.files ?? [];
-
-        for (const f of Object.values(files)) {
-          if (f.name.toLowerCase().includes(query.toLowerCase())) {
-            return f;
-          }
-        }
-        return null;
-      } catch (err) {
-        console.error('Gofile check error:', err);
-        return null;
-      }
-    }
-
     async function sendSearch() {
       const query = document.getElementById('searchBox').value.trim();
       if (!query) return alert("Please type something to search.");
 
-      // Move search bar up and show tabs ONLY AFTER hitting search
+      // Hide Fweb title and move search bar/button up
       document.getElementById('title').classList.add('hidden');
+      const searchContainer = document.getElementById('searchContainer');
+      searchContainer.classList.add('search-up');
+
+      // Show tabs
       document.getElementById('tabs').classList.add('active');
-      document.getElementById('searchContainer').classList.add('search-up');
 
       // Clear previous results
       document.getElementById('webResults').innerHTML = "";
@@ -217,18 +218,6 @@
       document.getElementById('bookResults').innerHTML = '';
       document.getElementById('books').style.display = 'none';
 
-      // Check Gofile storage first
-      const found = await checkGofile(query);
-      if (found) {
-        document.getElementById('webResults').innerHTML = `
-          <div class="fcards">
-            <h4>${found.name}</h4>
-            <p>Found in storage.</p>
-            <a href="${found.link}" target="_blank">${found.link}</a>
-          </div>`;
-      }
-
-      // Always send query to Render backend regardless of Gofile result
       try {
         const res = await fetch('https://fweb-backend.onrender.com/search', {
           method: 'POST',
@@ -238,12 +227,9 @@
 
         const data = await res.json();
 
-        // Show Render web results only if nothing found in storage
-        if (!found) {
-          document.getElementById('webResults').innerHTML = (data.web || [])
-            .map(item => `<div class="fcards"><h4>${item.title}</h4><p>${item.snippet}</p><a href="${item.url}" target="_blank">${item.url}</a></div>`)
-            .join('');
-        }
+        document.getElementById('webResults').innerHTML = (data.web || [])
+          .map(item => `<div class="fcards"><h4>${item.title}</h4><p>${item.snippet}</p><a href="${item.url}" target="_blank">${item.url}</a></div>`)
+          .join('');
 
         document.getElementById('imageResults').innerHTML = (data.images || [])
           .map(url => `<img src="${url}" alt="Image result"/>`)
@@ -256,7 +242,6 @@
         if (data.books && data.books.length) {
           document.getElementById('books').style.display = 'block';
 
-          // Add books tab only if it doesn't exist
           if (!document.querySelector('[data-tab="books"]')) {
             const bookTab = document.createElement('button');
             bookTab.className = 'tab';
