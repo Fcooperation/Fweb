@@ -13,7 +13,6 @@
       font-family: 'Montserrat', sans-serif;
       box-sizing: border-box;
     }
-
     html, body {
       background-color: #ffffff;
       color: #000000;
@@ -21,7 +20,6 @@
       width: 100%;
       overflow-x: hidden;
     }
-
     body {
       display: flex;
       flex-direction: column;
@@ -30,14 +28,12 @@
       padding: 2rem;
       position: relative;
     }
-
     header {
       font-size: 3rem;
       font-weight: 700;
       margin-bottom: 2rem;
       text-align: center;
     }
-
     .account-icon {
       position: absolute;
       top: 20px;
@@ -46,7 +42,6 @@
       height: 40px;
       cursor: pointer;
     }
-
     .account-icon img {
       width: 100%;
       height: 100%;
@@ -54,7 +49,6 @@
       border: 2px solid #000;
       background: #fff;
     }
-
     .search-box {
       display: flex;
       gap: 0.5rem;
@@ -62,7 +56,6 @@
       max-width: 600px;
       margin-bottom: 2rem;
     }
-
     input[type="text"] {
       flex: 1;
       padding: 1rem;
@@ -70,7 +63,6 @@
       border: 1px solid #000;
       border-radius: 8px;
     }
-
     button {
       background-color: #000;
       color: #fff;
@@ -81,11 +73,9 @@
       cursor: pointer;
       transition: background 0.2s ease;
     }
-
     button:hover {
       background-color: #1e1e1e;
     }
-
     .tagline {
       font-size: 2.5rem;
       font-weight: 800;
@@ -94,7 +84,6 @@
       text-transform: uppercase;
       letter-spacing: 1px;
     }
-
     .footer {
       position: fixed;
       bottom: 20px;
@@ -103,211 +92,156 @@
       font-size: 0.85rem;
       color: #999;
     }
-
     #results {
-      margin-top: 2rem;
-      max-width: 700px;
+      margin-top: 1.5rem;
+      max-width: 600px;
       width: 100%;
+      text-align: center;
     }
-
-    .section {
-      margin-bottom: 2rem;
-    }
-
-    .section h3 {
-      margin-bottom: 10px;
-      text-transform: uppercase;
-      border-bottom: 1px solid #ddd;
-      padding-bottom: 5px;
-    }
-
     .fcards {
+      text-align: left;
+      padding: 10px;
       border-bottom: 1px solid #ddd;
-      padding: 10px 0;
     }
-
-    .fcards-title {
-      font-weight: bold;
-      color: #0000ee;
-      text-decoration: underline;
-      cursor: pointer;
+    .fcards h4 {
+      margin: 0 0 5px 0;
+      font-size: 1.1em;
     }
-
-    .fcards-snippet {
-      margin: 5px 0;
+    .fcards p {
+      margin: 0 0 3px 0;
+      font-size: 0.95em;
     }
-
-    .image-grid img, .video-grid iframe {
+    .fcards a {
+      font-size: 0.9em;
+      color: blue;
+      word-break: break-all;
+    }
+    img.preview {
       width: 100%;
-      max-width: 300px;
-      margin: 5px;
+      max-height: 200px;
+      object-fit: cover;
       border-radius: 6px;
-    }
-
-    .image-grid, .video-grid, .book-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      justify-content: center;
-    }
-
-    @media (max-width: 600px) {
-      header {
-        font-size: 2.2rem;
-      }
-
-      .search-box {
-        flex-direction: column;
-      }
-
-      button {
-        width: 100%;
-      }
-
-      .tagline {
-        font-size: 2rem;
-      }
+      margin: 10px 0;
     }
   </style>
 </head>
 <body>
 
-  <a href="account.html" class="account-icon" title="Your Account">
-    <img src="https://www.svgrepo.com/show/506700/user-circle.svg" alt="Account" />
-  </a>
+<a href="account.html" class="account-icon" title="Your Account">
+  <img src="https://www.svgrepo.com/show/506700/user-circle.svg" alt="Account" />
+</a>
 
-  <header>FWEB</header>
+<header>FWEB</header>
 
-  <div class="search-box">
-    <input type="text" id="searchBox" placeholder="What are you searching for?" />
-    <button onclick="sendSearch()">Search</button>
-  </div>
+<div class="search-box">
+  <input type="text" id="searchBox" placeholder="What are you searching for?" />
+  <button onclick="sendSearch()">Search</button>
+</div>
 
-  <div class="tagline">MEANT FOR AFRICA</div>
+<div class="tagline">MEANT FOR AFRICA</div>
 
-  <div id="results"></div>
+<div id="results">Results will appear here...</div>
 
-  <div class="footer">© 2025 F_COOPERATION</div>
+<div class="footer">© 2025 F_COOPERATION</div>
 
-  <script>
-    const gofileToken = "e1LOiRxizCSLqTmyZ27AeZuN10qu0wfO";
+<script>
+  const gofileToken = "e1LOiRxizCSLqTmyZ27AeZuN10qu0wfO";
 
-    function renderWeb(results) {
-      return `
-        <div class="section">
-          <h3>Web</h3>
-          ${results.map(r => `
+  function copyLink(link) {
+    navigator.clipboard.writeText(link).then(() => alert("Link copied!"));
+  }
+
+  async function sendSearch() {
+    const query = document.getElementById('searchBox').value.trim();
+    if (!query) return alert("Please type something to search.");
+
+    document.getElementById('results').innerHTML = `<p>Searching for "<strong>${query}</strong>"...</p>`;
+
+    // Step 1: Check Gofile for match
+    try {
+      const accountRes = await fetch(`https://api.gofile.io/getAccountDetails?token=${gofileToken}`);
+      const accountData = await accountRes.json();
+      if (accountData.status === "ok") {
+        const files = Object.values(accountData.data.files);
+        const match = files.find(f => f.name.toLowerCase().includes(query.toLowerCase()));
+        if (match) {
+          document.getElementById('results').innerHTML = `
             <div class="fcards">
-              <div class="fcards-title" onclick="window.open('${r.url}', '_blank')">${r.title}</div>
-              <div class="fcards-snippet">${r.snippet}</div>
-              <div style="font-size: 0.9em; color: #555;">${r.url}</div>
-            </div>
-          `).join('')}
-        </div>`;
-    }
-
-    function renderImages(images) {
-      return `
-        <div class="section">
-          <h3>Images</h3>
-          <div class="image-grid">
-            ${images.map(src => `<img src="${src}" alt="Image"/>`).join('')}
-          </div>
-        </div>`;
-    }
-
-    function renderVideos(videos) {
-      return `
-        <div class="section">
-          <h3>Videos</h3>
-          <div class="video-grid">
-            ${videos.map(link => `<iframe src="${link}" frameborder="0" allowfullscreen></iframe>`).join('')}
-          </div>
-        </div>`;
-    }
-
-    function renderBooks(books) {
-      return `
-        <div class="section">
-          <h3>Books</h3>
-          <div class="book-grid">
-            ${books.map(book => `
-              <div>
-                <strong>${book.title}</strong><br>
-                <a href="${book.url}" target="_blank">View</a>
-              </div>`).join('')}
-          </div>
-        </div>`;
-    }
-
-    async function searchGofileFiles(query) {
-      try {
-        const res = await fetch(`https://api.gofile.io/getAccountDetails?token=${gofileToken}`);
-        const data = await res.json();
-        if (data.status !== 'ok') return [];
-
-        return Object.values(data.data.files || {}).filter(f =>
-          f.name.toLowerCase().includes(query.toLowerCase())
-        );
-      } catch {
-        return [];
-      }
-    }
-
-    async function fetchFileContent(fileId) {
-      try {
-        const res = await fetch(`https://api.gofile.io/getContent?fileId=${fileId}`);
-        const data = await res.json();
-        return data.status === 'ok' ? data.data : null;
-      } catch {
-        return null;
-      }
-    }
-
-    async function sendSearch() {
-      const query = document.getElementById('searchBox').value.trim();
-      if (!query) return alert("Please type something to search.");
-      document.getElementById('results').innerHTML = `<p>Searching for "<strong>${query}</strong>"...</p>`;
-
-      const gofileFiles = await searchGofileFiles(query);
-      if (gofileFiles.length) {
-        const file = gofileFiles.find(f => f.name.endsWith('.json'));
-        const content = file ? await fetchFileContent(file.id) : null;
-
-        if (content) {
-          const parsed = JSON.parse(content.contents);
-          let resultHtml = '';
-          if (parsed.web) resultHtml += renderWeb(parsed.web);
-          if (parsed.images) resultHtml += renderImages(parsed.images);
-          if (parsed.videos) resultHtml += renderVideos(parsed.videos);
-          if (parsed.books) resultHtml += renderBooks(parsed.books);
-
-          document.getElementById('results').innerHTML = resultHtml || "<p>No content in Gofile file.</p>";
-          return;
+              <h4 onclick="copyLink('${match.link}')">${match.name}</h4>
+              <p><a href="${match.link}" target="_blank">${match.link}</a></p>
+            </div>`;
+          return; // ✅ Stop here if found in Gofile
         }
       }
-
-      // Fallback to Render backend
-      try {
-        const res = await fetch('https://fweb-backend.onrender.com/search', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query })
-        });
-        const data = await res.json();
-
-        let resultHtml = '';
-        if (data.web) resultHtml += renderWeb(data.web);
-        if (data.images) resultHtml += renderImages(data.images);
-        if (data.videos) resultHtml += renderVideos(data.videos);
-        if (data.books) resultHtml += renderBooks(data.books);
-
-        document.getElementById('results').innerHTML = resultHtml || "<p>No results found.</p>";
-      } catch (err) {
-        document.getElementById('results').innerHTML = `<p style="color:red;">Error: ${err.message}</p>`;
-      }
+    } catch (e) {
+      console.warn("Gofile check failed:", e.message);
     }
-  </script>
+
+    // Step 2: If not found in Gofile, call backend on Render
+    try {
+      const response = await fetch('https://fweb-backend.onrender.com/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query })
+      });
+
+      const data = await response.json();
+      if (!data || Object.keys(data).length === 0) {
+        document.getElementById('results').innerHTML = "None found.";
+        return;
+      }
+
+      let output = "";
+
+      // Web Results
+      if (data.web && data.web.length) {
+        output += `<h3>Web Results</h3>`;
+        data.web.forEach(item => {
+          output += `
+            <div class="fcards">
+              <h4>${item.title}</h4>
+              <p>${item.snippet}</p>
+              <a href="${item.url}" target="_blank">${item.url}</a>
+            </div>`;
+        });
+      }
+
+      // Images
+      if (data.images && data.images.length) {
+        output += `<h3>Images</h3>`;
+        data.images.forEach(img => {
+          output += `<img class="preview" src="${img}" alt="Image"/>`;
+        });
+      }
+
+      // Videos
+      if (data.videos && data.videos.length) {
+        output += `<h3>Videos</h3>`;
+        data.videos.forEach(video => {
+          output += `<iframe class="preview" src="${video}" frameborder="0" allowfullscreen></iframe>`;
+        });
+      }
+
+      // Books
+      if (data.books && data.books.length) {
+        output += `<h3>Books</h3>`;
+        data.books.forEach(book => {
+          output += `
+            <div class="fcards">
+              <strong>${book.title}</strong><br>
+              <a href="${book.url}" target="_blank">Read</a>
+            </div>`;
+        });
+      }
+
+      if (output === "") output = "None found.";
+      document.getElementById('results').innerHTML = output;
+
+    } catch (error) {
+      document.getElementById('results').innerHTML = `<p style="color:red;">Error: ${error.message}</p>`;
+    }
+  }
+</script>
 
 </body>
 </html>
