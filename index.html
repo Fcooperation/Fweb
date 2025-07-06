@@ -66,10 +66,15 @@
     }
     nav.tabs {
       display: none;
-      justify-content: center;
-      flex-wrap: wrap;
-      margin-top: 80px;
-      border-bottom: 1px solid #000;
+      overflow-x: auto;
+      white-space: nowrap;
+      padding: 10px 5px;
+      background: #fff;
+      border-top: 1px solid #ddd;
+      border-bottom: 1px solid #ddd;
+      z-index: 998;
+      position: sticky;
+      top: 58px;
     }
     nav.tabs.active {
       display: flex;
@@ -77,17 +82,16 @@
     nav.tabs button {
       padding: 10px 20px;
       font-size: 15px;
-      border: none;
-      background: #000;
-      color: #fff;
+      border: 1px solid #fff;
+      background: #fff;
+      color: #000;
       cursor: pointer;
-      margin: 5px;
+      margin-right: 8px;
       border-radius: 3px;
+      flex-shrink: 0;
     }
     nav.tabs button.active {
       border: 2px solid #000;
-      background: #fff;
-      color: #000;
     }
     section.result-tab {
       display: none;
@@ -147,6 +151,16 @@
 <script>
   const tabs = document.querySelectorAll('.tab');
   const results = document.querySelectorAll('.result-tab');
+  const tabBar = document.getElementById('tabs');
+
+  function clearExtraTabs() {
+    document.querySelectorAll('.tab').forEach((btn, i) => {
+      if (i > 2) btn.remove(); // Remove all after Web, Images, Videos
+    });
+    document.querySelectorAll('.result-tab').forEach((sec, i) => {
+      if (i > 2) sec.remove(); // Remove extra result tabs
+    });
+  }
 
   tabs.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -160,6 +174,8 @@
   async function sendSearch() {
     const query = document.getElementById('searchBox').value.trim();
     if (!query) return alert("Type something to search.");
+
+    clearExtraTabs(); // Clear old dynamic categories
 
     document.getElementById('title').classList.add('hidden');
     document.getElementById('searchContainer').classList.add('search-up');
@@ -187,33 +203,33 @@
     document.getElementById('webResults').innerHTML = relatedHTML + sourceLink;
 
     if (data.images && data.images.length) {
-      document.getElementById('imageResults').innerHTML = data.images.map(img => `<img src="${img}" />`).join('');
+      const limitedImgs = data.images.slice(0, 20);
+      document.getElementById('imageResults').innerHTML = limitedImgs.map(img => `<img src="${img}" />`).join('');
     } else {
       document.getElementById('imageResults').innerHTML = "❌ No images found.";
     }
 
-    // Add dynamic tabs
+    // Add dynamic tabs (forums, books, news...)
     if (data.categories) {
       data.categories.forEach(cat => {
-        if (!document.querySelector(`.tab[data-tab="${cat}"]`)) {
+        const catId = cat.toLowerCase();
+        if (!document.querySelector(`.tab[data-tab="${catId}"]`)) {
           const btn = document.createElement('button');
           btn.classList.add('tab');
-          btn.dataset.tab = cat;
+          btn.dataset.tab = catId;
           btn.innerText = cat.charAt(0).toUpperCase() + cat.slice(1);
-          btn.style.background = '#000';
-          btn.style.color = '#fff';
           btn.onclick = () => {
             document.querySelector('.tab.active').classList.remove('active');
             btn.classList.add('active');
             results.forEach(tab => tab.classList.remove('active'));
-            document.getElementById(cat).classList.add('active');
+            document.getElementById(catId).classList.add('active');
           };
-          document.getElementById('tabs').appendChild(btn);
+          tabBar.appendChild(btn);
 
           const sec = document.createElement('section');
           sec.classList.add('result-tab');
-          sec.id = cat;
-          sec.innerHTML = `<p>📰 ${cat} results coming soon...</p>`;
+          sec.id = catId;
+          sec.innerHTML = `<p>No results yet for ${cat}.</p>`;
           document.body.insertBefore(sec, document.querySelector('footer'));
         }
       });
