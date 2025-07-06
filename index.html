@@ -1,4 +1,3 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Fweb</title>
   <style>
+    /* UNCHANGED CSS */
     body {
       font-family: 'Segoe UI', sans-serif;
       margin: 0;
@@ -66,6 +66,10 @@
       padding: 20px;
       max-width: 900px;
       margin: auto;
+      display: none;
+    }
+    section.result-tab.active {
+      display: block;
     }
     footer {
       margin-top: 40px;
@@ -85,14 +89,22 @@
   </header>
 
   <nav class="tabs">
-    <button class="tab active">Web</button>
-    <button class="tab">Images</button>
-    <button class="tab">Videos</button>
+    <button class="tab active" data-tab="web">Web</button>
+    <button class="tab" data-tab="images">Images</button>
+    <button class="tab" data-tab="videos">Videos</button>
   </nav>
 
-  <section class="result-tab" id="web">
+  <section class="result-tab active" id="web">
     <div id="sentenceCrawl" style="font-weight:bold; font-size:1.2em; margin-bottom: 15px;"></div>
     <div id="webResults">No results yet.</div>
+  </section>
+
+  <section class="result-tab" id="images">
+    <div id="imageResults">🖼️ Image results coming soon.</div>
+  </section>
+
+  <section class="result-tab" id="videos">
+    <div id="videoResults">🎥 Video results coming soon.</div>
   </section>
 
   <footer>
@@ -100,12 +112,24 @@
   </footer>
 
   <script>
+    const tabs = document.querySelectorAll(".tab");
+    const sections = document.querySelectorAll(".result-tab");
+
+    tabs.forEach(tab => {
+      tab.addEventListener("click", () => {
+        document.querySelector(".tab.active").classList.remove("active");
+        tab.classList.add("active");
+        sections.forEach(s => s.classList.remove("active"));
+        document.getElementById(tab.dataset.tab).classList.add("active");
+      });
+    });
+
     async function sendSearch() {
-      const query = document.getElementById('searchBox').value.trim();
+      const query = document.getElementById("searchBox").value.trim();
       if (!query) return alert("Type something to search.");
 
-      document.getElementById('sentenceCrawl').textContent = "🔎 Thinking...";
-      document.getElementById('webResults').innerHTML = "";
+      document.getElementById("sentenceCrawl").textContent = "🔎 Thinking...";
+      document.getElementById("webResults").innerHTML = "";
 
       try {
         const res = await fetch("https://fweb-backend.onrender.com/search", {
@@ -115,17 +139,18 @@
         });
 
         const data = await res.json();
+        document.getElementById("sentenceCrawl").textContent = data.response || "❌ No answer found.";
 
-        document.getElementById('sentenceCrawl').textContent = data.response || "❌ Not found.";
         let relatedHTML = "";
         if (data.related?.length) {
           relatedHTML = "<h4>Related info:</h4><ul>" + data.related.map(x => `<li>${x}</li>`).join('') + "</ul>";
         }
         let source = data.source ? `<p>📌 Source: <a href="${data.source}" target="_blank">${data.title}</a></p>` : "";
-        document.getElementById('webResults').innerHTML = relatedHTML + source;
+
+        document.getElementById("webResults").innerHTML = relatedHTML + source;
       } catch (e) {
-        document.getElementById('sentenceCrawl').textContent = "❌ Error";
-        document.getElementById('webResults').innerHTML = e.message;
+        document.getElementById("sentenceCrawl").textContent = "❌ Error";
+        document.getElementById("webResults").innerHTML = e.message;
       }
     }
   </script>
