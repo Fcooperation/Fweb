@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Fweb</title>
   <style>
-    /* UNCHANGED CSS */
+    /* Same CSS as before — UNCHANGED */
     body {
       font-family: 'Segoe UI', sans-serif;
       margin: 0;
@@ -15,15 +15,36 @@
     header {
       text-align: center;
       padding: 40px 10px 10px;
+      transition: all 0.4s ease;
     }
     #title {
       font-size: 3em;
       font-weight: 700;
+      letter-spacing: 1px;
+      transition: opacity 0.3s ease;
+    }
+    .hidden {
+      display: none !important;
     }
     .search-container {
       text-align: center;
       margin: 30px auto;
+      transition: all 0.4s ease;
       max-width: 600px;
+    }
+    .search-up {
+      margin: 5px auto !important;
+      position: fixed;
+      top: 5px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 90%;
+      max-width: 600px;
+      background: #fff;
+      padding: 10px 0 0 0;
+      z-index: 999;
+      box-sizing: border-box;
+      border-bottom: 1px solid #ddd;
     }
     #searchBox {
       width: 100%;
@@ -31,10 +52,13 @@
       font-size: 16px;
       border: 1px solid #000;
       border-radius: 5px;
+      outline: none;
+      box-sizing: border-box;
     }
     #searchButton {
       margin-top: 10px;
       width: 90%;
+      max-width: 100%;
       padding: 12px 0;
       background: #000;
       color: #fff;
@@ -42,12 +66,17 @@
       border-radius: 5px;
       font-weight: bold;
       cursor: pointer;
+      box-sizing: border-box;
     }
     nav.tabs {
-      display: flex;
+      display: none;
       justify-content: center;
-      margin-top: 20px;
+      flex-wrap: wrap;
+      margin-top: 80px;
       border-bottom: 1px solid #000;
+    }
+    nav.tabs.active {
+      display: flex;
     }
     nav.tabs button {
       padding: 10px 20px;
@@ -63,10 +92,11 @@
       color: #000;
     }
     section.result-tab {
+      display: none;
       padding: 20px;
       max-width: 900px;
       margin: auto;
-      display: none;
+      margin-top: 10px;
     }
     section.result-tab.active {
       display: block;
@@ -80,15 +110,15 @@
   </style>
 </head>
 <body>
-  <header>
+  <header id="header">
     <h1 id="title">Fweb</h1>
-    <div class="search-container">
-      <input type="text" id="searchBox" placeholder="Search..." />
+    <div class="search-container" id="searchContainer">
+      <input type="text" id="searchBox" placeholder="Search the web..." />
       <button id="searchButton" onclick="sendSearch()">Search</button>
     </div>
   </header>
 
-  <nav class="tabs">
+  <nav class="tabs" id="tabs">
     <button class="tab active" data-tab="web">Web</button>
     <button class="tab" data-tab="images">Images</button>
     <button class="tab" data-tab="videos">Videos</button>
@@ -111,48 +141,54 @@
     <p>© 2025 Fcooperation • Meant for Africa</p>
   </footer>
 
-  <script>
-    const tabs = document.querySelectorAll(".tab");
-    const sections = document.querySelectorAll(".result-tab");
+<script>
+  const tabs = document.querySelectorAll('.tab');
+  const results = document.querySelectorAll('.result-tab');
 
-    tabs.forEach(tab => {
-      tab.addEventListener("click", () => {
-        document.querySelector(".tab.active").classList.remove("active");
-        tab.classList.add("active");
-        sections.forEach(s => s.classList.remove("active"));
-        document.getElementById(tab.dataset.tab).classList.add("active");
-      });
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelector('.tab.active').classList.remove('active');
+      btn.classList.add('active');
+      results.forEach(tab => tab.classList.remove('active'));
+      document.getElementById(btn.getAttribute('data-tab')).classList.add('active');
     });
+  });
 
-    async function sendSearch() {
-      const query = document.getElementById("searchBox").value.trim();
-      if (!query) return alert("Type something to search.");
+  async function sendSearch() {
+    const query = document.getElementById('searchBox').value.trim();
+    if (!query) return alert("Type something to search.");
 
-      document.getElementById("sentenceCrawl").textContent = "🔎 Thinking...";
-      document.getElementById("webResults").innerHTML = "";
+    document.getElementById('title').classList.add('hidden');
+    document.getElementById('searchContainer').classList.add('search-up');
+    document.getElementById('tabs').classList.add('active');
+    document.getElementById('sentenceCrawl').textContent = "";
+    document.getElementById('webResults').innerHTML = "Loading...";
 
-      try {
-        const res = await fetch("https://fweb-backend.onrender.com/search", {
-          method: "POST",
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query })
-        });
+    try {
+      const res = await fetch('https://fweb-backend.onrender.com/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query })
+      });
 
-        const data = await res.json();
-        document.getElementById("sentenceCrawl").textContent = data.response || "❌ No answer found.";
+      const data = await res.json();
 
-        let relatedHTML = "";
-        if (data.related?.length) {
-          relatedHTML = "<h4>Related info:</h4><ul>" + data.related.map(x => `<li>${x}</li>`).join('') + "</ul>";
-        }
-        let source = data.source ? `<p>📌 Source: <a href="${data.source}" target="_blank">${data.title}</a></p>` : "";
+      document.getElementById('sentenceCrawl').textContent = data.response || "❌ No result.";
 
-        document.getElementById("webResults").innerHTML = relatedHTML + source;
-      } catch (e) {
-        document.getElementById("sentenceCrawl").textContent = "❌ Error";
-        document.getElementById("webResults").innerHTML = e.message;
+      let relatedHTML = "";
+      if (data.related && data.related.length > 0) {
+        relatedHTML = "<ul>" + data.related.map(p => `<li>${p}</li>`).join('') + "</ul>";
       }
+
+      let sourceLink = data.source
+        ? `<p>Source: <a href="${data.source}" target="_blank">${data.title || 'Wikipedia'}</a></p>`
+        : "";
+
+      document.getElementById('webResults').innerHTML = relatedHTML + sourceLink;
+    } catch (err) {
+      document.getElementById('webResults').innerHTML = `<p style="color:red;">❌ Error: ${err.message}</p>`;
     }
-  </script>
+  }
+</script>
 </body>
 </html>
