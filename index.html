@@ -10,53 +10,61 @@
       margin: 0;
       background: #fff;
       color: #000;
+      padding-top: 150px; /* Added padding to prevent overlap */
+      transition: padding 0.3s ease;
     }
+
     header {
       text-align: center;
       padding: 40px 10px 10px;
       transition: all 0.4s ease;
     }
+
     #title {
       font-size: 3em;
       font-weight: 700;
       letter-spacing: 1px;
       transition: opacity 0.3s ease;
     }
+
     .hidden {
       display: none !important;
     }
+
     .search-container {
       text-align: center;
       margin: 30px auto;
-      transition: all 0.4s ease;
+      transition: all 0.3s ease;
       max-width: 600px;
     }
+
     .search-up {
-      margin: 5px auto !important;
       position: fixed;
-      top: 5px;
+      top: 0;
       left: 50%;
       transform: translateX(-50%);
-      width: 90%;
-      max-width: 600px;
-      background: #fff;
-      padding: 10px 0 0 0;
-      z-index: 999;
-      border-bottom: 1px solid #ddd;
-    }
-    #searchBox {
       width: 100%;
-      padding: 12px;
-      font-size: 16px;
+      max-width: 600px;
+      padding: 8px;
+      background: #fff;
+      border-bottom: 1px solid #ddd;
+      z-index: 1000;
+    }
+
+    #searchBox {
+      width: 90%;
+      padding: 10px;
+      font-size: 15px;
       border: 1px solid #000;
       border-radius: 5px;
       outline: none;
       box-sizing: border-box;
     }
+
     #searchButton {
-      margin-top: 10px;
+      margin-top: 6px;
       width: 90%;
-      padding: 12px 0;
+      padding: 10px 0;
       background: #000;
       color: #fff;
       border: none;
@@ -64,21 +72,25 @@
       font-weight: bold;
       cursor: pointer;
     }
+
     nav.tabs {
       display: none;
       overflow-x: auto;
       white-space: nowrap;
-      padding: 10px 5px;
       background: #fff;
-      border-top: 1px solid #ddd;
       border-bottom: 1px solid #ddd;
-      z-index: 998;
-      position: sticky;
-      top: 58px;
+      z-index: 999;
+      position: fixed;
+      top: 80px;
+      left: 0;
+      width: 100%;
+      padding: 5px 10px;
     }
+
     nav.tabs.active {
       display: flex;
     }
+
     nav.tabs button {
       padding: 10px 20px;
       font-size: 15px;
@@ -90,24 +102,29 @@
       border-radius: 3px;
       flex-shrink: 0;
     }
+
     nav.tabs button.active {
       border: 2px solid #000;
     }
+
     section.result-tab {
       display: none;
       padding: 20px;
       max-width: 900px;
       margin: auto;
     }
+
     section.result-tab.active {
       display: block;
     }
+
     #imageResults img {
       max-width: 180px;
       height: auto;
       margin: 5px;
       border-radius: 5px;
     }
+
     footer {
       margin-top: 40px;
       text-align: center;
@@ -175,11 +192,13 @@
     const query = document.getElementById('searchBox').value.trim();
     if (!query) return alert("Type something to search.");
 
-    clearExtraTabs(); // Clear old dynamic categories
+    clearExtraTabs();
 
     document.getElementById('title').classList.add('hidden');
     document.getElementById('searchContainer').classList.add('search-up');
-    document.getElementById('tabs').classList.add('active');
+    document.body.style.paddingTop = "130px"; // Push page down
+    tabBar.classList.add('active');
+
     document.getElementById('sentenceCrawl').textContent = "";
     document.getElementById('webResults').innerHTML = "Loading...";
     document.getElementById('imageResults').innerHTML = "";
@@ -209,7 +228,7 @@
       document.getElementById('imageResults').innerHTML = "❌ No images found.";
     }
 
-    // Add dynamic tabs (forums, books, news...)
+    // Add new category tabs
     if (data.categories) {
       data.categories.forEach(cat => {
         const catId = cat.toLowerCase();
