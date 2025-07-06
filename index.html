@@ -142,6 +142,8 @@
   </footer>
 
 <script>
+  const gofileToken = "e1LOiRxizCSLqTmyZ27AeZuN10qu0wfO";
+
   async function sendSearch() {
     const query = document.getElementById('searchBox').value.trim();
     if (!query) return alert("Please type something to search.");
@@ -150,8 +152,22 @@
     document.getElementById('searchContainer').classList.add('search-up');
     document.getElementById('tabs').classList.add('active');
     document.getElementById('sentenceCrawl').textContent = "";
-    document.getElementById('webResults').innerHTML = "Loading...";
+    document.getElementById('webResults').innerHTML = "Searching...";
 
+    const gofileFiles = await searchGofileFiles(query);
+
+    if (gofileFiles && gofileFiles.length > 0) {
+      const match = gofileFiles[0];
+      const content = await fetchFileContent(match.id);
+      document.getElementById('webResults').innerHTML = `
+        <div style="padding:12px; border:1px solid #ccc;">
+          <strong>📁 From Gofile:</strong><br>
+          <pre style="white-space: pre-wrap;">${content.slice(0, 1000)}${content.length > 1000 ? '...' : ''}</pre>
+        </div>`;
+      return;
+    }
+
+    // If not found in Gofile → try backend
     try {
       const res = await fetch('https://fweb-backend.onrender.com/search', {
         method: 'POST',
@@ -162,12 +178,38 @@
       const data = await res.json();
       document.getElementById('webResults').innerHTML = `
         <div style="padding:12px; border:1px solid #ccc;">
-          <strong>${data.response}</strong><br>
-          <code>Query: ${data.query}</code>
-        </div>
-      `;
+          <strong>🤖 Backend:</strong><br>
+          <pre style="white-space: pre-wrap;">${data.response || data.mainAnswer || 'No response received.'}</pre>
+        </div>`;
     } catch (err) {
-      document.getElementById('webResults').innerHTML = `<p style="color:red;">Error: ${err.message}</p>`;
+      document.getElementById('webResults').innerHTML = `<p style="color:red;">❌ Backend error: ${err.message}</p>`;
+    }
+  }
+
+  async function searchGofileFiles(query) {
+    try {
+      const res = await fetch(`https://api.gofile.io/getAccountDetails?token=${gofileToken}`);
+      const data = await res.json();
+      if (data.status !== 'ok') return null;
+      const files = data.data.files || {};
+      return Object.values(files).filter(f => f.name.toLowerCase().includes(query.toLowerCase()));
+    } catch {
+      return null;
+    }
+  }
+
+  async function fetchFileContent(fileId) {
+    try {
+      const res = await fetch(`https://api.gofile.io/getContent?fileId=${fileId}`);
+      const data = await res.json();
+      if (data.status === 'ok') {
+        const firstFile = Object.values(data.data.contents)[0];
+        const fileRes = await fetch(firstFile.link);
+        return await fileRes.text();
+      }
+      return null;
+    } catch {
+      return null;
     }
   }
 </script>
