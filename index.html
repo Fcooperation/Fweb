@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Fweb</title>
   <style>
-    /* Same CSS as before — UNCHANGED */
     body {
       font-family: 'Segoe UI', sans-serif;
       margin: 0;
@@ -107,6 +106,12 @@
       font-size: 12px;
       color: #777;
     }
+    ul {
+      padding-left: 20px;
+    }
+    ul li {
+      margin: 5px 0;
+    }
   </style>
 </head>
 <body>
@@ -141,54 +146,57 @@
     <p>© 2025 Fcooperation • Meant for Africa</p>
   </footer>
 
-<script>
-  const tabs = document.querySelectorAll('.tab');
-  const results = document.querySelectorAll('.result-tab');
+  <script>
+    const tabs = document.querySelectorAll('.tab');
+    const results = document.querySelectorAll('.result-tab');
 
-  tabs.forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelector('.tab.active').classList.remove('active');
-      btn.classList.add('active');
-      results.forEach(tab => tab.classList.remove('active'));
-      document.getElementById(btn.getAttribute('data-tab')).classList.add('active');
-    });
-  });
-
-  async function sendSearch() {
-    const query = document.getElementById('searchBox').value.trim();
-    if (!query) return alert("Type something to search.");
-
-    document.getElementById('title').classList.add('hidden');
-    document.getElementById('searchContainer').classList.add('search-up');
-    document.getElementById('tabs').classList.add('active');
-    document.getElementById('sentenceCrawl').textContent = "";
-    document.getElementById('webResults').innerHTML = "Loading...";
-
-    try {
-      const res = await fetch('https://fweb-backend.onrender.com/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query })
+    tabs.forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelector('.tab.active').classList.remove('active');
+        btn.classList.add('active');
+        results.forEach(tab => tab.classList.remove('active'));
+        document.getElementById(btn.getAttribute('data-tab')).classList.add('active');
       });
+    });
 
-      const data = await res.json();
+    async function sendSearch() {
+      const query = document.getElementById('searchBox').value.trim();
+      if (!query) return alert("Type something to search.");
 
-      document.getElementById('sentenceCrawl').textContent = data.response || "❌ No result.";
+      document.getElementById('title').classList.add('hidden');
+      document.getElementById('searchContainer').classList.add('search-up');
+      document.getElementById('tabs').classList.add('active');
+      document.getElementById('sentenceCrawl').textContent = "";
+      document.getElementById('webResults').innerHTML = "Loading...";
 
-      let relatedHTML = "";
-      if (data.related && data.related.length > 0) {
-        relatedHTML = "<ul>" + data.related.map(p => `<li>${p}</li>`).join('') + "</ul>";
+      try {
+        const res = await fetch('https://fweb-backend.onrender.com/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query })
+        });
+
+        const data = await res.json();
+
+        // Show the best matching sentence
+        document.getElementById('sentenceCrawl').textContent = data.response || "❌ No result.";
+
+        // Show related lines if any
+        let relatedHTML = "";
+        if (data.related && data.related.length > 0) {
+          relatedHTML = "<h3>Related:</h3><ul>" + data.related.map(p => `<li>${p}</li>`).join('') + "</ul>";
+        }
+
+        // Source
+        let sourceLink = data.source
+          ? `<p>Source: <a href="${data.source}" target="_blank">${data.title || 'Wikipedia'}</a></p>`
+          : "";
+
+        document.getElementById('webResults').innerHTML = relatedHTML + sourceLink;
+      } catch (err) {
+        document.getElementById('webResults').innerHTML = `<p style="color:red;">❌ Error: ${err.message}</p>`;
       }
-
-      let sourceLink = data.source
-        ? `<p>Source: <a href="${data.source}" target="_blank">${data.title || 'Wikipedia'}</a></p>`
-        : "";
-
-      document.getElementById('webResults').innerHTML = relatedHTML + sourceLink;
-    } catch (err) {
-      document.getElementById('webResults').innerHTML = `<p style="color:red;">❌ Error: ${err.message}</p>`;
     }
-  }
-</script>
+  </script>
 </body>
 </html>
