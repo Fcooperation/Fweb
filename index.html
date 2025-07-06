@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Fweb</title>
   <style>
-    /* Same CSS as before — UNCHANGED */
     body {
       font-family: 'Segoe UI', sans-serif;
       margin: 0;
@@ -43,7 +42,6 @@
       background: #fff;
       padding: 10px 0 0 0;
       z-index: 999;
-      box-sizing: border-box;
       border-bottom: 1px solid #ddd;
     }
     #searchBox {
@@ -58,7 +56,6 @@
     #searchButton {
       margin-top: 10px;
       width: 90%;
-      max-width: 100%;
       padding: 12px 0;
       background: #000;
       color: #fff;
@@ -66,7 +63,6 @@
       border-radius: 5px;
       font-weight: bold;
       cursor: pointer;
-      box-sizing: border-box;
     }
     nav.tabs {
       display: none;
@@ -82,13 +78,15 @@
       padding: 10px 20px;
       font-size: 15px;
       border: none;
-      background: none;
+      background: #000;
+      color: #fff;
       cursor: pointer;
-      font-weight: bold;
-      color: #555;
+      margin: 5px;
+      border-radius: 3px;
     }
     nav.tabs button.active {
-      border-bottom: 3px solid #000;
+      border: 2px solid #000;
+      background: #fff;
       color: #000;
     }
     section.result-tab {
@@ -96,10 +94,15 @@
       padding: 20px;
       max-width: 900px;
       margin: auto;
-      margin-top: 10px;
     }
     section.result-tab.active {
       display: block;
+    }
+    #imageResults img {
+      max-width: 180px;
+      height: auto;
+      margin: 5px;
+      border-radius: 5px;
     }
     footer {
       margin-top: 40px;
@@ -125,16 +128,16 @@
   </nav>
 
   <section class="result-tab active" id="web">
-    <div id="sentenceCrawl" style="font-weight:bold; font-size:1.2em; margin-bottom: 15px;"></div>
-    <div id="webResults">No results yet.</div>
+    <div id="sentenceCrawl" style="font-weight:bold; font-size:1.2em;"></div>
+    <div id="webResults"></div>
   </section>
 
   <section class="result-tab" id="images">
-    <div id="imageResults">🖼️ Image results coming soon.</div>
+    <div id="imageResults">No images found.</div>
   </section>
 
   <section class="result-tab" id="videos">
-    <div id="videoResults">🎥 Video results coming soon.</div>
+    <div id="videoResults">No videos found.</div>
   </section>
 
   <footer>
@@ -163,30 +166,57 @@
     document.getElementById('tabs').classList.add('active');
     document.getElementById('sentenceCrawl').textContent = "";
     document.getElementById('webResults').innerHTML = "Loading...";
+    document.getElementById('imageResults').innerHTML = "";
 
-    try {
-      const res = await fetch('https://fweb-backend.onrender.com/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query })
+    const res = await fetch('https://fweb-backend.onrender.com/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query })
+    });
+
+    const data = await res.json();
+
+    document.getElementById('sentenceCrawl').textContent = data.response || "❌ No result.";
+    let relatedHTML = "";
+    if (data.related && data.related.length) {
+      relatedHTML = "<ul>" + data.related.map(r => `<li>${r}</li>`).join('') + "</ul>";
+    }
+
+    let sourceLink = data.source ? `<p>Source: <a href="${data.source}" target="_blank">${data.title}</a></p>` : "";
+
+    document.getElementById('webResults').innerHTML = relatedHTML + sourceLink;
+
+    if (data.images && data.images.length) {
+      document.getElementById('imageResults').innerHTML = data.images.map(img => `<img src="${img}" />`).join('');
+    } else {
+      document.getElementById('imageResults').innerHTML = "❌ No images found.";
+    }
+
+    // Add dynamic tabs
+    if (data.categories) {
+      data.categories.forEach(cat => {
+        if (!document.querySelector(`.tab[data-tab="${cat}"]`)) {
+          const btn = document.createElement('button');
+          btn.classList.add('tab');
+          btn.dataset.tab = cat;
+          btn.innerText = cat.charAt(0).toUpperCase() + cat.slice(1);
+          btn.style.background = '#000';
+          btn.style.color = '#fff';
+          btn.onclick = () => {
+            document.querySelector('.tab.active').classList.remove('active');
+            btn.classList.add('active');
+            results.forEach(tab => tab.classList.remove('active'));
+            document.getElementById(cat).classList.add('active');
+          };
+          document.getElementById('tabs').appendChild(btn);
+
+          const sec = document.createElement('section');
+          sec.classList.add('result-tab');
+          sec.id = cat;
+          sec.innerHTML = `<p>📰 ${cat} results coming soon...</p>`;
+          document.body.insertBefore(sec, document.querySelector('footer'));
+        }
       });
-
-      const data = await res.json();
-
-      document.getElementById('sentenceCrawl').textContent = data.response || "❌ No result.";
-
-      let relatedHTML = "";
-      if (data.related && data.related.length > 0) {
-        relatedHTML = "<ul>" + data.related.map(p => `<li>${p}</li>`).join('') + "</ul>";
-      }
-
-      let sourceLink = data.source
-        ? `<p>Source: <a href="${data.source}" target="_blank">${data.title || 'Wikipedia'}</a></p>`
-        : "";
-
-      document.getElementById('webResults').innerHTML = relatedHTML + sourceLink;
-    } catch (err) {
-      document.getElementById('webResults').innerHTML = `<p style="color:red;">❌ Error: ${err.message}</p>`;
     }
   }
 </script>
