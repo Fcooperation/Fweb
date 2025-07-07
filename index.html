@@ -10,7 +10,6 @@
       margin: 0;
       background: #fff;
       color: #000;
-      padding-top: 150px; /* Added padding to prevent overlap */
       transition: padding 0.3s ease;
     }
 
@@ -45,10 +44,11 @@
       transform: translateX(-50%);
       width: 100%;
       max-width: 600px;
-      padding: 8px;
+      padding: 8px 0;
       background: #fff;
       border-bottom: 1px solid #ddd;
       z-index: 1000;
+      height: 105px;
     }
 
     #searchBox {
@@ -81,7 +81,7 @@
       border-bottom: 1px solid #ddd;
       z-index: 999;
       position: fixed;
-      top: 80px;
+      top: 155px; /* Increased to stay below search bar */
       left: 0;
       width: 100%;
       padding: 5px 10px;
@@ -172,10 +172,10 @@
 
   function clearExtraTabs() {
     document.querySelectorAll('.tab').forEach((btn, i) => {
-      if (i > 2) btn.remove(); // Remove all after Web, Images, Videos
+      if (i > 2) btn.remove();
     });
     document.querySelectorAll('.result-tab').forEach((sec, i) => {
-      if (i > 2) sec.remove(); // Remove extra result tabs
+      if (i > 2) sec.remove();
     });
   }
 
@@ -193,15 +193,16 @@
     if (!query) return alert("Type something to search.");
 
     clearExtraTabs();
-
     document.getElementById('title').classList.add('hidden');
     document.getElementById('searchContainer').classList.add('search-up');
-    document.body.style.paddingTop = "130px"; // Push page down
+    document.body.style.paddingTop = "170px";
     tabBar.classList.add('active');
 
-    document.getElementById('sentenceCrawl').textContent = "";
-    document.getElementById('webResults').innerHTML = "Loading...";
-    document.getElementById('imageResults').innerHTML = "";
+    // ✅ Show loading in all sections
+    document.getElementById('sentenceCrawl').textContent = "Searching...";
+    document.getElementById('webResults').innerHTML = "Loading web results...";
+    document.getElementById('imageResults').innerHTML = "Loading image results...";
+    document.getElementById('videoResults').innerHTML = "Loading video results...";
 
     const res = await fetch('https://fweb-backend.onrender.com/search', {
       method: 'POST',
@@ -218,7 +219,6 @@
     }
 
     let sourceLink = data.source ? `<p>Source: <a href="${data.source}" target="_blank">${data.title}</a></p>` : "";
-
     document.getElementById('webResults').innerHTML = relatedHTML + sourceLink;
 
     if (data.images && data.images.length) {
@@ -228,29 +228,30 @@
       document.getElementById('imageResults').innerHTML = "❌ No images found.";
     }
 
-    // Add new category tabs
-    if (data.categories) {
+    // ✅ Only show category if result exists
+    if (data.categories && typeof data.results === 'object') {
       data.categories.forEach(cat => {
         const catId = cat.toLowerCase();
-        if (!document.querySelector(`.tab[data-tab="${catId}"]`)) {
-          const btn = document.createElement('button');
-          btn.classList.add('tab');
-          btn.dataset.tab = catId;
-          btn.innerText = cat.charAt(0).toUpperCase() + cat.slice(1);
-          btn.onclick = () => {
-            document.querySelector('.tab.active').classList.remove('active');
-            btn.classList.add('active');
-            results.forEach(tab => tab.classList.remove('active'));
-            document.getElementById(catId).classList.add('active');
-          };
-          tabBar.appendChild(btn);
+        const catContent = data.results?.[catId];
+        if (!catContent || catContent.trim() === "") return;
 
-          const sec = document.createElement('section');
-          sec.classList.add('result-tab');
-          sec.id = catId;
-          sec.innerHTML = `<p>No results yet for ${cat}.</p>`;
-          document.body.insertBefore(sec, document.querySelector('footer'));
-        }
+        const btn = document.createElement('button');
+        btn.classList.add('tab');
+        btn.dataset.tab = catId;
+        btn.innerText = cat.charAt(0).toUpperCase() + cat.slice(1);
+        btn.onclick = () => {
+          document.querySelector('.tab.active').classList.remove('active');
+          btn.classList.add('active');
+          document.querySelectorAll('.result-tab').forEach(t => t.classList.remove('active'));
+          document.getElementById(catId).classList.add('active');
+        };
+        tabBar.appendChild(btn);
+
+        const sec = document.createElement('section');
+        sec.classList.add('result-tab');
+        sec.id = catId;
+        sec.innerHTML = `<p>${catContent}</p>`;
+        document.body.insertBefore(sec, document.querySelector('footer'));
       });
     }
   }
