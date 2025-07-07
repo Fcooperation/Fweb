@@ -12,31 +12,24 @@
       color: #000;
       transition: padding 0.3s ease;
     }
-
     header {
       text-align: center;
       padding: 40px 10px 10px;
       transition: all 0.4s ease;
     }
-
     #title {
       font-size: 3em;
       font-weight: 700;
       letter-spacing: 1px;
       transition: opacity 0.3s ease;
     }
-
-    .hidden {
-      display: none !important;
-    }
-
+    .hidden { display: none !important; }
     .search-container {
       text-align: center;
       margin: 30px auto;
       transition: all 0.3s ease;
       max-width: 600px;
     }
-
     .search-up {
       position: fixed;
       top: 0;
@@ -50,7 +43,6 @@
       z-index: 1000;
       height: 105px;
     }
-
     #searchBox {
       width: 90%;
       padding: 10px;
@@ -60,7 +52,6 @@
       outline: none;
       box-sizing: border-box;
     }
-
     #searchButton {
       margin-top: 6px;
       width: 90%;
@@ -72,7 +63,6 @@
       font-weight: bold;
       cursor: pointer;
     }
-
     nav.tabs {
       display: none;
       overflow-x: auto;
@@ -81,16 +71,12 @@
       border-bottom: 1px solid #ddd;
       z-index: 999;
       position: fixed;
-      top: 155px; /* Increased to stay below search bar */
+      top: 155px;
       left: 0;
       width: 100%;
       padding: 5px 10px;
     }
-
-    nav.tabs.active {
-      display: flex;
-    }
-
+    nav.tabs.active { display: flex; }
     nav.tabs button {
       padding: 10px 20px;
       font-size: 15px;
@@ -102,29 +88,22 @@
       border-radius: 3px;
       flex-shrink: 0;
     }
-
     nav.tabs button.active {
       border: 2px solid #000;
     }
-
     section.result-tab {
       display: none;
       padding: 20px;
       max-width: 900px;
       margin: auto;
     }
-
-    section.result-tab.active {
-      display: block;
-    }
-
+    section.result-tab.active { display: block; }
     #imageResults img {
       max-width: 180px;
       height: auto;
       margin: 5px;
       border-radius: 5px;
     }
-
     footer {
       margin-top: 40px;
       text-align: center;
@@ -198,13 +177,12 @@
     document.body.style.paddingTop = "170px";
     tabBar.classList.add('active');
 
-    // ✅ Show loading in all sections
     document.getElementById('sentenceCrawl').textContent = "Searching...";
     document.getElementById('webResults').innerHTML = "Loading web results...";
     document.getElementById('imageResults').innerHTML = "Loading image results...";
     document.getElementById('videoResults').innerHTML = "Loading video results...";
 
-    const res = await fetch('https://fweb-backend.onrender.com/search', {
+    const res = await fetch('http://localhost:3000/search', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ query })
@@ -228,7 +206,6 @@
       document.getElementById('imageResults').innerHTML = "❌ No images found.";
     }
 
-    // ✅ Only show category if result exists
     if (data.categories && typeof data.results === 'object') {
       data.categories.forEach(cat => {
         const catId = cat.toLowerCase();
