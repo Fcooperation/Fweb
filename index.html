@@ -23,7 +23,9 @@
       letter-spacing: 1px;
       transition: opacity 0.3s ease;
     }
-    .hidden { display: none !important; }
+    .hidden {
+      display: none !important;
+    }
     .search-container {
       text-align: center;
       margin: 30px auto;
@@ -76,7 +78,9 @@
       width: 100%;
       padding: 5px 10px;
     }
-    nav.tabs.active { display: flex; }
+    nav.tabs.active {
+      display: flex;
+    }
     nav.tabs button {
       padding: 10px 20px;
       font-size: 15px;
@@ -97,7 +101,9 @@
       max-width: 900px;
       margin: auto;
     }
-    section.result-tab.active { display: block; }
+    section.result-tab.active {
+      display: block;
+    }
     #imageResults img {
       max-width: 180px;
       height: auto;
@@ -182,7 +188,7 @@
     document.getElementById('imageResults').innerHTML = "Loading image results...";
     document.getElementById('videoResults').innerHTML = "Loading video results...";
 
-    const res = await fetch('http://localhost:3000/search', {
+    const res = await fetch('https://fweb-backend.onrender.com/search', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ query })
@@ -191,45 +197,14 @@
     const data = await res.json();
 
     document.getElementById('sentenceCrawl').textContent = data.response || "❌ No result.";
-    let relatedHTML = "";
-    if (data.related && data.related.length) {
-      relatedHTML = "<ul>" + data.related.map(r => `<li>${r}</li>`).join('') + "</ul>";
-    }
-
-    let sourceLink = data.source ? `<p>Source: <a href="${data.source}" target="_blank">${data.title}</a></p>` : "";
-    document.getElementById('webResults').innerHTML = relatedHTML + sourceLink;
+    let sourceLink = data.source ? `<p>Source: <a href="${data.source}" target="_blank">${data.title || 'View Source'}</a></p>` : "";
+    document.getElementById('webResults').innerHTML = sourceLink;
 
     if (data.images && data.images.length) {
       const limitedImgs = data.images.slice(0, 20);
       document.getElementById('imageResults').innerHTML = limitedImgs.map(img => `<img src="${img}" />`).join('');
     } else {
       document.getElementById('imageResults').innerHTML = "❌ No images found.";
-    }
-
-    if (data.categories && typeof data.results === 'object') {
-      data.categories.forEach(cat => {
-        const catId = cat.toLowerCase();
-        const catContent = data.results?.[catId];
-        if (!catContent || catContent.trim() === "") return;
-
-        const btn = document.createElement('button');
-        btn.classList.add('tab');
-        btn.dataset.tab = catId;
-        btn.innerText = cat.charAt(0).toUpperCase() + cat.slice(1);
-        btn.onclick = () => {
-          document.querySelector('.tab.active').classList.remove('active');
-          btn.classList.add('active');
-          document.querySelectorAll('.result-tab').forEach(t => t.classList.remove('active'));
-          document.getElementById(catId).classList.add('active');
-        };
-        tabBar.appendChild(btn);
-
-        const sec = document.createElement('section');
-        sec.classList.add('result-tab');
-        sec.id = catId;
-        sec.innerHTML = `<p>${catContent}</p>`;
-        document.body.insertBefore(sec, document.querySelector('footer'));
-      });
     }
   }
 </script>
