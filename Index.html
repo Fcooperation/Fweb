@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fweb</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      background: #fff;
+      color: #000;
+      transition: padding 0.3s ease;
+    }
+    header {
+      text-align: center;
+      padding: 40px 10px 10px;
+      transition: all 0.4s ease;
+    }
+    #title {
+      font-size: 3em;
+      font-weight: 700;
+      letter-spacing: 1px;
+      transition: opacity 0.3s ease;
+    }
+    .hidden {
+      display: none !important;
+    }
+    .search-container {
+      text-align: center;
+      margin: 30px auto;
+      transition: all 0.3s ease;
+      max-width: 600px;
+    }
+    .search-up {
+      position: fixed;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 600px;
+      padding: 8px 0;
+      background: #fff;
+      border-bottom: 1px solid #ddd;
+      z-index: 1000;
+      height: 105px;
+    }
+    #searchBox {
+      width: 90%;
+      padding: 10px;
+      font-size: 15px;
+      border: 1px solid #000;
+      border-radius: 5px;
+      outline: none;
+      box-sizing: border-box;
+    }
+    #searchButton {
+      margin-top: 6px;
+      width: 90%;
+      padding: 10px 0;
+      background: #000;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    nav.tabs {
+      display: none;
+      overflow-x: auto;
+      white-space: nowrap;
+      background: #fff;
+      border-bottom: 1px solid #ddd;
+      z-index: 999;
+      position: fixed;
+      top: 155px;
+      left: 0;
+      width: 100%;
+      padding: 5px 10px;
+    }
+    nav.tabs.active {
+      display: flex;
+    }
+    nav.tabs button {
+      padding: 10px 20px;
+      font-size: 15px;
+      border: 1px solid #fff;
+      background: #fff;
+      color: #000;
+      cursor: pointer;
+      margin-right: 8px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+    nav.tabs button.active {
+      border: 2px solid #000;
+    }
+    section.result-tab {
+      display: none;
+      padding: 20px;
+      max-width: 900px;
+      margin: auto;
+    }
+    section.result-tab.active {
+      display: block;
+    }
+    #imageResults img {
+      max-width: 180px;
+      height: auto;
+      margin: 5px;
+      border-radius: 5px;
+    }
+    footer {
+      margin-top: 40px;
+      text-align: center;
+      font-size: 12px;
+      color: #777;
+    }
+  </style>
+</head>
+<body>
+  <header id="header">
+    <h1 id="title">Fweb</h1>
+    <div class="search-container" id="searchContainer">
+      <input type="text" id="searchBox" placeholder="Search the web..." />
+      <button id="searchButton" onclick="sendSearch()">Search</button>
+    </div>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-tab="web">Web</button>
+    <button class="tab" data-tab="images">Images</button>
+    <button class="tab" data-tab="videos">Videos</button>
+  </nav>
+
+  <section class="result-tab active" id="web">
+    <div id="sentenceCrawl" style="font-weight:bold; font-size:1.2em;"></div>
+    <div id="webResults"></div>
+  </section>
+
+  <section class="result-tab" id="images">
+    <div id="imageResults">No images found.</div>
+  </section>
+
+  <section class="result-tab" id="videos">
+    <div id="videoResults">No videos found.</div>
+  </section>
+
+  <footer>
+    <p>© 2025 Fcooperation • Meant for Africa</p>
+  </footer>
+
+<script>
+  const tabs = document.querySelectorAll('.tab');
+  const results = document.querySelectorAll('.result-tab');
+  const tabBar = document.getElementById('tabs');
+
+  function clearExtraTabs() {
+    document.querySelectorAll('.tab').forEach((btn, i) => {
+      if (i > 2) btn.remove();
+    });
+    document.querySelectorAll('.result-tab').forEach((sec, i) => {
+      if (i > 2) sec.remove();
+    });
+  }
+
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelector('.tab.active').classList.remove('active');
+      btn.classList.add('active');
+      results.forEach(tab => tab.classList.remove('active'));
+      document.getElementById(btn.getAttribute('data-tab')).classList.add('active');
+    });
+  });
+
+  async function sendSearch() {
+    const query = document.getElementById('searchBox').value.trim();
+    if (!query) return alert("Type something to search.");
+
+    clearExtraTabs();
+    document.getElementById('title').classList.add('hidden');
+    document.getElementById('searchContainer').classList.add('search-up');
+    document.body.style.paddingTop = "170px";
+    tabBar.classList.add('active');
+
+    document.getElementById('sentenceCrawl').textContent = "Searching...";
+    document.getElementById('webResults').innerHTML = "Loading web results...";
+    document.getElementById('imageResults').innerHTML = "Loading image results...";
+    document.getElementById('videoResults').innerHTML = "Loading video results...";
+
+    const res = await fetch('https://fweb-backend.onrender.com/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query })
+    });
+
+    const data = await res.json();
+
+    document.getElementById('sentenceCrawl').textContent = data.response || "❌ No result.";
+    let sourceLink = data.source ? `<p>Source: <a href="${data.source}" target="_blank">${data.title || 'View Source'}</a></p>` : "";
+    document.getElementById('webResults').innerHTML = sourceLink;
+
+    if (data.images && data.images.length) {
+      const limitedImgs = data.images.slice(0, 20);
+      document.getElementById('imageResults').innerHTML = limitedImgs.map(img => `<img src="${img}" />`).join('');
+    } else {
+      document.getElementById('imageResults').innerHTML = "❌ No images found.";
+    }
+  }
+</script>
+</body>
+</html>
