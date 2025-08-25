@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Apple Picker Game</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body, html { width: 100%; height: 100%; overflow: hidden; font-family: sans-serif; background: #cceeff; }
+    canvas { background: #a3d9ff; display: block; margin: auto; }
+    #no-internet {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
+      padding: 20px;
+    }
+    #no-internet h1 {
+      font-size: 2em;
+      margin-bottom: 1em;
+    }
+    #start-btn {
+      padding: 12px 20px;
+      font-size: 1em;
+      border: none;
+      border-radius: 5px;
+      background-color: #0077cc;
+      color: white;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<div id="no-internet" style="display: none;">
+  <h1>No Internet Connection</h1>
+  <button id="start-btn">Continue to Game</button>
+</div>
+
+<canvas id="gameCanvas" width="400" height="600" style="display:none;"></canvas>
+
+<script>
+  const checkConnection = () => {
+    if (navigator.onLine) {
+      location.href = "fweb.html";
+    }
+  };
+
+  window.addEventListener("online", checkConnection);
+
+  if (navigator.onLine) {
+    location.href = "fweb.html";
+  } else {
+    document.getElementById('no-internet').style.display = 'flex';
+  }
+
+  document.getElementById("start-btn").onclick = () => {
+    document.getElementById("no-internet").style.display = "none";
+    document.getElementById("gameCanvas").style.display = "block";
+    startGame();
+  };
+
+  function startGame() {
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const player = {
+      x: 200, y: 550, width: 50, height: 30, color: "#333"
+    };
+
+    let score = 0;
+    let items = [];
+    let gameOver = false;
+    let spawnInterval = 1500;
+    let speed = 2;
+    let bombRate = 0.3;
+    let lastSpawn = Date.now();
+    let difficultyTimer = Date.now();
+
+    canvas.addEventListener("touchmove", (e) => {
+      const touchX = e.touches[0].clientX - canvas.getBoundingClientRect().left;
+      if (touchX > player.width / 2 && touchX < canvas.width - player.width / 2) {
+        player.x = touchX - player.width / 2;
+      }
+    });
+
+    function drawPlayer() {
+      ctx.fillStyle = player.color;
+      ctx.fillRect(player.x, player.y, player.width, player.height);
+    }
+
+    function drawItem(item) {
+      ctx.beginPath();
+      ctx.arc(item.x, item.y, item.radius, 0, Math.PI * 2);
+      ctx.fillStyle = item.type === "apple" ? "red" : "black";
+      ctx.fill();
+      ctx.closePath();
+    }
+
+    function updateItems() {
+      const now = Date.now();
+      if (now - lastSpawn > spawnInterval) {
+        items.push({
+          x: Math.random() * (canvas.width - 20) + 10,
+          y: 0,
+          radius: 10,
+          speed: speed + Math.random() * 2,
+          type: Math.random() > bombRate ? "apple" : "bomb"
+        });
+        lastSpawn = now;
+      }
+
+      if (now - difficultyTimer > 7000) {
+        speed += 0.5;
+        bombRate = Math.min(0.6, bombRate + 0.05);
+        spawnInterval = Math.max(500, spawnInterval - 100);
+        difficultyTimer = now;
+      }
+
+      for (let i = items.length - 1; i >= 0; i--) {
+        let it = items[i];
+        it.y += it.speed;
+
+        // Hit
+        if (
+          it.y + it.radius > player.y &&
+          it.x > player.x &&
+          it.x < player.x + player.width
+        ) {
+          if (it.type === "apple") {
+            score += 1;
+          } else {
+            score -= 10;
+          }
+          items.splice(i, 1);
+        }
+        // Miss
+        else if (it.y > canvas.height) {
+          if (it.type === "apple") score -= 1;
+          items.splice(i, 1);
+        }
+      }
+    }
+
+    function drawScore() {
+      ctx.fillStyle = "#000";
+      ctx.font = "18px Arial";
+      ctx.fillText("Score: " + score, 10, 25);
+    }
+
+    function gameLoop() {
+      if (navigator.onLine) {
+        location.href = "fweb.html";
+        return;
+      }
+
+      if (gameOver || score < -20) {
+        ctx.fillStyle = "black";
+        ctx.font = "28px Arial";
+        ctx.fillText("Game Over!", 120, 300);
+        return;
+      }
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawPlayer();
+      updateItems();
+      items.forEach(drawItem);
+      drawScore();
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    gameLoop();
+  }
+</script>
+
+</body>
+</html>
