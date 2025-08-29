@@ -224,5 +224,64 @@
       }
     });
   </script>
+  <script>
+  const backendURL = "https://your-render-url.onrender.com"; // your Render service URL
+
+  async function fetchFCards(query) {
+    try {
+      const res = await fetch(`${backendURL}/fcards`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query })
+      });
+
+      const data = await res.json();
+      const resultsDiv = document.getElementById("webResults");
+      resultsDiv.innerHTML = "";
+
+      if (data.fcards && data.fcards.length > 0) {
+        data.fcards.forEach(card => {
+          const fcard = document.createElement("div");
+          fcard.className = "fcard";
+          fcard.innerHTML = `
+            <h3><a href="${card.link}" target="_blank">${card.title}</a></h3>
+            <p>${card.snippet}</p>
+          `;
+          resultsDiv.appendChild(fcard);
+        });
+      } else {
+        resultsDiv.innerHTML = "<p>No results found.</p>";
+      }
+    } catch (err) {
+      console.error("Error fetching fcards:", err);
+      document.getElementById("webResults").innerHTML =
+        "<p style='color:red;'>Failed to load results.</p>";
+    }
+  }
+
+  const searchBtn = document.getElementById("searchButton");
+  const searchBox = document.getElementById("searchBox");
+
+  searchBtn.addEventListener("click", () => {
+    const query = searchBox.value.trim();
+    if (query) {
+      raiseSearchUI();
+      document.getElementById("sentenceCrawl").textContent = "Searching for: " + query;
+      fetchFCards(query);
+    }
+  });
+
+  searchBox.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const query = searchBox.value.trim();
+      if (query) {
+        raiseSearchUI();
+        document.getElementById("sentenceCrawl").textContent = "Searching for: " + query;
+        fetchFCards(query);
+      }
+    }
+  });
+  </script>
 </body>
 </html>
