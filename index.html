@@ -109,7 +109,7 @@
       text-align: center;
       font-size: 12px;
       color: #777;
-
+}
       .fcard {
   border: 1px solid #ddd;
   border-radius: 12px;
@@ -130,10 +130,81 @@
   font-size: 14px;
   color: #555;
         }
+        
+        /* Three-dots menu button */
+.menu-button {
+  position: absolute;
+  top: 90px;
+  right: 15px;
+  width: 32px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: background 0.2s ease;
+}
+
+.menu-button:hover {
+  background: rgba(0,0,0,0.1);
+}
+
+.menu-dots {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 7px;
+  height: 26px;
+}
+
+.menu-dots span {
+  display: block;
+  width: 7px;
+  height: 7px;
+  background: #000; /* color of dots */
+  border-radius: 50%;
+}
+/* Account button at top-right */
+.account-btn {
+  position: absolute;   /* stays fixed at top-right */
+  top: 40px;
+  right: 10px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;   /* makes it round */
+  background-color: #f0f0f0;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transition: background-color 0.2s ease;
+}
+
+.account-btn:hover {
+  background-color: #e0e0e0;
+}
+
+/* Optional icon styling */
+.account-btn i {
+  font-size: 20px;
+  color: #333;
+}
+
+/* Icon inside */
+.account-btn img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
     }
   </style>
 </head>
 <body>
+  
+ 
   <!-- Header with title + search bar -->
   <header id="header">
     <h1 id="title">Fweb</h1>
@@ -171,116 +242,121 @@
     <p>© 2025 Fcooperation • Meant for Africa</p>
   </footer>
 
-  <!-- Scripts -->
-  <script>
-    // ===== Tabs logic =====
-    const tabs = document.querySelectorAll('nav.tabs button'); // tab buttons
-    const results = document.querySelectorAll('section.result-tab'); // result sections
-    const tabBar = document.querySelector('nav.tabs');
+<script>
+  // ===== Tabs logic =====
+  const tabs = document.querySelectorAll('nav.tabs button'); // tab buttons
+  const results = document.querySelectorAll('section.result-tab'); // result sections
+  const tabBar = document.querySelector('nav.tabs');
 
-    tabs.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const activeTab = document.querySelector('nav.tabs button.active');
-        if (activeTab) activeTab.classList.remove('active');
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const activeTab = document.querySelector('nav.tabs button.active');
+      if (activeTab) activeTab.classList.remove('active');
 
-        btn.classList.add('active');
+      btn.classList.add('active');
+      results.forEach(tab => tab.classList.remove('active'));
 
-        results.forEach(tab => tab.classList.remove('active'));
-
-        const tabId = btn.getAttribute('data-tab');
-        document.getElementById(tabId).classList.add('active');
-      });
+      const tabId = btn.getAttribute('data-tab');
+      document.getElementById(tabId).classList.add('active');
     });
+  });
 
-    // ===== Search UI animation =====
-    function raiseSearchUI() {
-      document.getElementById('title').classList.add('hidden');
-      document.getElementById('searchContainer').classList.add('search-up');
-      document.body.style.paddingTop = "170px";
-      tabBar.classList.add('active');
+  // ===== Search UI animation =====
+  function raiseSearchUI() {
+    document.getElementById('title').classList.add('hidden');
+    document.getElementById('searchContainer').classList.add('search-up');
+    document.body.style.paddingTop = "170px";
+    tabBar.classList.add('active');
 
-      if (!document.querySelector('nav.tabs button.active') && tabs.length > 0) {
-        tabs[0].classList.add('active');
-        const tabId = tabs[0].getAttribute('data-tab');
-        document.getElementById(tabId).classList.add('active');
-      }
-    }
-
-    // ===== Hook search events =====
-    const searchBtn = document.getElementById('searchButton');
-    const searchBox = document.getElementById('searchBox');
-
-    searchBtn.addEventListener('click', () => {
-      if (searchBox.value.trim() !== "") {
-        raiseSearchUI();
-        document.getElementById("sentenceCrawl").textContent = "Searching for: " + searchBox.value;
-      }
-    });
-
-    searchBox.addEventListener('keydown', (e) => {
-      if (e.key === "Enter" && searchBox.value.trim() !== "") {
-        raiseSearchUI();
-        document.getElementById("sentenceCrawl").textContent = "Searching for: " + searchBox.value;
-      }
-    });
-  </script>
-  <script>
-  const backendURL = "https://fweb-backend.onrender.com"
-  async function fetchFCards(query) {
-    try {
-      const res = await fetch(`${backendURL}/fcards`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query })
-      });
-
-      const data = await res.json();
-      const resultsDiv = document.getElementById("webResults");
-      resultsDiv.innerHTML = "";
-
-      if (data.fcards && data.fcards.length > 0) {
-        data.fcards.forEach(card => {
-          const fcard = document.createElement("div");
-          fcard.className = "fcard";
-          fcard.innerHTML = `
-            <h3><a href="${card.link}" target="_blank">${card.title}</a></h3>
-            <p>${card.snippet}</p>
-          `;
-          resultsDiv.appendChild(fcard);
-        });
-      } else {
-        resultsDiv.innerHTML = "<p>No results found.</p>";
-      }
-    } catch (err) {
-      console.error("Error fetching fcards:", err);
-      document.getElementById("webResults").innerHTML =
-        "<p style='color:red;'>Failed to load results.</p>";
+    if (!document.querySelector('nav.tabs button.active') && tabs.length > 0) {
+      tabs[0].classList.add('active');
+      const tabId = tabs[0].getAttribute('data-tab');
+      document.getElementById(tabId).classList.add('active');
     }
   }
 
-  const searchBtn = document.getElementById("searchButton");
-  const searchBox = document.getElementById("searchBox");
+  // ===== Hook search events =====
+  const searchBtn = document.getElementById('searchButton');
+  const searchBox = document.getElementById('searchBox');
 
-  searchBtn.addEventListener("click", () => {
+  async function handleSearch() {
     const query = searchBox.value.trim();
-    if (query) {
-      raiseSearchUI();
-      document.getElementById("sentenceCrawl").textContent = "Searching for: " + query;
-      fetchFCards(query);
-    }
-  });
+    if (!query) return;
 
-  searchBox.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      const query = searchBox.value.trim();
-      if (query) {
-        raiseSearchUI();
-        document.getElementById("sentenceCrawl").textContent = "Searching for: " + query;
-        fetchFCards(query);
-      }
+    // Check internet connection
+    if (!navigator.onLine) {
+      window.location.href = 'nonetwork.html';
+      return;
     }
+
+    raiseSearchUI();
+    document.getElementById("sentenceCrawl").textContent = "Searching for: " + query;
+
+    try {
+      const res = await fetch('https://fweb-backend.onrender.com/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query })
+      });
+
+      if (!res.ok) throw new Error('Failed to fetch search results');
+      const data = await res.json();
+
+      const webResults = document.getElementById('webResults');
+
+      // ===== Handle response type =====
+      if (data.blocks) {
+        // Backend sent a site in block format
+        webResults.innerHTML = `
+          <div class="site-render">
+            <h2>Loaded Site: ${data.url}</h2>
+            ${data.favicon ? `<img src="${data.favicon}" alt="favicon" style="width:32px;height:32px;">` : ""}
+            <div class="page-blocks">${data.blocks.map(block => {
+              if (block.type === "img") return `<img src="${block.src}" alt="${block.alt}"/>`;
+              if (block.type === "link") return `<a href="${block.href}" target="_blank">${block.text}</a>`;
+              if (block.type === "text") return `<${block.tag}>${block.content}</${block.tag}>`;
+              return "";
+            }).join("")}</div>
+          </div>
+        `;
+      } else if (data.html) {
+        // Backend sent raw search HTML
+        webResults.innerHTML = data.html;
+      } else {
+        webResults.innerHTML = "<p>No content found.</p>";
+      }
+
+    } catch (err) {
+      console.error(err);
+      document.getElementById('webResults').innerHTML = "<p>Failed to load results. Try again later.</p>";
+    }
+  }
+
+  searchBtn.addEventListener('click', handleSearch);
+  searchBox.addEventListener('keydown', (e) => {
+    if (e.key === "Enter") handleSearch();
   });
-  </script>
+</script>
+<!-- Menu button -->
+<div class="menu-button" onclick="loadMenuScript()">
+  <div class="menu-dots">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+
+<script>
+  function loadMenuScript() {
+    const script = document.createElement("script");
+    script.src = "menuscript.js";
+    document.body.appendChild(script);
+  }
+</script>
+<!-- Account button -->
+<a href="account.html" class="account-btn">
+  <img src="https://img.icons8.com/ios-filled/50/user.png" alt="Account" />
+</a>
+</script>
 </body>
 </html>
