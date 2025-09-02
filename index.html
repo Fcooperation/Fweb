@@ -109,29 +109,8 @@
       text-align: center;
       font-size: 12px;
       color: #777;
-}
-      .fcard {
-  border: 1px solid #ddd;
-  border-radius: 12px;
-  padding: 15px;
-  margin: 10px 0;
-  background: #f9f9f9;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-.fcard h3 {
-  margin: 0;
-  font-size: 18px;
-}
-.fcard a {
-  text-decoration: none;
-  color: #0073e6;
-}
-.fcard p {
-  font-size: 14px;
-  color: #555;
-        }
-        
-        /* Three-dots menu button */
+    }
+            /* Three-dots menu button */
 .menu-button {
   position: absolute;
   top: 90px;
@@ -199,12 +178,10 @@
   height: 24px;
   object-fit: contain;
 }
-    }
+
   </style>
 </head>
 <body>
-  
- 
   <!-- Header with title + search bar -->
   <header id="header">
     <h1 id="title">Fweb</h1>
@@ -242,102 +219,60 @@
     <p>© 2025 Fcooperation • Meant for Africa</p>
   </footer>
 
-<script>
-  // ===== Tabs logic =====
-  const tabs = document.querySelectorAll('nav.tabs button'); // tab buttons
-  const results = document.querySelectorAll('section.result-tab'); // result sections
-  const tabBar = document.querySelector('nav.tabs');
+  <!-- Scripts -->
+  <script>
+    // ===== Tabs logic =====
+    const tabs = document.querySelectorAll('nav.tabs button'); // tab buttons
+    const results = document.querySelectorAll('section.result-tab'); // result sections
+    const tabBar = document.querySelector('nav.tabs');
 
-  tabs.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const activeTab = document.querySelector('nav.tabs button.active');
-      if (activeTab) activeTab.classList.remove('active');
+    tabs.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const activeTab = document.querySelector('nav.tabs button.active');
+        if (activeTab) activeTab.classList.remove('active');
 
-      btn.classList.add('active');
-      results.forEach(tab => tab.classList.remove('active'));
+        btn.classList.add('active');
 
-      const tabId = btn.getAttribute('data-tab');
-      document.getElementById(tabId).classList.add('active');
-    });
-  });
+        results.forEach(tab => tab.classList.remove('active'));
 
-  // ===== Search UI animation =====
-  function raiseSearchUI() {
-    document.getElementById('title').classList.add('hidden');
-    document.getElementById('searchContainer').classList.add('search-up');
-    document.body.style.paddingTop = "170px";
-    tabBar.classList.add('active');
-
-    if (!document.querySelector('nav.tabs button.active') && tabs.length > 0) {
-      tabs[0].classList.add('active');
-      const tabId = tabs[0].getAttribute('data-tab');
-      document.getElementById(tabId).classList.add('active');
-    }
-  }
-
-  // ===== Hook search events =====
-  const searchBtn = document.getElementById('searchButton');
-  const searchBox = document.getElementById('searchBox');
-
-  async function handleSearch() {
-    const query = searchBox.value.trim();
-    if (!query) return;
-
-    // Check internet connection
-    if (!navigator.onLine) {
-      window.location.href = 'nonetwork.html';
-      return;
-    }
-
-    raiseSearchUI();
-    document.getElementById("sentenceCrawl").textContent = "Searching for: " + query;
-
-    try {
-      const res = await fetch('https://fweb-backend.onrender.com/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query })
+        const tabId = btn.getAttribute('data-tab');
+        document.getElementById(tabId).classList.add('active');
       });
+    });
 
-      if (!res.ok) throw new Error('Failed to fetch search results');
-      const data = await res.json();
+    // ===== Search UI animation =====
+    function raiseSearchUI() {
+      document.getElementById('title').classList.add('hidden');
+      document.getElementById('searchContainer').classList.add('search-up');
+      document.body.style.paddingTop = "170px";
+      tabBar.classList.add('active');
 
-      const webResults = document.getElementById('webResults');
-
-      // ===== Handle response type =====
-      if (data.blocks) {
-        // Backend sent a site in block format
-        webResults.innerHTML = `
-          <div class="site-render">
-            <h2>Loaded Site: ${data.url}</h2>
-            ${data.favicon ? `<img src="${data.favicon}" alt="favicon" style="width:32px;height:32px;">` : ""}
-            <div class="page-blocks">${data.blocks.map(block => {
-              if (block.type === "img") return `<img src="${block.src}" alt="${block.alt}"/>`;
-              if (block.type === "link") return `<a href="${block.href}" target="_blank">${block.text}</a>`;
-              if (block.type === "text") return `<${block.tag}>${block.content}</${block.tag}>`;
-              return "";
-            }).join("")}</div>
-          </div>
-        `;
-      } else if (data.html) {
-        // Backend sent raw search HTML
-        webResults.innerHTML = data.html;
-      } else {
-        webResults.innerHTML = "<p>No content found.</p>";
+      if (!document.querySelector('nav.tabs button.active') && tabs.length > 0) {
+        tabs[0].classList.add('active');
+        const tabId = tabs[0].getAttribute('data-tab');
+        document.getElementById(tabId).classList.add('active');
       }
-
-    } catch (err) {
-      console.error(err);
-      document.getElementById('webResults').innerHTML = "<p>Failed to load results. Try again later.</p>";
     }
-  }
 
-  searchBtn.addEventListener('click', handleSearch);
-  searchBox.addEventListener('keydown', (e) => {
-    if (e.key === "Enter") handleSearch();
-  });
-</script>
-<!-- Menu button -->
+    // ===== Hook search events =====
+    const searchBtn = document.getElementById('searchButton');
+    const searchBox = document.getElementById('searchBox');
+
+    searchBtn.addEventListener('click', () => {
+      if (searchBox.value.trim() !== "") {
+        raiseSearchUI();
+        document.getElementById("sentenceCrawl").textContent = "Searching for: " + searchBox.value;
+      }
+    });
+
+    searchBox.addEventListener('keydown', (e) => {
+      if (e.key === "Enter" && searchBox.value.trim() !== "") {
+        raiseSearchUI();
+        document.getElementById("sentenceCrawl").textContent = "Searching for: " + searchBox.value;
+      }
+    });
+  </script>
+  <!-- Menu button -->
 <div class="menu-button" onclick="loadMenuScript()">
   <div class="menu-dots">
     <span></span>
@@ -345,7 +280,7 @@
     <span></span>
   </div>
 </div>
-
+  
 <script>
   function loadMenuScript() {
     const script = document.createElement("script");
