@@ -163,7 +163,7 @@
 }
 
 .account-btn:hover {
-  background-color: #e0e0e0;
+  background-color: #333;
 }
 
 /* Optional icon styling */
@@ -292,24 +292,8 @@
       }
     });
   </script>
-  <!-- Menu button -->
-<div class="menu-button" onclick="loadMenuScript()">
-  <div class="menu-dots">
-    <span></span>
-    <span></span>
-    <span></span>
-  </div>
-</div>
-  
-<script>
-  function loadMenuScript() {
-    const script = document.createElement("script");
-    script.src = "menuscript.js";
-    document.body.appendChild(script);
-  }
-</script>
 <!-- Account button -->
-<a href="login.html" class="account-btn">
+<a href="dashboard.html" class="account-btn">
   <img src="https://img.icons8.com/ios-filled/50/user.png" alt="Account" />
 </a>
 </script>
@@ -494,5 +478,91 @@ async function performSearch(query) {
     await originalPerformSearch(query);
   };
 </script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const accountBtn = document.querySelector(".account-btn");
+
+    if (!accountBtn) return;
+
+    accountBtn.addEventListener("click", (e) => {
+      e.preventDefault(); // prevent default link behavior
+
+      const storedUser = localStorage.getItem("fwebUser");
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        console.log("Found logged-in user:", user);
+
+        if (user.status === "active") {
+          // ✅ Auto-login, go to dashboard
+          window.location.href = "dashboard.html";
+        } else {
+          alert("Your account is not active.");
+          window.location.href = "login.html";
+        }
+      } else {
+        // Not logged in, go to login page
+        window.location.href = "login.html";
+      }
+    });
+  });
+</script>
+
+<!-- Hidden checkbox -->
+<input type="checkbox" id="menu-toggle" style="display:none;">
+
+<!-- Menu button -->
+<label for="menu-toggle" class="menu-button">
+  <div class="menu-dots">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</label>
+
+<!-- Iframe menu -->
+<iframe src="menu.html" id="menu-iframe"></iframe>
+
+<style>
+/* Menu button style */
+.menu-button {
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 35px;
+  height: 28px;
+  position: fixed;
+  top: 100px;
+  right: 25px;
+  z-index: 10000;
+}
+
+/* Three lines */
+.menu-dots span {
+  display: block;
+  width: 35px;
+  height: 4px;
+  background-color: #333; /* bright blue */
+  border-radius: 2px;
+}
+
+/* Iframe menu */
+#menu-iframe {
+  position: fixed;
+  top: 0;
+  left: -320px;
+  width: 320px;
+  height: 100%;
+  border: none;
+  transition: left 0.35s ease;
+  z-index: 9999;
+  box-shadow: 3px 0 12px rgba(0,0,0,0.25);
+}
+
+/* Show iframe when checkbox is checked */
+#menu-toggle:checked + label + #menu-iframe {
+  left: 0;
+}
+</style>
 </body>
 </html>
