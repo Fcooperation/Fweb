@@ -81,8 +81,14 @@
     const email = localStorage.getItem("userEmail");
 
     async function loadUser() {
-      const { data, error } = await supabase.from("fwebaccount").select("*").eq("email", email).single();
-      if (error || !data) return alert("Error loading user: " + error.message);
+      const { data, error } = await supabase
+        .from("fwebaccount")
+        .select("*")
+        .eq("email", email)
+        .maybeSingle(); // ✅ returns null if no rows
+
+      if (error) return alert("Error loading user: " + error.message);
+      if (!data) return alert("No account found with this email");
 
       document.getElementById("username").innerText = data.username || "No Username";
 
@@ -109,11 +115,13 @@
       const file = fileInput.files[0];
       const base64 = await fileToBase64(file);
 
-      // Save Base64 string to profile_pic column
-      const { error } = await supabase.from("fwebaccount").update({ profile_pic: base64 }).eq("email", email);
+      const { error } = await supabase
+        .from("fwebaccount")
+        .update({ profile_pic: base64 })
+        .eq("email", email);
+
       if (error) return alert("Error updating image: " + error.message);
 
-      // Update the image preview immediately
       document.getElementById("profile-pic").src = base64;
       alert("Profile picture updated!");
     }
@@ -129,7 +137,11 @@
 
       if (Object.keys(updates).length === 0) return alert("Enter details to update");
 
-      const { error } = await supabase.from("fwebaccount").update(updates).eq("email", email);
+      const { error } = await supabase
+        .from("fwebaccount")
+        .update(updates)
+        .eq("email", email);
+
       if (error) return alert("Error updating: " + error.message);
 
       if (newName) document.getElementById("username").innerText = newName;
