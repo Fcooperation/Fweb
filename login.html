@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fweb Login</title>
+  <style>
+    body { font-family: sans-serif; background: #f5f7fa; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+    .account-box { background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+    h2 { text-align: center; margin-bottom: 20px; }
+    .input-group { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 6px; font-size: 14px; font-weight: 600; }
+    input[type="email"], input[type="password"] { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
+    .btn { width: 100%; padding: 12px; background: #007bff; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 15px; margin-top: 10px; }
+    .btn:hover { background: #0056b3; }
+    .toggle-link { text-align: center; margin-top: 15px; font-size: 14px; }
+    .toggle-link a { color: #007bff; cursor: pointer; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="account-box">
+    <h2>Login</h2>
+    <div class="input-group">
+      <label for="email">Email</label>
+      <input type="email" id="email">
+    </div>
+    <div class="input-group">
+      <label for="password">Password</label>
+      <input type="password" id="password">
+    </div>
+    <button class="btn" id="login-btn">Login</button>
+    <div class="toggle-link">
+      Don’t have an account? <a href="signup.html">Sign up</a>
+    </div>
+  </div>
+
+  <!-- Supabase client -->
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://pwsxezhugsxosbwhkdvf.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    document.getElementById("login-btn").addEventListener("click", async () => {
+      const emailInput = document.getElementById("email").value.trim().toLowerCase();
+      const passwordInput = document.getElementById("password").value.trim();
+
+      if (!emailInput || !passwordInput) {
+        alert("Please enter email and password");
+        return;
+      }
+
+      try {
+        // ✅ Only fetch account with matching email
+        const { data, error } = await supabase
+          .from("fwebaccount")
+          .select("username, email, password_hash, status")
+          .eq("email", emailInput)
+          .single();  // ensures only one row is returned
+
+        if (error || !data) {
+          console.warn("⚠️ No account found for:", emailInput);
+          alert("Invalid credentials");
+          return;
+        }
+
+        console.log("🔎 User fetched from DB:", data);
+
+        // ✅ Check password manually
+        if (data.password_hash !== passwordInput) {
+          console.warn("⚠️ Wrong password for:", emailInput);
+          alert("Invalid credentials");
+          return;
+        }
+
+        // ✅ Check account status
+        if (data.status === "active") {
+          localStorage.setItem("fwebUser", JSON.stringify(data));
+          console.log("✅ Login successful:", data);
+          alert("Login successful!");
+          window.location.href = "dashboard.html";
+        } else {
+          console.warn("⚠️ Account not active:", data);
+          alert("Your account is not active.");
+          window.location.href = "banned.html";
+        }
+      } catch (err) {
+        console.error("❌ JS error:", err.message);
+        alert("Error: " + err.message);
+      }
+    });
+  </script>
+  <script>
+  // After successful login
+  const loginUser = (user) => {
+    // Store user data in localStorage
+    localStorage.setItem("fwebUser", JSON.stringify(user));
+    console.log("✅ User saved to localStorage:", user);
+    
+    // Redirect to dashboard
+    window.location.href = "dashboard.html";
+  };
+
+  // Example usage: replace your login button handler
+  document.getElementById("login-btn").addEventListener("click", async () => {
+    const emailInput = document.getElementById("email").value.trim().toLowerCase();
+    const passwordInput = document.getElementById("password").value.trim();
+
+    if (!emailInput || !passwordInput) {
+      alert("Please enter email and password");
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from("fwebaccount")
+        .select("username, email, password_hash, status, created_at")
+        .eq("email", emailInput)
+        .single();
+
+      if (error || !data) {
+        alert("welcome");
+        return;
+      }
+
+      if (data.password_hash !== passwordInput) {
+        alert("invalid");
+        return;
+      }
+
+      if (data.status !== "active") {
+        alert("Your account is not active");
+        window.location.href = "banned.html";
+        return;
+      }
+
+      // ✅ Login successful
+      loginUser(data);
+
+    } catch (err) {
+      console.error("Login error:", err.message);
+      alert("Error: " + err.message);
+    }
+  });
+</script>
+</body>
+</html>

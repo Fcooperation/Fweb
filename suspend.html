@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Suspend Account</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; background: #f5f7fa; }
+    .box { background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
+    label { font-weight: bold; display: block; margin-top: 10px; }
+    select, button { padding: 10px; margin-top: 10px; width: 100%; border-radius: 6px; border: 1px solid #ccc; }
+    button { background: #ffc107; color: black; cursor: pointer; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>Suspend Account</h2>
+    <div id="details"></div>
+    <label>Suspend for</label>
+    <select id="duration">
+      <option value="5">5 minutes</option>
+      <option value="60">1 hour</option>
+      <option value="1440">1 day</option>
+      <option value="10080">1 week</option>
+      <option value="43200">1 month</option>
+      <option value="259200">6 months</option>
+    </select>
+    <button id="suspend-btn">Suspend</button>
+    <br><br>
+    <button onclick="window.location.href='admin.html'">Back to Admin</button>
+  </div>
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+    const supabase = createClient(
+      "https://pwsxezhugsxosbwhkdvf.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
+    );
+
+    const params = new URLSearchParams(window.location.search);
+    const email = params.get("email");
+
+    const { data } = await supabase.from("fwebaccount").select("*").eq("email", email).single();
+    document.getElementById("details").innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+
+    document.getElementById("suspend-btn").addEventListener("click", async () => {
+      const mins = parseInt(document.getElementById("duration").value);
+      const until = new Date(Date.now() + mins * 60000).toISOString();
+      await supabase.from("fwebaccount").update({ status: "suspended", suspended_until: until }).eq("email", email);
+      alert("Account suspended!");
+      window.location.href = "admin.html";
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard</title>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; background: #f5f7fa; text-align: center; }
+    .profile-section {
+      width: 100%; height: 300px; background: #ccc;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+    .profile-section img {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    .upload-box {
+      margin: 15px auto;
+      display: flex; justify-content: center; align-items: center; gap: 10px;
+    }
+    .upload-box input {
+      padding: 6px;
+    }
+    .upload-box button {
+      padding: 8px 14px; background: #007bff; color: #fff;
+      border: none; border-radius: 6px; cursor: pointer;
+    }
+    h2 {
+      margin: 20px 0; font-size: 28px; font-weight: bold;
+      color: #007bff; text-transform: uppercase;
+    }
+    .details-section {
+      margin: 30px auto; padding: 20px; max-width: 400px;
+      background: #fff; border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1); text-align: left;
+    }
+    .details-section h3 { margin-bottom: 15px; }
+    .details-section input {
+      width: 100%; padding: 10px; margin-bottom: 10px;
+      border: 1px solid #ddd; border-radius: 6px;
+    }
+    .details-section button {
+      width: 100%; padding: 10px;
+      background: #007bff; color: #fff; border: none;
+      border-radius: 6px; cursor: pointer;
+    }
+    .details-section button:hover { background: #0056b3; }
+  </style>
+</head>
+<body>
+  <!-- Profile Section -->
+  <div class="profile-section">
+    <img id="profile-pic" src="default.png" alt="Profile Picture">
+  </div>
+
+  <!-- Upload New Picture -->
+  <div class="upload-box">
+    <input type="file" id="file-input" accept="image/*">
+    <button onclick="uploadImage()">Upload</button>
+  </div>
+
+  <!-- Username -->
+  <h2 id="username">Loading...</h2>
+
+  <!-- Update Section -->
+  <div class="details-section">
+    <h3>Update Account Details</h3>
+    <input type="text" id="new-name" placeholder="New Username">
+    <input type="password" id="new-pass" placeholder="New Password">
+    <button onclick="updateDetails()">Save Changes</button>
+  </div>
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+    const supabase = createClient(
+      "https://pwsxezhugsxosbwhkdvf.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
+    );
+
+    const email = localStorage.getItem("userEmail");
+
+    async function loadUser() {
+      const { data, error } = await supabase.from("fwebaccount").select("*").eq("email", email).single();
+      if (error || !data) return alert("Error loading user: " + error.message);
+
+      document.getElementById("username").innerText = data.username || "No Username";
+
+      if (data.profile_pic) {
+        document.getElementById("profile-pic").src = data.profile_pic;
+      }
+    }
+
+    // Convert uploaded file to base64
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = (error) => reject(error);
+      });
+    }
+
+    // Upload image and store as base64 link in DB
+    async function uploadImage() {
+      const fileInput = document.getElementById("file-input");
+      if (fileInput.files.length === 0) return alert("Select an image first");
+
+      const file = fileInput.files[0];
+      const base64 = await fileToBase64(file);
+
+      // Save Base64 string to profile_pic column
+      const { error } = await supabase.from("fwebaccount").update({ profile_pic: base64 }).eq("email", email);
+      if (error) return alert("Error updating image: " + error.message);
+
+      // Update the image preview immediately
+      document.getElementById("profile-pic").src = base64;
+      alert("Profile picture updated!");
+    }
+
+    // Update username + password
+    async function updateDetails() {
+      const newName = document.getElementById("new-name").value;
+      const newPass = document.getElementById("new-pass").value;
+
+      const updates = {};
+      if (newName) updates.username = newName;
+      if (newPass) updates.password_hash = newPass;
+
+      if (Object.keys(updates).length === 0) return alert("Enter details to update");
+
+      const { error } = await supabase.from("fwebaccount").update(updates).eq("email", email);
+      if (error) return alert("Error updating: " + error.message);
+
+      if (newName) document.getElementById("username").innerText = newName;
+      alert("Account updated!");
+    }
+
+    window.uploadImage = uploadImage;
+    window.updateDetails = updateDetails;
+
+    loadUser();
+  </script>
+</body>
+</html>

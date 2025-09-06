@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - Fweb Accounts</title>
+  <style>
+    body { font-family: sans-serif; background: #f5f7fa; padding: 20px; }
+    h2 { text-align: center; margin-bottom: 20px; }
+    table { width: 100%; border-collapse: collapse; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    th, td { padding: 10px; border: 1px solid #ddd; text-align: center; }
+    th { background: #007bff; color: #fff; }
+    .dropdown { position: relative; display: inline-block; }
+    .dropdown-content {
+      display: none; position: absolute; background: #fff; min-width: 140px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2); z-index: 1; border-radius: 6px;
+    }
+    .dropdown-content a {
+      color: #000; padding: 8px 10px; text-decoration: none; display: block;
+    }
+    .dropdown-content a:hover { background: #f1f1f1; }
+    .dropdown:hover .dropdown-content { display: block; }
+    .refresh { margin: 15px 0; padding: 10px 15px; background: #007bff; color: #fff; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <h2>Admin Panel - Manage Accounts</h2>
+  <button class="refresh" onclick="fetchAccounts()">🔄 Refresh Accounts</button>
+  <table id="accounts-table">
+    <thead>
+      <tr>
+        <th>Email</th>
+        <th>Status</th>
+        <th>Suspension Remaining</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+    const supabaseUrl = "https://pwsxezhugsxosbwhkdvf.supabase.co";
+    const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+    function timeRemaining(until) {
+      const end = new Date(until);
+      const now = new Date();
+      const diff = end - now;
+      if (diff <= 0) return "Expired";
+      const mins = Math.floor(diff / 60000);
+      if (mins < 60) return mins + " min";
+      const hrs = Math.floor(mins / 60);
+      if (hrs < 24) return hrs + " hr";
+      const days = Math.floor(hrs / 24);
+      return days + " days";
+    }
+
+    async function fetchAccounts() {
+      const { data, error } = await supabase.from("fwebaccount").select("*");
+      if (error) { alert("Error fetching: " + error.message); return; }
+
+      const tbody = document.querySelector("#accounts-table tbody");
+      tbody.innerHTML = "";
+
+      for (let user of data) {
+        // 🔹 Auto-reactivate expired suspensions
+        if (user.status === "suspended" && user.suspended_until) {
+          const now = new Date();
+          const until = new Date(user.suspended_until);
+          if (now >= until) {
+            await supabase
+              .from("fwebaccount")
+              .update({ status: "active", suspended_until: null })
+              .eq("email", user.email);
+            user.status = "active";
+            user.suspended_until = null;
+          }
+        }
+
+        let remaining = "";
+        if (user.status === "suspended" && user.suspended_until) {
+          remaining = timeRemaining(user.suspended_until);
+        }
+
+        let actions = `
+          <div class="dropdown">
+            <button>Action ⬇</button>
+            <div class="dropdown-content">
+              <a href="suspend.html?email=${encodeURIComponent(user.email)}">Suspend</a>
+              <a href="ban.html?email=${encodeURIComponent(user.email)}">Ban</a>
+            </div>
+          </div>
+        `;
+
+        if (user.status === "suspended" || user.status === "banned") {
+          actions = `
+            <div class="dropdown">
+              <button>Action ⬇</button>
+              <div class="dropdown-content">
+                <a href="#" onclick="unsuspend('${user.email}')">Unban/Unsuspend</a>
+              </div>
+            </div>
+          `;
+        }
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${user.email}</td>
+          <td>${user.status}</td>
+          <td>${remaining}</td>
+          <td>${actions}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    window.unsuspend = async (email) => {
+      const { error } = await supabase.from("fwebaccount").update({ status: "active", suspended_until: null }).eq("email", email);
+      if (error) alert("Error unsuspending: " + error.message);
+      else { alert("Account re-activated"); fetchAccounts(); }
+    };
+
+    fetchAccounts();
+  </script>
+</body>
+</html>

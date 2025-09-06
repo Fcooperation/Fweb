@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Unban Account</title>
+</head>
+<body>
+  <h2>Unban Account</h2>
+  <div id="details"></div>
+  <button id="unban-btn">Unban</button>
+  <button onclick="window.location.href='admin.html'">Back</button>
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+    const supabase = createClient("https://pwsxezhugsxosbwhkdvf.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ");
+
+    const params = new URLSearchParams(window.location.search);
+    const email = params.get("email");
+
+    const { data } = await supabase.from("fwebaccount").select("*").eq("email", email).single();
+    document.getElementById("details").innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+
+    document.getElementById("unban-btn").addEventListener("click", async () => {
+      await supabase.from("fwebaccount").update({ status: "active" }).eq("email", email);
+      alert("Account unbanned");
+      window.location.href = "admin.html";
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Supabase Signup</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f5f7fa;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .account-box {
+      background: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 400px;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .input-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    input[type="text"], input[type="email"], input[type="password"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .btn {
+      width: 100%;
+      padding: 12px;
+      background: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 15px;
+      margin-top: 10px;
+    }
+    .btn:hover {
+      background: #0056b3;
+    }
+    .toggle-link {
+      text-align: center;
+      margin-top: 15px;
+      font-size: 14px;
+    }
+    .toggle-link a {
+      color: #007bff;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .captcha-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="account-box">
+    <h2>Signup to Fweb Account</h2>
+
+    <div class="input-group">
+      <label for="name">Full Name</label>
+      <input type="text" id="name" placeholder="Full Name" />
+    </div>
+    <div class="input-group">
+      <label for="email">Email</label>
+      <input type="email" id="email" placeholder="Email" />
+    </div>
+    <div class="input-group">
+      <label for="password">Password</label>
+      <input type="password" id="password" placeholder="Password" />
+    </div>
+
+    <!-- Captcha -->
+    <div class="captcha-group">
+      <input type="checkbox" id="human-check">
+      <label for="human-check">I am not a robot</label>
+    </div>
+
+    <button class="btn" id="signup-btn">Sign Up</button>
+
+    <div class="toggle-link">
+      Already have an account? <a href="login.html">Login here</a>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+    const supabaseUrl = "https://pwsxezhugsxosbwhkdvf.supabase.co";
+    const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
+
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+    document.getElementById("signup-btn").addEventListener("click", async () => {
+      const name = document.getElementById("name").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+      const humanChecked = document.getElementById("human-check").checked;
+
+      if (!name || !email || !password) {
+        alert("Please fill in all fields.");
+        return;
+      }
+
+      if (!humanChecked) {
+        alert("Please confirm you are human.");
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from("fwebaccount")
+          .insert([
+            {
+              username: name,
+              email: email,
+              password_hash: password,
+              status: "active"
+            }
+          ])
+          .select();
+
+        if (error) {
+          console.error("Error saving account:", error);
+          alert("Error: " + JSON.stringify(error));
+        } else {
+          console.log("Account saved:", data);
+          alert("Account saved successfully!");
+        }
+      } catch (err) {
+        console.error("Unexpected error:", err);
+        alert("Unexpected error: " + err.message);
+      }
+    });
+  </script>
+</body>
+</html>
