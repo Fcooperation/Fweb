@@ -34,12 +34,10 @@
     </div>
   </div>
 
-  <!-- Supabase client -->
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <script>
     const SUPABASE_URL = "https://pwsxezhugsxosbwhkdvf.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
-
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     document.getElementById("login-btn").addEventListener("click", async () => {
@@ -52,45 +50,39 @@
       }
 
       try {
-        // ✅ Only fetch account with matching email
         const { data, error } = await supabase
           .from("fwebaccount")
-          .select("username, email, password_hash, status")
+          .select("username, email, password_hash, status, profile_pic")
           .eq("email", emailInput)
-          .single();  // ensures only one row is returned
+          .maybeSingle(); // ✅ allows zero rows without error
 
-        if (error || !data) {
-          console.warn("⚠️ No account found for:", emailInput);
-          alert("Invalid credentials");
+        if (error) throw error;
+        if (!data) {
+          alert("No account found with this email");
           return;
         }
 
-        console.log("🔎 User fetched from DB:", data);
-
-        // ✅ Check password manually
         if (data.password_hash !== passwordInput) {
-          console.warn("⚠️ Wrong password for:", emailInput);
           alert("Invalid credentials");
           return;
         }
 
-        // ✅ Check account status
-        if (data.status === "active") {
-          localStorage.setItem("fwebUser", JSON.stringify(data));
-          console.log("✅ Login successful:", data);
-          alert("Login successful!");
-          window.location.href = "dashboard.html";
-        } else {
-          console.warn("⚠️ Account not active:", data);
+        if (data.status !== "active") {
           alert("Your account is not active.");
           window.location.href = "banned.html";
+          return;
         }
+
+        // ✅ Save user to localStorage
+        localStorage.setItem("fwebUser", JSON.stringify(data));
+        alert("Login successful!");
+        window.location.href = "dashboard.html";
+
       } catch (err) {
-        console.error("❌ JS error:", err.message);
+        console.error("Login error:", err.message);
         alert("Error: " + err.message);
       }
     });
   </script>
-
 </body>
 </html>
