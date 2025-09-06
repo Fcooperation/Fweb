@@ -91,58 +91,6 @@
       }
     });
   </script>
-  <script>
-  // After successful login
-  const loginUser = (user) => {
-    // Store user data in localStorage
-    localStorage.setItem("fwebUser", JSON.stringify(user));
-    console.log("✅ User saved to localStorage:", user);
-    
-    // Redirect to dashboard
-    window.location.href = "dashboard.html";
-  };
 
-  // Example usage: replace your login button handler
-  document.getElementById("login-btn").addEventListener("click", async () => {
-    const emailInput = document.getElementById("email").value.trim().toLowerCase();
-    const passwordInput = document.getElementById("password").value.trim();
-
-    if (!emailInput || !passwordInput) {
-      alert("Please enter email and password");
-      return;
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from("fwebaccount")
-        .select("username, email, password_hash, status, created_at")
-        .eq("email", emailInput)
-        .single();
-
-      if (error || !data) {
-        alert("welcome");
-        return;
-      }
-
-      if (data.password_hash !== passwordInput) {
-        alert("invalid");
-        return;
-      }
-
-      if (data.status !== "active") {
-        alert("Your account is not active");
-        window.location.href = "banned.html";
-        return;
-      }
-
-      // ✅ Login successful
-      loginUser(data);
-
-    } catch (err) {
-      console.error("Login error:", err.message);
-      alert("Error: " + err.message);
-    }
-  });
-</script>
 </body>
 </html>
