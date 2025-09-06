@@ -38,6 +38,7 @@
   <script>
     const SUPABASE_URL = "https://pwsxezhugsxosbwhkdvf.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
+
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     document.getElementById("login-btn").addEventListener("click", async () => {
@@ -52,29 +53,29 @@
       try {
         const { data, error } = await supabase
           .from("fwebaccount")
-          .select("username, email, password_hash, status, profile_pic")
+          .select("username, email, password_hash, status")
           .eq("email", emailInput)
-          .maybeSingle(); // ✅ allows zero rows without error
+          .maybeSingle(); // safe single row
 
-        if (error) throw error;
-        if (!data) {
+        if (!data || error) {
           alert("No account found with this email");
           return;
         }
 
         if (data.password_hash !== passwordInput) {
-          alert("Invalid credentials");
+          alert("Invalid password");
           return;
         }
 
         if (data.status !== "active") {
-          alert("Your account is not active.");
+          alert("Your account is not active");
           window.location.href = "banned.html";
           return;
         }
 
-        // ✅ Save user to localStorage
-        localStorage.setItem("fwebUser", JSON.stringify(data));
+        // ✅ Login success, save email and username
+        localStorage.setItem("userEmail", data.email);
+        localStorage.setItem("username", data.username);
         alert("Login successful!");
         window.location.href = "dashboard.html";
 
