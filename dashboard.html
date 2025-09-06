@@ -88,7 +88,7 @@
         .maybeSingle(); // ✅ returns null if no rows
 
       if (error) return alert("Error loading user: " + error.message);
-      if (!data) return alert("No account found with this email");
+      if (!data) return alert("Welcome 🤗");
 
       document.getElementById("username").innerText = data.username || "No Username";
 
