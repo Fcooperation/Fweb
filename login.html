@@ -53,61 +53,53 @@
 
   <!-- Supabase client -->
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-  <script>
-    const SUPABASE_URL = "https://pwsxezhugsxosbwhkdvf.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
+<script>
+  const SUPABASE_URL = "https://pwsxezhugsxosbwhkdvf.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
 
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    document.getElementById("login-btn").addEventListener("click", async () => {
-      const emailInput = document.getElementById("email").value.trim().toLowerCase();
-      const passwordInput = document.getElementById("password").value.trim();
+  document.getElementById("login-btn").addEventListener("click", async () => {
+    const emailInput = document.getElementById("email").value.trim().toLowerCase();
+    const passwordInput = document.getElementById("password").value.trim();
 
-      if (!emailInput || !passwordInput) {
-        alert("Please enter email and password");
+    if (!emailInput || !passwordInput) {
+      alert("Please enter email and password");
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from("fwebaccount")
+        .select("username, email, password_hash, status")
+        .eq("email", emailInput)
+        .single();
+
+      if (error || !data) {
+        alert("Invalid credentials");
         return;
       }
 
-      try {
-        // ✅ Only fetch account with matching email
-        const { data, error } = await supabase
-          .from("fwebaccount")
-          .select("username, email, password_hash, status")
-          .eq("email", emailInput)
-          .single();  // ensures only one row is returned
-
-        if (error || !data) {
-          console.warn("⚠️ No account found for:", emailInput);
-          alert("Invalid credentials");
-          return;
-        }
-
-        console.log("🔎 User fetched from DB:", data);
-
-        // ✅ Check password manually
-        if (data.password_hash !== passwordInput) {
-          console.warn("⚠️ Wrong password for:", emailInput);
-          alert("Invalid credentials");
-          return;
-        }
-
-        // ✅ Check account status
-        if (data.status === "active") {
-          localStorage.setItem("fwebUser", JSON.stringify(data));
-          console.log("✅ Login successful:", data);
-          alert("Login successful!");
-          window.location.href = "dashboard.html";
-        } else {
-          console.warn("⚠️ Account not active:", data);
-          alert("Your account is not active.");
-          window.location.href = "banned.html";
-        }
-      } catch (err) {
-        console.error("❌ JS error:", err.message);
-        alert("Error: " + err.message);
+      if (data.password_hash !== passwordInput) {
+        alert("Invalid credentials");
+        return;
       }
-    });
-  </script>
+
+      if (data.status === "active") {
+        // ✅ Save under "faccount", overwriting any existing data
+        localStorage.setItem("faccount", JSON.stringify(data));
+
+        alert("Login successful!");
+        window.location.href = "dashboard.html";
+      } else {
+        alert("Your account is not active.");
+        window.location.href = "banned.html";
+      }
+    } catch (err) {
+      alert("Error: " + err.message);
+    }
+  });
+</script>
   <script>
   document.getElementById("forgot-btn").addEventListener("click", () => {
     window.location.href = "forgetpassword.html";
