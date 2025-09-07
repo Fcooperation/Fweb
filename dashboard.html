@@ -172,5 +172,44 @@ document.getElementById("delete-btn").addEventListener("click", async () => {
   }
 });
   </script>
+  <script type="module">
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+  const supabase = createClient(
+    "https://pwsxezhugsxosbwhkdvf.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
+  );
+
+  const email = localStorage.getItem("userEmail");
+
+  // Function to check status
+  async function checkStatus() {
+    if (!email) return "active"; // fallback to active if no user
+    const { data, error } = await supabase
+      .from("fwebaccount")
+      .select("status")
+      .eq("email", email)
+      .single();
+
+    if (error || !data) return "active"; // fallback
+    return data.status?.toLowerCase();
+  }
+
+  // Intercept button clicks
+  document.addEventListener("click", async (e) => {
+    if (e.target.tagName === "BUTTON") {
+      const status = await checkStatus();
+
+      if (status === "banned") {
+        e.preventDefault();
+        window.location.href = "banned.html";
+      } else if (status === "suspended") {
+        e.preventDefault();
+        window.location.href = "suspended.html";
+      }
+      // if active → allow button action normally
+    }
+  });
+  </script>
 </body>
 </html>
