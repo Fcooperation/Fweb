@@ -15,6 +15,22 @@
     .btn:hover { background: #0056b3; }
     .toggle-link { text-align: center; margin-top: 15px; font-size: 14px; }
     .toggle-link a { color: #007bff; cursor: pointer; text-decoration: none; }
+  
+  .forgot-btn {
+    width: 100%;
+    padding: 12px;
+    background: #6c757d;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 15px;
+    margin-top: 10px;
+  }
+  .forgot-btn:hover {
+    background: #5a6268;
+  }
+
   </style>
 </head>
 <body>
@@ -29,11 +45,13 @@
       <input type="password" id="password">
     </div>
     <button class="btn" id="login-btn">Login</button>
+<button class="btn forgot-btn" id="forgot-btn">Forgot Password</button>
     <div class="toggle-link">
       Don’t have an account? <a href="signup.html">Sign up</a>
     </div>
   </div>
 
+  <!-- Supabase client -->
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <script>
     const SUPABASE_URL = "https://pwsxezhugsxosbwhkdvf.supabase.co";
@@ -51,39 +69,49 @@
       }
 
       try {
+        // ✅ Only fetch account with matching email
         const { data, error } = await supabase
           .from("fwebaccount")
           .select("username, email, password_hash, status")
           .eq("email", emailInput)
-          .maybeSingle(); // safe single row
+          .single();  // ensures only one row is returned
 
-        if (!data || error) {
-          alert("No account found with this email");
+        if (error || !data) {
+          console.warn("⚠️ No account found for:", emailInput);
+          alert("Invalid credentials");
           return;
         }
 
+        console.log("🔎 User fetched from DB:", data);
+
+        // ✅ Check password manually
         if (data.password_hash !== passwordInput) {
-          alert("Invalid password");
+          console.warn("⚠️ Wrong password for:", emailInput);
+          alert("Invalid credentials");
           return;
         }
 
-        if (data.status !== "active") {
-          alert("Your account is not active");
+        // ✅ Check account status
+        if (data.status === "active") {
+          localStorage.setItem("fwebUser", JSON.stringify(data));
+          console.log("✅ Login successful:", data);
+          alert("Login successful!");
+          window.location.href = "dashboard.html";
+        } else {
+          console.warn("⚠️ Account not active:", data);
+          alert("Your account is not active.");
           window.location.href = "banned.html";
-          return;
         }
-
-        // ✅ Login success, save email and username
-        localStorage.setItem("userEmail", data.email);
-        localStorage.setItem("username", data.username);
-        alert("Login successful!");
-        window.location.href = "dashboard.html";
-
       } catch (err) {
-        console.error("Login error:", err.message);
+        console.error("❌ JS error:", err.message);
         alert("Error: " + err.message);
       }
     });
   </script>
+  <script>
+  document.getElementById("forgot-btn").addEventListener("click", () => {
+    window.location.href = "forgetpassword.html";
+  });
+</script>
 </body>
 </html>

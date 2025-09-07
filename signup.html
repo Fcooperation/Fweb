@@ -79,6 +79,10 @@
     <h2>Signup to Fweb Account</h2>
 
     <div class="input-group">
+      <label for="username">Username</label>
+      <input type="text" id="username" placeholder="Username" />
+    </div>
+    <div class="input-group">
       <label for="name">Full Name</label>
       <input type="text" id="name" placeholder="Full Name" />
     </div>
@@ -89,6 +93,10 @@
     <div class="input-group">
       <label for="password">Password</label>
       <input type="password" id="password" placeholder="Password" />
+    </div>
+    <div class="input-group">
+      <label for="secret">Secret Code</label>
+      <input type="text" id="secret" placeholder="Secret Code" />
     </div>
 
     <!-- Captcha -->
@@ -113,12 +121,14 @@
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
     document.getElementById("signup-btn").addEventListener("click", async () => {
+      const username = document.getElementById("username").value.trim();
       const name = document.getElementById("name").value.trim();
-      const email = document.getElementById("email").value.trim();
+      const email = document.getElementById("email").value.trim().toLowerCase();
       const password = document.getElementById("password").value;
+      const secret = document.getElementById("secret").value.trim();
       const humanChecked = document.getElementById("human-check").checked;
 
-      if (!name || !email || !password) {
+      if (!username || !name || !email || !password || !secret) {
         alert("Please fill in all fields.");
         return;
       }
@@ -129,13 +139,40 @@
       }
 
       try {
+        // Check if email already exists
+        const { data: emailData, error: emailError } = await supabase
+          .from("fwebaccount")
+          .select("email")
+          .eq("email", email)
+          .single();
+
+        if (emailData) {
+          alert("Email already exists. Please login.");
+          return;
+        }
+
+        // Check if username already exists
+        const { data: usernameData } = await supabase
+          .from("fwebaccount")
+          .select("username")
+          .eq("username", username)
+          .single();
+
+        if (usernameData) {
+          alert("Username already exists. Please choose a different username.");
+          return;
+        }
+
+        // Insert new account
         const { data, error } = await supabase
           .from("fwebaccount")
           .insert([
             {
-              username: name,
+              username: username,
+              full_name: name,
               email: email,
               password_hash: password,
+              secret: secret,
               status: "active"
             }
           ])
@@ -146,7 +183,8 @@
           alert("Error: " + JSON.stringify(error));
         } else {
           console.log("Account saved:", data);
-          alert("Account saved successfully!");
+          alert("Account created successfully! You can now login.");
+          window.location.href = "login.html";
         }
       } catch (err) {
         console.error("Unexpected error:", err);
