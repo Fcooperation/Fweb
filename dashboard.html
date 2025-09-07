@@ -70,12 +70,6 @@
     <button onclick="updateDetails()">Save Changes</button>
   </div>
 
-  <div class="details-section" style="margin-top: 15px;">
-    <button id="logout-btn" style="background:#dc3545;">Logout</button>
-    <button id="delete-btn" style="background:#6c757d; margin-top:10px;">Delete Account</button>
-  </div>
-
-  <!-- Main Script -->
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
@@ -86,25 +80,12 @@
 
     const email = localStorage.getItem("userEmail");
 
-    // Load user info
     async function loadUser() {
-      const { data, error } = await supabase
-        .from("fwebaccount")
-        .select("*")
-        .eq("email", email)
-        .maybeSingle(); // ✅ safer
-
-      if (error) {
-        alert("Error loading user: " + error.message);
-        return;
-      }
-
-      if (!data) {
-        alert("No user found for this email");
-        return;
-      }
+      const { data, error } = await supabase.from("fwebaccount").select("*").eq("email", email).single();
+      if (error || !data) return alert("Error loading user: " + error.message);
 
       document.getElementById("username").innerText = data.username || "No Username";
+
       if (data.profile_pic) {
         document.getElementById("profile-pic").src = data.profile_pic;
       }
@@ -120,7 +101,7 @@
       });
     }
 
-    // Upload image and save
+    // Upload image and store as base64 link in DB
     async function uploadImage() {
       const fileInput = document.getElementById("file-input");
       if (fileInput.files.length === 0) return alert("Select an image first");
@@ -156,75 +137,7 @@
     window.uploadImage = uploadImage;
     window.updateDetails = updateDetails;
 
-    // Load user on start
     loadUser();
-
-    // Logout
-    document.getElementById("logout-btn").addEventListener("click", () => {
-      localStorage.removeItem("userEmail");
-      localStorage.removeItem("fwebUser");
-      alert("Logged out successfully!");
-      window.location.href = "login.html";
-    });
-
-    // Delete account
-    document.getElementById("delete-btn").addEventListener("click", async () => {
-      const confirmDelete = confirm("Are you sure you want to delete your account? This cannot be undone.");
-      if (!confirmDelete) return;
-
-      try {
-        const { error } = await supabase.from("fwebaccount").delete().eq("email", email);
-        if (error) return alert("Error deleting account: " + error.message);
-
-        localStorage.removeItem("userEmail");
-        localStorage.removeItem("fwebUser");
-        alert("Account deleted successfully.");
-        window.location.href = "signup.html";
-      } catch (err) {
-        alert("Error: " + err.message);
-      }
-    });
-  </script>
-
-  <!-- Status Checker -->
-  <script type="module">
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-
-    const supabase = createClient(
-      "https://pwsxezhugsxosbwhkdvf.supabase.co",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
-    );
-
-    const email = localStorage.getItem("userEmail");
-
-    // Function to check account status
-    async function checkStatus() {
-      if (!email) return "active"; // fallback
-
-      const { data, error } = await supabase
-        .from("fwebaccount")
-        .select("status")
-        .eq("email", email)
-        .maybeSingle(); // ✅ safer
-
-      if (error || !data) return "active";
-      return data.status?.toLowerCase() || "active";
-    }
-
-    // Intercept button clicks
-    document.addEventListener("click", async (e) => {
-      if (e.target.tagName === "BUTTON") {
-        const status = await checkStatus();
-
-        if (status === "banned") {
-          e.preventDefault();
-          window.location.href = "banned.html";
-        } else if (status === "suspended") {
-          e.preventDefault();
-          window.location.href = "suspended.html";
-        }
-      }
-    });
   </script>
 </body>
 </html>
