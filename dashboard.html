@@ -69,7 +69,11 @@
     <input type="password" id="new-pass" placeholder="New Password">
     <button onclick="updateDetails()">Save Changes</button>
   </div>
-
+  <!-- Logout / Delete -->
+  <div class="details-section" style="margin-top: 15px;">
+    <button id="logout-btn" style="background:#dc3545;">Logout</button>
+    <button id="delete-btn" style="background:#6c757d; margin-top:10px;">Delete Account</button>
+  </div>
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
@@ -78,17 +82,18 @@
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
     );
 
-    const email = localStorage.getItem("userEmail");
+    // ✅ Load account directly from localStorage
+    const faccount = JSON.parse(localStorage.getItem("faccount"));
 
-    async function loadUser() {
-      const { data, error } = await supabase.from("fwebaccount").select("*").eq("email", email).single();
-      if (error || !data) return alert("Error loading user: " + error.message);
+    if (!faccount) {
+      alert("No account found in local storage. Please log in again.");
+      window.location.href = "login.html";
+    }
 
-      document.getElementById("username").innerText = data.username || "No Username";
-
-      if (data.profile_pic) {
-        document.getElementById("profile-pic").src = data.profile_pic;
-      }
+    // Populate dashboard with local data
+    document.getElementById("username").innerText = faccount.username || "No Username";
+    if (faccount.profile_pic) {
+      document.getElementById("profile-pic").src = faccount.profile_pic;
     }
 
     // Convert uploaded file to base64
@@ -101,7 +106,7 @@
       });
     }
 
-    // Upload image and store as base64 link in DB
+    // Upload image and update DB + localStorage
     async function uploadImage() {
       const fileInput = document.getElementById("file-input");
       if (fileInput.files.length === 0) return alert("Select an image first");
@@ -109,8 +114,15 @@
       const file = fileInput.files[0];
       const base64 = await fileToBase64(file);
 
-      const { error } = await supabase.from("fwebaccount").update({ profile_pic: base64 }).eq("email", email);
+      const { error } = await supabase
+        .from("fwebaccount")
+        .update({ profile_pic: base64 })
+        .eq("email", faccount.email);
+
       if (error) return alert("Error updating image: " + error.message);
+
+      faccount.profile_pic = base64;
+      localStorage.setItem("faccount", JSON.stringify(faccount));
 
       document.getElementById("profile-pic").src = base64;
       alert("Profile picture updated!");
@@ -127,17 +139,44 @@
 
       if (Object.keys(updates).length === 0) return alert("Enter details to update");
 
-      const { error } = await supabase.from("fwebaccount").update(updates).eq("email", email);
+      const { error } = await supabase
+        .from("fwebaccount")
+        .update(updates)
+        .eq("email", faccount.email);
+
       if (error) return alert("Error updating: " + error.message);
 
-      if (newName) document.getElementById("username").innerText = newName;
+      if (newName) {
+        faccount.username = newName;
+        document.getElementById("username").innerText = newName;
+      }
+      if (newPass) {
+        faccount.password_hash = newPass;
+      }
+
+      localStorage.setItem("faccount", JSON.stringify(faccount));
       alert("Account updated!");
     }
+    // Logout
+    document.getElementById("logout-btn").addEventListener("click", () => {
+      localStorage.removeItem("fwebUser");
+      alert("Logged out successfully!");
+      window.location.href = "login.html";
+    });
 
+    // Delete account
+    document.getElementById("delete-btn").addEventListener("click", async () => {
+      if (!confirm("Are you sure you want to delete your account? This cannot be undone.")) return;
+      const { error } = await supabase.from("fwebaccount").delete().eq("email", email);
+      if (error) return alert("Error deleting account: " + error.message);
+      localStorage.removeItem("fwebUser");
+      alert("Account deleted successfully.");
+      window.location.href = "signup.html";
+    });
+
+    // Make functions global
     window.uploadImage = uploadImage;
     window.updateDetails = updateDetails;
-
-    loadUser();
   </script>
 </body>
 </html>
