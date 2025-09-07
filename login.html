@@ -69,9 +69,10 @@
     }
 
     try {
+      // ✅ Fetch *all* columns for this account
       const { data, error } = await supabase
         .from("fwebaccount")
-        .select("username, email, password_hash, status")
+        .select("*")
         .eq("email", emailInput)
         .single();
 
@@ -86,7 +87,7 @@
       }
 
       if (data.status === "active") {
-        // ✅ Save under "faccount", overwriting any existing data
+        // ✅ Save everything in localStorage
         localStorage.setItem("faccount", JSON.stringify(data));
 
         alert("Login successful!");
