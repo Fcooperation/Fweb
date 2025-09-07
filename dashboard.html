@@ -69,11 +69,13 @@
     <input type="password" id="new-pass" placeholder="New Password">
     <button onclick="updateDetails()">Save Changes</button>
   </div>
-  <div class="details-section" style="margin-top: 15px;">
-  <button id="logout-btn" style="background:#dc3545;">Logout</button>
-  <button id="delete-btn" style="background:#6c757d; margin-top:10px;">Delete Account</button>
-</div>
 
+  <div class="details-section" style="margin-top: 15px;">
+    <button id="logout-btn" style="background:#dc3545;">Logout</button>
+    <button id="delete-btn" style="background:#6c757d; margin-top:10px;">Delete Account</button>
+  </div>
+
+  <!-- Main Script -->
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
@@ -84,29 +86,53 @@
 
     const email = localStorage.getItem("userEmail");
 
-    
+    // Load user info
     async function loadUser() {
-  const { data, error } = await supabase
-    .from("fwebaccount")
-    .select("*")
-    .eq("email", email)
-    .maybeSingle(); // ✅ safer than .single()
+      const { data, error } = await supabase
+        .from("fwebaccount")
+        .select("*")
+        .eq("email", email)
+        .maybeSingle(); // ✅ safer
 
-  if (error) {
-    alert("Error loading user: " + error.message);
-    return;
-  }
+      if (error) {
+        alert("Error loading user: " + error.message);
+        return;
+      }
 
-  if (!data) {
-    alert("No user found for this email");
-    return;
-  }
+      if (!data) {
+        alert("No user found for this email");
+        return;
+      }
 
-  document.getElementById("username").innerText = data.username || "No Username";
+      document.getElementById("username").innerText = data.username || "No Username";
+      if (data.profile_pic) {
+        document.getElementById("profile-pic").src = data.profile_pic;
+      }
+    }
 
-  if (data.profile_pic) {
-    document.getElementById("profile-pic").src = data.profile_pic;
-  }
+    // Convert uploaded file to base64
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = (error) => reject(error);
+      });
+    }
+
+    // Upload image and save
+    async function uploadImage() {
+      const fileInput = document.getElementById("file-input");
+      if (fileInput.files.length === 0) return alert("Select an image first");
+
+      const file = fileInput.files[0];
+      const base64 = await fileToBase64(file);
+
+      const { error } = await supabase.from("fwebaccount").update({ profile_pic: base64 }).eq("email", email);
+      if (error) return alert("Error updating image: " + error.message);
+
+      document.getElementById("profile-pic").src = base64;
+      alert("Profile picture updated!");
     }
 
     // Update username + password
@@ -130,73 +156,75 @@
     window.uploadImage = uploadImage;
     window.updateDetails = updateDetails;
 
+    // Load user on start
     loadUser();
+
     // Logout
-document.getElementById("logout-btn").addEventListener("click", () => {
-  localStorage.removeItem("userEmail"); // remove saved email
-  localStorage.removeItem("fwebUser");  // remove saved user data
-  alert("Logged out successfully!");
-  window.location.href = "login.html";
-});
+    document.getElementById("logout-btn").addEventListener("click", () => {
+      localStorage.removeItem("userEmail");
+      localStorage.removeItem("fwebUser");
+      alert("Logged out successfully!");
+      window.location.href = "login.html";
+    });
 
-// Delete account
-document.getElementById("delete-btn").addEventListener("click", async () => {
-  const confirmDelete = confirm("Are you sure you want to delete your account? This cannot be undone.");
-  if (!confirmDelete) return;
+    // Delete account
+    document.getElementById("delete-btn").addEventListener("click", async () => {
+      const confirmDelete = confirm("Are you sure you want to delete your account? This cannot be undone.");
+      if (!confirmDelete) return;
 
-  try {
-    const { error } = await supabase.from("fwebaccount").delete().eq("email", email);
-    if (error) return alert("Error deleting account: " + error.message);
+      try {
+        const { error } = await supabase.from("fwebaccount").delete().eq("email", email);
+        if (error) return alert("Error deleting account: " + error.message);
 
-    // Clear localStorage and redirect
-    localStorage.removeItem("userEmail");
-    localStorage.removeItem("fwebUser");
-    alert("Account deleted successfully.");
-    window.location.href = "signup.html";
-
-  } catch (err) {
-    alert("Error: " + err.message);
-  }
-});
-  </script>
-  <script type="module">
-  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-
-  const supabase = createClient(
-    "https://pwsxezhugsxosbwhkdvf.supabase.co",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
-  );
-
-  const email = localStorage.getItem("userEmail");
-
-  // Function to check status
-  async function checkStatus() {
-    if (!email) return "active"; // fallback to active if no user
-    const { data, error } = await supabase
-      .from("fwebaccount")
-      .select("status")
-      .eq("email", email)
-      .single();
-
-    if (error || !data) return "active"; // fallback
-    return data.status?.toLowerCase();
-  }
-
-  // Intercept button clicks
-  document.addEventListener("click", async (e) => {
-    if (e.target.tagName === "BUTTON") {
-      const status = await checkStatus();
-
-      if (status === "banned") {
-        e.preventDefault();
-        window.location.href = "banned.html";
-      } else if (status === "suspended") {
-        e.preventDefault();
-        window.location.href = "suspended.html";
+        localStorage.removeItem("userEmail");
+        localStorage.removeItem("fwebUser");
+        alert("Account deleted successfully.");
+        window.location.href = "signup.html";
+      } catch (err) {
+        alert("Error: " + err.message);
       }
-      // if active → allow button action normally
+    });
+  </script>
+
+  <!-- Status Checker -->
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+    const supabase = createClient(
+      "https://pwsxezhugsxosbwhkdvf.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
+    );
+
+    const email = localStorage.getItem("userEmail");
+
+    // Function to check account status
+    async function checkStatus() {
+      if (!email) return "active"; // fallback
+
+      const { data, error } = await supabase
+        .from("fwebaccount")
+        .select("status")
+        .eq("email", email)
+        .maybeSingle(); // ✅ safer
+
+      if (error || !data) return "active";
+      return data.status?.toLowerCase() || "active";
     }
-  });
+
+    // Intercept button clicks
+    document.addEventListener("click", async (e) => {
+      if (e.target.tagName === "BUTTON") {
+        const status = await checkStatus();
+
+        if (status === "banned") {
+          e.preventDefault();
+          window.location.href = "banned.html";
+        } else if (status === "suspended") {
+          e.preventDefault();
+          window.location.href = "suspended.html";
+        }
+      }
+    });
   </script>
 </body>
 </html>
