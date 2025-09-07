@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fweb — Contact</title>
+<style>
+  :root{
+    --page-bg: #ffffff;
+    --text: #000000;
+    --muted: #6b6b6b;
+    --accent: #000000; /* black buttons */
+    --container: 1100px;
+    --radius: 10px;
+  }
+  html, body{
+    height:100%;
+    margin:0;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+    background:var(--page-bg);
+    color:var(--text);
+  }
+  .wrap{
+    max-width:var(--container);
+    margin:36px auto;
+    padding:28px;
+    box-sizing:border-box;
+  }
+  header{
+    display:flex;
+    align-items:center;
+    gap:18px;
+    margin-bottom:24px;
+  }
+  .logo{
+    width:64px;
+    height:64px;
+    border-radius:12px;
+    background:linear-gradient(135deg,var(--accent),#333);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#fff;
+    font-weight:700;
+    font-size:20px;
+  }
+  nav{
+    margin-top:18px;
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  nav a{
+    color:var(--accent);
+    text-decoration:none;
+    font-weight:600;
+    padding:8px 12px;
+    border-radius:8px;
+    border:1px solid rgba(0,0,0,0.1);
+  }
+  nav a:hover{
+    background:rgba(0,0,0,0.1);
+  }
+  section.card{
+    margin:18px 0;
+    padding:18px;
+    border-radius:var(--radius);
+    border:1px solid rgba(0,0,0,0.05);
+    box-shadow:0 6px 20px rgba(0,0,0,0.02);
+  }
+  section.card h2{
+    margin:0 0 10px;
+    font-size:20px;
+    color:var(--text);
+  }
+  .info{
+    margin:10px 0;
+    color:var(--muted);
+    font-size:15px;
+  }
+  .btn{
+    display:inline-block;
+    background:var(--accent);
+    color:#fff;
+    padding:10px 16px;
+    border-radius:8px;
+    font-weight:700;
+    text-decoration:none;
+    margin-top:12px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">F</div>
+    <div>
+      <h1>Fweb — Contact Us</h1>
+      <p style="color:var(--muted);margin:6px 0 0;">Reach out to us via WhatsApp or email. We do not accept calls.</p>
+    </div>
+  </header>
+
+  <nav aria-label="Primary">
+    <a href="home.html">Home</a>
+    <a href="search.html">Search</a>
+    <a href="blog.html">Blog</a>
+    <a href="about.html">About</a>
+    <a href="faq.html">FAQ</a>
+    <a href="help.html">Help</a>
+    <a href="settings.html">Settings</a>
+    <a href="contact.html">Contact</a>
+    <a href="privacy.html">Privacy</a>
+  </nav>
+
+  <section class="card">
+    <h2>Contact Information</h2>
+    <p class="info"><strong>WhatsApp:</strong> <a href="https://wa.me/2348165338300" style="color:var(--accent);text-decoration:none;">08165338300</a></p>
+    <p class="info"><strong>Email:</strong> <a href="mailto:thefcooperation@gmail.com" style="color:var(--accent);text-decoration:none;">thefcooperation@gmail.com</a></p>
+    <p class="info">Please use WhatsApp or email only. We do not handle phone calls.</p>
+
+    <a class="btn" href="home.html">Go to Home</a>
+  </section>
+
+  <footer style="margin-top:34px;padding-top:20px;border-top:1px solid rgba(0,0,0,0.05);color:var(--muted);text-align:center;font-size:14px;">
+    © 2025 Fcooperation • Meant for Africa • <a href="privacy.html" style="color:var(--accent);text-decoration:none;">Privacy</a> • <a href="about.html" style="color:var(--accent);text-decoration:none;">About</a>
+  </footer>
+</div>
+</body>
+</html>

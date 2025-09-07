@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fweb — About</title>
+<style>
+  :root {
+    --page-bg: #ffffff;
+    --text: #000000;
+    --muted: #6b6b6b;
+    --accent: #000000; /* Buttons black */
+    --container: 1100px;
+    --radius: 10px;
+  }
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background: var(--page-bg);
+    color: var(--text);
+  }
+  .wrap {
+    max-width: var(--container);
+    margin: 36px auto;
+    padding: 28px;
+    box-sizing: border-box;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 24px;
+  }
+  .logo {
+    width: 64px;
+    height: 64px;
+    border-radius: 12px;
+    background: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 700;
+    font-size: 20px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+  }
+  h1 { margin: 0; font-size: 28px; }
+  p.lead { margin: 8px 0 0; color: var(--muted); }
+  nav {
+    margin-top: 18px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  nav a {
+    color: #fff;
+    text-decoration: none;
+    font-weight: 600;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: var(--accent);
+  }
+  nav a:hover {
+    background: rgba(0,0,0,0.7);
+  }
+  section.card {
+    margin: 18px 0;
+    padding: 18px;
+    border-radius: var(--radius);
+    border: 1px solid rgba(0,0,0,0.04);
+    box-shadow: 0 6px 20px rgba(10,10,10,0.02);
+    background: #f9f9f9;
+  }
+  section.card h2 {
+    margin: 0 0 10px;
+    font-size: 20px;
+    color: var(--text);
+  }
+  .hint {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+  .btn {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 10px 14px;
+    background: #000;
+    color: #fff;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 700;
+  }
+  .btn:hover { background: #333; }
+  footer {
+    margin-top: 34px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(0,0,0,0.04);
+    color: var(--muted);
+    font-size: 14px;
+    text-align: center;
+  }
+  @media (max-width:700px){
+    header { flex-direction: column; align-items: flex-start; gap: 8px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">F</div>
+    <div>
+      <h1>About Fweb</h1>
+      <p class="lead">Learn more about our mission, vision, and what makes Fweb unique.</p>
+    </div>
+  </header>
+
+  <nav aria-label="Primary">
+    <a href="home.html">Home</a>
+    <a href="index.html">Search</a>
+    <a href="blog.html">Blog</a>
+    <a href="faq.html">FAQ</a>
+    <a href="help.html">Help</a>
+    <a href="settings.html">Settings</a>
+    <a href="contact.html">Contact</a>
+    <a href="privacy.html">Privacy</a>
+  </nav>
+
+  <!-- About Sections -->
+<section class="card" id="intro">
+  <h2>Introduction to Fweb</h2>
+  <p class="hint"></p>
+  <p>
+    Fweb is a fast, private, and user-friendly search engine designed to provide clear, relevant results for everyone. Produced by FCOOPERATION, a technology initiative focused on building tools for Africa, Fweb aims to make information accessible while respecting privacy. With a simple interface, secure browsing, and locally relevant content, Fweb is built to serve African users first but remains accessible globally. Our goal is to create a reliable and welcoming search experience that combines simplicity, security, and meaningful results, empowering users to explore the web confidently and efficiently.
+  </p>
+</section>
+
+<section class="card" id="mission-vision">
+  <h2>Mission & Vision</h2>
+  <p class="hint">~</p>
+  <p>
+    Fweb exists mainly to serve Africa, providing a fast, secure, and private search experience tailored to local needs. Our mission is to make information accessible for everyone, from students and entrepreneurs to casual users exploring the web. We prioritize user privacy, ensuring that searches are never tracked or shared with advertisers. With a simple, intuitive interface, Fweb makes finding answers effortless while highlighting content that is locally relevant. Our vision is to empower African users with a reliable and trustworthy search engine, while remaining open and useful to users worldwide. By combining security, simplicity, and regional focus, Fweb strives to set a new standard for search engines built by Africans for Africa.
+  </p>
+</section>
+
+  <section class="card" id="features">
+    <h2>Key Features & Uniqueness</h2>
+    <p class="hint"></p>
+    <ul>
+      <li>Friendly Interface — Easy to use for everyone</li>
+      <li>Secure & Private — No tracking or data selling</li>
+      <li>Local Relevance — Focused on African content</li>
+      <li>Global Access — Open for anyone around the world</li>
+    </ul>
+  </section>
+<section class="card" id="core-values">
+  <h2>Core Values</h2>
+  <p class="hint"></p>
+  <p>
+    At Fweb, we stand for trust, simplicity, and relevance. Trust means providing a secure search experience where your data is never sold or tracked. Simplicity ensures our interface is clean and easy to use, so anyone can search without confusion. Relevance reflects our commitment to delivering content that matters most to African users, from news and education to cultural insights. We believe in building a search engine that respects privacy, supports local communities, and empowers users with clear, accurate information. Our core values guide every decision, making Fweb not just a tool, but a safe and reliable platform for all searches.
+  </p>
+</section>
+
+  <div class="cta">
+    <a href="home.html" class="btn">Go to Home</a>
+    <a href="search.html" class="btn">Start Searching</a>
+    <a href="blog.html" class="btn">Visit Blog</a>
+  </div>
+
+  <footer>
+    © 2025 Fcooperation • Meant for Africa • <a href="privacy.html" style="color:#000;text-decoration:none;">Privacy</a>
+  </footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fweb — Help</title>
+<style>
+  :root{
+    --page-bg: #ffffff;
+    --text: #000000;
+    --muted: #6b6b6b;
+    --accent: #000000; /* black buttons */
+    --container: 1100px;
+    --radius: 10px;
+  }
+  html, body{
+    height:100%;
+    margin:0;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    background:var(--page-bg);
+    color:var(--text);
+  }
+  .wrap{
+    max-width:var(--container);
+    margin:36px auto;
+    padding:28px;
+    box-sizing:border-box;
+  }
+  header{
+    display:flex;
+    align-items:center;
+    gap:18px;
+    margin-bottom:24px;
+  }
+  .logo {
+    width:64px;
+    height:64px;
+    border-radius:12px;
+    background:linear-gradient(135deg,var(--accent),#333);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#fff;
+    font-weight:700;
+    font-size:20px;
+    box-shadow:0 6px 18px rgba(0,0,0,0.08);
+  }
+  h1 { margin:0; font-size:28px; }
+  p.lead { margin:8px 0 20px; color:var(--muted); }
+
+  nav {
+    margin-top:18px;
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  nav a{
+    color:#fff;
+    text-decoration:none;
+    font-weight:600;
+    padding:8px 12px;
+    border-radius:8px;
+    background:var(--accent);
+  }
+  nav a:hover{
+    opacity:0.8;
+  }
+  section.card{
+    margin:18px 0;
+    padding:18px;
+    border-radius:var(--radius);
+    border:1px solid rgba(0,0,0,0.04);
+    box-shadow:0 6px 20px rgba(10,10,10,0.02);
+  }
+  section.card h2{
+    margin:0 0 10px;
+    font-size:20px;
+    color:var(--text);
+  }
+  .hint {
+    font-size:13px;
+    color:var(--muted);
+    margin-bottom:12px;
+  }
+  footer{
+    margin-top:34px;
+    padding-top:20px;
+    border-top:1px solid rgba(0,0,0,0.04);
+    color:var(--muted);
+    font-size:14px;
+    text-align:center;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">F</div>
+    <div>
+      <h1>Fweb — Help</h1>
+      <p class="lead">Guides, tips, and troubleshooting to get the most out of Fweb.</p>
+    </div>
+  </header>
+
+  <nav aria-label="Primary">
+    <a href="home.html">Home</a>
+    <a href="index.html">Search</a>
+    <a href="blog.html">Blog</a>
+    <a href="about.html">About</a>
+    <a href="faq.html">FAQ</a>
+    <a href="settings.html">Settings</a>
+    <a href="contact.html">Contact</a>
+    <a href="privacy.html">Privacy</a>
+  </nav>
+
+  <!-- Help Sections -->
+  <section class="card">
+    <h2>Getting Started</h2>
+    <p>To perform a search, type your query in the search bar and click the Search button. This will take you to the search page with results relevant to your query.</p>
+  </section>
+
+  <section class="card">
+    <h2>Using Search Effectively</h2>
+    <p>Refining searches means researching further or narrowing down your query to get more specific results. Using precise keywords, like "best Nigerian recipes 2025," will help you find exactly what you need.</p>
+  </section>
+
+  <section class="card">
+    <h2>Understanding Search Results</h2>
+    <p>Each result shows the title, a short description, and the source URL. Click any result to visit the page. Focus on results that are most relevant to your query.</p>
+  </section>
+
+  <section class="card">
+    <h2>Browser & Privacy Settings</h2>
+    <p>Fweb keeps your searches private. Enhance security by not sharing passwords or secret codes. Your data is never sold or tracked.</p>
+  </section>
+
+  <section class="card">
+    <h2>Customizing Your Experience</h2>
+    <p>You can change dark mode or language preference in the Settings page. Adjust the interface to suit your visual comfort and preferred language.</p>
+  </section>
+
+  <section class="card">
+    <h2>Troubleshooting Common Issues</h2>
+    <p>If searches fail, the issue is usually a network problem or an error from Fweb's server. Try refreshing the page or checking your connection.</p>
+  </section>
+
+  <section class="card">
+    <h2>Tips & Tricks</h2>
+    <p>Use specific keywords for faster results, focus on local content for Africa-related searches, and explore the site for news, culture, and education. Fweb makes research simple and safe.</p>
+  </section>
+
+  <div style="margin-top:20px;">
+    <a href="faq.html" style="padding:12px 18px; background:#000; color:#fff; border-radius:8px; text-decoration:none; font-weight:700;">Go to FAQ</a>
+  </div>
+
+  <footer>
+    © 2025 Fcooperation • Meant for Africa • <a href="privacy.html" style="color:#000; text-decoration:none;">Privacy</a> • <a href="about.html" style="color:#000; text-decoration:none;">About</a>
+  </footer>
+</div>
+</body>
+</html>

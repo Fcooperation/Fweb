@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Fweb — Home</title>
+  <style>
+    :root{
+  --page-bg: #ffffff;
+  --text: #000000;
+  --muted: #6b6b6b;
+  --accent: #000000; /* changed accent to black */
+  --container: 1100px;
+  --radius: 10px;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background: var(--page-bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.wrap {
+  max-width: var(--container);
+  margin: 36px auto;
+  padding: 28px;
+  box-sizing: border-box;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.logo {
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  background: var(--accent); /* black */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 20px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+}
+
+h1 {
+  margin: 0;
+  font-size: 28px;
+}
+
+p.lead {
+  margin: 8px 0 0;
+  color: var(--muted);
+}
+
+nav {
+  margin-top: 18px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+nav a {
+  color: var(--accent); /* black links */
+  text-decoration: none;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+section.card {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  box-shadow: 0 6px 20px rgba(10, 10, 10, 0.02);
+}
+
+section.card h2 {
+  margin: 0 0 10px;
+  font-size: 20px;
+  color: var(--text);
+}
+
+.hint {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+ul.features {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+ul.features li {
+  background: #fff;
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.03);
+}
+
+.cta {
+  display: flex;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.cta a {
+  background: var(--accent); /* black buttons */
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+footer {
+  margin-top: 34px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(0, 0, 0, 0.04);
+  color: var(--muted);
+  font-size: 14px;
+  text-align: center;
+}
+
+/* small screens */
+@media (max-width: 700px){
+  header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">F</div>
+      <div>
+        <h1>Fweb — Search made for Africa</h1>
+        <p class="lead">Fast, private and simple search for everyone. Below are quick highlights and links to learn more.</p>
+      </div>
+    </header>
+
+    <nav aria-label="Primary">
+      
+      <a href="index.html">Search</a>
+      <a href="blog.html">Blog</a>
+      <a href="about.html">About</a>
+      <a href="faq.html">FAQ</a>
+      <a href="help.html">Help</a>
+      <a href="settings.html">Settings</a>
+      <a href="contact.html">Contact</a>
+      <a href="privacy.html">Privacy</a>
+    </nav>
+    
+
+    <!-- 1. Welcome / Intro -->
+    <section class="card" id="intro">
+      <h2>Welcome to Fweb <span style="font-size:14px;color:var(--muted)"></span></h2>
+<p style="margin:8px 0 0;color:var(--muted);font-size:14px;">
+      Welcome to Fweb — a fast, simple, and reliable search engine built to give you clear and relevant results without distractions. Our mission is to make information accessible for everyone, whether you’re a student looking for answers, a business owner researching opportunities, or just exploring the web for fun. Fweb is designed with a clean interface, smooth performance, and a focus on privacy, so your searches remain safe and personal. By combining simplicity with powerful tools, Fweb is here to make searching the web easier, smarter, and more enjoyable.</p>
+    
+    </section>
+
+    <!-- 2. Key Features -->
+    <section class="card" id="features">
+      <h2>Key Features of Fweb <span style="font-size:14px;color:var(--muted)"></span></h2>
+      <p class="hint"></p>
+
+<ul class="features">
+  <li>
+    <strong>Simple Interface</strong>
+    <p style="margin:8px 0 0;color:var(--muted);font-size:14px;">
+      Fweb’s interface is designed for simplicity and ease of use. Every element is intuitive, clean, and distraction-free, so users of all ages and experience levels can find what they need quickly. No cluttered menus or confusing options—just a friendly, straightforward design. While Fweb was created to serve African users with locally relevant content, anyone from around the world can navigate it effortlessly. Combined with privacy-first principles, the interface ensures a smooth, safe, and welcoming experience every time you search the web.
+    </p>
+  </li>
+  <li>
+    <strong>Secure & Private</strong>
+    <p style="margin:8px 0 0;color:var(--muted);font-size:14px;">
+      Your privacy matters, and Fweb is built with that in mind. We do not track your searches or share your personal data with advertisers. Each search session is protected with robust security measures to ensure your activity remains private. Whether you are researching local news, exploring global topics, or browsing images and videos, Fweb keeps your data safe. Users can search freely, knowing that their history and personal information are secure, providing a trustworthy environment that values confidentiality and peace of mind.
+    </p>
+  </li>
+  <li>
+    <strong>Local Relevance, Global Access</strong>
+    <p style="margin:8px 0 0;color:var(--muted);font-size:14px;">
+      Fweb was built by Africans for Africa, focusing on content that truly matters locally—news, culture, education, and opportunities. At the same time, it remains fully accessible to anyone globally, offering a unique perspective rooted in African experiences. This local-first approach ensures that users discover relevant and meaningful results for their daily needs, while also being able to explore international content. By bridging local relevance with global access, Fweb creates a search experience that is both culturally aware and universally useful.
+    </p>
+  </li>
+  <li>
+    <strong>Friendly & Inclusive</strong>
+<p style="margin:8px 0 0;color:var(--muted);font-size:14px;">
+      Fweb is not just a search engine—it’s a welcoming space for everyone. Its design and functionality prioritize user comfort, accessibility, and inclusivity. Regardless of technical skill or location, users can enjoy a smooth, understandable search experience. The platform encourages exploration, learning, and discovery without fear of being tracked or overwhelmed. By maintaining a friendly, inclusive environment, Fweb ensures that anyone looking for answers, news, or information feels at home and can find what they need efficiently.
+    </p>
+  </li>
+</ul>
+      
+        <li>
+          <strong>Secure Browsing</strong>
+          <p style="margin:8px 0 0;color:var(--muted);font-size:14px;"><!-- WRITE: privacy approach and tracking policy --></p>
+        </li>
+        <li>
+          <strong>Local Relevance</strong>
+          <p style="margin:8px 0 0;color:var(--muted);font-size:14px;"><!-- WRITE: focus on African content and local sources --></p>
+        </li>
+      </ul>
+    </section>
+
+    <!-- 3. Why use Fweb instead of others -->
+    <section class="card" id="comparison">
+      <h2>Why Use Fweb Instead of Others? <span style="font-size:14px;color:var(--muted)"></span></h2>
+      <p class="hint"></p>
+      <p><!-<li>
+  <strong>Simple Interface</strong>
+<p style="margin:8px 0 0;color:var(--muted);font-size:14px;">
+    Fweb is built with users in mind: friendly, intuitive, and easy to navigate for everyone. Your searches remain private—Fweb does not track your activity or share your data with advertisers. It is designed and dedicated to African users, providing content that is locally relevant while still accessible to anyone around the world. By focusing on security, simplicity, and trust, Fweb offers a reliable alternative for those who value privacy and meaningful results. Whether you are exploring news, culture, or opportunities, Fweb ensures a safe, welcoming environment for all searches.
+  </p>
+</li>
+    </section>
+
+    <!-- 4. Community & Blog -->
+    <section class="card" id="community">
+      <h2>Community & Blog <span style="font-size:14px;color:var(--muted)"></span></h2>
+<p style="margin:8px 0 0;color:var(--muted);font-size:14px;">
+      Join the Fweb community and explore our blog, where we share insights, news, and stories from Africa and beyond. Discover topics ranging from technology and culture to education and local events, all curated with African perspectives in mind. Our blog is designed to engage readers, spark conversations, and provide valuable information while keeping your experience private and secure. Whether you’re looking for practical tips or in-depth articles, Fweb’s community space invites everyone to learn, share, and stay connected.</p>
+      <p> <section class="card" id="community">
+  
+  <p>
+    
+  </p>
+<div class="cta">
+    <a href="blog.html" style="background:var(--accent);color:#fff;padding:10px 14px;border-radius:8px;text-decoration:none;font-weight:700;">Visit Blog</a>
+    <a href="index.html" style="background:#eee;color:#000;padding:10px 14px;border-radius:8px;text-decoration:none;font-weight:700;">Start Searching</a>
+  </div>
+</section></p>
+
+    <!-- 5. Call to Action -->
+    <section class="card" id="cta">
+      <h2>Ready to Search? <span style="font-size:14px;color:var(--muted)">(50–80 words)</span></h2>
+      <p class="hint"><section class="card" id="cta">
+  <h2>Ready to Search? <span style="font-size:14px;color:var(--muted)">(50–80 words)</span></h2>
+  
+<p style="margin:8px 0 0;color:var(--muted);font-size:14px;">
+    Start exploring the web with Fweb today—your friendly, private search engine built for Africa and beyond. Find answers, news, images, and local content without being tracked. Bookmark Fweb for quick access or begin your search now to experience secure, relevant results designed with you in mind. Join our community and make your searches meaningful and safe.
+  </p>
+  <div class="cta">
+    <a href="index.html" style="background:var(--accent);color:#fff;padding:10px 14px;border-radius:8px;text-decoration:none;font-weight:700;">Start Searching</a>
+  </div>
+</section></p>
+      <p><!-- WRITE: short motivating CTA, example: "Search now — find local news, answers and more." --></p>
+    </section>
+
+    <footer>
+      © 2025 Fcooperation • Meant for Africa • <a href="privacy.html" style="color:var(--accent);text-decoration:none;">Privacy</a> • <a href="about.html" style="color:var(--accent);text-decoration:none;">About</a>
+    </footer>
+  </div>
+
+  <!-- Optional: small script to count words in each filled section while you write (dev aid) -->
+  <script>
+    // DEV TOOL: Counts words inside placeholder <p> tags to help reach targets (optional)
+    (function () {
+      const sections = document.querySelectorAll('section.card');
+      // Create a small floating helper
+      const helper = document.createElement('div');
+      helper.style.position = 'fixed';
+      helper.style.right = '14px';
+      helper.style.bottom = '14px';
+      helper.style.padding = '8px 12px';
+      helper.style.background = '#111';
+      helper.style.color = '#fff';
+      helper.style.fontSize = '13px';
+      helper.style.borderRadius = '8px';
+      helper.style.opacity = '0.85';
+      helper.style.zIndex = 9999;
+      helper.innerText = 'Word counts: —';
+      document.body.appendChild(helper);
+
+      function countWords(text='') {
+        return text.trim() ? text.trim().split(/\s+/).length : 0;
+      }
+
+      function refresh() {
+        const counts = Array.from(sections).map(s => {
+          const p = s.querySelector('p:not(.hint)');
+          return countWords(p ? p.innerText : '');
+        });
+        helper.innerText = 'Word counts: ' + counts.join(' | ');
+      }
+
+      // Refresh every 2s so you can edit in devtools or a CMS preview
+      setInterval(refresh, 2000);
+      refresh();
+    })();
+  </script>
+</body>
+</html>
