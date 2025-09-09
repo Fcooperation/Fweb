@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fweb</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      background: #fff;
+      color: #000;
+      transition: padding 0.3s ease;
+    }
+    header {
+      text-align: center;
+      padding: 40px 10px 10px;
+      transition: all 0.4s ease;
+    }
+    #title {
+      font-size: 3em;
+      font-weight: 700;
+      letter-spacing: 1px;
+      transition: opacity 0.3s ease;
+    }
+    .hidden {
+      display: none !important;
+    }
+    .search-container {
+      text-align: center;
+      margin: 30px auto;
+      transition: all 0.3s ease;
+      max-width: 600px;
+    }
+    .search-up {
+      position: fixed;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 600px;
+      padding: 8px 0;
+      background: #fff;
+      border-bottom: 1px solid #ddd;
+      z-index: 1000;
+      height: 105px;
+    }
+    #searchBox {
+      width: 90%;
+      padding: 10px;
+      font-size: 15px;
+      border: 1px solid #000;
+      border-radius: 5px;
+      outline: none;
+      box-sizing: border-box;
+    }
+    #searchButton {
+      margin-top: 6px;
+      width: 90%;
+      padding: 10px 0;
+      background: #000;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    nav.tabs {
+      display: none;
+      overflow-x: auto;
+      white-space: nowrap;
+      background: #fff;
+      border-bottom: 1px solid #ddd;
+      z-index: 999;
+      position: fixed;
+      top: 155px;
+      left: 0;
+      width: 100%;
+      padding: 5px 10px;
+    }
+    nav.tabs.active {
+      display: flex;
+    }
+    nav.tabs button {
+      padding: 10px 20px;
+      font-size: 15px;
+      border: 1px solid #fff;
+      background: #fff;
+      color: #000;
+      cursor: pointer;
+      margin-right: 8px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+    nav.tabs button.active {
+      border: 2px solid #000;
+    }
+    section.result-tab {
+      display: none;
+      padding: 20px;
+      max-width: 900px;
+      margin: auto;
+    }
+    section.result-tab.active {
+      display: block;
+    }
+    footer {
+      margin-top: 40px;
+      text-align: center;
+      font-size: 12px;
+      color: #777;
+    }
+            /* Three-dots menu button */
+.menu-button {
+  position: absolute;
+  top: 90px;
+  right: 15px;
+  width: 32px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: background 0.2s ease;
+}
+
+.menu-button:hover {
+  background: rgba(0,0,0,0.1);
+}
+
+.menu-dots {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 7px;
+  height: 26px;
+}
+
+.menu-dots span {
+  display: block;
+  width: 7px;
+  height: 7px;
+  background: #000; /* color of dots */
+  border-radius: 50%;
+}
+/* Account button at top-right */
+.account-btn {
+  position: absolute;   /* stays fixed at top-right */
+  top: 40px;
+  right: 10px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;   /* makes it round */
+  background-color: #f0f0f0;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transition: background-color 0.2s ease;
+}
+
+.account-btn:hover {
+  background-color: #333;
+}
+
+/* Optional icon styling */
+.account-btn i {
+  font-size: 20px;
+  color: #333;
+}
+
+/* Icon inside */
+.account-btn img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+/* Search notice box */
+.search-notice {
+  position: fixed;
+  top: 130px; /* just below search bar */
+  left: 50%;
+  transform: translateX(-50%);
+  background: #000;
+  color: #fff;
+  padding: 12px 18px;
+  border-radius: 6px;
+  font-size: 14px;
+  z-index: 2000;
+  display: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translate(-50%, -10px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+  </style>
+</head>
+<body>
+  <!-- Header with title + search bar -->
+  <header id="header">
+    <h1 id="title">Fweb</h1>
+    <div class="search-container" id="searchContainer">
+      <input type="text" id="searchBox" placeholder="Search Fweb..." />
+      <button id="searchButton">Search</button>
+    </div>
+  </header>
+
+  <!-- Tab navigation -->
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-tab="web">Web</button>
+
+  </nav>
+
+  <!-- Results sections -->
+  <main>
+    <section class="result-tab active" id="web">
+      <div id="sentenceCrawl" class="result-heading"></div>
+      <div id="webResults"></div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <p>© 2025 Fcooperation • Meant for Africa</p>
+  </footer>
+
+  <!-- Scripts -->
+  <script>
+    // ===== Tabs logic =====
+    const tabs = document.querySelectorAll('nav.tabs button'); // tab buttons
+    const results = document.querySelectorAll('section.result-tab'); // result sections
+    const tabBar = document.querySelector('nav.tabs');
+
+    tabs.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const activeTab = document.querySelector('nav.tabs button.active');
+        if (activeTab) activeTab.classList.remove('active');
+
+        btn.classList.add('active');
+
+        results.forEach(tab => tab.classList.remove('active'));
+
+        const tabId = btn.getAttribute('data-tab');
+        document.getElementById(tabId).classList.add('active');
+      });
+    });
+
+    // ===== Search UI animation =====
+    function raiseSearchUI() {
+      document.getElementById('title').classList.add('hidden');
+      document.getElementById('searchContainer').classList.add('search-up');
+      document.body.style.paddingTop = "170px";
+      tabBar.classList.add('active');
+
+      if (!document.querySelector('nav.tabs button.active') && tabs.length > 0) {
+        tabs[0].classList.add('active');
+        const tabId = tabs[0].getAttribute('data-tab');
+        document.getElementById(tabId).classList.add('active');
+      }
+    }
+
+    // ===== Hook search events =====
+    const searchBtn = document.getElementById('searchButton');
+    const searchBox = document.getElementById('searchBox');
+
+    searchBtn.addEventListener('click', () => {
+      if (searchBox.value.trim() !== "") {
+        raiseSearchUI();
+        document.getElementById("sentenceCrawl").textContent = "Searching for: " + searchBox.value;
+      }
+    });
+
+    searchBox.addEventListener('keydown', (e) => {
+      if (e.key === "Enter" && searchBox.value.trim() !== "") {
+        raiseSearchUI();
+        document.getElementById("sentenceCrawl").textContent = "Searching for: " + searchBox.value;
+      }
+    });
+  </script>
+<!-- Account button -->
+<a href="dashboard.html" class="account-btn">
+  <img src="https://img.icons8.com/ios-filled/50/user.png" alt="Account" />
+</a>
+</script>
+<script>
+async function performSearch(query) {
+  try {
+    const webResults = document.getElementById("webResults");
+    webResults.innerHTML = `<p style="font-family:sans-serif;padding:20px;">Loading ${query} ...</p>`;
+
+    const response = await fetch("https://fweb-backend.onrender.com/search?q=" + encodeURIComponent(query));
+    if (!response.ok) throw new Error("Network response was not ok");
+
+    const results = await response.json();
+    if (!results || results.length === 0) {
+      webResults.innerHTML = "<p>No results found.</p>";
+      return;
+    }
+
+    const firstResult = results[0];
+
+    if (firstResult.type === "link" && firstResult.url) {
+      // Open link in full browser mode inside frontend
+      window.location.href = firstResult.url;
+    } else if (firstResult.html) {
+      // Full browser mode for HTML returned from backend
+      document.open();
+      document.write(firstResult.html);
+      document.close();
+    } else {
+      // Normal search: render under web results
+      webResults.innerHTML = `
+        <div style="padding:20px;font-family:sans-serif;">
+          <h2>${firstResult.title || "Normal Search"}</h2>
+          <p>${firstResult.snippet || ""}</p>
+          ${firstResult.url ? `<a href="${firstResult.url}" target="_blank">${firstResult.url}</a>` : ""}
+        </div>
+      `;
+    }
+  } catch (error) {
+    const webResults = document.getElementById("webResults");
+    webResults.innerHTML = "<p>Error fetching results.</p>";
+    console.error("Search error:", error);
+  }
+}
+
+// Hook search events
+document.getElementById("searchButton").addEventListener("click", () => {
+  const query = document.getElementById("searchBox").value.trim();
+  if (query) performSearch(query);
+});
+
+document.getElementById("searchBox").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    const query = document.getElementById("searchBox").value.trim();
+    if (query) performSearch(query);
+  }
+});
+</script>
+<script>
+// Render Fcards results
+function renderFcards(results) {
+  const webResults = document.getElementById("webResults");
+  webResults.innerHTML = ""; // clear old results
+
+  const container = document.createElement("div");
+  container.style.display = "grid";
+container.style.gridTemplateColumns = "repeat(auto-fill, 320px)";
+container.style.gap = "20px";
+container.style.padding = "20px";
+container.style.justifyContent = "center"; // ✅ aligns grid in center
+
+  results.forEach(result => {
+    if (result.type !== "fcards") return;
+
+    const card = document.createElement("a");
+    card.href = result.url;
+    card.target = "_blank";
+    card.rel = "noopener noreferrer";
+    card.style.display = "block";
+    card.style.textDecoration = "none";
+    card.style.color = "inherit";
+    card.style.background = "#fff";
+    card.style.border = "1px solid #eee";
+    card.style.borderRadius = "12px";
+    card.style.padding = "16px";
+    card.style.boxShadow = "0 2px 6px rgba(0,0,0,0.08)";
+    card.style.transition = "all 0.2s ease";
+    card.style.cursor = "pointer";
+
+    card.addEventListener("mouseover", () => {
+      card.style.transform = "translateY(-4px)";
+      card.style.boxShadow = "0 6px 12px rgba(0,0,0,0.12)";
+    });
+    card.addEventListener("mouseout", () => {
+      card.style.transform = "translateY(0)";
+      card.style.boxShadow = "0 2px 6px rgba(0,0,0,0.08)";
+    });
+
+    // Card content
+    card.innerHTML = `
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+    <img src="${result.favicon || "https://www.google.com/s2/favicons?sz=64&domain_url=" + result.url}" 
+         alt="favicon" 
+         style="width:20px;height:20px;border-radius:4px;flex-shrink:0;">
+    <h3 style="font-size:16px;font-weight:600;margin:0;line-height:1.3;">${result.title}</h3>
+  </div>
+  <p style="font-size:14px;line-height:1.5;color:#333;margin:0 0 12px;">${result.snippet}</p>
+  <p style="font-size:12px;color:#555;word-break:break-all;">${result.url}</p>
+  <div style="margin-top:10px;font-size:11px;color:#888;text-align:center;">FCOOPERATION • Made for Africa</div>
+`;
+
+    container.appendChild(card);
+  });
+
+  if (!container.hasChildNodes()) {
+    webResults.innerHTML = "<p>No Fcards could be generated.</p>";
+  } else {
+    webResults.appendChild(container);
+  }
+}
+
+// Modify performSearch to handle fcards
+async function performSearch(query) {
+  try {
+    const webResults = document.getElementById("webResults");
+    webResults.innerHTML = `<p style="font-family:sans-serif;padding:20px;">Loading ${query} ...</p>`;
+
+    const response = await fetch("https://fweb-backend.onrender.com/search?q=" + encodeURIComponent(query));
+    if (!response.ok) throw new Error("Network response was not ok");
+
+    const results = await response.json();
+    if (!results || results.length === 0) {
+      webResults.innerHTML = "<p>No results found.</p>";
+      return;
+    }
+
+    const firstResult = results[0];
+
+    if (firstResult.type === "link" && firstResult.url) {
+      window.location.href = firstResult.url;
+    } else if (firstResult.html) {
+      document.open();
+      document.write(firstResult.html);
+      document.close();
+    } else if (firstResult.type === "fcards" || results.some(r => r.type === "fcards")) {
+      renderFcards(results);
+    } else {
+      webResults.innerHTML = `
+        <div style="padding:20px;font-family:sans-serif;">
+          <h2>${firstResult.title || "Normal Search"}</h2>
+          <p>${firstResult.snippet || ""}</p>
+          ${firstResult.url ? `<a href="${firstResult.url}" target="_blank">${firstResult.url}</a>` : ""}
+        </div>
+      `;
+    }
+  } catch (error) {
+    const webResults = document.getElementById("webResults");
+    webResults.innerHTML = "<p>Error fetching results.</p>";
+    console.error("Search error:", error);
+  }
+}
+</script>
+
+<script>
+  // Create notice element
+  const notice = document.createElement("div");
+  notice.className = "search-notice";
+  notice.textContent = "⏳ Searches can take from 1 to 10 seconds. We appreciate your patience.";
+  document.body.appendChild(notice);
+
+  function showNotice() {
+    notice.style.display = "block";
+    setTimeout(() => {
+      notice.style.display = "none";
+    }, 5000); // hide after 5 seconds
+  }
+
+  // Hook into your search function
+  const originalPerformSearch = performSearch;
+  performSearch = async function(query) {
+    showNotice(); // show patience message
+    await originalPerformSearch(query);
+  };
+</script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const accountBtn = document.querySelector(".account-btn");
+
+    if (!accountBtn) return;
+
+    accountBtn.addEventListener("click", (e) => {
+      e.preventDefault(); // prevent default link behavior
+
+      const storedUser = localStorage.getItem("fwebUser");
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        console.log("Found logged-in user:", user);
+
+        if (user.status === "active") {
+          // ✅ Auto-login, go to dashboard
+          window.location.href = "dashboard.html";
+        } else {
+          alert("Your account is not active.");
+          window.location.href = "login.html";
+        }
+      } else {
+        // Not logged in, go to login page
+        window.location.href = "login.html";
+      }
+    });
+  });
+</script>
+
+<!-- Hidden checkbox -->
+<input type="checkbox" id="menu-toggle" style="display:none;">
+
+<!-- Menu button -->
+<label for="menu-toggle" class="menu-button">
+  <div class="menu-dots">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</label>
+
+<!-- Iframe menu -->
+<iframe src="menu.html" id="menu-iframe"></iframe>
+
+<style>
+/* Menu button style */
+.menu-button {
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 35px;
+  height: 28px;
+  position: fixed;
+  top: 100px;
+  right: 25px;
+  z-index: 10000;
+}
+
+/* Three lines */
+.menu-dots span {
+  display: block;
+  width: 35px;
+  height: 4px;
+  background-color: #333; /* bright blue */
+  border-radius: 2px;
+}
+
+/* Iframe menu */
+#menu-iframe {
+  position: fixed;
+  top: 0;
+  left: -320px;
+  width: 320px;
+  height: 100%;
+  border: none;
+  transition: left 0.35s ease;
+  z-index: 9999;
+  box-shadow: 3px 0 12px rgba(0,0,0,0.25);
+}
+
+/* Show iframe when checkbox is checked */
+#menu-toggle:checked + label + #menu-iframe {
+  left: 0;
+}
+</style>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3677015402429352"
+     crossorigin="anonymous"></script>
+</body>
+</html>,
