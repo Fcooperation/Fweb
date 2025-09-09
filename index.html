@@ -499,7 +499,7 @@ async function performSearch(query) {
   });
 </script>
 
-<!-- Hidden checkbox -->
+<!-- Hidden checkbox toggle -->
 <input type="checkbox" id="menu-toggle" style="display:none;">
 
 <!-- Menu button -->
@@ -511,11 +511,23 @@ async function performSearch(query) {
   </div>
 </label>
 
-<!-- Iframe menu -->
-<iframe src="menu.html" id="menu-iframe"></iframe>
+<!-- Sidebar menu -->
+<nav id="side-menu">
+  <div class="menu-header">
+    <img id="profile-pic" src="default.png" alt="Profile Icon">
+    <div class="username" id="username">User</div>
+  </div>
+  <a href="home.html">Home</a>
+  <a href="about.html">About</a>
+  <a href="blog.html">Blog</a>
+  <a href="faq.html">FAQ</a>
+  <a href="help.html">Help</a>
+  <a href="contact.html">Contact</a>
+  <a href="settings.html">Settings</a>
+</nav>
 
 <style>
-/* Menu button style */
+/* Menu button (3 dots/lines) */
 .menu-button {
   cursor: pointer;
   display: flex;
@@ -528,34 +540,72 @@ async function performSearch(query) {
   right: 25px;
   z-index: 10000;
 }
-
-/* Three lines */
 .menu-dots span {
   display: block;
   width: 35px;
   height: 4px;
-  background-color: #333; /* bright blue */
+  background-color: #333;
   border-radius: 2px;
 }
 
-/* Iframe menu */
-#menu-iframe {
+/* Sidebar menu */
+#side-menu {
   position: fixed;
   top: 0;
   left: -320px;
-  width: 320px;
+  width: 280px;
   height: 100%;
-  border: none;
+  background: #333;
+  color: #fff;
+  padding: 20px;
+  box-shadow: 3px 0 12px rgba(0,0,0,0.25);
   transition: left 0.35s ease;
   z-index: 9999;
-  box-shadow: 3px 0 12px rgba(0,0,0,0.25);
+}
+#side-menu a {
+  display: block;
+  color: #fff;
+  text-decoration: none;
+  font-weight: bold;
+  margin: 12px 0;
+}
+#side-menu a:hover {
+  background: rgba(255,255,255,0.15);
+  padding-left: 8px;
+  border-radius: 6px;
+}
+#side-menu .menu-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+#side-menu img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 10px;
+}
+#side-menu .username {
+  font-size: 18px;
+  font-weight: bold;
 }
 
-/* Show iframe when checkbox is checked */
-#menu-toggle:checked + label + #menu-iframe {
+/* When checkbox is checked → show menu */
+#menu-toggle:checked + label + #side-menu {
   left: 0;
 }
 </style>
+
+<script>
+  // Load user details from localStorage
+  const account = JSON.parse(localStorage.getItem("faccount"));
+  if (account) {
+    document.getElementById("username").textContent = account.username || "User";
+    if (account.profile_pic) {
+      document.getElementById("profile-pic").src = account.profile_pic;
+    }
+  }
+</script>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3677015402429352"
      crossorigin="anonymous"></script>
 </body>
