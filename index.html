@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
 <link rel="manifest" href="/site.webmanifest">
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Fweb</title>
   <style>
     body {
@@ -27,9 +27,7 @@
       letter-spacing: 1px;
       transition: opacity 0.3s ease;
     }
-    .hidden {
-      display: none !important;
-    }
+    .hidden { display: none !important; }
     .search-container {
       text-align: center;
       margin: 30px auto;
@@ -82,9 +80,7 @@
       width: 100%;
       padding: 5px 10px;
     }
-    nav.tabs.active {
-      display: flex;
-    }
+    nav.tabs.active { display: flex; }
     nav.tabs button {
       padding: 10px 20px;
       font-size: 15px;
@@ -96,66 +92,157 @@
       border-radius: 3px;
       flex-shrink: 0;
     }
-    nav.tabs button.active {
-      border: 2px solid #000;
-    }
+    nav.tabs button.active { border: 2px solid #000; }
     section.result-tab {
       display: none;
       padding: 20px;
       max-width: 900px;
       margin: auto;
     }
-    section.result-tab.active {
-      display: block;
+    section.result-tab.active { display: block; }
+    .loading {
+      text-align: center;
+      padding: 20px;
+      font-size: 14px;
+      color: #666;
     }
+    .result-item {
+      margin-bottom: 15px;
+    }
+    .result-item a {
+      font-weight: bold;
+      color: #000;
+      text-decoration: none;
+    }
+    .result-item a:hover { text-decoration: underline; }
+
+    /* ===== Fcards ===== */
+    .fcards-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, 320px);
+      gap: 20px;
+      padding: 20px;
+      justify-content: center;
+    }
+    .fcard {
+      display: block;
+      background: #fff;
+      border: 1px solid #eee;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+      text-decoration: none;
+      color: inherit;
+      transition: all 0.2s ease;
+    }
+    .fcard:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.12);
+    }
+    .fcard-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .fcard-header img {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+    }
+    .fcard-header h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0;
+      line-height: 1.3;
+    }
+    .fcard-snippet {
+      font-size: 14px;
+      line-height: 1.5;
+      color: #333;
+      margin: 0 0 12px;
+    }
+    .fcard-url {
+      font-size: 12px;
+      color: #555;
+      word-break: break-all;
+    }
+    .fcard-footer {
+      margin-top: 10px;
+      font-size: 11px;
+      color: #888;
+      text-align: center;
+    }
+
+    /* ===== Image Grid ===== */
+    .image-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 10px;
+    }
+    .image-grid img {
+      width: 100%;
+      border-radius: 6px;
+      object-fit: cover;
+      cursor: pointer;
+    }
+
+    /* ===== Videos ===== */
+    .video-item {
+      margin-bottom: 15px;
+      cursor: pointer;
+    }
+    iframe {
+      width: 100%;
+      height: 200px;
+      border: none;
+      border-radius: 6px;
+    }
+
+    /* ===== Modal ===== */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 2000;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.85);
+      justify-content: center;
+      align-items: center;
+    }
+    .modal.active { display: flex; }
+    .modal-content {
+      max-width: 90%;
+      max-height: 90%;
+    }
+    .modal-content iframe,
+    .modal-content img {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+    .close-btn {
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      font-size: 30px;
+      color: #fff;
+      cursor: pointer;
+    }
+
     footer {
       margin-top: 40px;
       text-align: center;
       font-size: 12px;
       color: #777;
     }
-            /* Three-dots menu button */
-.menu-button {
+    .account-btn {
   position: absolute;
-  top: 90px;
-  right: 15px;
-  width: 32px;
-  height: 52px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  border-radius: 50%;
-  transition: background 0.2s ease;
-}
-
-.menu-button:hover {
-  background: rgba(0,0,0,0.1);
-}
-
-.menu-dots {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  width: 7px;
-  height: 26px;
-}
-
-.menu-dots span {
-  display: block;
-  width: 7px;
-  height: 7px;
-  background: #000; /* color of dots */
-  border-radius: 50%;
-}
-/* Account button at top-right */
-.account-btn {
-  position: absolute;   /* stays fixed at top-right */
   top: 40px;
   right: 10px;
   width: 40px;
   height: 40px;
-  border-radius: 50%;   /* makes it round */
+  border-radius: 50%;
   background-color: #f0f0f0;
   border: none;
   display: flex;
@@ -165,374 +252,13 @@
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   transition: background-color 0.2s ease;
 }
-
 .account-btn:hover {
   background-color: #333;
 }
-
-/* Optional icon styling */
-.account-btn i {
-  font-size: 20px;
-  color: #333;
-}
-
-/* Icon inside */
 .account-btn img {
   width: 24px;
   height: 24px;
-  object-fit: contain;
 }
-/* Search notice box */
-.search-notice {
-  position: fixed;
-  top: 130px; /* just below search bar */
-  left: 50%;
-  transform: translateX(-50%);
-  background: #000;
-  color: #fff;
-  padding: 12px 18px;
-  border-radius: 6px;
-  font-size: 14px;
-  z-index: 2000;
-  display: none;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-  animation: fadeIn 0.3s ease;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translate(-50%, -10px); }
-  to { opacity: 1; transform: translate(-50%, 0); }
-}
-  </style>
-</head>
-<body>
-  <!-- Header with title + search bar -->
-  <header id="header">
-    <h1 id="title">Fweb</h1>
-    <div class="search-container" id="searchContainer">
-      <input type="text" id="searchBox" placeholder="Search Fweb..." />
-      <button id="searchButton">Search</button>
-    </div>
-  </header>
-
-  <!-- Tab navigation -->
-  <nav class="tabs" id="tabs">
-    <button class="tab active" data-tab="web">Web</button>
-
-  </nav>
-
-  <!-- Results sections -->
-  <main>
-    <section class="result-tab active" id="web">
-      <div id="sentenceCrawl" class="result-heading"></div>
-      <div id="webResults"></div>
-    </section>
-
-  </main>
-
-  <!-- Footer -->
-  <footer>
-    <p>© 2025 Fcooperation • Meant for Africa</p>
-  </footer>
-
-  <!-- Scripts -->
-  <script>
-    // ===== Tabs logic =====
-    const tabs = document.querySelectorAll('nav.tabs button'); // tab buttons
-    const results = document.querySelectorAll('section.result-tab'); // result sections
-    const tabBar = document.querySelector('nav.tabs');
-
-    tabs.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const activeTab = document.querySelector('nav.tabs button.active');
-        if (activeTab) activeTab.classList.remove('active');
-
-        btn.classList.add('active');
-
-        results.forEach(tab => tab.classList.remove('active'));
-
-        const tabId = btn.getAttribute('data-tab');
-        document.getElementById(tabId).classList.add('active');
-      });
-    });
-
-    // ===== Search UI animation =====
-    function raiseSearchUI() {
-      document.getElementById('title').classList.add('hidden');
-      document.getElementById('searchContainer').classList.add('search-up');
-      document.body.style.paddingTop = "170px";
-      tabBar.classList.add('active');
-
-      if (!document.querySelector('nav.tabs button.active') && tabs.length > 0) {
-        tabs[0].classList.add('active');
-        const tabId = tabs[0].getAttribute('data-tab');
-        document.getElementById(tabId).classList.add('active');
-      }
-    }
-
-    // ===== Hook search events =====
-    const searchBtn = document.getElementById('searchButton');
-    const searchBox = document.getElementById('searchBox');
-
-    searchBtn.addEventListener('click', () => {
-      if (searchBox.value.trim() !== "") {
-        raiseSearchUI();
-        document.getElementById("sentenceCrawl").textContent = "Searching for: " + searchBox.value;
-      }
-    });
-
-    searchBox.addEventListener('keydown', (e) => {
-      if (e.key === "Enter" && searchBox.value.trim() !== "") {
-        raiseSearchUI();
-        document.getElementById("sentenceCrawl").textContent = "Searching for: " + searchBox.value;
-      }
-    });
-  </script>
-<!-- Account button -->
-<a href="dashboard.html" class="account-btn">
-  <img src="https://img.icons8.com/ios-filled/50/user.png" alt="Account" />
-</a>
-</script>
-<script>
-async function performSearch(query) {
-  try {
-    const webResults = document.getElementById("webResults");
-    webResults.innerHTML = `<p style="font-family:sans-serif;padding:20px;">Loading ${query} ...</p>`;
-
-    const response = await fetch("https://fweb-backend.onrender.com/search?q=" + encodeURIComponent(query));
-    if (!response.ok) throw new Error("Network response was not ok");
-
-    const results = await response.json();
-    if (!results || results.length === 0) {
-      webResults.innerHTML = "<p>No results found.</p>";
-      return;
-    }
-
-    const firstResult = results[0];
-
-    if (firstResult.type === "link" && firstResult.url) {
-      // Open link in full browser mode inside frontend
-      window.location.href = firstResult.url;
-    } else if (firstResult.html) {
-      // Full browser mode for HTML returned from backend
-      document.open();
-      document.write(firstResult.html);
-      document.close();
-    } else {
-      // Normal search: render under web results
-      webResults.innerHTML = `
-        <div style="padding:20px;font-family:sans-serif;">
-          <h2>${firstResult.title || "Normal Search"}</h2>
-          <p>${firstResult.snippet || ""}</p>
-          ${firstResult.url ? `<a href="${firstResult.url}" target="_blank">${firstResult.url}</a>` : ""}
-        </div>
-      `;
-    }
-  } catch (error) {
-    const webResults = document.getElementById("webResults");
-    webResults.innerHTML = "<p>Error fetching results.</p>";
-    console.error("Search error:", error);
-  }
-}
-
-// Hook search events
-document.getElementById("searchButton").addEventListener("click", () => {
-  const query = document.getElementById("searchBox").value.trim();
-  if (query) performSearch(query);
-});
-
-document.getElementById("searchBox").addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
-    const query = document.getElementById("searchBox").value.trim();
-    if (query) performSearch(query);
-  }
-});
-</script>
-<script>
-// Render Fcards results
-function renderFcards(results) {
-  const webResults = document.getElementById("webResults");
-  webResults.innerHTML = ""; // clear old results
-
-  const container = document.createElement("div");
-  container.style.display = "grid";
-container.style.gridTemplateColumns = "repeat(auto-fill, 320px)";
-container.style.gap = "20px";
-container.style.padding = "20px";
-container.style.justifyContent = "center"; // ✅ aligns grid in center
-
-  results.forEach(result => {
-    if (result.type !== "fcards") return;
-
-    const card = document.createElement("a");
-    card.href = result.url;
-    card.target = "_blank";
-    card.rel = "noopener noreferrer";
-    card.style.display = "block";
-    card.style.textDecoration = "none";
-    card.style.color = "inherit";
-    card.style.background = "#fff";
-    card.style.border = "1px solid #eee";
-    card.style.borderRadius = "12px";
-    card.style.padding = "16px";
-    card.style.boxShadow = "0 2px 6px rgba(0,0,0,0.08)";
-    card.style.transition = "all 0.2s ease";
-    card.style.cursor = "pointer";
-
-    card.addEventListener("mouseover", () => {
-      card.style.transform = "translateY(-4px)";
-      card.style.boxShadow = "0 6px 12px rgba(0,0,0,0.12)";
-    });
-    card.addEventListener("mouseout", () => {
-      card.style.transform = "translateY(0)";
-      card.style.boxShadow = "0 2px 6px rgba(0,0,0,0.08)";
-    });
-
-    // Card content
-    card.innerHTML = `
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-    <img src="${result.favicon || "https://www.google.com/s2/favicons?sz=64&domain_url=" + result.url}" 
-         alt="favicon" 
-         style="width:20px;height:20px;border-radius:4px;flex-shrink:0;">
-    <h3 style="font-size:16px;font-weight:600;margin:0;line-height:1.3;">${result.title}</h3>
-  </div>
-  <p style="font-size:14px;line-height:1.5;color:#333;margin:0 0 12px;">${result.snippet}</p>
-  <p style="font-size:12px;color:#555;word-break:break-all;">${result.url}</p>
-  <div style="margin-top:10px;font-size:11px;color:#888;text-align:center;">FCOOPERATION • Made for Africa</div>
-`;
-
-    container.appendChild(card);
-  });
-
-  if (!container.hasChildNodes()) {
-    webResults.innerHTML = "<p>No Fcards could be generated.</p>";
-  } else {
-    webResults.appendChild(container);
-  }
-}
-
-// Modify performSearch to handle fcards
-async function performSearch(query) {
-  try {
-    const webResults = document.getElementById("webResults");
-    webResults.innerHTML = `<p style="font-family:sans-serif;padding:20px;">Loading ${query} ...</p>`;
-
-    const response = await fetch("https://fweb-backend.onrender.com/search?q=" + encodeURIComponent(query));
-    if (!response.ok) throw new Error("Network response was not ok");
-
-    const results = await response.json();
-    if (!results || results.length === 0) {
-      webResults.innerHTML = "<p>No results found.</p>";
-      return;
-    }
-
-    const firstResult = results[0];
-
-    if (firstResult.type === "link" && firstResult.url) {
-      window.location.href = firstResult.url;
-    } else if (firstResult.html) {
-      document.open();
-      document.write(firstResult.html);
-      document.close();
-    } else if (firstResult.type === "fcards" || results.some(r => r.type === "fcards")) {
-      renderFcards(results);
-    } else {
-      webResults.innerHTML = `
-        <div style="padding:20px;font-family:sans-serif;">
-          <h2>${firstResult.title || "Normal Search"}</h2>
-          <p>${firstResult.snippet || ""}</p>
-          ${firstResult.url ? `<a href="${firstResult.url}" target="_blank">${firstResult.url}</a>` : ""}
-        </div>
-      `;
-    }
-  } catch (error) {
-    const webResults = document.getElementById("webResults");
-    webResults.innerHTML = "<p>Error fetching results.</p>";
-    console.error("Search error:", error);
-  }
-}
-</script>
-
-<script>
-  // Create notice element
-  const notice = document.createElement("div");
-  notice.className = "search-notice";
-  notice.textContent = "⏳ Searches can take from 1 to 10 seconds. We appreciate your patience.";
-  document.body.appendChild(notice);
-
-  function showNotice() {
-    notice.style.display = "block";
-    setTimeout(() => {
-      notice.style.display = "none";
-    }, 5000); // hide after 5 seconds
-  }
-
-  // Hook into your search function
-  const originalPerformSearch = performSearch;
-  performSearch = async function(query) {
-    showNotice(); // show patience message
-    await originalPerformSearch(query);
-  };
-</script>
-<script>
-  document.addEventListener("DOMContentLoaded", () => {
-    const accountBtn = document.querySelector(".account-btn");
-
-    if (!accountBtn) return;
-
-    accountBtn.addEventListener("click", (e) => {
-      e.preventDefault(); // prevent default link behavior
-
-      const storedUser = localStorage.getItem("fwebUser");
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
-        console.log("Found logged-in user:", user);
-
-        if (user.status === "active") {
-          // ✅ Auto-login, go to dashboard
-          window.location.href = "dashboard.html";
-        } else {
-          alert("Your account is not active.");
-          window.location.href = "login.html";
-        }
-      } else {
-        // Not logged in, go to login page
-        window.location.href = "login.html";
-      }
-    });
-  });
-</script>
-
-<!-- Hidden checkbox toggle -->
-<input type="checkbox" id="menu-toggle" style="display:none;">
-
-<!-- Menu button -->
-<label for="menu-toggle" class="menu-button">
-  <div class="menu-dots">
-    <span></span>
-    <span></span>
-    <span></span>
-  </div>
-</label>
-
-<!-- Sidebar menu -->
-<nav id="side-menu">
-  <div class="menu-header">
-    <img id="profile-pic" src="default.png" alt="Profile Icon">
-    <div class="username" id="username">User</div>
-  </div>
-  <a href="home.html">Home</a>
-  <a href="about.html">About</a>
-  <a href="blog.html">Blog</a>
-  <a href="faq.html">FAQ</a>
-  <a href="help.html">Help</a>
-  <a href="privacy.html">Privacy policy</a>
-  <a href="contact.html">Contact</a>
-  <a href="settings.html">Settings</a>
-</nav>
-
-<style>
-/* Menu button (3 dots/lines) */
 .menu-button {
   cursor: pointer;
   display: flex;
@@ -542,18 +268,16 @@ async function performSearch(query) {
   height: 28px;
   position: fixed;
   top: 100px;
-  right: 25px;
+  right: 12px;
   z-index: 10000;
-}
-.menu-dots span {
+}.menu-dots span {
   display: block;
   width: 35px;
   height: 4px;
   background-color: #333;
   border-radius: 2px;
+  margin: 4px 0;   /* 👈 adds spacing between each line */
 }
-
-/* Sidebar menu */
 #side-menu {
   position: fixed;
   top: 0;
@@ -594,24 +318,266 @@ async function performSearch(query) {
   font-size: 18px;
   font-weight: bold;
 }
-
-/* When checkbox is checked → show menu */
+/* toggle via checkbox */
 #menu-toggle:checked + label + #side-menu {
   left: 0;
 }
-</style>
+.search-notice {
+  position: fixed;
+  top: 130px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #000;
+  color: #fff;
+  padding: 12px 18px;
+  border-radius: 6px;
+  font-size: 14px;
+  z-index: 2000;
+  display: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translate(-50%, -10px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header id="header">
+    <h1 id="title">Fweb</h1>
+    <div class="search-container" id="searchContainer">
+      <input type="text" id="searchBox" placeholder="Search Fweb..." />
+      <button id="searchButton">Search</button>
+    </div>
+  </header>
 
-<script>
-  // Load user details from localStorage
-  const account = JSON.parse(localStorage.getItem("faccount"));
-  if (account) {
-    document.getElementById("username").textContent = account.username || "User";
-    if (account.profile_pic) {
-      document.getElementById("profile-pic").src = account.profile_pic;
+  <!-- Tabs -->
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-tab="web">Web</button>
+    <button class="tab" data-tab="images">Images</button>
+    <button class="tab" data-tab="vids">Vids</button>
+  </nav>
+
+  <!-- Results -->
+  <main>
+    <section class="result-tab active" id="web"></section>
+    <section class="result-tab" id="images"></section>
+    <section class="result-tab" id="vids"></section>
+  </main>
+
+  <!-- Modal -->
+  <div class="modal" id="modal">
+    <span class="close-btn" id="closeModal">&times;</span>
+    <div class="modal-content" id="modalContent"></div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <p>© 2025 Fcooperation • Meant for Africa</p>
+  </footer>
+
+  <script>
+    // ===== Tabs =====
+    const tabs = document.querySelectorAll('nav.tabs button');
+    const results = document.querySelectorAll('section.result-tab');
+    const tabBar = document.getElementById('tabs');
+
+    tabs.forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelector('nav.tabs button.active')?.classList.remove('active');
+        btn.classList.add('active');
+        results.forEach(tab => tab.classList.remove('active'));
+        document.getElementById(btn.dataset.tab).classList.add('active');
+      });
+    });
+
+    // ===== Modal =====
+    const modal = document.getElementById("modal");
+    const modalContent = document.getElementById("modalContent");
+    const closeModal = document.getElementById("closeModal");
+
+    closeModal.addEventListener("click", () => {
+      modal.classList.remove("active");
+      modalContent.innerHTML = "";
+    });
+
+    function openModal(content) {
+      modalContent.innerHTML = content;
+      modal.classList.add("active");
     }
+
+    // ===== Search bar animation =====
+    function raiseSearchUI() {
+      document.getElementById('title').classList.add('hidden');
+      document.getElementById('searchContainer').classList.add('search-up');
+      document.body.style.paddingTop = "170px";
+      tabBar.classList.add('active');
+    }
+
+    const searchBtn = document.getElementById('searchButton');
+    const searchBox = document.getElementById('searchBox');
+    searchBtn.addEventListener('click', () => handleSearch());
+    searchBox.addEventListener('keydown', (e) => {
+      if (e.key === "Enter") handleSearch();
+    });
+
+    // ===== Render Fcards =====
+    function renderFcards(results) {
+      const webResults = document.getElementById("web");
+      webResults.innerHTML = "";
+
+      const container = document.createElement("div");
+      container.className = "fcards-container";
+
+      results.forEach(r => {
+        if (r.type === "link") {
+          // Load like a browser if backend says it's a link
+          window.location.href = r.url;
+          return;
+        }
+        const card = document.createElement("a");
+        card.href = r.url;
+        card.target = "_blank";
+        card.className = "fcard";
+        card.innerHTML = `
+          <div class="fcard-header">
+            <img src="${r.favicon || "https://www.google.com/s2/favicons?sz=64&domain_url=" + r.url}" alt="">
+            <h3>${r.title || r.url}</h3>
+          </div>
+          <p class="fcard-snippet">${r.snippet || ""}</p>
+          <p class="fcard-url">${r.url}</p>
+          <div class="fcard-footer">FCOOPERATION • Meant for Africa</div>
+        `;
+        container.appendChild(card);
+      });
+
+      if (!container.hasChildNodes()) {
+        webResults.innerHTML = "<p></p>";
+      } else {
+        webResults.appendChild(container);
+      }
+    }
+
+    // ===== Handle Search =====
+    async function handleSearch() {
+      const query = searchBox.value.trim();
+      if (!query) return;
+      raiseSearchUI();
+
+      document.getElementById("web").innerHTML = "<p class='loading'>Loading web results...</p>";
+      document.getElementById("images").innerHTML = "<p class='loading'>Loading images...</p>";
+      document.getElementById("vids").innerHTML = "<p class='loading'>Loading videos...</p>";
+
+      // Web search
+      fetch("https://fweb-backend.onrender.com/search?q=" + encodeURIComponent(query))
+        .then(res => res.json())
+        .then(data => renderFcards(data))
+        .catch(() => document.getElementById("web").innerHTML = "<p>Error loading web results.</p>");
+
+      // Images (Pixabay)
+      fetch(`https://pixabay.com/api/?key=52236532-a5106c580da4b432f21d142e7&q=${encodeURIComponent(query)}&image_type=photo`)
+        .then(res => res.json())
+        .then(data => {
+          const container = document.getElementById("images");
+          if (!data.hits || data.hits.length === 0) {
+            container.innerHTML = "<p>No images found.</p>";
+          } else {
+            container.innerHTML = `<div class="image-grid">${data.hits.map(img =>
+              `<img src="${img.webformatURL}" alt="${query}" onclick="openModal('<img src=${img.largeImageURL} />')">`
+            ).join("")}</div>`;
+          }
+        })
+        .catch(() => document.getElementById("images").innerHTML = "<p>Error loading images.</p>");
+
+      // Videos (YouTube)
+      fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=6&q=${encodeURIComponent(query)}&key=AIzaSyB6IdRR6pdOLJ3m6T-GuTZ7usoaKp4kbOA`)
+        .then(res => res.json())
+        .then(data => {
+          const container = document.getElementById("vids");
+          if (!data.items || data.items.length === 0) {
+            container.innerHTML = "<p>No videos found.</p>";
+          } else {
+            container.innerHTML = data.items.map(v =>
+              `<div class="video-item" onclick="openModal('<iframe src=https://www.youtube.com/embed/${v.id.videoId} allowfullscreen></iframe>')">
+                <iframe src="https://www.youtube.com/embed/${v.id.videoId}" allowfullscreen></iframe>
+                <p>${v.snippet.title}</p>
+              </div>`
+            ).join("");
+          }
+        })
+        .catch(() => document.getElementById("vids").innerHTML = "<p>Error loading videos.</p>");
+    }
+    
+
+  </script>
+  <a href="dashboard.html" class="account-btn">
+  <img src="https://img.icons8.com/ios-filled/50/user.png" alt="Account" />
+</a>
+<input type="checkbox" id="menu-toggle" style="display:none;">
+<label for="menu-toggle" class="menu-button">
+  <div class="menu-dots">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</label>
+
+<nav id="side-menu">
+  <div class="menu-header">
+    <img id="profile-pic" src="default.png" alt="Profile Icon">
+    <div class="username" id="username">User</div>
+  </div>
+  <a href="home.html">Home</a>
+  <a href="about.html">About</a>
+  <a href="blog.html">Blog</a>
+  <a href="faq.html">FAQ</a>
+  <a href="help.html">Help</a>
+  <a href="privacy.html">Privacy policy</a>
+  <a href="contact.html">Contact</a>
+  <a href="settings.html">Settings</a>
+</nav>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  // ===== Create notice element =====
+  const notice = document.createElement("div");
+  notice.className = "search-notice";
+  notice.textContent = "⏳ Searches can take from 1 to 10 seconds. We appreciate your patience.";
+  Object.assign(notice.style, {
+    display: "none",
+    position: "fixed",
+    bottom: "20px",
+    height:"70px",
+    left: "50%",
+    transform: "translateX(-50%)",
+    background: "#000",
+    color: "#fff",
+    padding: "10px 20px",
+    borderRadius: "6px",
+    fontSize: "14px",
+    zIndex: "9999",
+    boxShadow: "0 2px 6px rgba(0,0,0,0.2)"
+  });
+  document.body.appendChild(notice);
+
+  // ===== Show/hide logic =====
+  function showNotice() {
+    notice.style.display = "block";
+    setTimeout(() => {
+      notice.style.display = "none";
+    }, 5000);
   }
+
+  // ===== Patch search function =====
+  const originalHandleSearch = window.handleSearch;
+  window.handleSearch = async function() {
+    showNotice();
+    if (originalHandleSearch) {
+      await originalHandleSearch.apply(this, arguments);
+    }
+  };
+});
 </script>
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3677015402429352"
-     crossorigin="anonymous"></script>
 </body>
-</html>,
+</html>
