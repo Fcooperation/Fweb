@@ -7,6 +7,7 @@
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
 <link rel="manifest" href="/site.webmanifest">
+
   <title>Fweb</title>
   <style>
     body {
@@ -525,10 +526,11 @@
 </label>
 
 <nav id="side-menu">
-  <div class="menu-header">
-    <img id="profile-pic" src="default.png" alt="Profile Icon">
-    <div class="username" id="username">User</div>
-  </div>
+  <!-- Somewhere in your header/menu -->
+<div class="account-info">
+  <img id="profile-pic" src="default-avatar.png" alt="Profile" width="40" height="40" style="border-radius:50%">
+  <span id="username">Guest</span>
+</div>
   <a href="home.html">Home</a>
   <a href="about.html">About</a>
   <a href="blog.html">Blog</a>
@@ -578,6 +580,47 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 });
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const account = JSON.parse(localStorage.getItem("faccount"));
+  if (account) {
+    const usernameEl = document.getElementById("username");
+    const profilePicEl = document.getElementById("profile-pic");
+
+    if (usernameEl) {
+      usernameEl.textContent = account.username || "User";
+    }
+    if (profilePicEl && account.profile_pic) {
+      profilePicEl.src = account.profile_pic;
+    }
+  }
+});
+</script>
+<script>
+  // ===== Persist last Fcards results =====
+  window.addEventListener("DOMContentLoaded", () => {
+    const saved = sessionStorage.getItem("lastFcardsResults");
+    if (saved) {
+      const results = JSON.parse(saved);
+      if (typeof renderFcards === "function") {
+        renderFcards(results);
+      }
+    }
+  });
+
+  // ===== Hook to save Fcards when rendered =====
+  const originalRenderFcards = window.renderFcards;
+  window.renderFcards = function(results) {
+    // Save to sessionStorage
+    if (results && results.length > 0) {
+      sessionStorage.setItem("lastFcardsResults", JSON.stringify(results));
+    }
+    // Call original render
+    if (originalRenderFcards) {
+      originalRenderFcards(results);
+    }
+  }
 </script>
 </body>
 </html>
