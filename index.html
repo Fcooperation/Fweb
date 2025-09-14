@@ -599,24 +599,34 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
 <script>
   // ===== Persist last Fcards results =====
-  window.addEventListener("DOMContentLoaded", () => {
+  function restoreFcards() {
     const saved = sessionStorage.getItem("lastFcardsResults");
-    if (saved) {
+    if (saved && typeof renderFcards === "function") {
       const results = JSON.parse(saved);
-      if (typeof renderFcards === "function") {
-        renderFcards(results);
-      }
+      renderFcards(results);
+    }
+  }
+
+  // Restore Fcards on DOM load
+  window.addEventListener("DOMContentLoaded", restoreFcards);
+
+  // Handle back/forward navigation with bfcache
+  window.addEventListener("pageshow", (event) => {
+    if (event.persisted) {
+      // Page loaded from back/forward cache
+      restoreFcards();
+    } else {
+      // Full reload: clear Fcards
+      sessionStorage.removeItem("lastFcardsResults");
     }
   });
 
   // ===== Hook to save Fcards when rendered =====
   const originalRenderFcards = window.renderFcards;
   window.renderFcards = function(results) {
-    // Save to sessionStorage
     if (results && results.length > 0) {
       sessionStorage.setItem("lastFcardsResults", JSON.stringify(results));
     }
-    // Call original render
     if (originalRenderFcards) {
       originalRenderFcards(results);
     }
