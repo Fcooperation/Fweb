@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fwallet</title>
+  <style>
+    body { margin:0; font-family: Arial, sans-serif; background:#f5f7fa; text-align:center; }
+    .profile-section { padding:40px 0; background:#007bff; color:#fff; display:flex; flex-direction:column; align-items:center; }
+    .profile-section img { width:120px; height:120px; object-fit:cover; border-radius:50%; border:4px solid #fff; margin-bottom:15px; }
+    .username-balance { display:flex; align-items:center; gap:15px; font-size:20px; font-weight:bold; }
+    .fcoin { background:#ffc107; color:#000; padding:4px 10px; border-radius:6px; }
+    .conversion { margin-top:15px; font-size:18px; }
+    .btn { width:100%; padding:15px; font-size:18px; border:none; border-radius:6px; cursor:pointer; margin-top:10px; }
+    .withdraw-btn { background:#28a745; color:#fff; }
+    .form-section { max-width:500px; margin:20px auto; padding:20px; background:#fff; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.1); display:none; text-align:left; }
+    .form-section input, .form-section select { width:100%; padding:10px; margin-bottom:10px; border:1px solid #ddd; border-radius:6px; }
+    .submit-btn { width:100%; padding:12px; background:#007bff; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:16px; }
+  </style>
+</head>
+<body>
+  <!-- Profile Section -->
+  <div class="profile-section">
+    <img id="profile-pic" src="default.png" alt="Profile Picture">
+    <div class="username-balance">
+      <span id="username">Loading...</span>
+      <span class="fcoin" id="fcoin">0 Fcoins</span>
+    </div>
+    <div class="conversion">
+      <span id="usd">$0</span> | <span id="naira">₦0</span>
+    </div>
+  </div>
+
+  <!-- Withdraw Button -->
+  <button class="btn withdraw-btn" id="withdraw-btn">Withdraw</button>
+
+  <!-- Withdraw Form -->
+  <div class="form-section" id="withdraw-form">
+    <h3>Withdraw Fcoins</h3>
+    <input type="text" id="account-name" placeholder="Account Name">
+    <input type="number" id="withdraw-amount" placeholder="Amount of Fcoins to withdraw">
+    <input type="text" id="bank" placeholder="Bank Name">
+    <input type="text" id="bank-account-name" placeholder="Bank Account Name">
+    <input type="text" id="bank-account-number" placeholder="Bank Account Number">
+    <button class="submit-btn" id="submit-btn">Submit Withdrawal</button>
+  </div>
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+    const supabase = createClient(
+      "https://pwsxezhugsxosbwhkdvf.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
+    );
+
+    const faccount = JSON.parse(localStorage.getItem("faccount"));
+    if(!faccount){
+      alert("No account found, please login."); 
+      window.location.href="login.html";
+    }
+
+    const profilePic = document.getElementById("profile-pic");
+    const usernameEl = document.getElementById("username");
+    const fcoinEl = document.getElementById("fcoin");
+    const usdEl = document.getElementById("usd");
+    const nairaEl = document.getElementById("naira");
+    const withdrawBtn = document.getElementById("withdraw-btn");
+    const withdrawForm = document.getElementById("withdraw-form");
+
+    // Set profile pic & username
+    usernameEl.innerText = faccount.username || "No Username";
+    if(faccount.profile_pic) profilePic.src = faccount.profile_pic;
+
+    // Load fcoin from Supabase
+    async function loadFcoins(){
+      const { data, error } = await supabase
+        .from("fwebaccount")
+        .select("fcoin")
+        .eq("email", faccount.email)
+        .single();
+      if(error){ console.error(error.message); return; }
+      const fcoins = data.fcoin || 0;
+      fcoinEl.innerText = `${fcoins} Fcoins`;
+      usdEl.innerText = `$${(fcoins/1000).toFixed(2)}`; // 1000 Fcoins = $1
+      nairaEl.innerText = `₦${(fcoins/1000*1500).toFixed(0)}`; // $1 = 1500 Naira
+    }
+
+    loadFcoins();
+
+    // Withdraw logic
+    withdrawBtn.addEventListener("click", () => {
+      const today = new Date();
+      const day = today.getDay(); // 4 = Thursday
+      const fcoins = parseInt(fcoinEl.innerText.replace(" Fcoins",""));
+
+      if(day !== 4){
+        alert("Withdrawals are only allowed on Thursdays.");
+        return;
+      }
+      if(fcoins < 10000){
+        alert("You need at least 10,000 Fcoins to withdraw.");
+        return;
+      }
+      withdrawForm.style.display = "block";
+    });
+
+    document.getElementById("submit-btn").addEventListener("click", async () => {
+      const accountName = document.getElementById("account-name").value;
+      const withdrawAmount = document.getElementById("withdraw-amount").value;
+      const bank = document.getElementById("bank").value;
+      const bankAccountName = document.getElementById("bank-account-name").value;
+      const bankAccountNumber = document.getElementById("bank-account-number").value;
+
+      if(!accountName || !withdrawAmount || !bank || !bankAccountName || !bankAccountNumber){
+        return alert("Please fill all fields.");
+      }
+
+      const formData = {
+        account_name: accountName,
+        amount_fcoin: withdrawAmount,
+        bank,
+        bank_account_name: bankAccountName,
+        bank_account_number: bankAccountNumber,
+        submitted: true
+      };
+
+      const { error } = await supabase
+        .from("fwebaccount")
+        .update({ withdraw_form: formData })
+        .eq("email", faccount.email);
+
+      if(error){ alert("Error submitting withdrawal: "+error.message); return; }
+      alert("Withdrawal request submitted!");
+      withdrawForm.style.display = "none";
+    });
+  </script>
+</body>
+  </html>
