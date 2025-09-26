@@ -178,5 +178,40 @@
     window.uploadImage = uploadImage;
     window.updateDetails = updateDetails;
   </script>
+  <script>
+  // Find the last details-section (logout/delete)
+  const lastSection = document.querySelectorAll('.details-section');
+  if (lastSection.length) {
+    const container = document.createElement('div');
+    container.className = 'details-section';
+    container.style.marginTop = '15px';
+
+    // Button data
+    const buttons = [
+      { text: 'Fminers', href: 'fminers.html', color: '#28a745' },
+      { text: 'Fpublisher', href: 'fpublisher.html', color: '#17a2b8' },
+      { text: 'Fadvertisers', href: 'fadvertisers.html', color: '#ffc107' }
+    ];
+
+    // Create buttons dynamically
+    buttons.forEach(btn => {
+      const b = document.createElement('button');
+      b.innerText = btn.text;
+      b.style.background = btn.color;
+      b.style.border = 'none';
+      b.style.color = '#fff';
+      b.style.padding = '10px';
+      b.style.width = '100%';
+      b.style.borderRadius = '6px';
+      b.style.cursor = 'pointer';
+      b.style.marginBottom = '10px';
+      b.onclick = () => window.location.href = btn.href;
+      container.appendChild(b);
+    });
+
+    // Append container after last section
+    lastSection[lastSection.length - 1].after(container);
+  }
+  </script>
 </body>
 </html>
