@@ -84,5 +84,43 @@
 
     loadFcoins();
   </script>
+  <script>
+  // Create container for buttons
+  const buttonContainer = document.createElement("div");
+  buttonContainer.style.margin = "20px 0";
+  buttonContainer.style.display = "flex";
+  buttonContainer.style.justifyContent = "center";
+  buttonContainer.style.gap = "15px";
+
+  // Wallet button
+  const walletBtn = document.createElement("button");
+  walletBtn.innerText = "Wallet";
+  walletBtn.style.padding = "10px 20px";
+  walletBtn.style.background = "#28a745";
+  walletBtn.style.color = "#fff";
+  walletBtn.style.border = "none";
+  walletBtn.style.borderRadius = "6px";
+  walletBtn.style.cursor = "pointer";
+  walletBtn.onclick = () => window.location.href = "wallet.html";
+
+  // Start Mining button
+  const miningBtn = document.createElement("button");
+  miningBtn.innerText = "Start Mining";
+  miningBtn.style.padding = "10px 20px";
+  miningBtn.style.background = "#ffc107";
+  miningBtn.style.color = "#000";
+  miningBtn.style.border = "none";
+  miningBtn.style.borderRadius = "6px";
+  miningBtn.style.cursor = "pointer";
+  miningBtn.onclick = () => window.location.href = "mining.html";
+
+  // Append buttons to container
+  buttonContainer.appendChild(walletBtn);
+  buttonContainer.appendChild(miningBtn);
+
+  // Insert container below profile section
+  const profileSection = document.querySelector(".profile-section");
+  profileSection.insertAdjacentElement("afterend", buttonContainer);
+  </script>
 </body>
 </html>
