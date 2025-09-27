@@ -283,7 +283,323 @@
   position: fixed;
   top: 0;
   left: -320px;
-  width: on restoreFcards() {
+  width: 280px;
+  height: 100%;
+  background: #333;
+  color: #fff;
+  padding: 20px;
+  box-shadow: 3px 0 12px rgba(0,0,0,0.25);
+  transition: left 0.35s ease;
+  z-index: 9999;
+}
+#side-menu a {
+  display: block;
+  color: #fff;
+  text-decoration: none;
+  font-weight: bold;
+  margin: 12px 0;
+}
+#side-menu a:hover {
+  background: rgba(255,255,255,0.15);
+  padding-left: 8px;
+  border-radius: 6px;
+}
+#side-menu .menu-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+#side-menu img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 10px;
+}
+#side-menu .username {
+  font-size: 18px;
+  font-weight: bold;
+}
+/* toggle via checkbox */
+#menu-toggle:checked + label + #side-menu {
+  left: 0;
+}
+.search-notice {
+  position: fixed;
+  top: 130px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #000;
+  color: #fff;
+  padding: 12px 18px;
+  border-radius: 6px;
+  font-size: 14px;
+  z-index: 2000;
+  display: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translate(-50%, -10px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header id="header">
+    <h1 id="title">Fweb</h1>
+    <div class="search-container" id="searchContainer">
+      <input type="text" id="searchBox" placeholder="Search Fweb..." />
+      <button id="searchButton">Search</button>
+    </div>
+  </header>
+
+  <!-- Tabs -->
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-tab="web">Web</button>
+    <button class="tab" data-tab="images">Images</button>
+    <button class="tab" data-tab="vids">Vids</button>
+  </nav>
+
+  <!-- Results -->
+  <main>
+    <section class="result-tab active" id="web"></section>
+    <section class="result-tab" id="images"></section>
+    <section class="result-tab" id="vids"></section>
+  </main>
+
+  <!-- Modal -->
+  <div class="modal" id="modal">
+    <span class="close-btn" id="closeModal">&times;</span>
+    <div class="modal-content" id="modalContent"></div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <p>© 2025 Fcooperation • Meant for Africa</p>
+  </footer>
+
+  <script>
+    // ===== Tabs =====
+    const tabs = document.querySelectorAll('nav.tabs button');
+    const results = document.querySelectorAll('section.result-tab');
+    const tabBar = document.getElementById('tabs');
+
+    tabs.forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelector('nav.tabs button.active')?.classList.remove('active');
+        btn.classList.add('active');
+        results.forEach(tab => tab.classList.remove('active'));
+        document.getElementById(btn.dataset.tab).classList.add('active');
+      });
+    });
+
+    // ===== Modal =====
+    const modal = document.getElementById("modal");
+    const modalContent = document.getElementById("modalContent");
+    const closeModal = document.getElementById("closeModal");
+
+    closeModal.addEventListener("click", () => {
+      modal.classList.remove("active");
+      modalContent.innerHTML = "";
+    });
+
+    function openModal(content) {
+      modalContent.innerHTML = content;
+      modal.classList.add("active");
+    }
+
+    // ===== Search bar animation =====
+    function raiseSearchUI() {
+      document.getElementById('title').classList.add('hidden');
+      document.getElementById('searchContainer').classList.add('search-up');
+      document.body.style.paddingTop = "170px";
+      tabBar.classList.add('active');
+    }
+
+    const searchBtn = document.getElementById('searchButton');
+    const searchBox = document.getElementById('searchBox');
+    searchBtn.addEventListener('click', () => handleSearch());
+    searchBox.addEventListener('keydown', (e) => {
+      if (e.key === "Enter") handleSearch();
+    });
+
+    // ===== Render Fcards =====
+    function renderFcards(results) {
+      const webResults = document.getElementById("web");
+      webResults.innerHTML = "";
+
+      const container = document.createElement("div");
+      container.className = "fcards-container";
+
+      results.forEach(r => {
+        if (r.type === "link") {
+          // Load like a browser if backend says it's a link
+          window.location.href = r.url;
+          return;
+        }
+        const card = document.createElement("a");
+        card.href = r.url;
+        card.target = "_blank";
+        card.className = "fcard";
+        card.innerHTML = `
+          <div class="fcard-header">
+            <img src="${r.favicon || "https://www.google.com/s2/favicons?sz=64&domain_url=" + r.url}" alt="">
+            <h3>${r.title || r.url}</h3>
+          </div>
+          <p class="fcard-snippet">${r.snippet || ""}</p>
+          <p class="fcard-url">${r.url}</p>
+          <div class="fcard-footer">FCOOPERATION • Meant for Africa</div>
+        `;
+        container.appendChild(card);
+      });
+
+      if (!container.hasChildNodes()) {
+        webResults.innerHTML = "<p></p>";
+      } else {
+        webResults.appendChild(container);
+      }
+    }
+
+    // ===== Handle Search =====
+    async function handleSearch() {
+      const query = searchBox.value.trim();
+      if (!query) return;
+      raiseSearchUI();
+
+      document.getElementById("web").innerHTML = "<p class='loading'>Loading web results...</p>";
+      document.getElementById("images").innerHTML = "<p class='loading'>Loading images...</p>";
+      document.getElementById("vids").innerHTML = "<p class='loading'>Loading videos...</p>";
+
+      // Web search
+      fetch("https://fweb-backend.onrender.com/search?q=" + encodeURIComponent(query))
+        .then(res => res.json())
+        .then(data => renderFcards(data))
+        .catch(() => document.getElementById("web").innerHTML = "<p>Error loading web results.</p>");
+
+      // Images (Pixabay)
+      fetch(`https://pixabay.com/api/?key=52236532-a5106c580da4b432f21d142e7&q=${encodeURIComponent(query)}&image_type=photo`)
+        .then(res => res.json())
+        .then(data => {
+          const container = document.getElementById("images");
+          if (!data.hits || data.hits.length === 0) {
+            container.innerHTML = "<p>No images found.</p>";
+          } else {
+            container.innerHTML = `<div class="image-grid">${data.hits.map(img =>
+              `<img src="${img.webformatURL}" alt="${query}" onclick="openModal('<img src=${img.largeImageURL} />')">`
+            ).join("")}</div>`;
+          }
+        })
+        .catch(() => document.getElementById("images").innerHTML = "<p>Error loading images.</p>");
+
+      // Videos (YouTube)
+      fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=6&q=${encodeURIComponent(query)}&key=AIzaSyB6IdRR6pdOLJ3m6T-GuTZ7usoaKp4kbOA`)
+        .then(res => res.json())
+        .then(data => {
+          const container = document.getElementById("vids");
+          if (!data.items || data.items.length === 0) {
+            container.innerHTML = "<p>No videos found.</p>";
+          } else {
+            container.innerHTML = data.items.map(v =>
+              `<div class="video-item" onclick="openModal('<iframe src=https://www.youtube.com/embed/${v.id.videoId} allowfullscreen></iframe>')">
+                <iframe src="https://www.youtube.com/embed/${v.id.videoId}" allowfullscreen></iframe>
+                <p>${v.snippet.title}</p>
+              </div>`
+            ).join("");
+          }
+        })
+        .catch(() => document.getElementById("vids").innerHTML = "<p>Error loading videos.</p>");
+    }
+    
+
+  </script>
+  <a href="dashboard.html" class="account-btn">
+  <img src="https://img.icons8.com/ios-filled/50/user.png" alt="Account" />
+</a>
+<input type="checkbox" id="menu-toggle" style="display:none;">
+<label for="menu-toggle" class="menu-button">
+  <div class="menu-dots">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</label>
+
+<nav id="side-menu">
+  <!-- Somewhere in your header/menu -->
+<div class="account-info">
+  <img id="profile-pic" src="default-avatar.png" alt="Profile" width="40" height="40" style="border-radius:50%">
+  <span id="username">Guest</span>
+</div>
+  <a href="home.html">Home</a>
+  <a href="about.html">About</a>
+  <a href="blog.html">Blog</a>
+  <a href="faq.html">FAQ</a>
+  <a href="help.html">Help</a>
+  <a href="privacy.html">Privacy policy</a>
+  <a href="contact.html">Contact</a>
+  <a href="settings.html">Settings</a>
+</nav>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  // ===== Create notice element =====
+  const notice = document.createElement("div");
+  notice.className = "search-notice";
+  notice.textContent = "⏳ Searches can take from 1 to 10 seconds. We appreciate your patience.";
+  Object.assign(notice.style, {
+    display: "none",
+    position: "fixed",
+    bottom: "20px",
+    height:"70px",
+    left: "50%",
+    transform: "translateX(-50%)",
+    background: "#000",
+    color: "#fff",
+    padding: "10px 20px",
+    borderRadius: "6px",
+    fontSize: "14px",
+    zIndex: "9999",
+    boxShadow: "0 2px 6px rgba(0,0,0,0.2)"
+  });
+  document.body.appendChild(notice);
+
+  // ===== Show/hide logic =====
+  function showNotice() {
+    notice.style.display = "block";
+    setTimeout(() => {
+      notice.style.display = "none";
+    }, 5000);
+  }
+
+  // ===== Patch search function =====
+  const originalHandleSearch = window.handleSearch;
+  window.handleSearch = async function() {
+    showNotice();
+    if (originalHandleSearch) {
+      await originalHandleSearch.apply(this, arguments);
+    }
+  };
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const account = JSON.parse(localStorage.getItem("faccount"));
+  if (account) {
+    const usernameEl = document.getElementById("username");
+    const profilePicEl = document.getElementById("profile-pic");
+
+    if (usernameEl) {
+      usernameEl.textContent = account.username || "User";
+    }
+    if (profilePicEl && account.profile_pic) {
+      profilePicEl.src = account.profile_pic;
+    }
+  }
+});
+</script>
+<script>
+  // ===== Persist last Fcards results =====
+  function restoreFcards() {
     const saved = sessionStorage.getItem("lastFcardsResults");
     if (saved && typeof renderFcards === "function") {
       const results = JSON.parse(saved);
