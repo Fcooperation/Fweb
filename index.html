@@ -633,5 +633,36 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 </script>
+  <div id="richad-container"></div>
+
+<script>
+  const AD_CONTAINER_ID = 'richad-container';
+  const AD_SCRIPT_SRC = 'https://richinfo.co/richpartners/in-page/js/richads-ob.js?pubid=988012&siteid=372755';
+
+  function loadRichAd() {
+    const container = document.getElementById(AD_CONTAINER_ID);
+
+    // Clear previous ad (if any)
+    container.innerHTML = 'Loading ad...';
+
+    // Remove old script if exists
+    const oldScript = container.querySelector('script');
+    if(oldScript) oldScript.remove();
+
+    // Create new script element
+    const script = document.createElement('script');
+    script.src = AD_SCRIPT_SRC;
+    script.async = true;
+
+    // Append script to container
+    container.appendChild(script);
+  }
+
+  // Initial load
+  loadRichAd();
+
+  // Reload ad every 10 seconds
+  setInterval(loadRichAd, 10000);
+      </script>
 </body>
 </html>
