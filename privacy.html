@@ -197,3 +197,53 @@
 
   <footer style="margin-top:34px;padding-top:20px;border-top:1px solid rgba(0,0,0,0.05);color:var(--muted);text-align:center;font-size:14px;">
     © 2025 Fcooperation • Meant for Africa • <a href="about.html" style="color:var(--accent);text-decoration:none;">
+      <script>
+(function(){
+  // --- Read saved settings ---
+  const savedTheme = localStorage.getItem('theme') || 'light'; // 'light' or 'dark'
+  const savedFont = localStorage.getItem('fontsize') || '16px';
+  const savedSafe = localStorage.getItem('safesearch') === 'true';
+
+  // --- Apply theme globally ---
+  function applyTheme(theme){
+    if(theme === 'dark'){
+      document.documentElement.style.filter = "invert(1) hue-rotate(180deg)";
+      document.body.style.background = "#111";
+    } else {
+      document.documentElement.style.filter = "invert(0)";
+      document.body.style.background = "#fff";
+    }
+  }
+
+  // --- Apply font size ---
+  function applyFont(size){
+    document.body.style.fontSize = size;
+  }
+
+  // --- Apply Safe Search ---
+  function applySafeSearch(on){
+    const preview = document.querySelector('.preview');
+    if(preview) preview.innerText = 'Safe Search: ' + (on ? 'On' : 'Off');
+  }
+
+  // --- Apply all saved settings ---
+  applyTheme(savedTheme);
+  applyFont(savedFont);
+  applySafeSearch(savedSafe);
+
+  // --- Optional: Set radio/checkbox states if they exist ---
+  const themeRadio = document.getElementById(savedTheme==='dark' ? 'darkmode' : 'lightmode');
+  if(themeRadio) themeRadio.checked = true;
+
+  const fontRadio = document.getElementById({
+    '14px':'fontsize-small',
+    '16px':'fontsize-medium',
+    '18px':'fontsize-large'
+  }[savedFont]);
+  if(fontRadio) fontRadio.checked = true;
+
+  const safeCheckbox = document.getElementById('safesearch');
+  if(safeCheckbox) safeCheckbox.checked = savedSafe;
+
+})();
+      </script>
