@@ -598,55 +598,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 </script>
-<script>
-  // ===== Persist last Fcards results =====
-  function restoreFcards() {
-    const saved = sessionStorage.getItem("lastFcardsResults");
-    if (saved && typeof renderFcards === "function") {
-      const results = JSON.parse(saved);
-      renderFcards(results);
-    }
-  }
 
-  // Restore Fcards on DOM load
-  window.addEventListener("DOMContentLoaded", restoreFcards);
-
-  // Handle back/forward navigation with bfcache
-  window.addEventListener("pageshow", (event) => {
-    if (event.persisted) {
-      // Page loaded from back/forward cache
-      restoreFcards();
-    } else {
-      // Full reload: clear Fcards
-      sessionStorage.removeItem("lastFcardsResults");
-    }
-  });
-
-  // ===== Hook to save Fcards when rendered =====
-  const originalRenderFcards = window.renderFcards;
-  window.renderFcards = function(results) {
-    if (results && results.length > 0) {
-      sessionStorage.setItem("lastFcardsResults", JSON.stringify(results));
-    }
-    if (originalRenderFcards) {
-      originalRenderFcards(results);
-    }
-  }
-</script>
-  <div id="richad-container"></div>
-
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const container = document.getElementById('richad-container');
-    container.innerHTML = ''; // clear loading text
-
-    const script = document.createElement('script');
-    script.src = 'https://richinfo.co/richpartners/in-page/js/richads-ob.js?pubid=988012&siteid=372755';
-    script.async = true;
-
-    container.appendChild(script);
-  });
-</script>
   <script async="async" data-cfasync="false" src="//pl27736418.revenuecpmgate.com/66f7e9f0e3b7d4c73d45d726370fbc8a/invoke.js"></script>
 <div id="container-66f7e9f0e3b7d4c73d45d726370fbc8a"></div>
 </body>
