@@ -45,6 +45,15 @@
       border-radius: 6px; cursor: pointer;
     }
     .details-section button:hover { background: #0056b3; }
+    body.dark-mode, html.dark-mode {
+  background: #111;
+  color: #f5f5f5;
+}
+
+body.dark-mode * {
+  background: inherit !important;
+  color: inherit !important;
+}
   </style>
 </head>
 <body>
@@ -213,5 +222,85 @@
     lastSection[lastSection.length - 1].after(container);
   }
   </script>
+  <style>
+  :root {
+    --bg-color-light: #fff;
+    --text-color-light: #000;
+    --bg-color-dark: #111;
+    --text-color-dark: #f5f5f5;
+  }
+
+  body.light-mode {
+    background: var(--bg-color-light);
+    color: var(--text-color-light);
+  }
+
+  body.dark-mode {
+    background: var(--bg-color-dark);
+    color: var(--text-color-dark);
+  }
+
+  body.dark-mode .btn,
+  body.dark-mode nav a {
+    background: #1f1f1f !important;
+    color: #f5f5f5 !important;
+    border: 1px solid rgba(255,255,255,0.2) !important;
+  }
+
+  body.light-mode .btn,
+  body.light-mode nav a {
+    background: #000 !important;
+    color: #fff !important;
+    border: 1px solid rgba(0,0,0,0.1) !important;
+  }
+
+  body.dark-mode label {
+    color: #f5f5f5 !important;
+  }
+</style>
+
+<script>
+(function(){
+  const savedTheme = localStorage.getItem('theme') || 'light';
+  const savedFont = localStorage.getItem('fontsize') || '16px';
+  const savedSafe = localStorage.getItem('safesearch') === 'true';
+
+  // --- Apply theme ---
+  function applyTheme(theme){
+    document.body.classList.remove("light-mode", "dark-mode");
+    document.body.classList.add(theme + "-mode");
+  }
+
+  // --- Apply font size ---
+  function applyFont(size){
+    document.body.style.fontSize = size;
+  }
+
+  // --- Apply Safe Search ---
+  function applySafeSearch(on){
+    const preview = document.querySelector('.preview');
+    if(preview) preview.innerText = 'Safe Search: ' + (on ? 'On' : 'Off');
+  }
+
+  // --- Apply all saved settings ---
+  applyTheme(savedTheme);
+  applyFont(savedFont);
+  applySafeSearch(savedSafe);
+
+  // --- Optional: set radio states ---
+  const themeRadio = document.getElementById(savedTheme==='dark' ? 'darkmode' : 'lightmode');
+  if(themeRadio) themeRadio.checked = true;
+
+  const fontRadio = document.getElementById({
+    '14px':'fontsize-small',
+    '16px':'fontsize-medium',
+    '18px':'fontsize-large'
+  }[savedFont]);
+  if(fontRadio) fontRadio.checked = true;
+
+  const safeCheckbox = document.getElementById('safesearch');
+  if(safeCheckbox) safeCheckbox.checked = savedSafe;
+})();
+</script>
 </body>
 </html>
