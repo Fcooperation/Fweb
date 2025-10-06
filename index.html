@@ -608,6 +608,95 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 </script>
 
+  <!-- Fweb Intro Animation -->
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600&display=swap');
+
+  .fweb-intro {
+    position: relative;
+    width: 100%;
+    text-align: center;
+    color: black;
+    font-family: 'Orbitron', sans-serif;
+    overflow: hidden;
+    margin-top: 50px;
+  }
+
+  .magnify {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto;
+    animation: scan 4s ease-in-out infinite;
+  }
+
+  @keyframes scan {
+    0% { transform: translateX(-60px) scale(1); opacity: 0.8; }
+    25% { transform: translateX(0) scale(1.1); opacity: 1; }
+    50% { transform: translateX(60px) scale(1); opacity: 0.8; }
+    75% { transform: translateX(0) scale(1.05); opacity: 1; }
+    100% { transform: translateX(-60px) scale(1); opacity: 0.8; }
+  }
+
+  .fweb-text {
+    font-size: 60px;
+    opacity: 0.2;
+    animation: fadeFweb 8s ease-in-out infinite;
+  }
+
+  @keyframes fadeFweb {
+    0%, 20% { opacity: 0.1; transform: scale(0.9); }
+    30%, 60% { opacity: 0.6; transform: scale(1); }
+    80%, 100% { opacity: 0.2; transform: scale(0.95); }
+  }
+
+  .description {
+    font-size: 18px;
+    max-width: 700px;
+    margin: 20px auto;
+    line-height: 1.5;
+    opacity: 0;
+    animation: showDesc 8s ease-in-out infinite;
+  }
+
+  @keyframes showDesc {
+    0%, 30% { opacity: 0; transform: translateY(20px); }
+    40%, 70% { opacity: 1; transform: translateY(0); }
+    80%, 100% { opacity: 0; transform: translateY(-20px); }
+  }
+
+  .word-anim {
+    font-size: 50px;
+    margin-top: 30px;
+    opacity: 0;
+    animation: wordCycle 8s ease-in-out infinite;
+  }
+
+  @keyframes wordCycle {
+    0%, 40% { opacity: 0; }
+    50% { opacity: 1; content: "Then f it up on..."; }
+    60%, 100% { opacity: 0; }
+  }
+
+  .highlight {
+    color: #00e0ff;
+    font-weight: 700;
+  }
+</style>
+
+<div class="fweb-intro">
+  <svg class="magnify" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="27" cy="27" r="16" stroke="#00e0ff" stroke-width="4"/>
+    <line x1="40" y1="40" x2="60" y2="60" stroke="#00e0ff" stroke-width="4" stroke-linecap="round"/>
+  </svg>
+  <div class="fweb-text">fweb</div>
+  <div class="description">
+    Looking for a way to <b>conveniently search?</b><br>
+    Built for <span class="highlight">Africa</span>, accessible worldwide — 
+    a search engine that <span class="highlight">respects your privacy</span>.
+  </div>
+  <div class="word-anim">Then <span class="highlight">f</span> it up on <span class="highlight">web</span></div>
+</div>
+
   <script async="async" data-cfasync="false" src="//pl27736418.revenuecpmgate.com/66f7e9f0e3b7d4c73d45d726370fbc8a/invoke.js"></script>
 <div id="container-66f7e9f0e3b7d4c73d45d726370fbc8a"></div>
   <style>
