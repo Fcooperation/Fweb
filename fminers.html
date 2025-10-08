@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fminers Dashboard</title>
   <style>
     body { margin: 0; font-family: Arial, sans-serif; background: #f5f7fa; text-align: center; }
@@ -25,12 +25,39 @@
       background: #fff; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1);
       text-align: left;
     }
+    .earn-btn {
+      display: inline-block;
+      background: linear-gradient(45deg, #2d89ef, #1e5aa8);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: 0.3s ease;
+      text-align: center;
+      width: 100%;
+    }
+    .earn-btn:hover {
+      background: linear-gradient(45deg, #1e5aa8, #2d89ef);
+    }
+    .main-btn {
+      width: 100%; padding: 15px; font-size: 18px;
+      border: none; border-radius: 8px; cursor: pointer; transition: 0.3s;
+    }
+    .wallet-btn {
+      background: #28a745; color: white;
+    }
+    .wallet-btn:hover { background: #1d9238; }
+    .check-btn {
+      background: #ffc107; color: #000;
+    }
+    .check-btn:hover { background: #e0ac06; }
   </style>
 </head>
 <body>
   <!-- Profile Section -->
   <div class="profile-section">
-    <img id="profile-pic" src="default.png" alt="Profile Picture">
+    <img id="profile-pic" src="default.png" alt="Profile Picture" />
     <div class="username-balance">
       <span id="username">Loading...</span>
       <span class="fcoin" id="fcoin">0 Fcoins</span>
@@ -39,14 +66,23 @@
 
   <!-- Content Section -->
   <div class="content-section">
-    <h3>Fminers Content</h3>
-    <p>This is where you can show mining info, tasks, or earnings.</p>
+    <h3>Fminers Dashboard</h3>
+    <p>Earn Fcoins by completing verified tasks from our trusted partner below.</p>
+
+    <!-- OfferToro or partner offers -->
+    <a href="#" id="offers-link" target="_blank" class="earn-btn">💰 Start Earning Tasks</a>
+
+    <!-- Buttons -->
+    <div style="margin-top: 20px;">
+      <button id="fwallet" class="main-btn wallet-btn">💼 FWallet</button>
+      <button id="check-rewards" class="main-btn check-btn" style="margin-top: 10px;">🔄 Check & Update Rewards</button>
+    </div>
   </div>
 
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-    // Supabase credentials (your dashboard creds)
+    // Initialize Supabase
     const supabase = createClient(
       "https://pwsxezhugsxosbwhkdvf.supabase.co",
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
@@ -54,19 +90,15 @@
 
     // Load account from localStorage
     const faccount = JSON.parse(localStorage.getItem("faccount"));
-
     if (!faccount) {
       alert("No account found in local storage. Please log in.");
       window.location.href = "login.html";
     }
 
-    // Set profile pic & username from localStorage first
     document.getElementById("username").innerText = faccount.username || "No Username";
-    if (faccount.profile_pic) {
-      document.getElementById("profile-pic").src = faccount.profile_pic;
-    }
+    if (faccount.profile_pic) document.getElementById("profile-pic").src = faccount.profile_pic;
 
-    // Load fcoin from Supabase
+    // Load Fcoins from Supabase
     async function loadFcoins() {
       const { data, error } = await supabase
         .from("fwebaccount")
@@ -80,50 +112,42 @@
       }
 
       document.getElementById("fcoin").innerText = `${data.fcoin || 0} Fcoins`;
+      faccount.fcoin = data.fcoin || 0;
+      localStorage.setItem("faccount", JSON.stringify(faccount));
     }
-
     loadFcoins();
+
+    // Go to Wallet
+    document.getElementById("fwallet").onclick = () => {
+      window.location.href = "fwallet.html";
+    };
+
+    // Reward Checker (simulated)
+    document.getElementById("check-rewards").onclick = async () => {
+      const simulatedEarning = Math.random() * 0.05; // simulate $0.00–$0.05
+      const userRewardUSD = simulatedEarning * 0.5;
+      const userRewardFcoin = Math.floor(userRewardUSD * 1000);
+
+      alert(`✅ Task verified!\nYour share: $${userRewardUSD.toFixed(3)} (${userRewardFcoin} Fcoins)`);
+
+      const newFcoin = (faccount.fcoin || 0) + userRewardFcoin;
+      const { error } = await supabase
+        .from("fwebaccount")
+        .update({ fcoin: newFcoin })
+        .eq("email", faccount.email);
+
+      if (error) {
+        alert("❌ Error updating reward: " + error.message);
+        return;
+      }
+
+      faccount.fcoin = newFcoin;
+      localStorage.setItem("faccount", JSON.stringify(faccount));
+      document.getElementById("fcoin").innerText = `${newFcoin} Fcoins`;
+    };
+
+    // Future OfferToro link placeholder
+    document.getElementById("offers-link").href = "https://www.offertoro.com/"; // replace with your OfferToro wall link after approval
   </script>
-   <script>
-  // Create a container for buttons
-  const contentSection = document.querySelector('.content-section');
-
-  const buttonContainer = document.createElement('div');
-  buttonContainer.style.display = 'flex';
-  buttonContainer.style.flexDirection = 'column';
-  buttonContainer.style.gap = '10px';
-  buttonContainer.style.marginTop = '20px';
-
-  // Wallet Button
-  const walletBtn = document.createElement('button');
-  walletBtn.innerText = 'FWallet';
-  walletBtn.style.width = '100%';
-  walletBtn.style.padding = '15px';
-  walletBtn.style.fontSize = '18px';
-  walletBtn.style.background = '#28a745';
-  walletBtn.style.color = '#fff';
-  walletBtn.style.border = 'none';
-  walletBtn.style.borderRadius = '6px';
-  walletBtn.style.cursor = 'pointer';
-  walletBtn.onclick = () => { window.location.href = 'fwallet.html'; };
-
-  // Start Mining Button
-  const miningBtn = document.createElement('button');
-  miningBtn.innerText = 'Start Mining';
-  miningBtn.style.width = '100%';
-  miningBtn.style.padding = '15px';
-  miningBtn.style.fontSize = '18px';
-  miningBtn.style.background = '#ffc107';
-  miningBtn.style.color = '#000';
-  miningBtn.style.border = 'none';
-  miningBtn.style.borderRadius = '6px';
-  miningBtn.style.cursor = 'pointer';
-  miningBtn.onclick = () => { window.location.href = 'mining.html'; };
-
-  // Append buttons to container and then to content section
-  buttonContainer.appendChild(walletBtn);
-  buttonContainer.appendChild(miningBtn);
-  contentSection.appendChild(buttonContainer);
-   </script>
 </body>
 </html>
