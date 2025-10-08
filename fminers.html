@@ -5,56 +5,148 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fminers Dashboard</title>
   <style>
-    body { margin: 0; font-family: Arial, sans-serif; background: #f5f7fa; text-align: center; }
-    .profile-section {
-      width: 100%; padding: 40px 0; background: #007bff; color: #fff;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    body { 
+      margin: 0; 
+      font-family: Arial, sans-serif; 
+      background: #f5f7fa; 
+      text-align: center; 
     }
+
+    /* Profile Section */
+    .profile-section {
+      width: 100%; 
+      padding: 40px 0; 
+      background: #007bff; 
+      color: #fff;
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      justify-content: center;
+    }
+
     .profile-section img {
-      width: 120px; height: 120px; object-fit: cover; border-radius: 50%; border: 4px solid #fff;
+      width: 120px; 
+      height: 120px; 
+      object-fit: cover; 
+      border-radius: 50%; 
+      border: 4px solid #fff;
       margin-bottom: 15px;
     }
+
     .username-balance {
-      display: flex; align-items: center; gap: 15px; font-size: 20px; font-weight: bold;
+      display: flex; 
+      align-items: center; 
+      gap: 15px; 
+      font-size: 20px; 
+      font-weight: bold;
     }
+
     .fcoin {
-      background: #ffc107; color: #000; padding: 4px 10px; border-radius: 6px;
+      background: #ffc107; 
+      color: #000; 
+      padding: 4px 10px; 
+      border-radius: 6px;
     }
+
+    /* Dashboard Section */
     .content-section {
-      max-width: 800px; margin: 30px auto; padding: 20px;
-      background: #fff; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      max-width: 800px; 
+      margin: 30px auto; 
+      padding: 20px;
+      background: #fff; 
+      border-radius: 8px; 
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
       text-align: left;
     }
-    .earn-btn {
-      display: inline-block;
-      background: linear-gradient(45deg, #2d89ef, #1e5aa8);
-      color: white;
-      padding: 12px 20px;
-      border-radius: 8px;
-      text-decoration: none;
-      font-weight: 600;
-      transition: 0.3s ease;
-      text-align: center;
-      width: 100%;
-    }
-    .earn-btn:hover {
-      background: linear-gradient(45deg, #1e5aa8, #2d89ef);
-    }
+
     .main-btn {
-      width: 100%; padding: 15px; font-size: 18px;
-      border: none; border-radius: 8px; cursor: pointer; transition: 0.3s;
+      width: 100%; 
+      padding: 15px; 
+      font-size: 18px;
+      border: none; 
+      border-radius: 8px; 
+      cursor: pointer; 
+      transition: 0.3s;
     }
-    .wallet-btn {
-      background: #28a745; color: white;
-    }
+
+    .wallet-btn { background: #28a745; color: white; }
     .wallet-btn:hover { background: #1d9238; }
-    .check-btn {
-      background: #ffc107; color: #000;
-    }
+    .check-btn { background: #ffc107; color: #000; }
     .check-btn:hover { background: #e0ac06; }
+
+    /* Offer Boxes Section */
+    .offers-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 30px auto;
+      width: 90%;
+      max-width: 700px;
+    }
+
+    .offer-card {
+      background: #fff;
+      width: 100%;
+      max-width: 600px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 15px 20px;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      cursor: pointer;
+      transition: 0.3s ease;
+    }
+
+    .offer-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      transform: scale(1.01);
+    }
+
+    .offer-icon {
+      width: 50px; 
+      height: 50px; 
+      border-radius: 10px; 
+      background: #e9ecef;
+      display: flex; 
+      align-items: center; 
+      justify-content: center;
+      margin-right: 15px;
+      font-size: 22px;
+      color: #6c757d;
+    }
+
+    .offer-info {
+      text-align: left;
+    }
+
+    .offer-info h4 {
+      margin: 0;
+      font-size: 16px;
+      color: #333;
+    }
+
+    .offer-info p {
+      margin: 5px 0 0 0;
+      font-size: 13px;
+      color: #777;
+    }
+
+    iframe {
+      width: 100%;
+      height: 250px;
+      border: none;
+      border-radius: 8px;
+      margin: 10px 0 20px;
+      background: #fff;
+      color: #000;
+      display: none;
+    }
   </style>
 </head>
 <body>
+
   <!-- Profile Section -->
   <div class="profile-section">
     <img id="profile-pic" src="default.png" alt="Profile Picture" />
@@ -64,20 +156,18 @@
     </div>
   </div>
 
-  <!-- Content Section -->
+  <!-- Dashboard Section -->
   <div class="content-section">
     <h3>Fminers Dashboard</h3>
-    <p>Earn Fcoins by completing verified tasks from our trusted partner below.</p>
-
-    <!-- OfferToro or partner offers -->
-    <a href="#" id="offers-link" target="_blank" class="earn-btn">💰 Start Earning Tasks</a>
-
-    <!-- Buttons -->
+    <p>Earn Fcoins by completing verified tasks and offers from our partners (coming soon).</p>
     <div style="margin-top: 20px;">
       <button id="fwallet" class="main-btn wallet-btn">💼 FWallet</button>
       <button id="check-rewards" class="main-btn check-btn" style="margin-top: 10px;">🔄 Check & Update Rewards</button>
     </div>
   </div>
+
+  <!-- Offers Section -->
+  <div class="offers-container" id="offers-container"></div>
 
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
@@ -88,7 +178,7 @@
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
     );
 
-    // Load account from localStorage
+    // Load account
     const faccount = JSON.parse(localStorage.getItem("faccount"));
     if (!faccount) {
       alert("No account found in local storage. Please log in.");
@@ -117,14 +207,46 @@
     }
     loadFcoins();
 
-    // Go to Wallet
+    // Generate blank offers dynamically
+    const offersContainer = document.getElementById("offers-container");
+    for (let i = 1; i <= 10; i++) {
+      const offer = document.createElement("div");
+      offer.className = "offer-card";
+      offer.innerHTML = `
+        <div class="offer-icon">💠</div>
+        <div class="offer-info">
+          <h4>Offer #${i}</h4>
+          <p>Coming soon – Offers will be displayed here.</p>
+        </div>
+      `;
+      offer.onclick = () => toggleIframe(i);
+      offersContainer.appendChild(offer);
+
+      const iframe = document.createElement("iframe");
+      iframe.id = `iframe${i}`;
+      offersContainer.appendChild(iframe);
+    }
+
+    // Toggle iframe display
+    function toggleIframe(num) {
+      const iframe = document.getElementById(`iframe${num}`);
+      if (iframe.style.display === "none" || !iframe.style.display) {
+        iframe.style.display = "block";
+        const doc = iframe.contentDocument || iframe.contentWindow.document;
+        doc.body.innerHTML = "<h3 style='text-align:center;'>Coming Soon</h3><p style='text-align:center;'>Offers will be displayed here.</p>";
+      } else {
+        iframe.style.display = "none";
+      }
+    }
+
+    // Wallet navigation
     document.getElementById("fwallet").onclick = () => {
       window.location.href = "fwallet.html";
     };
 
-    // Reward Checker (simulated)
+    // Check rewards simulation
     document.getElementById("check-rewards").onclick = async () => {
-      const simulatedEarning = Math.random() * 0.05; // simulate $0.00–$0.05
+      const simulatedEarning = Math.random() * 0.05;
       const userRewardUSD = simulatedEarning * 0.5;
       const userRewardFcoin = Math.floor(userRewardUSD * 1000);
 
@@ -145,9 +267,6 @@
       localStorage.setItem("faccount", JSON.stringify(faccount));
       document.getElementById("fcoin").innerText = `${newFcoin} Fcoins`;
     };
-
-    // Future OfferToro link placeholder
-    document.getElementById("offers-link").href = "https://www.offertoro.com/"; // replace with your OfferToro wall link after approval
   </script>
 </body>
 </html>
