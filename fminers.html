@@ -268,5 +268,29 @@
       document.getElementById("fcoin").innerText = `${newFcoin} Fcoins`;
     };
   </script>
+  <script>
+  // Create footer container
+  const footer = document.createElement("div");
+  footer.innerHTML = `
+    <p style="
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+      color: #555;
+      text-align: center;
+      margin: 40px 0 15px 0;
+      opacity: 0;
+      transition: opacity 2s ease;
+    ">
+      <strong>Built by <span style='color:#007bff;'>FCOOPERATION</span></strong> |
+      <span style='color:#28a745;'>Powered by OFFERTORO</span>
+    </p>
+  `;
+  document.body.appendChild(footer);
+
+  // Fade-in animation
+  setTimeout(() => {
+    footer.querySelector("p").style.opacity = 1;
+  }, 800);
+  </script>
 </body>
 </html>
