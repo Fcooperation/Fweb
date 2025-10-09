@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Account Suspended</title>
+
 <style>
   body {
-    font-family: sans-serif;
+    font-family: "Segoe UI", sans-serif;
     background: #fff3cd;
     display: flex;
     justify-content: center;
@@ -14,104 +15,139 @@
     height: 100vh;
     margin: 0;
   }
+
   .message-box {
     background: #fff;
     padding: 30px;
     border-radius: 12px;
     text-align: center;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     max-width: 450px;
+    width: 90%;
   }
-  h2 { color: #856404; margin-bottom: 20px; }
-  p { color: #856404; font-size: 16px; }
-  a { color: #007bff; text-decoration: none; }
-  a:hover { text-decoration: underline; }
-  .timer { font-size: 18px; font-weight: bold; margin-top: 15px; }
+
+  h2 {
+    color: #856404;
+    margin-bottom: 20px;
+  }
+
+  p {
+    color: #856404;
+    font-size: 16px;
+  }
+
+  a {
+    color: #007bff;
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+
+  .timer {
+    font-size: 18px;
+    font-weight: bold;
+    margin-top: 15px;
+  }
+
+  #backBtn {
+    padding: 10px 20px;
+    background: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 20px;
+    font-size: 15px;
+  }
+
+  #backBtn:hover {
+    background: #0056b3;
+  }
 </style>
 </head>
 <body>
-<div class="message-box">
-  <h2>Account Suspended</h2>
-  <p id="welcome"></p>
-  <p>Your account is suspended until:</p>
-  <div class="timer" id="countdown">Loading...</div>
-  <p>Review the <a href="privacy.html">Terms and Conditions</a>.</p>
-</div>
+  <div class="message-box">
+    <h2>Account Suspended</h2>
+    <p id="welcome">Loading your info...</p>
+    <p>Your account is suspended until:</p>
+    <div class="timer" id="countdown">Loading...</div>
+    <p>Review the <a href="privacy.html">Terms and Conditions</a>.</p>
+    <button id="backBtn">Back to Login</button>
+  </div>
 
-<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-<script>
-const SUPABASE_URL = "https://pwsxezhugsxosbwhkdvf.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://pwsxezhugsxosbwhkdvf.supabase.co";
+    const SUPABASE_ANON_KEY =
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const faccount = JSON.parse(localStorage.getItem("faccount"));
-if (!faccount || !faccount.email) {
-  document.getElementById("welcome").textContent = "No account info found.";
-} else {
-  const userEmail = faccount.email;
-
-  async function fetchUser() {
-    const { data, error } = await supabase
-      .from("fwebaccount")
-      .select("username, suspended_until")
-      .eq("email", userEmail)
-      .single();
-
-    if (error || !data) {
-      document.getElementById("welcome").textContent = "Unable to fetch account info.";
-      document.getElementById("countdown").textContent = "Error loading suspension info.";
-      return;
-    }
-
-    document.getElementById("welcome").textContent = `Hello, ${data.username}!`;
-
-    const suspendedUTC = new Date(data.suspended_until); // UTC time from Supabase
+    const faccount = JSON.parse(localStorage.getItem("faccount"));
+    const welcomeEl = document.getElementById("welcome");
     const countdownEl = document.getElementById("countdown");
 
-    function updateCountdown() {
-      const nowUTC = new Date(new Date().toISOString()); // current UTC time
-      const diff = suspendedUTC - nowUTC;
+    if (!faccount || !faccount.email) {
+      welcomeEl.textContent = "No account info found.";
+      countdownEl.textContent = "Unable to load suspension info.";
+    } else {
+      const userEmail = faccount.email;
 
-      if (diff <= 0) {
-        countdownEl.textContent = "Your suspension has ended. Redirecting...";
-        clearInterval(timerInterval);
-        setTimeout(() => {
-          window.location.href = "login.html";
-        }, 3000);
-        return;
+      async function fetchUser() {
+        const { data, error } = await supabase
+          .from("fwebaccount")
+          .select("username, suspended_until")
+          .eq("email", userEmail)
+          .single();
+
+        if (error || !data) {
+          welcomeEl.textContent = "Unable to fetch account info.";
+          countdownEl.textContent = "Error loading suspension info.";
+          return;
+        }
+
+        welcomeEl.textContent = `Hello, ${data.username}!`;
+
+        const suspendedUTC = new Date(data.suspended_until);
+
+        function updateCountdown() {
+          const nowUTC = new Date(new Date().toISOString());
+          const diff = suspendedUTC - nowUTC;
+
+          if (diff <= 0) {
+            countdownEl.textContent = "Your suspension has ended. Redirecting...";
+            clearInterval(timerInterval);
+            setTimeout(() => {
+              window.location.href = "login.html";
+            }, 3000);
+            return;
+          }
+
+          const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+          const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+          const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+          const localTime = suspendedUTC.toLocaleString();
+
+          countdownEl.innerHTML = `
+            <div>⏰ ${days}d ${hours}h ${minutes}m ${seconds}s remaining</div>
+            <div>🕒 Ends at: ${localTime}</div>
+          `;
+        }
+
+        updateCountdown();
+        const timerInterval = setInterval(updateCountdown, 1000);
       }
 
-      const days = Math.floor(diff / (1000*60*60*24));
-      const hours = Math.floor((diff % (1000*60*60*24)) / (1000*60*60));
-      const minutes = Math.floor((diff % (1000*60*60)) / (1000*60));
-      const seconds = Math.floor((diff % (1000*60)) / 1000);
-
-      const localTime = suspendedUTC.toLocaleString(); // show your timezone
-      countdownEl.innerHTML = `
-        <div>⏰ ${days}d ${hours}h ${minutes}m ${seconds}s remaining</div>
-        <div>🕒 Ends at: ${localTime}</div>
-      `;
+      fetchUser();
     }
 
-    updateCountdown();
-    const timerInterval = setInterval(updateCountdown, 1000);
-  }
-
-  fetchUser();
-}
-</script>
-  <div style="text-align:center; margin-top:20px;">
-  <button id="backBtn" 
-    style="padding:10px 20px; background:#007bff; color:#fff; border:none; border-radius:8px; cursor:pointer;">
-    Back to Login
-  </button>
-</div>
-
-<script>
-  document.getElementById("backBtn").addEventListener("click", () => {
-    window.location.href = "login.html";
-  });
-</script>
+    // Back to login button fallback
+    document.getElementById("backBtn").addEventListener("click", () => {
+      window.location.href = "login.html";
+    });
+  </script>
 </body>
 </html>
