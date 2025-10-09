@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dashboard</title>
   <style>
     body { margin: 0; font-family: Arial, sans-serif; background: #f5f7fa; text-align: center; }
@@ -50,7 +50,6 @@
       background: #111;
       color: #f5f5f5;
     }
-
     body.dark-mode * {
       background: inherit !important;
       color: inherit !important;
@@ -58,10 +57,12 @@
   </style>
 </head>
 <body>
+  <!-- Profile Section -->
   <div class="profile-section">
     <img id="profile-pic" src="default.png" alt="Profile Picture">
   </div>
 
+  <!-- Upload Box -->
   <div class="upload-box">
     <input type="file" id="file-input" accept="image/*">
     <button onclick="uploadImage()">Upload</button>
@@ -69,6 +70,7 @@
 
   <h2 id="username">Loading...</h2>
 
+  <!-- Account Update -->
   <div class="details-section">
     <h3>Update Account Details</h3>
     <input type="text" id="new-name" placeholder="New Username">
@@ -76,6 +78,7 @@
     <button onclick="updateDetails()">Save Changes</button>
   </div>
 
+  <!-- Logout/Delete -->
   <div class="details-section" style="margin-top: 15px;">
     <button id="logout-btn" style="background:#dc3545;">Logout</button>
     <button id="delete-btn" style="background:#6c757d; margin-top:10px;">Delete Account</button>
@@ -95,6 +98,7 @@
       window.location.href = "login.html";
     }
 
+    // Show basic info
     document.getElementById("username").innerText = faccount.username || "No Username";
     if (faccount.profile_pic) document.getElementById("profile-pic").src = faccount.profile_pic;
 
@@ -109,17 +113,19 @@
         r.onerror = rej;
         r.readAsDataURL(file);
       });
-      const { error } = await supabase.from("fwebaccount")
+      const { error } = await supabase
+        .from("fwebaccount")
         .update({ profile_pic: base64 })
         .eq("email", faccount.email);
       if (error) return alert("Error: " + error.message);
+
       faccount.profile_pic = base64;
       localStorage.setItem("faccount", JSON.stringify(faccount));
       document.getElementById("profile-pic").src = base64;
       alert("Profile picture updated!");
     }
 
-    // --- Update User Details ---
+    // --- Update Details ---
     async function updateDetails() {
       const newName = document.getElementById("new-name").value;
       const newPass = document.getElementById("new-pass").value;
@@ -128,10 +134,12 @@
       if (newPass) updates.password_hash = newPass;
       if (Object.keys(updates).length === 0) return alert("Enter details to update.");
 
-      const { error } = await supabase.from("fwebaccount")
+      const { error } = await supabase
+        .from("fwebaccount")
         .update(updates)
         .eq("email", faccount.email);
-      if (error) return alert("Error: " + error.message);
+
+      if (error) return alert("Error updating: " + error.message);
 
       if (newName) {
         faccount.username = newName;
@@ -142,6 +150,7 @@
       alert("Account updated!");
     }
 
+    // Logout/Delete buttons
     document.getElementById("logout-btn").addEventListener("click", () => {
       localStorage.removeItem("faccount");
       alert("Logged out successfully!");
@@ -150,7 +159,10 @@
 
     document.getElementById("delete-btn").addEventListener("click", async () => {
       if (!confirm("Are you sure you want to delete your account?")) return;
-      const { error } = await supabase.from("fwebaccount").delete().eq("email", faccount.email);
+      const { error } = await supabase
+        .from("fwebaccount")
+        .delete()
+        .eq("email", faccount.email);
       if (error) return alert("Error deleting: " + error.message);
       localStorage.removeItem("faccount");
       alert("Account deleted.");
@@ -160,11 +172,11 @@
     window.uploadImage = uploadImage;
     window.updateDetails = updateDetails;
 
-    // 🔁 Real-Time Status Checker
+    // 🔁 Real-Time Status Check
     async function checkAccountStatus() {
       const { data, error } = await supabase
         .from("fwebaccount")
-        .select("suspended_until")
+        .select("suspended_until, status")
         .eq("email", faccount.email)
         .single();
 
@@ -176,22 +188,30 @@
         return;
       }
 
+      // 🚫 Check for banned status
+      if (data.status && data.status.toLowerCase() === "banned") {
+        window.location.href = "fbanned.html";
+        return;
+      }
+
+      // ⏳ Check for suspension
       if (data.suspended_until) {
         const suspendedUTC = new Date(data.suspended_until);
         const nowUTC = new Date(new Date().toISOString());
         if (nowUTC < suspendedUTC) {
-          window.location.href = "suspended.html";
+          window.location.href = "fsuspend.html";
+          return;
         }
       }
     }
 
-    // Check every 5 seconds
-    setInterval(checkAccountStatus, 5000);
+    // Run immediately + every 5 seconds
     checkAccountStatus();
+    setInterval(checkAccountStatus, 5000);
   </script>
 
+  <!-- Extra quick navigation buttons -->
   <script>
-    // Adds quick navigation buttons (Fminers, Fpublisher, Fadvertisers)
     const lastSection = document.querySelectorAll('.details-section');
     if (lastSection.length) {
       const container = document.createElement('div');
@@ -220,6 +240,7 @@
     }
   </script>
 
+  <!-- Theme & Font Preferences -->
   <style>
     :root {
       --bg-color-light: #fff;
