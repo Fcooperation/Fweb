@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Account Banned</title>
+<style>
+  body {
+    font-family: sans-serif;
+    background: #f8d7da;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+  }
+  .message-box {
+    background: #fff;
+    padding: 30px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    max-width: 450px;
+  }
+  h2 { color: #721c24; margin-bottom: 20px; }
+  p { color: #721c24; font-size: 16px; }
+  a { color: #007bff; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="message-box">
+  <h2>Account Permanently Banned</h2>
+  <p id="welcome"></p>
+  <p>Your Faccount has been permanently banned because you have gone against one of the <a href="privacy.html">Terms and Conditions</a>.</p>
+</div>
+
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = "https://pwsxezhugsxosbwhkdvf.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
+
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const faccount = JSON.parse(localStorage.getItem("faccount"));
+if (!faccount || !faccount.email) {
+  document.getElementById("welcome").textContent = "No account info found.";
+} else {
+  const userEmail = faccount.email;
+
+  async function fetchUser() {
+    const { data, error } = await supabase
+      .from("fwebaccount")
+      .select("username")
+      .eq("email", userEmail)
+      .single();
+
+    if (error || !data) {
+      document.getElementById("welcome").textContent = "Unable to fetch account info.";
+      return;
+    }
+
+    document.getElementById("welcome").textContent = `Hello, ${data.username}!`;
+  }
+
+  fetchUser();
+}
+</script>
+</body>
+</html>
