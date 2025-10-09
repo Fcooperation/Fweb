@@ -5,72 +5,55 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dashboard</title>
   <style>
-    body { margin: 0; font-family: Arial, sans-serif; background: #f5f7fa; text-align: center; }
-    .profile-section {
-      width: 100%; height: 300px; background: #ccc;
-      display: flex; align-items: center; justify-content: center;
-      overflow: hidden;
-    }
-    .profile-section img {
-      width: 100%; height: 100%; object-fit: cover;
-    }
-    .upload-box {
-      margin: 15px auto;
-      display: flex; justify-content: center; align-items: center; gap: 10px;
-    }
-    .upload-box input {
-      padding: 6px;
-    }
-    .upload-box button {
-      padding: 8px 14px; background: #007bff; color: #fff;
-      border: none; border-radius: 6px; cursor: pointer;
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f5f7fa;
+      text-align: center;
     }
     h2 {
-      margin: 20px 0; font-size: 28px; font-weight: bold;
-      color: #007bff; text-transform: uppercase;
+      margin: 20px 0;
+      font-size: 28px;
+      font-weight: bold;
+      color: #007bff;
+      text-transform: uppercase;
     }
     .details-section {
-      margin: 30px auto; padding: 20px; max-width: 400px;
-      background: #fff; border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1); text-align: left;
+      margin: 30px auto;
+      padding: 20px;
+      max-width: 400px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      text-align: left;
     }
-    .details-section h3 { margin-bottom: 15px; }
+    .details-section h3 {
+      margin-bottom: 15px;
+    }
     .details-section input {
-      width: 100%; padding: 10px; margin-bottom: 10px;
-      border: 1px solid #ddd; border-radius: 6px;
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
     }
     .details-section button {
-      width: 100%; padding: 10px;
-      background: #007bff; color: #fff; border: none;
-      border-radius: 6px; cursor: pointer;
+      width: 100%;
+      padding: 10px;
+      background: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
     }
-    .details-section button:hover { background: #0056b3; }
-
-    body.dark-mode, html.dark-mode {
-      background: #111;
-      color: #f5f5f5;
-    }
-    body.dark-mode * {
-      background: inherit !important;
-      color: inherit !important;
+    .details-section button:hover {
+      background: #0056b3;
     }
   </style>
 </head>
 <body>
-  <!-- Profile Section -->
-  <div class="profile-section">
-    <img id="profile-pic" src="default.png" alt="Profile Picture">
-  </div>
-
-  <!-- Upload Box -->
-  <div class="upload-box">
-    <input type="file" id="file-input" accept="image/*">
-    <button onclick="uploadImage()">Upload</button>
-  </div>
-
   <h2 id="username">Loading...</h2>
 
-  <!-- Account Update -->
   <div class="details-section">
     <h3>Update Account Details</h3>
     <input type="text" id="new-name" placeholder="New Username">
@@ -78,7 +61,6 @@
     <button onclick="updateDetails()">Save Changes</button>
   </div>
 
-  <!-- Logout/Delete -->
   <div class="details-section" style="margin-top: 15px;">
     <button id="logout-btn" style="background:#dc3545;">Logout</button>
     <button id="delete-btn" style="background:#6c757d; margin-top:10px;">Delete Account</button>
@@ -87,70 +69,50 @@
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
+    // Initialize Supabase
     const supabase = createClient(
       "https://pwsxezhugsxosbwhkdvf.supabase.co",
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
     );
 
+    // Retrieve stored account
     const faccount = JSON.parse(localStorage.getItem("faccount"));
     if (!faccount) {
-      alert("No account found in local storage. Please log in again.");
+      alert("No account found. Please log in again.");
       window.location.href = "login.html";
     }
 
-    // Show basic info
-    document.getElementById("username").innerText = faccount.username || "No Username";
-    if (faccount.profile_pic) document.getElementById("profile-pic").src = faccount.profile_pic;
+    // Show username
+    document.getElementById("username").innerText = faccount.username || "User";
 
-    // --- Upload Image ---
-    async function uploadImage() {
-      const fileInput = document.getElementById("file-input");
-      if (!fileInput.files.length) return alert("Select an image first.");
-      const file = fileInput.files[0];
-      const base64 = await new Promise((res, rej) => {
-        const r = new FileReader();
-        r.onload = () => res(r.result);
-        r.onerror = rej;
-        r.readAsDataURL(file);
-      });
-      const { error } = await supabase
-        .from("fwebaccount")
-        .update({ profile_pic: base64 })
-        .eq("email", faccount.email);
-      if (error) return alert("Error: " + error.message);
-
-      faccount.profile_pic = base64;
-      localStorage.setItem("faccount", JSON.stringify(faccount));
-      document.getElementById("profile-pic").src = base64;
-      alert("Profile picture updated!");
-    }
-
-    // --- Update Details ---
+    // Update details
     async function updateDetails() {
-      const newName = document.getElementById("new-name").value;
-      const newPass = document.getElementById("new-pass").value;
+      const newName = document.getElementById("new-name").value.trim();
+      const newPass = document.getElementById("new-pass").value.trim();
+      if (!newName && !newPass) return alert("Enter a username or password to update.");
+
       const updates = {};
       if (newName) updates.username = newName;
       if (newPass) updates.password_hash = newPass;
-      if (Object.keys(updates).length === 0) return alert("Enter details to update.");
 
       const { error } = await supabase
         .from("fwebaccount")
         .update(updates)
         .eq("email", faccount.email);
 
-      if (error) return alert("Error updating: " + error.message);
-
-      if (newName) {
-        faccount.username = newName;
-        document.getElementById("username").innerText = newName;
+      if (error) {
+        alert("Error updating: " + error.message);
+      } else {
+        if (newName) faccount.username = newName;
+        if (newPass) faccount.password_hash = newPass;
+        localStorage.setItem("faccount", JSON.stringify(faccount));
+        document.getElementById("username").innerText = faccount.username;
+        alert("Account updated!");
       }
-      if (newPass) faccount.password_hash = newPass;
-      localStorage.setItem("faccount", JSON.stringify(faccount));
-      alert("Account updated!");
     }
+    window.updateDetails = updateDetails;
 
-    // Logout/Delete buttons
+    // Logout/Delete
     document.getElementById("logout-btn").addEventListener("click", () => {
       localStorage.removeItem("faccount");
       alert("Logged out successfully!");
@@ -163,102 +125,74 @@
         .from("fwebaccount")
         .delete()
         .eq("email", faccount.email);
-      if (error) return alert("Error deleting: " + error.message);
-      localStorage.removeItem("faccount");
-      alert("Account deleted.");
-      window.location.href = "signup.html";
+      if (error) {
+        alert("Error deleting: " + error.message);
+      } else {
+        localStorage.removeItem("faccount");
+        alert("Account deleted.");
+        window.location.href = "signup.html";
+      }
     });
 
-    window.uploadImage = uploadImage;
-    window.updateDetails = updateDetails;
-
-    // 🔁 Real-Time Status Check
+    // ✅ Check account suspension and banned status
     async function checkAccountStatus() {
       const { data, error } = await supabase
         .from("fwebaccount")
         .select("suspended_until, status")
         .eq("email", faccount.email)
-        .single();
+        .maybeSingle();
 
-      if (error || !data) {
-        console.warn("User not found or deleted.");
+      if (error) {
+        console.warn("Error checking account status:", error.message);
+        return;
+      }
+
+      if (!data) {
         alert("Your account no longer exists.");
         localStorage.removeItem("faccount");
         window.location.href = "login.html";
         return;
       }
 
-      // 🚫 Check for banned status
-      if (data.status && data.status.toLowerCase() === "banned") {
+      // Convert to lower case to avoid case mismatches
+      const status = data.status ? data.status.toLowerCase() : "active";
+
+      // 🚫 Redirect if banned
+      if (status === "banned") {
+        console.log("User is banned — redirecting to fbanned.html");
         window.location.href = "fbanned.html";
         return;
       }
 
-      // ⏳ Check for suspension
+      // ⏳ Redirect if suspended
       if (data.suspended_until) {
-        const suspendedUTC = new Date(data.suspended_until);
-        const nowUTC = new Date(new Date().toISOString());
-        if (nowUTC < suspendedUTC) {
+        const suspendedUntil = new Date(data.suspended_until);
+        const now = new Date();
+        if (now < suspendedUntil) {
+          console.log("User is suspended — redirecting to fsuspend.html");
           window.location.href = "fsuspend.html";
           return;
         }
       }
     }
 
-    // Run immediately + every 5 seconds
+    // Run immediately and every 5 seconds
     checkAccountStatus();
     setInterval(checkAccountStatus, 5000);
   </script>
 
-  <!-- Extra quick navigation buttons -->
+  <!-- Backup Redirect Button -->
   <script>
-    const lastSection = document.querySelectorAll('.details-section');
-    if (lastSection.length) {
-      const container = document.createElement('div');
-      container.className = 'details-section';
-      container.style.marginTop = '15px';
-      const buttons = [
-        { text: 'Fminers', href: 'fminers.html', color: '#28a745' },
-        { text: 'Fpublisher', href: 'fpublisher.html', color: '#17a2b8' },
-        { text: 'Fadvertisers', href: 'fadvertisers.html', color: '#ffc107' }
-      ];
-      buttons.forEach(btn => {
-        const b = document.createElement('button');
-        b.innerText = btn.text;
-        b.style.background = btn.color;
-        b.style.border = 'none';
-        b.style.color = '#fff';
-        b.style.padding = '10px';
-        b.style.width = '100%';
-        b.style.borderRadius = '6px';
-        b.style.cursor = 'pointer';
-        b.style.marginBottom = '10px';
-        b.onclick = () => window.location.href = btn.href;
-        container.appendChild(b);
-      });
-      lastSection[lastSection.length - 1].after(container);
-    }
-  </script>
-
-  <!-- Theme & Font Preferences -->
-  <style>
-    :root {
-      --bg-color-light: #fff;
-      --text-color-light: #000;
-      --bg-color-dark: #111;
-      --text-color-dark: #f5f5f5;
-    }
-    body.light-mode { background: var(--bg-color-light); color: var(--text-color-light); }
-    body.dark-mode { background: var(--bg-color-dark); color: var(--text-color-dark); }
-  </style>
-
-  <script>
-    (function(){
-      const theme = localStorage.getItem('theme') || 'light';
-      const font = localStorage.getItem('fontsize') || '16px';
-      document.body.classList.add(theme + "-mode");
-      document.body.style.fontSize = font;
-    })();
+    // Add a backup redirect button if auto redirect fails
+    const backup = document.createElement("div");
+    backup.style.marginTop = "20px";
+    backup.innerHTML = `
+      <button onclick="window.location.href='login.html'" 
+        style="padding:10px 20px; background:#28a745; border:none; border-radius:6px; color:#fff; cursor:pointer;">
+        Back to Login
+      </button>
+    `;
+    document.body.appendChild(backup);
   </script>
 </body>
 </html>
