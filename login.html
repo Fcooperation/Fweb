@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fweb Login</title>
   <style>
     body {
@@ -123,7 +123,6 @@
         return;
       }
 
-      // show loading
       loginBtn.textContent = "Logging in...";
       loginBtn.disabled = true;
 
@@ -144,18 +143,39 @@
           return;
         }
 
-        // Status check logic
+        // Always check account status before deciding redirect
+        const nowUTC = new Date(new Date().toISOString());
+        const suspendedUntil = data.suspended_until ? new Date(data.suspended_until) : null;
+
+        if (data.status === "banned") {
+          window.location.href = "fbanned.html";
+          return;
+        }
+
+        if (data.status === "suspended" && suspendedUntil && suspendedUntil > nowUTC) {
+          // Still suspended
+          localStorage.setItem("faccount", JSON.stringify(data));
+          localStorage.setItem("suspended_until", data.suspended_until);
+          window.location.href = "fsuspend.html";
+          return;
+        }
+
+        // If suspension expired, reactivate automatically
+        if (data.status === "suspended" && suspendedUntil && suspendedUntil <= nowUTC) {
+          await supabase
+            .from("fwebaccount")
+            .update({ status: "active" })
+            .eq("email", emailInput);
+          data.status = "active";
+        }
+
+        // Finally handle active or other states
         if (data.status === "active") {
           localStorage.setItem("faccount", JSON.stringify(data));
           alert("Login successful!");
           window.location.href = "dashboard.html";
-        } else if (data.status === "banned") {
-          window.location.href = "fbanned.html";
-        } else if (data.status === "suspended") {
-          localStorage.setItem("suspended_until", data.suspended_until);
-          window.location.href = "fsuspend.html";
         } else {
-          alert("Your account is not active.");
+          alert("Your account is not active. Please contact support.");
         }
 
       } catch (err) {
