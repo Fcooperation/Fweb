@@ -34,7 +34,7 @@
   <h2>Account Suspended</h2>
   <p id="welcome"></p>
   <p>Your account is suspended until:</p>
-  <div class="timer" id="countdown"></div>
+  <div class="timer" id="suspendTime">Loading...</div>
   <p>Review the <a href="privacy.html">Terms and Conditions</a>.</p>
 </div>
 
@@ -45,7 +45,7 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Get user email from localStorage
+// Get account from localStorage
 const faccount = JSON.parse(localStorage.getItem("faccount"));
 if (!faccount || !faccount.email) {
   document.getElementById("welcome").textContent = "No account info found.";
@@ -61,36 +61,12 @@ if (!faccount || !faccount.email) {
 
     if (error || !data) {
       document.getElementById("welcome").textContent = "Unable to fetch account info.";
+      document.getElementById("suspendTime").textContent = "Error loading suspension info.";
       return;
     }
 
     document.getElementById("welcome").textContent = `Hello, ${data.username}!`;
-
-    // Ensure proper UTC comparison
-    const targetTime = new Date(data.suspended_until);
-    const countdownEl = document.getElementById("countdown");
-
-    function updateCountdown() {
-      const nowUTC = new Date(new Date().toISOString());
-      const diff = targetTime - nowUTC;
-
-      if (diff <= 0) {
-        countdownEl.textContent = "Your suspension has ended. Redirecting...";
-        clearInterval(timerInterval);
-        setTimeout(() => {
-          localStorage.removeItem("faccount");
-          window.location.href = "login.html";
-        }, 2000);
-        return;
-      }
-
-      const totalMinutes = Math.floor(diff / 60000);
-      const seconds = Math.floor((diff % 60000) / 1000);
-      countdownEl.textContent = `${totalMinutes}m ${seconds}s remaining`;
-    }
-
-    updateCountdown();
-    const timerInterval = setInterval(updateCountdown, 1000);
+    document.getElementById("suspendTime").textContent = data.suspended_until || "Not specified";
   }
 
   fetchUser();
