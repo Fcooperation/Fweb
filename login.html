@@ -5,32 +5,86 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Fweb Login</title>
   <style>
-    body { font-family: sans-serif; background: #f5f7fa; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-    .account-box { background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
-    h2 { text-align: center; margin-bottom: 20px; }
-    .input-group { margin-bottom: 15px; }
-    label { display: block; margin-bottom: 6px; font-size: 14px; font-weight: 600; }
-    input[type="email"], input[type="password"] { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
-    .btn { width: 100%; padding: 12px; background: #007bff; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 15px; margin-top: 10px; }
-    .btn:hover { background: #0056b3; }
-    .toggle-link { text-align: center; margin-top: 15px; font-size: 14px; }
-    .toggle-link a { color: #007bff; cursor: pointer; text-decoration: none; }
-  
-  .forgot-btn {
-    width: 100%;
-    padding: 12px;
-    background: #6c757d;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 15px;
-    margin-top: 10px;
-  }
-  .forgot-btn:hover {
-    background: #5a6268;
-  }
-
+    body {
+      font-family: sans-serif;
+      background: #f5f7fa;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .account-box {
+      background: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 400px;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .input-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    input[type="email"], input[type="password"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .btn {
+      width: 100%;
+      padding: 12px;
+      background: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 15px;
+      margin-top: 10px;
+      transition: background 0.2s;
+    }
+    .btn:hover {
+      background: #0056b3;
+    }
+    .forgot-btn {
+      width: 100%;
+      padding: 12px;
+      background: #6c757d;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 15px;
+      margin-top: 10px;
+      transition: background 0.2s;
+    }
+    .forgot-btn:hover {
+      background: #5a6268;
+    }
+    .toggle-link {
+      text-align: center;
+      margin-top: 15px;
+      font-size: 14px;
+    }
+    .toggle-link a {
+      color: #007bff;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .toggle-link a:hover {
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
@@ -38,14 +92,14 @@
     <h2>Login</h2>
     <div class="input-group">
       <label for="email">Email</label>
-      <input type="email" id="email">
+      <input type="email" id="email" placeholder="Enter your email">
     </div>
     <div class="input-group">
       <label for="password">Password</label>
-      <input type="password" id="password">
+      <input type="password" id="password" placeholder="Enter your password">
     </div>
     <button class="btn" id="login-btn">Login</button>
-<button class="btn forgot-btn" id="forgot-btn">Forgot Password</button>
+    <button class="forgot-btn" id="forgot-btn">Forgot Password</button>
     <div class="toggle-link">
       Don’t have an account? <a href="signup.html">Sign up</a>
     </div>
@@ -53,58 +107,68 @@
 
   <!-- Supabase client -->
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-<script>
-  const SUPABASE_URL = "https://pwsxezhugsxosbwhkdvf.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
-
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-  document.getElementById("login-btn").addEventListener("click", async () => {
-    const emailInput = document.getElementById("email").value.trim().toLowerCase();
-    const passwordInput = document.getElementById("password").value.trim();
-
-    if (!emailInput || !passwordInput) {
-      alert("Please enter email and password");
-      return;
-    }
-
-    try {
-      // ✅ Fetch *all* columns for this account
-      const { data, error } = await supabase
-        .from("fwebaccount")
-        .select("*")
-        .eq("email", emailInput)
-        .single();
-
-      if (error || !data) {
-        alert("Invalid credentials");
-        return;
-      }
-
-      if (data.password_hash !== passwordInput) {
-        alert("Invalid credentials");
-        return;
-      }
-
-      if (data.status === "active") {
-        // ✅ Save everything in localStorage
-        localStorage.setItem("faccount", JSON.stringify(data));
-
-        alert("Login successful!");
-        window.location.href = "dashboard.html";
-      } else {
-        alert("Your account is not active.");
-        window.location.href = "banned.html";
-      }
-    } catch (err) {
-      alert("Error: " + err.message);
-    }
-  });
-</script>
   <script>
-  document.getElementById("forgot-btn").addEventListener("click", () => {
-    window.location.href = "forgetpassword.html";
-  });
-</script>
+    const SUPABASE_URL = "https://pwsxezhugsxosbwhkdvf.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    document.getElementById("login-btn").addEventListener("click", async () => {
+      const emailInput = document.getElementById("email").value.trim().toLowerCase();
+      const passwordInput = document.getElementById("password").value.trim();
+      const loginBtn = document.getElementById("login-btn");
+
+      if (!emailInput || !passwordInput) {
+        alert("Please enter email and password");
+        return;
+      }
+
+      // show loading
+      loginBtn.textContent = "Logging in...";
+      loginBtn.disabled = true;
+
+      try {
+        const { data, error } = await supabase
+          .from("fwebaccount")
+          .select("*")
+          .eq("email", emailInput)
+          .single();
+
+        if (error || !data) {
+          alert("Invalid credentials");
+          return;
+        }
+
+        if (data.password_hash !== passwordInput) {
+          alert("Invalid credentials");
+          return;
+        }
+
+        // Status check logic
+        if (data.status === "active") {
+          localStorage.setItem("faccount", JSON.stringify(data));
+          alert("Login successful!");
+          window.location.href = "dashboard.html";
+        } else if (data.status === "banned") {
+          window.location.href = "fbanned.html";
+        } else if (data.status === "suspended") {
+          localStorage.setItem("suspended_until", data.suspended_until);
+          window.location.href = "fsuspend.html";
+        } else {
+          alert("Your account is not active.");
+        }
+
+      } catch (err) {
+        alert("Error: " + err.message);
+      } finally {
+        loginBtn.textContent = "Login";
+        loginBtn.disabled = false;
+      }
+    });
+
+    document.getElementById("forgot-btn").addEventListener("click", () => {
+      window.location.href = "forgetpassword.html";
+    });
+  </script>
 </body>
 </html>
