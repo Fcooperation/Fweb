@@ -101,5 +101,17 @@ if (!faccount || !faccount.email) {
   fetchUser();
 }
 </script>
+  <div style="text-align:center; margin-top:20px;">
+  <button id="backBtn" 
+    style="padding:10px 20px; background:#007bff; color:#fff; border:none; border-radius:8px; cursor:pointer;">
+    Back to Login
+  </button>
+</div>
+
+<script>
+  document.getElementById("backBtn").addEventListener("click", () => {
+    window.location.href = "login.html";
+  });
+</script>
 </body>
 </html>
