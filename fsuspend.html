@@ -1,131 +1,104 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Account Suspended — Debug</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Account Suspended</title>
 <style>
-  body { font-family: sans-serif; background:#fff3cd; display:flex; align-items:center; justify-content:center; height:100vh; margin:0; }
-  .box { background:#fff; padding:24px; border-radius:12px; max-width:720px; box-shadow:0 6px 20px rgba(0,0,0,0.08); }
-  h2 { color:#856404; margin:0 0 12px; }
-  p { color:#856404; margin:6px 0; }
-  pre { background:#f8f9fa; padding:12px; border-radius:8px; max-height:240px; overflow:auto; }
-  .label { font-weight:700; margin-top:8px; }
-  .raw { font-size:12px; color:#333; }
+  body {
+    font-family: sans-serif;
+    background: #fff3cd;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+  }
+  .message-box {
+    background: #fff;
+    padding: 30px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    max-width: 450px;
+  }
+  h2 { color: #856404; margin-bottom: 20px; }
+  p { color: #856404; font-size: 16px; }
+  a { color: #007bff; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .timer { font-size: 18px; font-weight: bold; margin-top: 15px; }
 </style>
 </head>
 <body>
-  <div class="box">
-    <h2>Account Suspended (debug)</h2>
-    <p id="welcome">Loading…</p>
-
-    <p class="label">Suspension value (detected):</p>
-    <div id="suspendTime">Loading…</div>
-
-    <p class="label">Raw DB row returned:</p>
-    <pre id="rawData">Loading…</pre>
-
-    <p style="margin-top:12px">If it still shows <em>Not specified</em>, open the browser console (F12) and paste the JSON here so I can inspect the exact column names/values.</p>
-  </div>
+<div class="message-box">
+  <h2>Account Suspended</h2>
+  <p id="welcome"></p>
+  <p>Your account is suspended until:</p>
+  <div class="timer" id="countdown">Loading...</div>
+  <p>Review the <a href="privacy.html">Terms and Conditions</a>.</p>
+</div>
 
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL = "https://pwsxezhugsxosbwhkdvf.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
+
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// get stored account (from login)
-const faccount = (() => {
-  try { return JSON.parse(localStorage.getItem("faccount")); } catch(e) { return null; }
-})();
-
-const welcomeEl = document.getElementById("welcome");
-const suspendEl = document.getElementById("suspendTime");
-const rawEl = document.getElementById("rawData");
-
-if (!faccount) {
-  welcomeEl.textContent = "No account found in localStorage (faccount).";
-  suspendEl.textContent = "Not specified";
-  rawEl.textContent = "{}";
+const faccount = JSON.parse(localStorage.getItem("faccount"));
+if (!faccount || !faccount.email) {
+  document.getElementById("welcome").textContent = "No account info found.";
 } else {
-  // prefer id if available (more reliable), otherwise use email
-  const queryField = faccount.id ? "id" : "email";
-  const queryValue = faccount.id ? faccount.id : (faccount.email || "").trim().toLowerCase();
+  const userEmail = faccount.email;
 
-  welcomeEl.textContent = `Hello, ${faccount.username || faccount.email || "user"} — querying by ${queryField}`;
+  async function fetchUser() {
+    const { data, error } = await supabase
+      .from("fwebaccount")
+      .select("username, suspended_until")
+      .eq("email", userEmail)
+      .single();
 
-  (async function fetchRow() {
-    try {
-      // request everything so we can inspect column names
-      const { data, error } = await supabase
-        .from("fwebaccount")
-        .select("*")
-        .eq(queryField, queryValue)
-        .maybeSingle(); // maybeSingle avoids throwing when no row — returns null if none
-
-      console.log("Supabase response:", { data, error });
-      rawEl.textContent = JSON.stringify({ data, error }, null, 2);
-
-      if (error) {
-        suspendEl.textContent = "Error fetching row — check console for details.";
-        return;
-      }
-      if (!data) {
-        suspendEl.textContent = "No row returned for that account (check email/id).";
-        return;
-      }
-
-      // try a list of likely suspension keys (common variants)
-      const candidates = [
-        "suspended_until", "suspended_till", "suspend_until", "suspend_till",
-        "suspended_at", "suspended_time", "suspended_until_utc",
-        "suspension_end", "suspension_ends_at", "suspension_until",
-        "suspend_end", "suspend_end_at", "suspend_time",
-        "suspended_until_ts", "suspended_until_timestamp",
-        "suspend_minutes", "suspension_minutes", "suspended_for_minutes",
-        "suspension_duration_minutes", "suspension_duration"
-      ];
-
-      // find first truthy value among the candidates
-      let foundKey = null;
-      let foundValue = null;
-      for (const k of candidates) {
-        if (Object.prototype.hasOwnProperty.call(data, k) && data[k] != null && data[k] !== "") {
-          foundKey = k;
-          foundValue = data[k];
-          break;
-        }
-      }
-
-      // if nothing found, try to detect any key that looks like date/time by inspecting values
-      if (!foundKey) {
-        for (const k of Object.keys(data)) {
-          const v = data[k];
-          if (v == null || v === "") continue;
-          // heuristics: ISO timestamp strings or Date objects or numeric timestamps
-          if (typeof v === "string" && /\d{4}-\d{2}-\d{2}T?\d{2}:\d{2}:\d{2}/.test(v)) {
-            foundKey = k; foundValue = v; break;
-          }
-          if (typeof v === "number" && v > 1e9) { // likely unix ms/seconds
-            foundKey = k; foundValue = v; break;
-          }
-        }
-      }
-
-      if (foundKey) {
-        suspendEl.textContent = `${foundKey} → ${String(foundValue)}`;
-      } else {
-        // nothing found: show fallback and instructions
-        suspendEl.textContent = "Not specified (no known suspension column found).";
-        // keep raw JSON visible for inspection
-      }
-
-    } catch (err) {
-      console.error("Fetch error:", err);
-      suspendEl.textContent = "Error: see console.";
-      rawEl.textContent = String(err);
+    if (error || !data) {
+      document.getElementById("welcome").textContent = "Unable to fetch account info.";
+      document.getElementById("countdown").textContent = "Error loading suspension info.";
+      return;
     }
-  })();
+
+    document.getElementById("welcome").textContent = `Hello, ${data.username}!`;
+
+    const suspendedUTC = new Date(data.suspended_until); // UTC time from Supabase
+    const countdownEl = document.getElementById("countdown");
+
+    function updateCountdown() {
+      const nowUTC = new Date(new Date().toISOString()); // current UTC time
+      const diff = suspendedUTC - nowUTC;
+
+      if (diff <= 0) {
+        countdownEl.textContent = "Your suspension has ended. Redirecting...";
+        clearInterval(timerInterval);
+        setTimeout(() => {
+          window.location.href = "login.html";
+        }, 3000);
+        return;
+      }
+
+      const days = Math.floor(diff / (1000*60*60*24));
+      const hours = Math.floor((diff % (1000*60*60*24)) / (1000*60*60));
+      const minutes = Math.floor((diff % (1000*60*60)) / (1000*60));
+      const seconds = Math.floor((diff % (1000*60)) / 1000);
+
+      const localTime = suspendedUTC.toLocaleString(); // show your timezone
+      countdownEl.innerHTML = `
+        <div>⏰ ${days}d ${hours}h ${minutes}m ${seconds}s remaining</div>
+        <div>🕒 Ends at: ${localTime}</div>
+      `;
+    }
+
+    updateCountdown();
+    const timerInterval = setInterval(updateCountdown, 1000);
+  }
+
+  fetchUser();
 }
 </script>
 </body>
