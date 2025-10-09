@@ -60,6 +60,7 @@
     cursor: pointer;
     margin-top: 20px;
     font-size: 15px;
+    display: none; /* hidden by default */
   }
 
   #backBtn:hover {
@@ -88,10 +89,12 @@
     const faccount = JSON.parse(localStorage.getItem("faccount"));
     const welcomeEl = document.getElementById("welcome");
     const countdownEl = document.getElementById("countdown");
+    const backBtn = document.getElementById("backBtn");
 
     if (!faccount || !faccount.email) {
       welcomeEl.textContent = "No account info found.";
       countdownEl.textContent = "Unable to load suspension info.";
+      backBtn.style.display = "inline-block";
     } else {
       const userEmail = faccount.email;
 
@@ -105,6 +108,7 @@
         if (error || !data) {
           welcomeEl.textContent = "Unable to fetch account info.";
           countdownEl.textContent = "Error loading suspension info.";
+          backBtn.style.display = "inline-block";
           return;
         }
 
@@ -119,9 +123,20 @@
           if (diff <= 0) {
             countdownEl.textContent = "Your suspension has ended. Redirecting...";
             clearInterval(timerInterval);
+
+            // Attempt redirect
             setTimeout(() => {
-              window.location.href = "login.html";
+              try {
+                window.location.href = "login.html";
+              } catch {
+                backBtn.style.display = "inline-block"; // fallback
+              }
             }, 3000);
+
+            // Safety fallback in case redirect fails
+            setTimeout(() => {
+              backBtn.style.display = "inline-block";
+            }, 5000);
             return;
           }
 
@@ -144,8 +159,8 @@
       fetchUser();
     }
 
-    // Back to login button fallback
-    document.getElementById("backBtn").addEventListener("click", () => {
+    // Manual Back to Login button
+    backBtn.addEventListener("click", () => {
       window.location.href = "login.html";
     });
   </script>
