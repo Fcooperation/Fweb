@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FCHAT</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Poppins', 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #000000, #1a1a1a);
+      color: #fff;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+    }
+
+    /* Header */
+    header {
+      position: relative;
+      text-align: center;
+      padding: 15px 0;
+      background: rgba(255, 255, 255, 0.05);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      font-weight: 700;
+      font-size: 22px;
+      letter-spacing: 1px;
+      color: #00c6ff;
+    }
+
+    /* Chat Empty State */
+    main {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      text-align: center;
+      padding: 20px;
+      animation: fadeIn 1.5s ease;
+    }
+
+    main h2 {
+      font-size: 22px;
+      color: #fff;
+      margin-bottom: 10px;
+    }
+
+    main p {
+      color: #aaa;
+      font-size: 15px;
+    }
+
+    /* Floating Plus Button */
+    .fab {
+      position: fixed;
+      right: 25px;
+      bottom: 85px;
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, #0072ff, #00c6ff);
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 36px;
+      color: white;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .fab:hover {
+      transform: scale(1.1);
+      opacity: 0.9;
+    }
+
+    /* Bottom Navigation */
+    nav {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      height: 65px;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    nav button {
+      background: none;
+      border: none;
+      color: #aaa;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    nav button.active {
+      color: #00c6ff;
+      font-weight: 600;
+    }
+
+    nav button:hover {
+      color: #fff;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ===== 3 Dots Menu ===== */
+    .menu-btn {
+      position: absolute;
+      top: 115px;
+      right: 20px;
+      font-size: 22px;
+      color: #fff;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.2s ease;
+    }
+    .menu-btn:hover { transform: scale(1.1); }
+
+    .menu-box {
+      position: absolute;
+      top: 155px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.07);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      width: 150px;
+      animation: fadeIn 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      z-index: 100;
+    }
+
+    .menu-box button {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 15px;
+      padding: 12px;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .menu-box button:hover {
+      background: rgba(255,255,255,0.1);
+    }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <!-- Header with 3 Dots Menu -->
+  <header>
+    FWEB
+    <div class="menu-btn" id="menuBtn">⋮</div>
+    <div class="menu-box hidden" id="menuBox">
+      <button onclick="window.location.href='friendrequest.html'">Frie d requests</button>
+            <button onclick="window.location.href='fchatsettings.html'">Settings</button>
+    </div>
+  </header>
+
+  <!-- Main Section -->
+  <main id="content">
+    <h2>Welcome to FCHAT</h2>
+    <p>Your chats will appear here once you start messaging.</p>
+  </main>
+
+  <!-- Floating Add Button -->
+  <div class="fab" onclick="window.location.href='add.html'">+</div>
+
+  <!-- Bottom Navigation -->
+  <nav>
+    <button id="chatTab" class="active" onclick="goPage('fchat.html', this)">Chats</button>
+    <button onclick="goPage('status.html', this)">Status</button>
+    <button onclick="goPage('channels.html', this)">Channels</button>
+    <button onclick="goPage('me.html', this)">Me</button>
+  </nav>
+
+  <!-- Scripts -->
+  <script>
+    // Navigation handler
+    function goPage(url, el) {
+      document.querySelectorAll("nav button").forEach(btn => btn.classList.remove("active"));
+      el.classList.add("active");
+      if (url !== "fchat.html") window.location.href = url;
+    }
+
+    // Swipe detection setup
+    let startX = 0;
+    document.body.addEventListener('touchstart', e => startX = e.touches[0].clientX);
+    document.body.addEventListener('touchend', e => {
+      let endX = e.changedTouches[0].clientX;
+      if (startX - endX > 80) console.log("➡️ Swipe left");
+      if (endX - startX > 80) console.log("⬅️ Swipe right");
+    });
+
+    // === Handle 3-dot menu toggle ===
+    const menuBtn = document.getElementById("menuBtn");
+    const menuBox = document.getElementById("menuBox");
+
+    menuBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      menuBox.classList.toggle("hidden");
+    });
+
+    // === Close menu when clicking outside ===
+    document.addEventListener("click", (e) => {
+      if (!menuBox.contains(e.target) && !menuBtn.contains(e.target)) {
+        menuBox.classList.add("hidden");
+      }
+    });
+  </script>
+<script>
+// === Insert Search Bar Under Header ===
+document.addEventListener("DOMContentLoaded", () => {
+  const header = document.querySelector("header");
+  const searchContainer = document.createElement("div");
+  searchContainer.classList.add("search-wrapper");
+  searchContainer.innerHTML = `
+    <div class="search-bar">
+      <span class="search-icon" id="openSearch">🔍</span>
+      <input type="text" id="chatSearch" placeholder="Search chats..." readonly />
+    </div>
+  `;
+  header.insertAdjacentElement("afterend", searchContainer);
+
+  // === Create Search Overlay ===
+  const overlay = document.createElement("div");
+  overlay.classList.add("search-overlay", "hidden");
+  overlay.innerHTML = `
+    <div class="overlay-content">
+      <div class="overlay-header">
+        <span class="back-btn" id="closeSearch">←</span>
+        <input type="text" id="overlaySearch" placeholder="Search chats or users..." autofocus />
+        <button id="cancelSearch">Cancel</button>
+      </div>
+      <div class="search-results" id="searchResults">
+        <p class="empty-state">Start typing to search...</p>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  // === Open & Close Handlers ===
+  const openSearch = document.getElementById("openSearch");
+  const closeSearch = document.getElementById("closeSearch");
+  const cancelSearch = document.getElementById("cancelSearch");
+  const searchOverlay = document.querySelector(".search-overlay");
+  const overlayInput = document.getElementById("overlaySearch");
+  const resultsBox = document.getElementById("searchResults");
+
+  openSearch.addEventListener("click", () => {
+    searchOverlay.classList.remove("hidden");
+    overlayInput.focus();
+  });
+
+  [closeSearch, cancelSearch].forEach(el =>
+    el.addEventListener("click", () => {
+      searchOverlay.classList.add("hidden");
+      overlayInput.value = "";
+      resultsBox.innerHTML = `<p class="empty-state">Start typing to search...</p>`;
+    })
+  );
+
+  // === Search Filtering Simulation ===
+  overlayInput.addEventListener("input", () => {
+    const query = overlayInput.value.trim().toLowerCase();
+    if (!query) {
+      resultsBox.innerHTML = `<p class="empty-state">Start typing to search...</p>`;
+      return;
+    }
+
+    // Dummy results for now
+    resultsBox.innerHTML = `
+      <p class="search-item">Searching for "<b>${query}</b>"...</p>
+      <p class="search-item">No results yet (connect to DB later).</p>
+    `;
+  });
+});
+</script>
+
+<style>
+/* === Search Bar (Under Header) === */
+.search-wrapper {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 15px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.search-icon {
+  font-size: 18px;
+  color: #aaa;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+.search-icon:hover { color: #00c6ff; }
+.search-bar input {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: none;
+  outline: none;
+  font-size: 15px;
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+}
+
+/* === Overlay (Full-Screen Search) === */
+.search-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(15px);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  transition: opacity 0.4s ease;
+  animation: fadeIn 0.3s ease;
+  z-index: 999;
+}
+.hidden {
+  display: none !important;
+  opacity: 0;
+}
+.overlay-header {
+  display: flex;
+  align-items: center;
+  padding: 15px;
+  gap: 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.15);
+}
+.overlay-header input {
+  flex: 1;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: none;
+  outline: none;
+  font-size: 15px;
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+}
+.back-btn {
+  font-size: 22px;
+  cursor: pointer;
+  color: #00c6ff;
+}
+#cancelSearch {
+  background: none;
+  border: none;
+  color: #00c6ff;
+  font-size: 15px;
+  cursor: pointer;
+}
+.search-results {
+  padding: 15px;
+  overflow-y: auto;
+  flex: 1;
+}
+.search-item {
+  padding: 12px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.08);
+  margin-bottom: 10px;
+  font-size: 15px;
+  color: #fff;
+}
+.empty-state {
+  color: #aaa;
+  text-align: center;
+  margin-top: 40px;
+}
+</style>
+</body>
+</html>
