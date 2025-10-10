@@ -6,86 +6,119 @@
   <title>Welcome to FCHAT</title>
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #ffffff;
-      color: #000000;
+      font-family: 'Poppins', 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #000000, #1a1a1a);
+      color: #fff;
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
       margin: 0;
-      overflow: hidden;
       flex-direction: column;
       text-align: center;
+      overflow: hidden;
+    }
+    .card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(12px);
+      border-radius: 24px;
+      padding: 40px 25px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+      width: 90%;
+      max-width: 420px;
+      animation: fadeInCard 1.5s ease-in-out forwards;
+    }
+    @keyframes fadeInCard {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); opacity: 1; }
     }
     h1 {
-      font-size: 42px;
+      font-size: 38px;
       font-weight: 800;
       letter-spacing: 1px;
+      margin: 0;
+      background: linear-gradient(90deg, #00c6ff, #0072ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
       opacity: 0;
-      animation: fadeIn 2s ease-in-out forwards;
+      animation: fadeIn 1.5s ease-in-out forwards;
     }
     h2 {
-      font-size: 30px;
+      font-size: 24px;
+      font-weight: 600;
       margin-top: 20px;
-      font-weight: 700;
       opacity: 0;
-      animation: fadeIn 2s ease-in-out 2s forwards;
+      animation: fadeIn 1.5s ease-in-out forwards;
     }
+    p { color: #aaa; font-size: 15px; }
     .hidden { display: none; }
+
     .btn {
-      background: #000;
+      background: linear-gradient(135deg, #0072ff, #00c6ff);
       color: #fff;
       border: none;
-      padding: 12px 30px;
+      padding: 12px 35px;
       border-radius: 10px;
-      font-size: 16px;
+      font-size: 15px;
       cursor: pointer;
-      margin-top: 30px;
+      margin-top: 25px;
+      transition: all 0.3s ease;
     }
-    .btn:hover { background: #333; }
+    .btn:hover { transform: scale(1.05); opacity: 0.9; }
+
     .input-box {
       display: none;
       flex-direction: column;
       align-items: center;
       gap: 15px;
-      animation: fadeIn 1s ease-in-out forwards;
+      animation: fadeIn 1.2s ease-in-out forwards;
     }
     input, textarea {
-      width: 80%;
+      width: 90%;
       max-width: 350px;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.1);
+      color: #fff;
       font-size: 15px;
+      outline: none;
       text-align: center;
+      transition: all 0.3s ease;
+    }
+    input:focus, textarea:focus {
+      background: rgba(255,255,255,0.15);
     }
     textarea {
       resize: none;
       height: 100px;
     }
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
+      from { opacity: 0; transform: translateY(15px); }
       to { opacity: 1; transform: translateY(0); opacity: 1; }
     }
   </style>
 </head>
 <body>
-  <h1 id="brand">FCOOPERATION</h1>
-  <h2 id="welcome-text" class="hidden">Welcome to FCHAT...</h2>
-  <div id="hiUser" class="hidden"></div>
+  <div class="card">
+    <h1 id="brand">FCOOPERATION</h1>
+    <h2 id="welcome-text" class="hidden">Welcome to FCHAT...</h2>
 
-  <div id="dob-box" class="input-box">
-    <h2>Enter your Date of Birth</h2>
-    <input type="date" id="dob" />
-    <button class="btn" id="save-dob">Next</button>
-  </div>
+    <div id="hiUser" class="hidden"></div>
 
-  <div id="bio-box" class="input-box">
-    <h2>Write about yourself (max 250 chars)</h2>
-    <textarea id="bio" maxlength="250" placeholder="Hintly write about yourself... (optional)"></textarea>
-    <button class="btn" id="save-bio">Next</button>
-    <button class="btn" id="skip-bio">Skip</button>
+    <div id="dob-box" class="input-box">
+      <h2>Enter your Date of Birth</h2>
+      <input type="date" id="dob" />
+      <button class="btn" id="save-dob">Next</button>
+    </div>
+
+    <div id="bio-box" class="input-box">
+      <h2>Write about yourself (optional)</h2>
+      <textarea id="bio" maxlength="250" placeholder="Briefly describe yourself..."></textarea>
+      <button class="btn" id="save-bio">Next</button>
+      <button class="btn" id="skip-bio" style="background:rgba(255,255,255,0.1);">Skip</button>
+    </div>
   </div>
 
   <script type="module">
@@ -101,37 +134,35 @@
     const hiUser = document.getElementById("hiUser");
     const dobBox = document.getElementById("dob-box");
     const bioBox = document.getElementById("bio-box");
-
     const user = JSON.parse(localStorage.getItem("faccount"));
 
-    // Step 1: Fade in FCOOPERATION (2s fade-in, wait 2s)
+    // Step 1 — Brand fade in then Welcome
     setTimeout(() => {
       brand.style.opacity = "1";
       setTimeout(() => {
         brand.classList.add("hidden");
         welcomeText.classList.remove("hidden");
+        welcomeText.style.opacity = "1";
       }, 2000);
-    }, 0);
+    }, 200);
 
-    // Step 2: Show welcome loading then greet user
+    // Step 2 — After welcome done, show hiUser text then Next button
     setTimeout(() => {
       welcomeText.classList.add("hidden");
-      hiUser.innerHTML = `<h2>Hi ${user?.username || "User"}<br>Welcome to FCHAT</h2>
-                          <button class='btn' id='next-btn' style='opacity:0;'>Next</button>`;
       hiUser.classList.remove("hidden");
+      hiUser.innerHTML = `<h2 style="animation-delay:0s;">Hi ${user?.username || "User"}<br>Welcome to FCHAT</h2>
+                          <button class='btn hidden' id='next-btn'>Next</button>`;
 
-      // Fade in the "Next" button after text fully visible
       setTimeout(() => {
-        document.getElementById("next-btn").style.opacity = "1";
-      }, 1200);
-
+        document.getElementById("next-btn").classList.remove("hidden");
+      }, 1500);
       document.getElementById("next-btn").addEventListener("click", () => {
         hiUser.classList.add("hidden");
-        dobBox.style.display = "flex";
+        setTimeout(() => dobBox.style.display = "flex", 200);
       });
-    }, 4000);
+    }, 4500);
 
-    // Step 3: Save DOB to Supabase and localStorage
+    // Step 3 — Save DOB
     document.getElementById("save-dob").addEventListener("click", async () => {
       const dob = document.getElementById("dob").value;
       if (!dob) return alert("Please enter your date of birth.");
@@ -146,10 +177,10 @@
       user.dob = dob;
       localStorage.setItem("faccount", JSON.stringify(user));
       dobBox.style.display = "none";
-      bioBox.style.display = "flex";
+      setTimeout(() => bioBox.style.display = "flex", 200);
     });
 
-    // Step 4: Save BIO + Mark FCHAT Account Complete
+    // Step 4 — Save BIO + mark fchat
     async function completeFchat(bioValue) {
       const updates = { bio: bioValue, fchat: "yes" };
       const { error } = await supabase
@@ -159,12 +190,11 @@
 
       if (error) return alert("Error saving data: " + error.message);
 
-      // Save locally
       user.bio = bioValue;
       user.fchat = "yes";
       localStorage.setItem("faccount", JSON.stringify(user));
 
-      alert("🎉 FCHAT account created successfully!");
+      alert("🎉 Your FCHAT account is ready!");
       window.location.href = "fchat.html";
     }
 
@@ -172,7 +202,6 @@
       const bio = document.getElementById("bio").value.trim();
       completeFchat(bio);
     });
-
     document.getElementById("skip-bio").addEventListener("click", () => {
       completeFchat("");
     });
