@@ -257,33 +257,41 @@
     body.dark-mode { background: var(--bg-color-dark); color: var(--text-color-dark); }
   </style>
 
-  <script>
-    (function(){
-      const theme = localStorage.getItem('theme') || 'light';
-      const font = localStorage.getItem('fontsize') || '16px';
-      document.body.classList.add(theme + "-mode");
-      document.body.style.fontSize = font;
-    })();
-  </script>
   <button id="fchat-btn" class="btn">Open FCHAT</button>
 
 <script type="module">
   import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-  const supabase = createClient(
-    "https://pwsxezhugsxosbwhkdvf.supabase.co",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-  );
+
+  const supabaseUrl = "https://pwsxezhugsxosbwhkdvf.supabase.co";
+  const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
+  const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
   document.getElementById("fchat-btn").addEventListener("click", async () => {
     const user = JSON.parse(localStorage.getItem("fweb_user"));
-    if (!user) return (window.location.href = "signup.html");
 
-    const { data } = await supabase.from("fwebaccount").select("*").eq("email", user.email).single();
+    if (!user || !user.email) {
+      // No user data locally — assume not onboarded yet
+      return (window.location.href = "welcometofchat.html");
+    }
 
-    if (data?.dob) {
+    // Fetch account details from Supabase
+    const { data, error } = await supabase
+      .from("fwebaccount")
+      .select("*")
+      .eq("email", user.email)
+      .single();
+
+    // If account exists and has completed onboarding
+    if (data && data.dob) {
       localStorage.setItem("fweb_user", JSON.stringify(data));
       window.location.href = "fchat.html";
-    } else {
+    } 
+    // If account exists but onboarding not complete
+    else if (data && !data.dob) {
+      window.location.href = "welcometofchat.html";
+    } 
+    // If account not found
+    else {
       window.location.href = "welcometofchat.html";
     }
   });
