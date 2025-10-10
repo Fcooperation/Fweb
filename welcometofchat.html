@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome to FCHAT</title>
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background: #ffffff;
+      color: #000000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      flex-direction: column;
+      text-align: center;
+      overflow: hidden;
+    }
+    h1 {
+      font-size: 45px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      opacity: 0;
+      animation: fadeIn 2s ease-in-out forwards;
+    }
+    h2 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-top: 20px;
+      opacity: 0;
+      animation: fadeIn 2s ease-in-out forwards;
+    }
+    .dots {
+      display: inline-block;
+      font-size: 45px;
+      letter-spacing: 5px;
+      animation: blinkDots 1.5s infinite;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes blinkDots {
+      0%, 20% { opacity: 0; }
+      40% { opacity: 1; }
+      60%, 80%, 100% { opacity: 0; }
+    }
+    .hidden { display: none; }
+    .btn {
+      background: #000;
+      color: #fff;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 10px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 30px;
+    }
+    .btn:hover { background: #333; }
+    .input-box {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+      animation: fadeIn 1s ease-in-out forwards;
+    }
+    input, textarea {
+      width: 80%;
+      max-width: 350px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 15px;
+      text-align: center;
+    }
+    textarea {
+      resize: none;
+      height: 100px;
+    }
+  </style>
+</head>
+<body>
+  <h1 id="brand">FCOOPERATION</h1>
+  <h2 id="welcome" class="hidden">Welcome to FCHAT <span class="dots">...</span></h2>
+  <div id="hiUser" class="hidden"></div>
+
+  <div id="dob-box" class="input-box">
+    <h2>Enter your Date of Birth</h2>
+    <input type="date" id="dob" />
+    <button class="btn" id="save-dob">Next</button>
+  </div>
+
+  <div id="bio-box" class="input-box">
+    <h2>Write about yourself (max 250 chars)</h2>
+    <textarea id="bio" maxlength="250" placeholder="Hintly write about yourself... (optional)"></textarea>
+    <button class="btn" id="save-bio">Next</button>
+    <button class="btn" id="skip-bio">Skip</button>
+  </div>
+
+  <div id="done" class="hidden">
+    <h2>🎉 FCHAT account created!</h2>
+  </div>
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+    const supabaseUrl = "https://pwsxezhugsxosbwhkdvf.supabase.co";
+    const supabaseAnonKey =
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+    const brand = document.getElementById("brand");
+    const welcome = document.getElementById("welcome");
+    const hiUser = document.getElementById("hiUser");
+    const dobBox = document.getElementById("dob-box");
+    const bioBox = document.getElementById("bio-box");
+    const doneBox = document.getElementById("done");
+
+    const userData = JSON.parse(localStorage.getItem("fweb_user"));
+    if (!userData) window.location.href = "signup.html";
+
+    // Step 1: FCOOPERATION fade for 2s, pause 2s
+    setTimeout(() => {
+      brand.style.opacity = "0";
+      setTimeout(() => {
+        brand.classList.add("hidden");
+        welcome.classList.remove("hidden");
+      }, 2000);
+    }, 2000);
+
+    // Step 2: After 4s show hi message
+    setTimeout(() => {
+      welcome.classList.add("hidden");
+      hiUser.innerHTML = `
+        <h2>Hi ${userData?.full_name || "User"}<br>Welcome to FCHAT</h2>
+        <button class='btn hidden' id='next-btn'>Next</button>`;
+      hiUser.classList.remove("hidden");
+
+      // show next button only after fade
+      setTimeout(() => {
+        document.getElementById("next-btn").classList.remove("hidden");
+      }, 2000);
+
+      document.getElementById("next-btn").addEventListener("click", () => {
+        hiUser.classList.add("hidden");
+        dobBox.style.display = "flex";
+      });
+    }, 4000);
+
+    // Step 3: Save DOB
+    document.getElementById("save-dob").addEventListener("click", async () => {
+      const dob = document.getElementById("dob").value;
+      if (!dob) return alert("Please enter your date of birth.");
+
+      await supabase.from("fwebaccount").update({ dob }).eq("email", userData.email);
+      userData.dob = dob;
+      localStorage.setItem("fweb_user", JSON.stringify(userData));
+
+      dobBox.style.display = "none";
+      bioBox.style.display = "flex";
+    });
+
+    // Step 4: Save BIO
+    async function saveBio(value) {
+      await supabase.from("fwebaccount").update({ bio: value }).eq("email", userData.email);
+      userData.bio = value;
+      localStorage.setItem("fweb_user", JSON.stringify(userData));
+
+      bioBox.style.display = "none";
+      doneBox.classList.remove("hidden");
+
+      setTimeout(() => {
+        window.location.href = "fchat.html";
+      }, 2000);
+    }
+
+    document.getElementById("save-bio").addEventListener("click", () => {
+      const bio = document.getElementById("bio").value.trim();
+      saveBio(bio);
+    });
+    document.getElementById("skip-bio").addEventListener("click", () => {
+      saveBio("");
+    });
+  </script>
+</body>
+</html>
