@@ -8,7 +8,7 @@
   body { margin: 0; font-family: Arial,sans-serif; background:#f4f5f7; color:#222; }
   header { background:#0084ff; color:white; text-align:center; padding:15px; font-size:20px; font-weight:bold; position:sticky; top:0; box-shadow:0 2px 5px rgba(0,0,0,0.2); }
   .request-list { padding:15px; }
-  .fcard { display:flex; align-items:center; justify-content:space-between; background:white; margin-bottom:10px; border-radius:10px; padding:10px; box-shadow:0 1px 3px rgba(0,0,0,0.1); cursor:pointer; }
+  .fcard { display:flex; align-items:center; justify-content:space-between; background:white; margin-bottom:10px; border-radius:10px; padding:10px; box-shadow:0 1px 3px rgba(0,0,0,0.1); }
   .fcard-left { display:flex; align-items:center; gap:10px; }
   .profile-pic { width:45px; height:45px; border-radius:50%; object-fit:cover; background:#ccc; }
   .username { font-weight:bold; font-size:16px; }
@@ -32,8 +32,8 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 const supabaseUrl = "https://pwsxezhugsxosbwhkdvf.supabase.co";
 const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
-
 const supabase = createClient(supabaseUrl, supabaseKey);
+
 const username = JSON.parse(localStorage.getItem("faccount"))?.username;
 const requestList = document.getElementById("requests");
 const status = document.getElementById("status");
@@ -42,84 +42,99 @@ async function loadRequests() {
   status.textContent = "Loading...";
   requestList.innerHTML = "";
 
-  const { data, error } = await supabase
-    .from("fwebaccount")
-    .select("username, profile_pic, friend_requests, friends");
+  try {
+    const { data, error } = await supabase
+      .from("fwebaccount")
+      .select("username, profile_pic, friend_requests");
 
-  if (error) { status.textContent = "Error loading requests"; console.error(error); return; }
+    if (error) throw error;
 
-  const requests = data.filter(u => u.friend_requests && u.friend_requests.split(",").includes(username));
+    // Filter requests that include current username
+    const requests = data.filter(u => {
+      return u.friend_requests?.split(",").includes(username);
+    });
 
-  if (requests.length === 0) {
-    status.textContent = "No friend requests.";
-    return;
+    if (!requests.length) {
+      status.textContent = "No friend requests.";
+      return;
+    }
+
+    status.textContent = "";
+
+    requests.forEach(user => {
+      const card = document.createElement("div");
+      card.className = "fcard";
+      card.innerHTML = `
+        <div class="fcard-left">
+          <img src="${user.profile_pic || 'default.png'}" class="profile-pic">
+          <span class="username">${user.username}</span>
+        </div>
+        <div class="actions">
+          <button class="accept">Accept</button>
+          <button class="reject">Reject</button>
+        </div>
+      `;
+
+      const acceptBtn = card.querySelector(".accept");
+      const rejectBtn = card.querySelector(".reject");
+
+      acceptBtn.addEventListener("click", () => respond(user.username, true));
+      rejectBtn.addEventListener("click", () => respond(user.username, false));
+
+      requestList.appendChild(card);
+    });
+  } catch (err) {
+    status.textContent = "Error loading requests";
+    console.error(err);
   }
-
-  status.textContent = "";
-
-  requests.forEach(user => {
-    const card = document.createElement("div");
-    card.className = "fcard";
-    card.innerHTML = `
-      <div class="fcard-left">
-        <img src="${user.profile_pic || 'default.png'}" class="profile-pic">
-        <span class="username">${user.username}</span>
-      </div>
-      <div class="actions">
-        <button class="accept">Accept</button>
-        <button class="reject">Reject</button>
-      </div>
-    `;
-    const acceptBtn = card.querySelector(".accept");
-    const rejectBtn = card.querySelector(".reject");
-
-    acceptBtn.addEventListener("click", async () => await handleResponse(user.username, true));
-    rejectBtn.addEventListener("click", async () => await handleResponse(user.username, false));
-
-    requestList.appendChild(card);
-  });
 }
 
-async function handleResponse(sender, accepted) {
-  // Remove your username from sender's friend_requests
-  const { data: senderData, error } = await supabase
-    .from("fwebaccount")
-    .select("friend_requests")
-    .eq("username", sender)
-    .single();
-
-  if (error) return alert("Error: " + error.message);
-
-  let newRequests = senderData.friend_requests
-    ? senderData.friend_requests.split(",").filter(u => u !== username).join(",")
-    : "";
-
-  await supabase
-    .from("fwebaccount")
-    .update({ friend_requests: newRequests })
-    .eq("username", sender);
-
-  if (accepted) {
-    // Add sender to your friends
-    const { data: meData } = await supabase
+// Accept or Reject handler
+async function respond(sender, accepted) {
+  try {
+    // Remove current user from sender's friend_requests
+    const { data: senderData, error } = await supabase
       .from("fwebaccount")
-      .select("friends")
-      .eq("username", username)
+      .select("friend_requests")
+      .eq("username", sender)
       .single();
+    if (error) throw error;
 
-    const currentFriends = meData?.friends ? meData.friends.split(",") : [];
-    if (!currentFriends.includes(sender)) currentFriends.push(sender);
+    let newRequests = senderData.friend_requests
+      ?.split(",")
+      .filter(u => u !== username)
+      .join(",") || "";
 
     await supabase
       .from("fwebaccount")
-      .update({ friends: currentFriends.join(",") })
-      .eq("username", username);
-  }
+      .update({ friend_requests: newRequests })
+      .eq("username", sender);
 
-  loadRequests();
+    // If accepted, add sender to your friends list
+    if (accepted) {
+      const { data: meData } = await supabase
+        .from("fwebaccount")
+        .select("friends")
+        .eq("username", username)
+        .single();
+
+      const currentFriends = meData.friends?.split(",") || [];
+      if (!currentFriends.includes(sender)) currentFriends.push(sender);
+
+      await supabase
+        .from("fwebaccount")
+        .update({ friends: currentFriends.join(",") })
+        .eq("username", username);
+    }
+
+    loadRequests();
+  } catch (err) {
+    alert("Error processing request: " + err.message);
+    console.error(err);
+  }
 }
 
-// Load on page open
+// Initial load
 loadRequests();
 </script>
 </body>
