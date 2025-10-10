@@ -265,5 +265,28 @@
       document.body.style.fontSize = font;
     })();
   </script>
+  <button id="fchat-btn" class="btn">Open FCHAT</button>
+
+<script type="module">
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+  const supabase = createClient(
+    "https://pwsxezhugsxosbwhkdvf.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  );
+
+  document.getElementById("fchat-btn").addEventListener("click", async () => {
+    const user = JSON.parse(localStorage.getItem("fweb_user"));
+    if (!user) return (window.location.href = "signup.html");
+
+    const { data } = await supabase.from("fwebaccount").select("*").eq("email", user.email).single();
+
+    if (data?.dob) {
+      localStorage.setItem("fweb_user", JSON.stringify(data));
+      window.location.href = "fchat.html";
+    } else {
+      window.location.href = "welcometofchat.html";
+    }
+  });
+</script>
 </body>
 </html>
