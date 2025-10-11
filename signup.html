@@ -22,56 +22,20 @@
       width: 100%;
       max-width: 400px;
     }
-    h2 {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    .input-group {
-      margin-bottom: 15px;
-    }
-    label {
-      display: block;
-      margin-bottom: 6px;
-      font-size: 14px;
-      font-weight: 600;
-    }
+    h2 { text-align: center; margin-bottom: 20px; }
+    .input-group { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 6px; font-size: 14px; font-weight: 600; }
     input[type="text"], input[type="email"], input[type="password"] {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      font-size: 14px;
+      width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;
     }
     .btn {
-      width: 100%;
-      padding: 12px;
-      background: #007bff;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 15px;
-      margin-top: 10px;
+      width: 100%; padding: 12px; background: #007bff; color: #fff; border: none;
+      border-radius: 8px; cursor: pointer; font-size: 15px; margin-top: 10px;
     }
-    .btn:hover {
-      background: #0056b3;
-    }
-    .toggle-link {
-      text-align: center;
-      margin-top: 15px;
-      font-size: 14px;
-    }
-    .toggle-link a {
-      color: #007bff;
-      cursor: pointer;
-      text-decoration: none;
-    }
-    .captcha-group {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 15px;
-    }
+    .btn:hover { background: #0056b3; }
+    .toggle-link { text-align: center; margin-top: 15px; font-size: 14px; }
+    .toggle-link a { color: #007bff; cursor: pointer; text-decoration: none; }
+    .captcha-group { display: flex; align-items: center; gap: 8px; margin-bottom: 15px; }
   </style>
 </head>
 <body>
@@ -99,7 +63,6 @@
       <input type="text" id="secret" placeholder="Secret Code" />
     </div>
 
-    <!-- Captcha -->
     <div class="captcha-group">
       <input type="checkbox" id="human-check">
       <label for="human-check">I am not a robot</label>
@@ -132,42 +95,31 @@
         alert("Please fill in all fields.");
         return;
       }
-
       if (!humanChecked) {
         alert("Please confirm you are human.");
         return;
       }
 
       try {
-        // Check if email already exists
-        const { data: emailData, error: emailError } = await supabase
-          .from("fwebaccount")
-          .select("email")
-          .eq("email", email)
-          .single();
-
-        if (emailData) {
-          alert("Email already exists. Please login.");
-          return;
+        // Generate unique ID up to 15 digits
+        let uniqueId;
+        let isUnique = false;
+        while (!isUnique) {
+          uniqueId = Math.floor(Math.random() * 10**15).toString();
+          const { data } = await supabase
+            .from("fwebaccount")
+            .select("id")
+            .eq("id", uniqueId)
+            .maybeSingle();
+          if (!data) isUnique = true;
         }
 
-        // Check if username already exists
-        const { data: usernameData } = await supabase
-          .from("fwebaccount")
-          .select("username")
-          .eq("username", username)
-          .single();
-
-        if (usernameData) {
-          alert("Username already exists. Please choose a different username.");
-          return;
-        }
-
-        // Insert new account
+        // Insert new account (username can be duplicate)
         const { data, error } = await supabase
           .from("fwebaccount")
           .insert([
             {
+              id: uniqueId,
               username: username,
               full_name: name,
               email: email,
