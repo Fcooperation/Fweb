@@ -108,6 +108,10 @@
 
   <div id="results" class="results"></div>
 
+  <div class="bottom">
+    <button onclick="window.location.href='fchat.html'">Back</button>
+  </div>
+
 <script type="module">
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -154,15 +158,15 @@ async function searchUsers(query) {
   }
 
   resultsDiv.innerHTML = data
+    .filter(u => u.username !== loggedInUser) // Remove self from list
     .map((u) => {
       const requests = u.friend_requests
         ? u.friend_requests.split(",").map((s) => s.trim())
         : [];
-      const isPending = requests.includes(loggedInUser);
+      const isPending = requests.includes(loggedInUser); // Pending if logged-in user already sent them
 
       // Determine if Add button should appear
-      const canAdd =
-        u.fchat === "yes" || u.fchat === null || u.fchat === undefined;
+      const canAdd = !isPending && (u.fchat === "yes" || u.fchat === null || u.fchat === undefined);
 
       return `
         <div class="card">
@@ -182,8 +186,6 @@ async function searchUsers(query) {
 
 // 📩 Send request
 window.sendRequest = async (username) => {
-  if (username === loggedInUser) return alert("You can’t add yourself 😅");
-
   const nowUTC = new Date().toISOString();
 
   const { data: user } = await supabase
