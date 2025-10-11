@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Friend Requests</title>
   <style>
     body {
@@ -45,6 +45,7 @@
       display: flex;
       align-items: center;
       gap: 10px;
+      cursor: default;
     }
     .user-info img {
       width: 40px;
@@ -52,17 +53,25 @@
       border-radius: 50%;
       object-fit: cover;
     }
+    .buttons {
+      display: flex;
+      gap: 8px;
+    }
     .card button {
       background: #238636;
       border: none;
       color: #fff;
-      padding: 8px 15px;
+      padding: 8px 12px;
       border-radius: 8px;
       cursor: pointer;
       font-weight: 500;
       transition: background 0.3s ease;
     }
     .card button:hover { background: #2ea043; }
+    .card button.reject {
+      background: #991b1b;
+    }
+    .card button.reject:hover { background: #b91c1c; }
     .status {
       text-align: center;
       padding: 20px;
@@ -114,11 +123,9 @@ if (!loggedInUser) alert("No username found — please log in first.");
 async function loadRequests() {
   requestsDiv.innerHTML = `<div class="status">Loading...</div>`;
 
-  // Get all users where friend_requests contains your username
   const { data: users, error } = await supabase
     .from("fwebaccount")
-    .select("username, profile_pic, friend_requests")
-    .ilike("friend_requests", `%${loggedInUser}%`);
+    .select("username, profile_pic, friend_requests");
 
   if (error) {
     requestsDiv.innerHTML = `<div class="status">Error loading requests</div>`;
@@ -130,14 +137,29 @@ async function loadRequests() {
     return;
   }
 
-  requestsDiv.innerHTML = users.map(u => {
+  // Filter only users whose friend_requests column contains loggedInUser
+  const requests = users.filter(u => {
+    if (!u.friend_requests) return false;
+    const list = u.friend_requests.split(",").map(s => s.trim());
+    return list.includes(loggedInUser);
+  });
+
+  if (requests.length === 0) {
+    requestsDiv.innerHTML = `<div class="status">No friend requests</div>`;
+    return;
+  }
+
+  requestsDiv.innerHTML = requests.map(u => {
     return `
       <div class="card">
         <div class="user-info">
           <img src="${u.profile_pic || 'https://via.placeholder.com/40'}" alt="profile">
           <span>${u.username}</span>
         </div>
-        <button onclick="acceptRequest('${u.username}')">Accept</button>
+        <div class="buttons">
+          <button onclick="acceptRequest('${u.username}')">Accept</button>
+          <button class="reject" onclick="rejectRequest('${u.username}')">Reject</button>
+        </div>
       </div>
     `;
   }).join("");
@@ -145,7 +167,6 @@ async function loadRequests() {
 
 // Accept friend request
 window.acceptRequest = async (username) => {
-  // Add username to your accepted column
   const { data: user } = await supabase
     .from("fwebaccount")
     .select("accepted, friend_requests")
@@ -155,7 +176,6 @@ window.acceptRequest = async (username) => {
   let acceptedList = user.accepted ? user.accepted.split(",").map(s => s.trim()) : [];
   if (!acceptedList.includes(username)) acceptedList.push(username);
 
-  // Remove from friend_requests column
   let updatedRequests = user.friend_requests
     ? user.friend_requests.split(",").map(s => s.trim()).filter(s => s !== username)
     : [];
@@ -169,8 +189,27 @@ window.acceptRequest = async (username) => {
     .eq("username", loggedInUser);
 
   if (error) return alert("Error accepting request");
+  loadRequests();
+};
 
-  // Reload requests
+// Reject friend request
+window.rejectRequest = async (username) => {
+  const { data: user } = await supabase
+    .from("fwebaccount")
+    .select("friend_requests")
+    .eq("username", loggedInUser)
+    .single();
+
+  let updatedRequests = user.friend_requests
+    ? user.friend_requests.split(",").map(s => s.trim()).filter(s => s !== username)
+    : [];
+
+  const { error } = await supabase
+    .from("fwebaccount")
+    .update({ friend_requests: updatedRequests.join(",") })
+    .eq("username", loggedInUser);
+
+  if (error) return alert("Error rejecting request");
   loadRequests();
 };
 
