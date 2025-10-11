@@ -56,16 +56,16 @@
       background: #238636;
       border: none;
       color: #fff;
-      padding: 8px 12px;
+      padding: 8px 15px;
       border-radius: 8px;
       cursor: pointer;
       font-weight: 500;
-      margin-left: 5px;
       transition: background 0.3s ease;
+      margin-left: 5px;
     }
     .card button:hover { background: #2ea043; }
-    .reject { background: #d63636; }
-    .reject:hover { background: #f44336; }
+    .reject-btn { background: #f44336; }
+    .reject-btn:hover { background: #d32f2f; }
     .status {
       text-align: center;
       padding: 20px;
@@ -111,96 +111,104 @@ const supabase = createClient(
 
 const requestsDiv = document.getElementById("requestsDiv");
 const loggedInUser = localStorage.getItem("username");
-
 if (!loggedInUser) alert("No username found — please log in first.");
 
 // Load friend requests
 async function loadRequests() {
   requestsDiv.innerHTML = `<div class="status">Loading...</div>`;
 
-  const { data: users, error } = await supabase
+  // Get logged-in user's record
+  const { data: userData, error } = await supabase
     .from("fwebaccount")
-    .select("username, profile_pic, friend_requests")
-    .ilike("friend_requests", `%${loggedInUser}%`);
+    .select("friend_requests")
+    .eq("username", loggedInUser);
 
-  if (error) {
+  if (error || !userData || userData.length === 0) {
+    requestsDiv.innerHTML = `<div class="status">Error fetching user data</div>`;
+    console.error(error);
+    return;
+  }
+
+  const friendRequests = userData[0].friend_requests
+    ? userData[0].friend_requests.split(",").map(s => s.trim())
+    : [];
+
+  if (friendRequests.length === 0) {
+    requestsDiv.innerHTML = `<div class="status">No friend requests</div>`;
+    return;
+  }
+
+  // Fetch all users who sent requests
+  const { data: users, error: usersError } = await supabase
+    .from("fwebaccount")
+    .select("username, profile_pic")
+    .in("username", friendRequests);
+
+  if (usersError) {
     requestsDiv.innerHTML = `<div class="status">Error loading requests</div>`;
+    console.error(usersError);
     return;
   }
 
-  if (!users || users.length === 0) {
-    requestsDiv.innerHTML = `<div class="status">No friend requests</div>`;
-    return;
-  }
-
-  // Filter only users who actually sent you a request
-  const filteredUsers = users.filter(u => {
-    const senders = u.friend_requests ? u.friend_requests.split(",").map(s => s.trim()) : [];
-    return senders.includes(loggedInUser);
-  });
-
-  if (filteredUsers.length === 0) {
-    requestsDiv.innerHTML = `<div class="status">No friend requests</div>`;
-    return;
-  }
-
-  requestsDiv.innerHTML = filteredUsers.map(u => {
-    return `
-      <div class="card">
-        <div class="user-info">
-          <img src="${u.profile_pic || 'https://via.placeholder.com/40'}" alt="profile">
-          <span>${u.username}</span>
-        </div>
-        <div>
-          <button onclick="acceptRequest('${u.username}')">Accept</button>
-          <button class="reject" onclick="rejectRequest('${u.username}')">Reject</button>
-        </div>
+  requestsDiv.innerHTML = users.map(u => `
+    <div class="card">
+      <div class="user-info">
+        <img src="${u.profile_pic || 'https://via.placeholder.com/40'}" alt="profile">
+        <span>${u.username}</span>
       </div>
-    `;
-  }).join("");
+      <div>
+        <button onclick="acceptRequest('${u.username}')">Accept</button>
+        <button class="reject-btn" onclick="rejectRequest('${u.username}')">Reject</button>
+      </div>
+    </div>
+  `).join("");
 }
 
-// Accept friend request
+// Accept request
 window.acceptRequest = async (username) => {
-  // Get your record
-  const { data: user, error } = await supabase
+  const { data: userData, error } = await supabase
     .from("fwebaccount")
     .select("accepted, friend_requests")
-    .eq("username", loggedInUser)
-    .single();
+    .eq("username", loggedInUser);
 
-  if (error) return alert("Error fetching user data");
+  if (error || !userData || userData.length === 0) {
+    return alert("Error fetching user data");
+  }
 
-  // Update accepted
+  const user = userData[0];
   let acceptedList = user.accepted ? user.accepted.split(",").map(s => s.trim()) : [];
   if (!acceptedList.includes(username)) acceptedList.push(username);
 
-  // Remove from friend_requests
   let updatedRequests = user.friend_requests
     ? user.friend_requests.split(",").map(s => s.trim()).filter(s => s !== username)
     : [];
 
   const { error: updateError } = await supabase
     .from("fwebaccount")
-    .update({ accepted: acceptedList.join(","), friend_requests: updatedRequests.join(",") })
+    .update({
+      accepted: acceptedList.join(","),
+      friend_requests: updatedRequests.join(",")
+    })
     .eq("username", loggedInUser);
 
-  if (updateError) return alert("Error updating request");
+  if (updateError) return alert("Error accepting request");
 
   loadRequests();
 };
 
-// Reject friend request
+// Reject request
 window.rejectRequest = async (username) => {
-  const { data: user, error } = await supabase
+  const { data: userData, error } = await supabase
     .from("fwebaccount")
     .select("friend_requests")
-    .eq("username", loggedInUser)
-    .single();
+    .eq("username", loggedInUser);
 
-  if (error) return alert("Error fetching user data");
+  if (error || !userData || userData.length === 0) {
+    return alert("Error fetching user data");
+  }
 
-  // Remove from friend_requests
+  const user = userData[0];
+
   let updatedRequests = user.friend_requests
     ? user.friend_requests.split(",").map(s => s.trim()).filter(s => s !== username)
     : [];
