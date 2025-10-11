@@ -105,7 +105,6 @@
 <body>
   <h1>Friend Requests</h1>
   <p id="logline">Loading...</p>
-
   <div id="requests-container">
     <p id="status">Loading...</p>
   </div>
@@ -122,7 +121,8 @@
     const statusText = document.getElementById("status");
     const logLine = document.getElementById("logline");
 
-    async function showLog(msg, delay = 1000) {
+    // Simple fading log system
+    async function showLog(msg, delay = 700) {
       logLine.style.opacity = 0;
       await new Promise(r => setTimeout(r, 200));
       logLine.textContent = msg;
@@ -133,15 +133,13 @@
     async function loadUserData() {
       await showLog("Retrieving from local storage...");
       const faccount = JSON.parse(localStorage.getItem("faccount"));
-
-      if (!faccount || !faccount.id) {
-        await showLog("No account found in localStorage.");
-        statusText.innerText = "No account found. Please log in again.";
+      if (!faccount?.id) {
+        await showLog("No user found.");
+        statusText.textContent = "Please log in again.";
         return;
       }
 
-      await showLog("User ID found. Fetching from Supabase...");
-
+      await showLog("Fetching your account data...");
       const { data: user, error } = await supabase
         .from("fwebaccount")
         .select("*")
@@ -149,41 +147,41 @@
         .maybeSingle();
 
       if (error || !user) {
-        await showLog("Error fetching user data.");
-        statusText.innerText = "Error loading data.";
+        await showLog("Failed to load account data.");
+        statusText.textContent = "Error loading account data.";
         return;
       }
 
-      await showLog("Checking friend_requests column...");
-
-      const requests = Array.isArray(user.friend_requests)
-        ? user.friend_requests
-        : (user.friend_requests
-            ? user.friend_requests.split(",").map(r => r.trim()).filter(Boolean)
-            : []);
+      const requests = user.friend_requests
+        ? user.friend_requests.split(",").map(r => r.trim()).filter(Boolean)
+        : [];
 
       if (requests.length === 0) {
         await showLog("No friend requests found.");
-        statusText.innerText = "No friend requests.";
+        statusText.textContent = "No friend requests.";
         return;
       }
 
+      await showLog("Fetching requesters...");
       statusText.remove();
-      await showLog("Fetching requester details...");
 
-      for (const requesterId of requests) {
-        await showLog(`Loading ${requesterId}...`);
+      // Fetch all requesters at once
+      const { data: requesters, error: reqError } = await supabase
+        .from("fwebaccount")
+        .select("*")
+        .in("id", requests);
 
-        const { data: requestUser, error: reqErr } = await supabase
-          .from("fwebaccount")
-          .select("*")
-          .eq("id", requesterId)
-          .maybeSingle();
+      if (reqError || !requesters?.length) {
+        await showLog("No requester data found.");
+        statusText.textContent = "No friend requests found.";
+        return;
+      }
 
-        if (reqErr || !requestUser) {
-          continue;
-        }
+      await showLog("Displaying requests...");
 
+      // Render all cards instantly
+      container.innerHTML = "";
+      for (const reqUser of requesters) {
         const card = document.createElement("div");
         card.className = "fchat-card";
 
@@ -191,12 +189,12 @@
         left.className = "fchat-left";
 
         const img = document.createElement("img");
-        img.src = requestUser.profile_pic || "default.png";
+        img.src = reqUser.profile_pic || "default.png";
         img.className = "profile-pic";
 
         const name = document.createElement("div");
         name.className = "username";
-        name.innerText = requestUser.username;
+        name.textContent = reqUser.username;
 
         left.appendChild(img);
         left.appendChild(name);
@@ -205,10 +203,11 @@
         actions.className = "actions";
 
         const acceptBtn = document.createElement("button");
-        acceptBtn.innerText = "Accept";
+        acceptBtn.textContent = "Accept";
+
         const rejectBtn = document.createElement("button");
-        rejectBtn.innerText = "Reject";
-        rejectBtn.className = "reject";
+        rejectBtn.textContent = "Reject";
+        rejectBtn.classList.add("reject");
 
         actions.appendChild(acceptBtn);
         actions.appendChild(rejectBtn);
@@ -217,40 +216,52 @@
         card.appendChild(actions);
         container.appendChild(card);
 
+        // Accept logic
         acceptBtn.onclick = async () => {
-          await showLog(`Accepting ${requestUser.username}...`);
-          const acceptedList = Array.isArray(user.accepted)
-            ? user.accepted
-            : (user.accepted
-                ? user.accepted.split(",").map(a => a.trim()).filter(Boolean)
-                : []);
-          if (!acceptedList.includes(requesterId)) acceptedList.push(requesterId);
+          acceptBtn.textContent = "Accepting...";
+          acceptBtn.disabled = true;
+          rejectBtn.disabled = true;
+          await showLog(`Accepting ${reqUser.username}...`);
 
-          const updatedRequests = requests.filter(id => id !== requesterId);
+          const accepted = user.accepted
+            ? user.accepted.split(",").map(a => a.trim()).filter(Boolean)
+            : [];
+
+          if (!accepted.includes(reqUser.id.toString()))
+            accepted.push(reqUser.id);
+
+          const updatedRequests = requests.filter(r => r !== reqUser.id.toString());
 
           await supabase
             .from("fwebaccount")
             .update({
-              accepted: acceptedList,
-              friend_requests: updatedRequests
+              accepted: accepted.join(","),
+              friend_requests: updatedRequests.join(",")
             })
             .eq("id", faccount.id);
 
-          location.reload();
+          card.remove();
+          await showLog(`${reqUser.username} accepted.`);
         };
 
+        // Reject logic
         rejectBtn.onclick = async () => {
-          await showLog(`Rejecting ${requestUser.username}...`);
-          const updatedRequests = requests.filter(id => id !== requesterId);
+          rejectBtn.textContent = "Rejecting...";
+          rejectBtn.disabled = true;
+          acceptBtn.disabled = true;
+          await showLog(`Rejecting ${reqUser.username}...`);
+
+          const updatedRequests = requests.filter(r => r !== reqUser.id.toString());
 
           await supabase
             .from("fwebaccount")
             .update({
-              friend_requests: updatedRequests
+              friend_requests: updatedRequests.join(",")
             })
             .eq("id", faccount.id);
 
-          location.reload();
+          card.remove();
+          await showLog(`${reqUser.username} rejected.`);
         };
       }
 
