@@ -30,14 +30,12 @@
       z-index: 10;
     }
 
-    /* MENU ICON */
     .menu-icon {
       font-size: 24px;
       cursor: pointer;
       color: #fff;
     }
 
-    /* SLIDE MENU */
     .side-menu {
       position: fixed;
       top: 0;
@@ -69,7 +67,6 @@
     }
     .side-menu button:hover { background: rgba(255,255,255,0.1); }
 
-    /* SEARCH BAR */
     .search-bar {
       padding: 10px 15px;
       background: #111;
@@ -87,7 +84,6 @@
       font-size: 15px;
     }
 
-    /* MAIN CONTENT */
     main {
       flex: 1;
       overflow-y: auto;
@@ -108,23 +104,23 @@
 
     .fchat-card:hover { transform: scale(1.02); background: #222; }
 
-    .fchat-left { display: flex; align-items: center; gap: 12px; }
+    .fchat-left { display: flex; align-items: center; gap: 12px; width: 100%; }
 
     .profile-pic {
       width: 50px; height: 50px;
       border-radius: 50%;
       object-fit: cover;
       border: 2px solid #00c6ff;
+      flex-shrink: 0;
     }
 
     .fchat-info {
-      display: flex; flex-direction: column;
+      display: flex; flex-direction: column; flex: 1;
     }
 
     .username { font-weight: bold; color: #fff; }
     .last-msg { color: #aaa; font-size: 13px; margin-top: 3px; }
 
-    /* NAVBAR */
     nav {
       position: fixed;
       bottom: 0; left: 0;
@@ -151,7 +147,6 @@
     nav button.active { color: #00c6ff; font-weight: 600; }
     nav button:hover { color: #fff; }
 
-    /* OVERLAY for menu blur */
     .overlay {
       position: fixed;
       top: 0; left: 0;
@@ -168,6 +163,19 @@
       opacity: 1;
       pointer-events: all;
     }
+
+    #statusLine {
+      position: fixed;
+      top: 70px;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      font-size: 13px;
+      color: #00c6ff;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      z-index: 100;
+    }
   </style>
 </head>
 <body>
@@ -176,6 +184,8 @@
   <div class="menu-icon" id="menuBtn">☰</div>
   <span>FCHAT</span>
 </header>
+
+<div id="statusLine">Loading chats...</div>
 
 <div class="side-menu" id="sideMenu">
   <button onclick="window.location.href='friendrequest.html'">Friend Requests</button>
@@ -207,15 +217,23 @@ const supabase = createClient(
 
 const chatContainer = document.getElementById("chatContainer");
 const loadingText = document.getElementById("loadingText");
+const statusLine = document.getElementById("statusLine");
 let allFriends = [];
 
-// Load Accepted Friends
-async function loadAcceptedFriends() {
+function showStatus(msg) {
+  statusLine.textContent = msg;
+  statusLine.style.opacity = 1;
+  setTimeout(() => statusLine.style.opacity = 0, 1200);
+}
+
+async function loadAcceptedFriends(showLoading = false) {
   const faccount = JSON.parse(localStorage.getItem("faccount"));
   if (!faccount || !faccount.id) {
     loadingText.textContent = "No account found. Please log in again.";
     return;
   }
+
+  if (showLoading) showStatus("Refreshing chats...");
 
   const { data: user, error } = await supabase
     .from("fwebaccount")
@@ -233,16 +251,17 @@ async function loadAcceptedFriends() {
     : [];
 
   if (accepted.length === 0) {
-    loadingText.textContent = "No chats yet. Add friends to start chatting!";
+    chatContainer.innerHTML = `<p style="text-align:center;margin-top:20px;">No chats yet. Add friends to start chatting!</p>`;
     return;
   }
 
-  const { data: friends } = await supabase
+  const { data: friends, error: err2 } = await supabase
     .from("fwebaccount")
     .select("id, username, profile_pic, bio")
     .in("id", accepted);
 
-  allFriends = friends;
+  if (err2) return;
+  allFriends = friends || [];
   renderChats(friends);
 }
 
@@ -251,30 +270,44 @@ function renderChats(friends) {
   friends.forEach(f => {
     const card = document.createElement("div");
     card.className = "fchat-card";
-    card.innerHTML = `
-      <div class="fchat-left">
-        <img src="${f.profile_pic || 'default.png'}" class="profile-pic" onclick="viewProfilePic('${f.profile_pic || 'default.png'}')" />
-        <div class="fchat-info">
-          <div class="username">${f.username}</div>
-          <div class="last-msg">${f.bio || "Tap to chat"}</div>
-        </div>
-      </div>
+
+    const profile = document.createElement("img");
+    profile.src = f.profile_pic || "default.png";
+    profile.className = "profile-pic";
+    profile.onclick = (e) => {
+      e.stopPropagation();
+      viewProfilePic(profile.src);
+    };
+
+    const info = document.createElement("div");
+    info.className = "fchat-info";
+    info.innerHTML = `
+      <div class="username">${f.username}</div>
+      <div class="last-msg">${f.bio || "Tap to chat"}</div>
     `;
+
+    const left = document.createElement("div");
+    left.className = "fchat-left";
+    left.appendChild(profile);
+    left.appendChild(info);
+
+    card.appendChild(left);
     card.onclick = () => window.location.href = `chat.html?id=${f.id}`;
     chatContainer.appendChild(card);
   });
 }
 
-// Simple search
 document.getElementById("searchInput").addEventListener("input", e => {
   const q = e.target.value.toLowerCase();
   const filtered = allFriends.filter(f => f.username.toLowerCase().includes(q));
   renderChats(filtered);
 });
 
-loadAcceptedFriends();
+loadAcceptedFriends(true);
 
-// View profile picture in full
+// auto-refresh every 5s silently
+setInterval(() => loadAcceptedFriends(), 5000);
+
 window.viewProfilePic = function(src) {
   const overlay = document.createElement("div");
   overlay.style.cssText = `
