@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Friend Requests - Fweb</title>
+  <title>Friend Requests</title>
   <style>
     body {
       margin: 0;
@@ -17,37 +17,9 @@
       padding: 20px;
     }
 
-    header {
-      width: 100%;
-      max-width: 600px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 0;
-      border-bottom: 1px solid #1f2833;
-    }
-
-    .loga {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .loga img {
-      width: 40px;
-      height: 40px;
-      border-radius: 10px;
-    }
-
-    .loga span {
-      font-size: 20px;
-      font-weight: bold;
-      color: #66fcf1;
-    }
-
     h1 {
       color: #66fcf1;
-      margin: 20px 0;
+      margin-bottom: 20px;
     }
 
     #requests-container {
@@ -93,11 +65,6 @@
       color: #fff;
     }
 
-    .details {
-      font-size: 13px;
-      color: #9ba4b4;
-    }
-
     #status {
       margin-top: 20px;
       color: #888;
@@ -105,13 +72,6 @@
   </style>
 </head>
 <body>
-  <header>
-    <div class="loga">
-      <img src="loga.png" alt="Fweb Logo">
-      <span>Fweb</span>
-    </div>
-  </header>
-
   <h1>Friend Requests</h1>
   <div id="requests-container">
     <p id="status">Loading...</p>
@@ -128,16 +88,21 @@
     const container = document.getElementById("requests-container");
     const statusText = document.getElementById("status");
 
-    // Get local account info
+    // 🧠 Step 1: Retrieve account data from localStorage
     const faccount = JSON.parse(localStorage.getItem("faccount"));
+    console.log("Local account data:", faccount);
+
     if (!faccount || !faccount.id) {
+      console.error("❌ No account found in localStorage.");
       statusText.innerText = "No account found. Please log in again.";
       window.location.href = "login.html";
     }
 
-    async function loadFriendRequests() {
+    async function loadUserData() {
       try {
-        // Fetch full user record
+        console.log("Fetching all details for user ID:", faccount.id);
+
+        // 🧠 Step 2: Fetch full user data
         const { data: user, error } = await supabase
           .from("fwebaccount")
           .select("*")
@@ -145,14 +110,19 @@
           .maybeSingle();
 
         if (error || !user) {
-          console.error(error);
-          statusText.innerText = "Error loading user details.";
+          console.error("❌ Supabase fetch error:", error);
+          statusText.innerText = "Error loading data.";
           return;
         }
 
-        console.log("Fetched user:", user);
+        console.log("✅ User data loaded:", user);
 
-        const requests = user.friend_request ? user.friend_request.split(",").map(r => r.trim()).filter(Boolean) : [];
+        // 🧠 Step 3: Parse friend requests
+        const requests = user.friend_request
+          ? user.friend_request.split(",").map(r => r.trim()).filter(Boolean)
+          : [];
+
+        console.log("📬 Friend request list:", requests);
 
         if (requests.length === 0) {
           statusText.innerText = "No friend requests.";
@@ -161,16 +131,24 @@
 
         statusText.remove();
 
-        // Load details of each requester
+        // 🧠 Step 4: Fetch each requester’s full details
         for (const username of requests) {
-          const { data: requester, error: reqErr } = await supabase
+          console.log(`Fetching details for friend request from: ${username}`);
+
+          const { data: requestUser, error: reqErr } = await supabase
             .from("fwebaccount")
             .select("*")
             .eq("username", username)
             .maybeSingle();
 
-          if (reqErr || !requester) continue;
+          if (reqErr || !requestUser) {
+            console.warn(`⚠️ Could not fetch details for ${username}`, reqErr);
+            continue;
+          }
 
+          console.log("✅ Friend data:", requestUser);
+
+          // 🧠 Step 5: Display as fchat card
           const card = document.createElement("div");
           card.className = "fchat-card";
 
@@ -178,34 +156,34 @@
           left.className = "fchat-left";
 
           const img = document.createElement("img");
-          img.src = requester.profile_pic || "default.png";
+          img.src = requestUser.profile_pic || "default.png";
           img.className = "profile-pic";
 
-          const info = document.createElement("div");
           const name = document.createElement("div");
           name.className = "username";
-          name.innerText = requester.username;
-
-          const details = document.createElement("div");
-          details.className = "details";
-          details.innerText = `${requester.email || "No email"} • ${requester.location || "Unknown"}`;
-
-          info.appendChild(name);
-          info.appendChild(details);
+          name.innerText = requestUser.username;
 
           left.appendChild(img);
-          left.appendChild(info);
+          left.appendChild(name);
 
           card.appendChild(left);
+
+          // Optional — show email or other info below username
+          const extra = document.createElement("div");
+          extra.style.fontSize = "12px";
+          extra.style.color = "#bbb";
+          extra.innerText = requestUser.email || "No email";
+          card.appendChild(extra);
+
           container.appendChild(card);
         }
       } catch (err) {
-        console.error(err);
-        statusText.innerText = "Error fetching friend requests.";
+        console.error("❌ Unexpected error:", err);
+        statusText.innerText = "Error fetching user data.";
       }
     }
 
-    loadFriendRequests();
+    loadUserData();
   </script>
 </body>
 </html>
