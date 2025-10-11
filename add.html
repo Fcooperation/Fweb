@@ -3,298 +3,266 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Friend Requests</title>
+  <title>Add Friends</title>
   <style>
     body {
       margin: 0;
-      background: #0b0c10;
+      font-family: 'Poppins', sans-serif;
+      background: #0d1117;
       color: #fff;
-      font-family: Arial, sans-serif;
       display: flex;
       flex-direction: column;
-      align-items: center;
       min-height: 100vh;
-      padding: 20px;
     }
-
-    h1 {
-      color: #66fcf1;
-      margin-bottom: 10px;
-    }
-
-    #logline {
-      font-size: 13px;
-      color: #45a29e;
-      margin-bottom: 15px;
-      transition: opacity 0.5s ease;
-    }
-
-    #requests-container {
-      width: 100%;
-      max-width: 500px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .fchat-card {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: #1f2833;
-      padding: 14px;
-      border-radius: 10px;
-      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
-      transition: 0.3s;
-    }
-
-    .fchat-card:hover {
-      transform: scale(1.02);
-      background: #202833;
-    }
-
-    .fchat-left {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .profile-pic {
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 2px solid #45a29e;
-    }
-
-    .username {
+    header {
+      background: #161b22;
+      padding: 15px;
+      text-align: center;
+      font-size: 20px;
       font-weight: bold;
+      border-bottom: 1px solid #30363d;
+      color: #00c6ff;
+      letter-spacing: 1px;
+    }
+    .search-box {
+      padding: 15px;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: none;
+      outline: none;
+      font-size: 16px;
+      background: #21262d;
       color: #fff;
     }
-
-    .actions {
-      display: flex;
-      gap: 10px;
+    .results {
+      flex: 1;
+      padding: 10px;
     }
-
-    button {
-      background: #45a29e;
+    .card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #161b22;
+      margin: 10px 0;
+      padding: 15px;
+      border-radius: 10px;
+      border: 1px solid #30363d;
+      transition: background 0.3s ease;
+    }
+    .card:hover { background: #1e242b; }
+    .card span {
+      font-weight: 500;
+      font-size: 16px;
+    }
+    .card .pending {
+      color: #facc15;
+      font-size: 14px;
+    }
+    .card button {
+      background: #238636;
       border: none;
       color: #fff;
-      padding: 6px 10px;
-      border-radius: 6px;
+      padding: 8px 15px;
+      border-radius: 8px;
       cursor: pointer;
-      transition: 0.2s;
-      font-size: 13px;
+      font-weight: 500;
+      transition: background 0.3s ease;
     }
-
-    button:hover {
-      background: #66fcf1;
-      color: #0b0c10;
+    .card button:hover { background: #2ea043; }
+    .card button:disabled {
+      background: #444;
+      cursor: not-allowed;
     }
-
-    .reject {
-      background: #c0392b;
+    .status {
+      text-align: center;
+      padding: 20px;
+      color: #999;
     }
-
-    .reject:hover {
-      background: #e74c3c;
+    .bottom {
+      background: #161b22;
+      padding: 15px;
+      text-align: center;
+      border-top: 1px solid #30363d;
+    }
+    .bottom button {
+      width: 100%;
+      background: #238636;
+      border: none;
+      color: white;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 16px;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <h1>Friend Requests</h1>
-  <p id="logline">Loading...</p>
+  <header>Add Friends</header>
 
-  <div id="requests-container">
-    <p id="status">Loading...</p>
+  <div class="search-box">
+    <input type="text" id="searchInput" placeholder="Search username..." />
   </div>
 
- <script type="module">
-  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+  <div id="broadcastList" class="results"></div>
+  <div id="results" class="results" style="display:none;"></div>
 
-  const supabase = createClient(
-    "https://pwsxezhugsxosbwhkdvf.supabase.co",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
-  );
+  <div class="bottom">
+    <button onclick="window.location.href='fchat.html'">Back</button>
+  </div>
 
-  const container = document.getElementById("requests-container");
-  const statusText = document.getElementById("status");
-  const logLine = document.getElementById("logline");
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-  async function showLog(msg, delay = 1000) {
-    logLine.style.opacity = 0;
-    await new Promise(r => setTimeout(r, 200));
-    logLine.textContent = msg;
-    logLine.style.opacity = 1;
-    await new Promise(r => setTimeout(r, delay));
+const supabase = createClient(
+  "https://pwsxezhugsxosbwhkdvf.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
+);
+
+const searchInput = document.getElementById("searchInput");
+const broadcastDiv = document.getElementById("broadcastList");
+const resultsDiv = document.getElementById("results");
+
+// ✅ Retrieve logged-in user
+const faccount = JSON.parse(localStorage.getItem("faccount"));
+if (!faccount || !faccount.id) {
+  alert("No account found — please log in first.");
+}
+
+// 🟢 Load broadcasted users
+async function loadBroadcastUsers() {
+  const { data: allUsers, error } = await supabase
+    .from("fwebaccount")
+    .select("id, username, broadcast, friend_requests, accepted, fchat")
+    .eq("broadcast", "yes");
+
+  if (error || !allUsers) {
+    broadcastDiv.innerHTML = `<div class='status'>Error loading broadcast users</div>`;
+    return;
   }
 
-  async function loadUserData() {
-    await showLog("Retrieving from local storage...");
-    const faccount = JSON.parse(localStorage.getItem("faccount"));
-
-    if (!faccount || !faccount.id) {
-      await showLog("No account found in localStorage.");
-      statusText.innerText = "No account found. Please log in again.";
-      return;
-    }
-
-    await showLog("User ID found. Fetching from Supabase...");
-
-    const { data: user, error } = await supabase
-      .from("fwebaccount")
-      .select("*")
-      .eq("id", faccount.id)
-      .maybeSingle();
-
-    if (error || !user) {
-      await showLog("Error fetching user data.");
-      statusText.innerText = "Error loading data.";
-      return;
-    }
-
-    await showLog("Checking friend_requests column...");
-
-    const requests = Array.isArray(user.friend_requests)
-      ? user.friend_requests
-      : (user.friend_requests
-          ? user.friend_requests.split(",").map(r => r.trim()).filter(Boolean)
-          : []);
-
-    if (requests.length === 0) {
-      await showLog("No friend requests found.");
-      statusText.innerText = "No friend requests.";
-      return;
-    }
-
-    statusText.remove();
-    await showLog("Fetching requester details...");
-
-    for (const requesterId of requests) {
-      const { data: requestUser, error: reqErr } = await supabase
-        .from("fwebaccount")
-        .select("*")
-        .eq("id", requesterId)
-        .maybeSingle();
-
-      if (reqErr || !requestUser) continue;
-
-      const card = document.createElement("div");
-      card.className = "fchat-card";
-
-      const left = document.createElement("div");
-      left.className = "fchat-left";
-
-      const img = document.createElement("img");
-      img.src = requestUser.profile_pic || "default.png";
-      img.className = "profile-pic";
-
-      const name = document.createElement("div");
-      name.className = "username";
-      name.innerText = requestUser.username;
-
-      left.appendChild(img);
-      left.appendChild(name);
-
-      const actions = document.createElement("div");
-      actions.className = "actions";
-
-      const acceptBtn = document.createElement("button");
-      acceptBtn.innerText = "Accept";
-      const rejectBtn = document.createElement("button");
-      rejectBtn.innerText = "Reject";
-      rejectBtn.className = "reject";
-
-      actions.appendChild(acceptBtn);
-      actions.appendChild(rejectBtn);
-
-      card.appendChild(left);
-      card.appendChild(actions);
-      container.appendChild(card);
-
-// ✅ Accept button logic
-acceptBtn.onclick = async () => {
-  acceptBtn.disabled = true;
-  rejectBtn.disabled = true;
-  acceptBtn.innerText = "Accepted ✓";
-  acceptBtn.style.background = "#2ecc71";
-  await showLog(`Accepting ${requestUser.username}...`);
-
-  const acceptedList = Array.isArray(user.accepted)
-    ? user.accepted
-    : (user.accepted
-        ? user.accepted.split(",").map(a => a.trim()).filter(Boolean)
-        : []);
-  if (!acceptedList.includes(requesterId)) acceptedList.push(requesterId);
-
-  const updatedRequests = requests.filter(id => id !== requesterId);
-
-  // ✅ Update your own data (accepted + friend_requests)
-  await supabase
-    .from("fwebaccount")
-    .update({
-      accepted: acceptedList.join(","),
-      friend_requests: updatedRequests.join(","),
-    })
-    .eq("id", faccount.id);
-
-  // ✅ Add your ID to the requester's accepted column (two-way friendship)
-  await showLog(`Adding your ID to ${requestUser.username}'s accepted list...`);
-
-  const { data: requesterData, error: requesterErr } = await supabase
+  // Get your accepted list
+  const { data: myData } = await supabase
     .from("fwebaccount")
     .select("accepted")
-    .eq("id", requesterId)
+    .eq("id", faccount.id)
     .maybeSingle();
 
-  if (!requesterErr && requesterData) {
-    const requesterAccepted = requesterData.accepted
-      ? requesterData.accepted.split(",").map(a => a.trim()).filter(Boolean)
-      : [];
-    if (!requesterAccepted.includes(faccount.id.toString())) {
-      requesterAccepted.push(faccount.id.toString());
-    }
+  const acceptedList = myData?.accepted
+    ? myData.accepted.split(",").map(a => a.trim())
+    : [];
 
-    await supabase
-      .from("fwebaccount")
-      .update({
-        accepted: requesterAccepted.join(","),
-      })
-      .eq("id", requesterId);
+  broadcastDiv.innerHTML = allUsers
+    .filter(u => u.id !== faccount.id)
+    .map(u => {
+      const alreadyAdded = acceptedList.includes(String(u.id));
+      return `
+        <div class="card">
+          <span>${u.username}</span>
+          ${
+            alreadyAdded
+              ? `<button disabled>Added ✓</button>`
+              : `<button onclick="sendRequest('${u.id}', '${u.username}')">Add</button>`
+          }
+        </div>
+      `;
+    })
+    .join("");
+}
 
-    await showLog(`Your ID added to ${requestUser.username}'s accepted list.`);
+// 🔍 Search logic
+let typingTimer;
+const delay = 400;
+
+searchInput.addEventListener("input", () => {
+  clearTimeout(typingTimer);
+  const query = searchInput.value.trim();
+  if (query === "") {
+    broadcastDiv.style.display = "block";
+    resultsDiv.style.display = "none";
+    return;
+  }
+  broadcastDiv.style.display = "none";
+  resultsDiv.style.display = "block";
+  resultsDiv.innerHTML = `<div class='status'>🔍 Searching...</div>`;
+  typingTimer = setTimeout(() => searchUsers(query), delay);
+});
+
+async function searchUsers(query) {
+  const { data, error } = await supabase
+    .from("fwebaccount")
+    .select("id, username, friend_requests, fchat")
+    .ilike("username", `%${query}%`);
+
+  if (error) {
+    resultsDiv.innerHTML = `<div class='status'>Error loading users</div>`;
+    return;
   }
 
-  await showLog(`${requestUser.username} accepted.`);
-  card.style.opacity = 0.3;
+  if (!data || data.length === 0) {
+    resultsDiv.innerHTML = `<div class='status'>No results found</div>`;
+    return;
+  }
+
+  resultsDiv.innerHTML = data
+    .filter(u => u.id !== faccount.id)
+    .map((u) => {
+      const requests = u.friend_requests
+        ? u.friend_requests.split(",").map((s) => s.trim())
+        : [];
+      const isPending = requests.includes(String(faccount.id));
+      const canAdd = !isPending && (u.fchat === "yes" || !u.fchat);
+      return `
+        <div class="card">
+          <span>${u.username}</span>
+          ${
+            isPending
+              ? `<span class="pending">⏳ Pending</span>`
+              : canAdd
+              ? `<button onclick="sendRequest('${u.id}', '${u.username}')">Add</button>`
+              : `<div style="color:#f44336; font-size:14px;">This person is not in FChat</div>`
+          }
+        </div>
+      `;
+    })
+    .join("");
+}
+
+// 📩 Send friend request
+window.sendRequest = async (targetId, targetName) => {
+  const nowUTC = new Date().toISOString();
+  const { data: target, error } = await supabase
+    .from("fwebaccount")
+    .select("friend_requests")
+    .eq("id", targetId)
+    .maybeSingle();
+
+  if (error || !target) return alert("Error fetching user data");
+
+  let requests = target.friend_requests
+    ? target.friend_requests.split(",").map((s) => s.trim())
+    : [];
+
+  if (requests.includes(String(faccount.id))) return alert("Already sent");
+
+  requests.push(String(faccount.id));
+
+  const { error: updateErr } = await supabase
+    .from("fwebaccount")
+    .update({ friend_requests: requests.join(","), sent_at: nowUTC })
+    .eq("id", targetId);
+
+  if (updateErr) return alert("Error sending request");
+
+  alert(`✅ Request sent to ${targetName}`);
+  if (searchInput.value.trim() === "") loadBroadcastUsers();
+  else searchUsers(searchInput.value.trim());
 };
-      // ❌ Reject button logic
-      rejectBtn.onclick = async () => {
-        acceptBtn.disabled = true;
-        rejectBtn.disabled = true;
-        rejectBtn.innerText = "Rejected ✗";
-        rejectBtn.style.background = "#e74c3c";
-        await showLog(`Rejecting ${requestUser.username}...`);
 
-        const updatedRequests = requests.filter(id => id !== requesterId);
-
-        await supabase
-          .from("fwebaccount")
-          .update({
-            friend_requests: updatedRequests.join(","),
-          })
-          .eq("id", faccount.id);
-
-        await showLog(`${requestUser.username} rejected.`);
-        card.style.opacity = 0.3;
-      };
-    }
-
-    await showLog("All requests displayed.");
-  }
-
-  loadUserData();
+// 🔄 Initial load
+loadBroadcastUsers();
 </script>
 </body>
 </html>
