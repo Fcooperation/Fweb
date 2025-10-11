@@ -108,128 +108,109 @@
 
   <div id="results" class="results"></div>
 
-  <div class="bottom">
-    <button onclick="window.location.href='fchat.html'">Back</button>
-  </div>
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-  <script type="module">
-    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+const supabase = createClient(
+  "https://pwsxezhugsxosbwhkdvf.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
+);
 
-    const supabase = createClient(
-      "https://pwsxezhugsxosbwhkdvf.supabase.co",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
-    );
+const searchInput = document.getElementById("searchInput");
+const resultsDiv = document.getElementById("results");
+const loggedInUser = localStorage.getItem("username");
 
-    const searchInput = document.getElementById("searchInput");
-    const resultsDiv = document.getElementById("results");
-    const loggedInUser = localStorage.getItem("username");
+if (!loggedInUser) alert("No username found — please log in first.");
 
-    if (!loggedInUser) alert("No username found — please log in first.");
+// 🔍 Live search
+let typingTimer;
+const delay = 400;
 
-    // 🧹 Auto-clear old requests older than 7 days
-    async function autoClearOldRequests() {
-      const { data } = await supabase
-        .from("fwebaccount")
-        .select("username, sent_at");
+searchInput.addEventListener("input", () => {
+  clearTimeout(typingTimer);
+  const query = searchInput.value.trim();
+  if (query === "") {
+    resultsDiv.innerHTML = "";
+    return;
+  }
+  resultsDiv.innerHTML = `<div class='status'>🔍 Searching...</div>`;
+  typingTimer = setTimeout(() => searchUsers(query), delay);
+});
 
-      if (!data) return;
+async function searchUsers(query) {
+  const { data, error } = await supabase
+    .from("fwebaccount")
+    .select("username, friend_requests, fchat")
+    .ilike("username", `%${query}%`);
 
-      const now = Date.now();
-      const week = 7 * 24 * 60 * 60 * 1000;
+  if (error) {
+    resultsDiv.innerHTML = `<div class='status'>Error loading users</div>`;
+    return;
+  }
 
-      for (const u of data) {
-        if (u.sent_at && new Date(u.sent_at).getTime() + week < now) {
-          await supabase
-            .from("fwebaccount")
-            .update({ friend_requests: null, sent_at: null })
-            .eq("username", u.username);
-        }
-      }
-    }
-    autoClearOldRequests();
+  if (!data || data.length === 0) {
+    resultsDiv.innerHTML = `<div class='status'>No results found</div>`;
+    return;
+  }
 
-    // 🔍 Live search
-    let typingTimer;
-    const delay = 400;
-
-    searchInput.addEventListener("input", () => {
-      clearTimeout(typingTimer);
-      const query = searchInput.value.trim();
-      if (query === "") {
-        resultsDiv.innerHTML = "";
-        return;
-      }
-      resultsDiv.innerHTML = `<div class='status'>🔍 Searching...</div>`;
-      typingTimer = setTimeout(() => searchUsers(query), delay);
-    });
-
-    async function searchUsers(query) {
-      const { data, error } = await supabase
-        .from("fwebaccount")
-        .select("username, friend_requests")
-        .ilike("username", `%${query}%`);
-
-      if (error) {
-        resultsDiv.innerHTML = `<div class='status'>Error loading users</div>`;
-        return;
-      }
-
-      if (!data || data.length === 0) {
-        resultsDiv.innerHTML = `<div class='status'>No results found</div>`;
-        return;
-      }
-
-      resultsDiv.innerHTML = data
-        .map((u) => {
-          const requests = u.friend_requests
-            ? u.friend_requests.split(",").map((s) => s.trim())
-            : [];
-          const isPending = requests.includes(loggedInUser);
-          return `
-            <div class="card">
-              <span>${u.username}</span>
-              ${
-                isPending
-                  ? `<span class="pending">⏳ Pending</span>`
-                  : `<button onclick="sendRequest('${u.username}')">Add</button>`
-              }
-            </div>
-          `;
-        })
-        .join("");
-    }
-
-    // 📩 Send request
-    window.sendRequest = async (username) => {
-      if (username === loggedInUser) return alert("You can’t add yourself 😅");
-
-      const nowUTC = new Date().toISOString();
-
-      const { data: user } = await supabase
-        .from("fwebaccount")
-        .select("friend_requests")
-        .eq("username", username)
-        .single();
-
-      let requests = user.friend_requests
-        ? user.friend_requests.split(",").map((s) => s.trim())
+  resultsDiv.innerHTML = data
+    .map((u) => {
+      const requests = u.friend_requests
+        ? u.friend_requests.split(",").map((s) => s.trim())
         : [];
+      const isPending = requests.includes(loggedInUser);
 
-      if (requests.includes(loggedInUser)) return alert("Already sent");
+      // Determine if Add button should appear
+      const canAdd =
+        u.fchat === "yes" || u.fchat === null || u.fchat === undefined;
 
-      requests.push(loggedInUser);
-      const newReqs = requests.join(",");
+      return `
+        <div class="card">
+          <span>${u.username}</span>
+          ${
+            isPending
+              ? `<span class="pending">⏳ Pending</span>`
+              : canAdd
+              ? `<button onclick="sendRequest('${u.username}')">Add</button>`
+              : `<div style="color:#f44336; font-size:14px;">This person is not in FChat</div>`
+          }
+        </div>
+      `;
+    })
+    .join("");
+}
 
-      const { error } = await supabase
-        .from("fwebaccount")
-        .update({ friend_requests: newReqs, sent_at: nowUTC })
-        .eq("username", username);
+// 📩 Send request
+window.sendRequest = async (username) => {
+  if (username === loggedInUser) return alert("You can’t add yourself 😅");
 
-      if (error) return alert("Error sending request");
+  const nowUTC = new Date().toISOString();
 
-      alert("✅ Request sent");
-      searchUsers(searchInput.value.trim());
-    };
-  </script>
+  const { data: user } = await supabase
+    .from("fwebaccount")
+    .select("friend_requests")
+    .eq("username", username)
+    .single();
+
+  let requests = user.friend_requests
+    ? user.friend_requests.split(",").map((s) => s.trim())
+    : [];
+
+  if (requests.includes(loggedInUser)) return alert("Already sent");
+
+  requests.push(loggedInUser);
+  const newReqs = requests.join(",");
+
+  const { error } = await supabase
+    .from("fwebaccount")
+    .update({ friend_requests: newReqs, sent_at: nowUTC })
+    .eq("username", username);
+
+  if (error) return alert("Error sending request");
+
+  alert("✅ Request sent");
+  searchUsers(searchInput.value.trim());
+};
+</script>
 </body>
 </html>
