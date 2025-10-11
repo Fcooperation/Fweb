@@ -110,16 +110,17 @@ const container = document.getElementById("requests-container");
 const statusText = document.getElementById("status");
 const logLine = document.getElementById("logline");
 
-function cycleLog(messages, delay = 900) {
+function showLogSequence(messages, interval = 900) {
   let i = 0;
-  setInterval(() => {
+  const loop = setInterval(() => {
     logLine.style.opacity = 0;
     setTimeout(() => {
       logLine.textContent = messages[i % messages.length];
       logLine.style.opacity = 1;
       i++;
     }, 200);
-  }, delay);
+  }, interval);
+  return loop;
 }
 
 async function loadUserData() {
@@ -130,11 +131,11 @@ async function loadUserData() {
     return;
   }
 
-  cycleLog([
+  const loop = showLogSequence([
     "Retrieving from local storage...",
-    "Fetching user data...",
+    "Fetching your account data...",
     "Checking friend requests...",
-    "Loading requesters...",
+    "Loading all requesters at once..."
   ]);
 
   const { data: user, error } = await supabase
@@ -144,6 +145,7 @@ async function loadUserData() {
     .maybeSingle();
 
   if (error || !user) {
+    clearInterval(loop);
     logLine.textContent = "Error fetching user data.";
     statusText.textContent = "Error loading data.";
     return;
@@ -156,6 +158,7 @@ async function loadUserData() {
         : []);
 
   if (requests.length === 0) {
+    clearInterval(loop);
     logLine.textContent = "No friend requests found.";
     statusText.textContent = "No friend requests.";
     return;
@@ -163,19 +166,24 @@ async function loadUserData() {
 
   statusText.remove();
 
-  // ✅ Fetch all requester details simultaneously
-  const requesterPromises = requests.map(requesterId =>
-    supabase.from("fwebaccount")
-      .select("*")
-      .eq("id", requesterId)
-      .maybeSingle()
-  );
+  // ⚡ One single query to fetch all requesters at once
+  const { data: requesters, error: reqErr } = await supabase
+    .from("fwebaccount")
+    .select("*")
+    .in("id", requests);
 
-  const requesterResults = await Promise.all(requesterPromises);
+  clearInterval(loop);
+  logLine.textContent = reqErr
+    ? "Error fetching requesters."
+    : `Loaded ${requesters.length} requester(s).`;
 
-  requesterResults.forEach(({ data: requestUser, error: reqErr }, idx) => {
-    if (reqErr || !requestUser) return;
+  if (reqErr || !requesters.length) {
+    statusText.textContent = "Error fetching requesters.";
+    return;
+  }
 
+  // 🔥 Render all at once
+  for (const requestUser of requesters) {
     const card = document.createElement("div");
     card.className = "fchat-card";
 
@@ -204,12 +212,11 @@ async function loadUserData() {
 
     actions.appendChild(acceptBtn);
     actions.appendChild(rejectBtn);
-
     card.appendChild(left);
     card.appendChild(actions);
     container.appendChild(card);
 
-    // ✅ Accept logic
+    // ✅ Accept
     acceptBtn.onclick = async () => {
       acceptBtn.disabled = true;
       rejectBtn.disabled = true;
@@ -232,7 +239,6 @@ async function loadUserData() {
         })
         .eq("id", faccount.id);
 
-      // Update requester's accepted
       const { data: requesterData } = await supabase
         .from("fwebaccount")
         .select("accepted")
@@ -253,7 +259,7 @@ async function loadUserData() {
       card.style.opacity = 0.3;
     };
 
-    // ❌ Reject logic
+    // ❌ Reject
     rejectBtn.onclick = async () => {
       acceptBtn.disabled = true;
       rejectBtn.disabled = true;
@@ -268,7 +274,9 @@ async function loadUserData() {
 
       card.style.opacity = 0.3;
     };
-  });
+  }
+
+  logLine.textContent = "All friend requests displayed successfully.";
 }
 
 loadUserData();
