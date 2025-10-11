@@ -4,193 +4,135 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Friend Requests</title>
+  <script src="https://unpkg.com/@supabase/supabase-js"></script>
   <style>
     body {
-      margin: 0;
-      background: #0b0c10;
+      background: #0e0e10;
       color: #fff;
       font-family: Arial, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
+      margin: 0;
       padding: 20px;
     }
-
-    h1 {
-      color: #66fcf1;
-      margin-bottom: 20px;
+    .container {
+      max-width: 600px;
+      margin: auto;
     }
-
-    #requests-container {
-      width: 100%;
-      max-width: 500px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
+    .card {
+      background: #1c1c1f;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
-
-    .fchat-card {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: #1f2833;
-      padding: 14px;
-      border-radius: 10px;
-      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
-      transition: 0.3s;
+    .card h3 {
+      margin: 0 0 8px 0;
+      color: #4da6ff;
     }
-
-    .fchat-card:hover {
-      transform: scale(1.02);
-      background: #202833;
-    }
-
-    .fchat-left {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .profile-pic {
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 2px solid #45a29e;
-    }
-
-    .username {
-      font-weight: bold;
+    .actions button {
+      background: #333;
       color: #fff;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 6px;
+      margin-right: 8px;
+      cursor: pointer;
+      transition: 0.2s;
     }
-
-    #log {
-      background: #111;
-      color: #45a29e;
-      width: 90%;
-      max-width: 500px;
-      margin-top: 20px;
-      padding: 10px;
-      border-radius: 10px;
-      font-size: 13px;
-      white-space: pre-line;
-      overflow-y: auto;
-      max-height: 200px;
+    .actions button:hover {
+      background: #4da6ff;
+    }
+    .no-req {
+      text-align: center;
+      color: #777;
     }
   </style>
 </head>
 <body>
-  <h1>Friend Requests</h1>
-  <div id="requests-container">
-    <p id="status">Loading...</p>
+  <div class="container">
+    <h2>Friend Requests</h2>
+    <div id="requests"></div>
   </div>
 
-  <div id="log"></div>
+  <script>
+    const SUPABASE_URL = "https://pwsxezhugsxosbwhkdvf.supabase.co";
+    const SUPABASE_KEY =
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  <script type="module">
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+    const reqDiv = document.getElementById("requests");
 
-    const supabase = createClient(
-      "https://pwsxezhugsxosbwhkdvf.supabase.co",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
-    );
-
-    const container = document.getElementById("requests-container");
-    const statusText = document.getElementById("status");
-    const logBox = document.getElementById("log");
-
-    function addLog(msg) {
-      console.log(msg);
-      logBox.textContent += msg + "\n";
-    }
-
-    async function loadUserData() {
-      addLog("🔹 Retrieving from local storage...");
-      const faccount = JSON.parse(localStorage.getItem("faccount"));
-
-      if (!faccount || !faccount.id) {
-        addLog("❌ No account found in localStorage.");
-        statusText.innerText = "No account found. Please log in again.";
+    async function loadRequests() {
+      reqDiv.innerHTML = "Loading...";
+      const id = localStorage.getItem("id");
+      if (!id) {
+        reqDiv.innerHTML = "<p class='no-req'>No user ID found in local storage.</p>";
         return;
       }
-
-      addLog(`✅ Retrieved user ID: ${faccount.id}`);
-      addLog("🔹 Fetching from Supabase...");
 
       const { data: user, error } = await supabase
         .from("fwebaccount")
         .select("*")
-        .eq("id", faccount.id)
-        .maybeSingle();
+        .eq("id", id)
+        .single();
 
       if (error || !user) {
-        addLog(`❌ Error fetching user data: ${error?.message || "No data found"}`);
-        statusText.innerText = "Error loading data.";
+        reqDiv.innerHTML = "<p class='no-req'>Error fetching user data.</p>";
         return;
       }
 
-      addLog("✅ Found account data.");
-      addLog("🔹 Checking friend_request column...");
-
-      const requests = user.friend_request
-        ? user.friend_request.split(",").map(r => r.trim()).filter(Boolean)
-        : [];
-
-      addLog(`📬 Friend requests found: ${requests.length ? requests.join(", ") : "none"}`);
-
+      const requests = user.friend_requests || [];
       if (requests.length === 0) {
-        statusText.innerText = "No friend requests.";
-        addLog("ℹ️ No requests to show.");
+        reqDiv.innerHTML = "<p class='no-req'>No friend requests.</p>";
         return;
       }
 
-      statusText.remove();
-      addLog("🔹 Fetching requester details...");
-
-      for (const username of requests) {
-        addLog(`➡️ Fetching details for '${username}'...`);
-
-        const { data: requestUser, error: reqErr } = await supabase
+      reqDiv.innerHTML = "";
+      for (const friendId of requests) {
+        const { data: friend } = await supabase
           .from("fwebaccount")
           .select("*")
-          .eq("username", username)
-          .maybeSingle();
+          .eq("id", friendId)
+          .single();
 
-        if (reqErr || !requestUser) {
-          addLog(`⚠️ Could not fetch details for ${username}`);
-          continue;
-        }
-
-        addLog(`✅ Found user: ${requestUser.username}`);
+        if (!friend) continue;
 
         const card = document.createElement("div");
-        card.className = "fchat-card";
+        card.className = "card";
+        card.innerHTML = `
+          <h3>${friend.username}</h3>
+          <p>Email: ${friend.email}</p>
+          <div class="actions">
+            <button class="accept">Accept</button>
+            <button class="reject">Reject</button>
+          </div>
+        `;
 
-        const left = document.createElement("div");
-        left.className = "fchat-left";
+        card.querySelector(".accept").onclick = async () => {
+          const updatedAccepted = user.accepted ? [...user.accepted, friendId] : [friendId];
+          const updatedRequests = requests.filter(r => r !== friendId);
 
-        const img = document.createElement("img");
-        img.src = requestUser.profile_pic || "default.png";
-        img.className = "profile-pic";
+          await supabase.from("fwebaccount").update({
+            accepted: updatedAccepted,
+            friend_requests: updatedRequests
+          }).eq("id", id);
 
-        const name = document.createElement("div");
-        name.className = "username";
-        name.innerText = requestUser.username;
+          location.reload();
+        };
 
-        left.appendChild(img);
-        left.appendChild(name);
+        card.querySelector(".reject").onclick = async () => {
+          const updatedRequests = requests.filter(r => r !== friendId);
+          await supabase.from("fwebaccount").update({
+            friend_requests: updatedRequests
+          }).eq("id", id);
 
-        card.appendChild(left);
+          location.reload();
+        };
 
-        container.appendChild(card);
-        addLog(`✅ Served '${username}' as fchat card.`);
+        reqDiv.appendChild(card);
       }
-
-      addLog("🎉 All requests displayed successfully.");
     }
 
-    loadUserData();
+    loadRequests();
   </script>
 </body>
 </html>
