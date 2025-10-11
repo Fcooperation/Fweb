@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Friend Requests</title>
 <style>
   body {
@@ -58,9 +58,11 @@
     color: #fff;
     padding: 8px 15px;
     border-radius: 8px;
-    cursor: not-allowed;
+    cursor: pointer;
     font-weight: 500;
+    transition: background 0.3s ease;
   }
+  .card button:hover { background: #2ea043; }
   .status {
     text-align: center;
     padding: 20px;
@@ -86,49 +88,56 @@ const supabase = createClient(
 
 const requestsDiv = document.getElementById("requestsDiv");
 
-// 1️⃣ Get logged-in user from localStorage
+// ✅ Get logged-in user from localStorage like your dashboard
 const faccount = JSON.parse(localStorage.getItem("faccount"));
-if (!faccount || !faccount.email) {
-  requestsDiv.innerHTML = "<div class='status'>No account found. Please log in.</div>";
-  throw new Error("No localStorage account");
+if (!faccount) {
+  alert("No account found in localStorage. Please log in again.");
+  window.location.href = "login.html";
 }
 
-// 2️⃣ Load friend requests
+// --- Load Friend Requests ---
 async function loadRequests() {
   requestsDiv.innerHTML = `<div class="status">Loading...</div>`;
 
-  // Fetch full user row from Supabase using email
-  const { data: user, error: userError } = await supabase
+  // Get full user data from Supabase using email
+  const { data: userData, error: userError } = await supabase
     .from("fwebaccount")
     .select("friend_requests")
     .eq("email", faccount.email)
     .maybeSingle();
 
-  if (userError || !user) {
-    requestsDiv.innerHTML = "<div class='status'>Error fetching user data</div>";
+  if (userError || !userData) {
+    requestsDiv.innerHTML = `<div class="status">Error fetching user data</div>`;
     return;
   }
 
-  const requests = user.friend_requests
-    ? user.friend_requests.split(",").map(s => s.trim()).filter(Boolean)
+  // Safely split requests and remove empty strings
+  const requests = userData.friend_requests
+    ? userData.friend_requests.split(",").map(s => s.trim()).filter(Boolean)
     : [];
 
   if (requests.length === 0) {
-    requestsDiv.innerHTML = "<div class='status'>No friend requests</div>";
+    requestsDiv.innerHTML = `<div class="status">No friend requests</div>`;
     return;
   }
 
-  // Fetch all users in the request list
+  // Get the details of all users in the request list
   const { data: requestUsers, error: reqError } = await supabase
     .from("fwebaccount")
     .select("username, profile_pic")
     .in("username", requests);
 
-  if (reqError || !requestUsers) {
-    requestsDiv.innerHTML = "<div class='status'>Error fetching request users</div>";
+  if (reqError) {
+    requestsDiv.innerHTML = `<div class="status">Error fetching request users</div>`;
     return;
   }
 
+  if (!requestUsers || requestUsers.length === 0) {
+    requestsDiv.innerHTML = `<div class="status">No friend requests</div>`;
+    return;
+  }
+
+  // Render FChat cards
   requestsDiv.innerHTML = requestUsers.map(u => `
     <div class="card">
       <div class="user-info">
