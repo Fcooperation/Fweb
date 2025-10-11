@@ -105,170 +105,169 @@
 <body>
   <h1>Friend Requests</h1>
   <p id="logline">Loading...</p>
+
   <div id="requests-container">
     <p id="status">Loading...</p>
   </div>
 
-  <script type="module">
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+ <script type="module">
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-    const supabase = createClient(
-      "https://pwsxezhugsxosbwhkdvf.supabase.co",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
-    );
+  const supabase = createClient(
+    "https://pwsxezhugsxosbwhkdvf.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
+  );
 
-    const container = document.getElementById("requests-container");
-    const statusText = document.getElementById("status");
-    const logLine = document.getElementById("logline");
+  const container = document.getElementById("requests-container");
+  const statusText = document.getElementById("status");
+  const logLine = document.getElementById("logline");
 
-    // Simple fading log system
-    async function showLog(msg, delay = 700) {
-      logLine.style.opacity = 0;
-      await new Promise(r => setTimeout(r, 200));
-      logLine.textContent = msg;
-      logLine.style.opacity = 1;
-      await new Promise(r => setTimeout(r, delay));
+  async function showLog(msg, delay = 1000) {
+    logLine.style.opacity = 0;
+    await new Promise(r => setTimeout(r, 200));
+    logLine.textContent = msg;
+    logLine.style.opacity = 1;
+    await new Promise(r => setTimeout(r, delay));
+  }
+
+  async function loadUserData() {
+    await showLog("Retrieving from local storage...");
+    const faccount = JSON.parse(localStorage.getItem("faccount"));
+
+    if (!faccount || !faccount.id) {
+      await showLog("No account found in localStorage.");
+      statusText.innerText = "No account found. Please log in again.";
+      return;
     }
 
-    async function loadUserData() {
-      await showLog("Retrieving from local storage...");
-      const faccount = JSON.parse(localStorage.getItem("faccount"));
-      if (!faccount?.id) {
-        await showLog("No user found.");
-        statusText.textContent = "Please log in again.";
-        return;
-      }
+    await showLog("User ID found. Fetching from Supabase...");
 
-      await showLog("Fetching your account data...");
-      const { data: user, error } = await supabase
+    const { data: user, error } = await supabase
+      .from("fwebaccount")
+      .select("*")
+      .eq("id", faccount.id)
+      .maybeSingle();
+
+    if (error || !user) {
+      await showLog("Error fetching user data.");
+      statusText.innerText = "Error loading data.";
+      return;
+    }
+
+    await showLog("Checking friend_requests column...");
+
+    const requests = Array.isArray(user.friend_requests)
+      ? user.friend_requests
+      : (user.friend_requests
+          ? user.friend_requests.split(",").map(r => r.trim()).filter(Boolean)
+          : []);
+
+    if (requests.length === 0) {
+      await showLog("No friend requests found.");
+      statusText.innerText = "No friend requests.";
+      return;
+    }
+
+    statusText.remove();
+    await showLog("Fetching requester details...");
+
+    for (const requesterId of requests) {
+      const { data: requestUser, error: reqErr } = await supabase
         .from("fwebaccount")
         .select("*")
-        .eq("id", faccount.id)
+        .eq("id", requesterId)
         .maybeSingle();
 
-      if (error || !user) {
-        await showLog("Failed to load account data.");
-        statusText.textContent = "Error loading account data.";
-        return;
-      }
+      if (reqErr || !requestUser) continue;
 
-      const requests = user.friend_requests
-        ? user.friend_requests.split(",").map(r => r.trim()).filter(Boolean)
-        : [];
+      const card = document.createElement("div");
+      card.className = "fchat-card";
 
-      if (requests.length === 0) {
-        await showLog("No friend requests found.");
-        statusText.textContent = "No friend requests.";
-        return;
-      }
+      const left = document.createElement("div");
+      left.className = "fchat-left";
 
-      await showLog("Fetching requesters...");
-      statusText.remove();
+      const img = document.createElement("img");
+      img.src = requestUser.profile_pic || "default.png";
+      img.className = "profile-pic";
 
-      // Fetch all requesters at once
-      const { data: requesters, error: reqError } = await supabase
-        .from("fwebaccount")
-        .select("*")
-        .in("id", requests);
+      const name = document.createElement("div");
+      name.className = "username";
+      name.innerText = requestUser.username;
 
-      if (reqError || !requesters?.length) {
-        await showLog("No requester data found.");
-        statusText.textContent = "No friend requests found.";
-        return;
-      }
+      left.appendChild(img);
+      left.appendChild(name);
 
-      await showLog("Displaying requests...");
+      const actions = document.createElement("div");
+      actions.className = "actions";
 
-      // Render all cards instantly
-      container.innerHTML = "";
-      for (const reqUser of requesters) {
-        const card = document.createElement("div");
-        card.className = "fchat-card";
+      const acceptBtn = document.createElement("button");
+      acceptBtn.innerText = "Accept";
+      const rejectBtn = document.createElement("button");
+      rejectBtn.innerText = "Reject";
+      rejectBtn.className = "reject";
 
-        const left = document.createElement("div");
-        left.className = "fchat-left";
+      actions.appendChild(acceptBtn);
+      actions.appendChild(rejectBtn);
 
-        const img = document.createElement("img");
-        img.src = reqUser.profile_pic || "default.png";
-        img.className = "profile-pic";
+      card.appendChild(left);
+      card.appendChild(actions);
+      container.appendChild(card);
 
-        const name = document.createElement("div");
-        name.className = "username";
-        name.textContent = reqUser.username;
+      // ✅ Accept button logic
+      acceptBtn.onclick = async () => {
+        acceptBtn.disabled = true;
+        rejectBtn.disabled = true;
+        acceptBtn.innerText = "Accepted ✓";
+        acceptBtn.style.background = "#2ecc71";
+        await showLog(`Accepting ${requestUser.username}...`);
 
-        left.appendChild(img);
-        left.appendChild(name);
+        const acceptedList = Array.isArray(user.accepted)
+          ? user.accepted
+          : (user.accepted
+              ? user.accepted.split(",").map(a => a.trim()).filter(Boolean)
+              : []);
+        if (!acceptedList.includes(requesterId)) acceptedList.push(requesterId);
 
-        const actions = document.createElement("div");
-        actions.className = "actions";
+        const updatedRequests = requests.filter(id => id !== requesterId);
 
-        const acceptBtn = document.createElement("button");
-        acceptBtn.textContent = "Accept";
+        await supabase
+          .from("fwebaccount")
+          .update({
+            accepted: acceptedList.join(","),
+            friend_requests: updatedRequests.join(","),
+          })
+          .eq("id", faccount.id);
 
-        const rejectBtn = document.createElement("button");
-        rejectBtn.textContent = "Reject";
-        rejectBtn.classList.add("reject");
+        await showLog(`${requestUser.username} accepted.`);
+        card.style.opacity = 0.3;
+      };
 
-        actions.appendChild(acceptBtn);
-        actions.appendChild(rejectBtn);
+      // ❌ Reject button logic
+      rejectBtn.onclick = async () => {
+        acceptBtn.disabled = true;
+        rejectBtn.disabled = true;
+        rejectBtn.innerText = "Rejected ✗";
+        rejectBtn.style.background = "#e74c3c";
+        await showLog(`Rejecting ${requestUser.username}...`);
 
-        card.appendChild(left);
-        card.appendChild(actions);
-        container.appendChild(card);
+        const updatedRequests = requests.filter(id => id !== requesterId);
 
-        // Accept logic
-        acceptBtn.onclick = async () => {
-          acceptBtn.textContent = "Accepting...";
-          acceptBtn.disabled = true;
-          rejectBtn.disabled = true;
-          await showLog(`Accepting ${reqUser.username}...`);
+        await supabase
+          .from("fwebaccount")
+          .update({
+            friend_requests: updatedRequests.join(","),
+          })
+          .eq("id", faccount.id);
 
-          const accepted = user.accepted
-            ? user.accepted.split(",").map(a => a.trim()).filter(Boolean)
-            : [];
-
-          if (!accepted.includes(reqUser.id.toString()))
-            accepted.push(reqUser.id);
-
-          const updatedRequests = requests.filter(r => r !== reqUser.id.toString());
-
-          await supabase
-            .from("fwebaccount")
-            .update({
-              accepted: accepted.join(","),
-              friend_requests: updatedRequests.join(",")
-            })
-            .eq("id", faccount.id);
-
-          card.remove();
-          await showLog(`${reqUser.username} accepted.`);
-        };
-
-        // Reject logic
-        rejectBtn.onclick = async () => {
-          rejectBtn.textContent = "Rejecting...";
-          rejectBtn.disabled = true;
-          acceptBtn.disabled = true;
-          await showLog(`Rejecting ${reqUser.username}...`);
-
-          const updatedRequests = requests.filter(r => r !== reqUser.id.toString());
-
-          await supabase
-            .from("fwebaccount")
-            .update({
-              friend_requests: updatedRequests.join(",")
-            })
-            .eq("id", faccount.id);
-
-          card.remove();
-          await showLog(`${reqUser.username} rejected.`);
-        };
-      }
-
-      await showLog("All requests displayed.");
+        await showLog(`${requestUser.username} rejected.`);
+        card.style.opacity = 0.3;
+      };
     }
 
-    loadUserData();
-  </script>
+    await showLog("All requests displayed.");
+  }
+
+  loadUserData();
+</script>
 </body>
 </html>
