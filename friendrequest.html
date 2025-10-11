@@ -40,10 +40,10 @@ const requestsDiv = document.getElementById("requestsDiv");
 const loggedInUser = localStorage.getItem("username");
 if(!loggedInUser) alert("No username found — please log in first.");
 
+// Load friend requests
 async function loadRequests() {
   requestsDiv.innerHTML = `<div class="status">Loading...</div>`;
 
-  // Only users who sent you a request
   const { data: users, error } = await supabase
     .from("fwebaccount")
     .select("username, profile_pic, friend_requests")
@@ -70,14 +70,15 @@ async function loadRequests() {
   }).join("");
 }
 
+// Accept request → add to accepted column and remove from friend_requests
 window.acceptRequest = async (sender) => {
-  // Add sender to accepted column
   const { data: me } = await supabase
     .from("fwebaccount")
     .select("accepted, friend_requests")
     .eq("username", loggedInUser)
     .single();
 
+  // Add to accepted
   let acceptedList = me.accepted ? me.accepted.split(",").map(s=>s.trim()) : [];
   if(!acceptedList.includes(sender)) acceptedList.push(sender);
 
@@ -95,11 +96,12 @@ window.acceptRequest = async (sender) => {
     .eq("username", loggedInUser);
 
   if(error) return alert("Error accepting request");
-  loadRequests();
+
+  loadRequests(); // reload
 };
 
+// Reject request → remove from friend_requests
 window.rejectRequest = async (sender) => {
-  // Remove sender from friend_requests without adding to accepted
   const { data: me } = await supabase
     .from("fwebaccount")
     .select("friend_requests")
@@ -116,7 +118,8 @@ window.rejectRequest = async (sender) => {
     .eq("username", loggedInUser);
 
   if(error) return alert("Error rejecting request");
-  loadRequests();
+
+  loadRequests(); // reload
 };
 
 loadRequests();
