@@ -122,9 +122,12 @@ const supabase = createClient(
 
 const searchInput = document.getElementById("searchInput");
 const resultsDiv = document.getElementById("results");
-const loggedInUser = localStorage.getItem("username");
 
-if (!loggedInUser) alert("No username found — please log in first.");
+// ✅ Retrieve full logged-in user info
+const faccount = JSON.parse(localStorage.getItem("faccount"));
+if (!faccount || !faccount.id) {
+  alert("No account found — please log in first.");
+}
 
 // 🔍 Live search
 let typingTimer;
@@ -144,7 +147,7 @@ searchInput.addEventListener("input", () => {
 async function searchUsers(query) {
   const { data, error } = await supabase
     .from("fwebaccount")
-    .select("username, friend_requests, fchat")
+    .select("id, username, friend_requests, fchat")
     .ilike("username", `%${query}%`);
 
   if (error) {
@@ -157,15 +160,15 @@ async function searchUsers(query) {
     return;
   }
 
+  // Hide the logged-in user
   resultsDiv.innerHTML = data
-    .filter(u => u.username !== loggedInUser) // Remove self from list
+    .filter(u => u.id !== faccount.id)
     .map((u) => {
       const requests = u.friend_requests
         ? u.friend_requests.split(",").map((s) => s.trim())
         : [];
-      const isPending = requests.includes(loggedInUser); // Pending if logged-in user already sent them
+      const isPending = requests.includes(String(faccount.id));
 
-      // Determine if Add button should appear
       const canAdd = !isPending && (u.fchat === "yes" || u.fchat === null || u.fchat === undefined);
 
       return `
@@ -175,7 +178,7 @@ async function searchUsers(query) {
             isPending
               ? `<span class="pending">⏳ Pending</span>`
               : canAdd
-              ? `<button onclick="sendRequest('${u.username}')">Add</button>`
+              ? `<button onclick="sendRequest('${u.id}', '${u.username}')">Add</button>`
               : `<div style="color:#f44336; font-size:14px;">This person is not in FChat</div>`
           }
         </div>
@@ -185,32 +188,36 @@ async function searchUsers(query) {
 }
 
 // 📩 Send request
-window.sendRequest = async (username) => {
+window.sendRequest = async (targetId, targetName) => {
   const nowUTC = new Date().toISOString();
 
-  const { data: user } = await supabase
+  // Fetch target's friend_requests list
+  const { data: user, error } = await supabase
     .from("fwebaccount")
     .select("friend_requests")
-    .eq("username", username)
-    .single();
+    .eq("id", targetId)
+    .maybeSingle();
+
+  if (error || !user) return alert("Error fetching user data");
 
   let requests = user.friend_requests
     ? user.friend_requests.split(",").map((s) => s.trim())
     : [];
 
-  if (requests.includes(loggedInUser)) return alert("Already sent");
+  if (requests.includes(String(faccount.id))) return alert("Already sent");
 
-  requests.push(loggedInUser);
+  // Add sender’s ID to friend_requests
+  requests.push(String(faccount.id));
   const newReqs = requests.join(",");
 
-  const { error } = await supabase
+  const { error: updateErr } = await supabase
     .from("fwebaccount")
     .update({ friend_requests: newReqs, sent_at: nowUTC })
-    .eq("username", username);
+    .eq("id", targetId);
 
-  if (error) return alert("Error sending request");
+  if (updateErr) return alert("Error sending request");
 
-  alert("✅ Request sent");
+  alert(`✅ Request sent to ${targetName}`);
   searchUsers(searchInput.value.trim());
 };
 </script>
