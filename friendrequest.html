@@ -65,9 +65,18 @@
       color: #fff;
     }
 
-    #status {
+    #log {
+      background: #111;
+      color: #45a29e;
+      width: 90%;
+      max-width: 500px;
       margin-top: 20px;
-      color: #888;
+      padding: 10px;
+      border-radius: 10px;
+      font-size: 13px;
+      white-space: pre-line;
+      overflow-y: auto;
+      max-height: 200px;
     }
   </style>
 </head>
@@ -76,6 +85,8 @@
   <div id="requests-container">
     <p id="status">Loading...</p>
   </div>
+
+  <div id="log"></div>
 
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
@@ -87,100 +98,96 @@
 
     const container = document.getElementById("requests-container");
     const statusText = document.getElementById("status");
+    const logBox = document.getElementById("log");
 
-    // 🧠 Step 1: Retrieve account data from localStorage
-    const faccount = JSON.parse(localStorage.getItem("faccount"));
-    console.log("Local account data:", faccount);
-
-    if (!faccount || !faccount.id) {
-      console.error("❌ No account found in localStorage.");
-      statusText.innerText = "No account found. Please log in again.";
-      window.location.href = "login.html";
+    function addLog(msg) {
+      console.log(msg);
+      logBox.textContent += msg + "\n";
     }
 
     async function loadUserData() {
-      try {
-        console.log("Fetching all details for user ID:", faccount.id);
+      addLog("🔹 Retrieving from local storage...");
+      const faccount = JSON.parse(localStorage.getItem("faccount"));
 
-        // 🧠 Step 2: Fetch full user data
-        const { data: user, error } = await supabase
+      if (!faccount || !faccount.id) {
+        addLog("❌ No account found in localStorage.");
+        statusText.innerText = "No account found. Please log in again.";
+        return;
+      }
+
+      addLog(`✅ Retrieved user ID: ${faccount.id}`);
+      addLog("🔹 Fetching from Supabase...");
+
+      const { data: user, error } = await supabase
+        .from("fwebaccount")
+        .select("*")
+        .eq("id", faccount.id)
+        .maybeSingle();
+
+      if (error || !user) {
+        addLog(`❌ Error fetching user data: ${error?.message || "No data found"}`);
+        statusText.innerText = "Error loading data.";
+        return;
+      }
+
+      addLog("✅ Found account data.");
+      addLog("🔹 Checking friend_request column...");
+
+      const requests = user.friend_request
+        ? user.friend_request.split(",").map(r => r.trim()).filter(Boolean)
+        : [];
+
+      addLog(`📬 Friend requests found: ${requests.length ? requests.join(", ") : "none"}`);
+
+      if (requests.length === 0) {
+        statusText.innerText = "No friend requests.";
+        addLog("ℹ️ No requests to show.");
+        return;
+      }
+
+      statusText.remove();
+      addLog("🔹 Fetching requester details...");
+
+      for (const username of requests) {
+        addLog(`➡️ Fetching details for '${username}'...`);
+
+        const { data: requestUser, error: reqErr } = await supabase
           .from("fwebaccount")
           .select("*")
-          .eq("id", faccount.id)
+          .eq("username", username)
           .maybeSingle();
 
-        if (error || !user) {
-          console.error("❌ Supabase fetch error:", error);
-          statusText.innerText = "Error loading data.";
-          return;
+        if (reqErr || !requestUser) {
+          addLog(`⚠️ Could not fetch details for ${username}`);
+          continue;
         }
 
-        console.log("✅ User data loaded:", user);
+        addLog(`✅ Found user: ${requestUser.username}`);
 
-        // 🧠 Step 3: Parse friend requests
-        const requests = user.friend_request
-          ? user.friend_request.split(",").map(r => r.trim()).filter(Boolean)
-          : [];
+        const card = document.createElement("div");
+        card.className = "fchat-card";
 
-        console.log("📬 Friend request list:", requests);
+        const left = document.createElement("div");
+        left.className = "fchat-left";
 
-        if (requests.length === 0) {
-          statusText.innerText = "No friend requests.";
-          return;
-        }
+        const img = document.createElement("img");
+        img.src = requestUser.profile_pic || "default.png";
+        img.className = "profile-pic";
 
-        statusText.remove();
+        const name = document.createElement("div");
+        name.className = "username";
+        name.innerText = requestUser.username;
 
-        // 🧠 Step 4: Fetch each requester’s full details
-        for (const username of requests) {
-          console.log(`Fetching details for friend request from: ${username}`);
+        left.appendChild(img);
+        left.appendChild(name);
 
-          const { data: requestUser, error: reqErr } = await supabase
-            .from("fwebaccount")
-            .select("*")
-            .eq("username", username)
-            .maybeSingle();
+        card.appendChild(left);
 
-          if (reqErr || !requestUser) {
-            console.warn(`⚠️ Could not fetch details for ${username}`, reqErr);
-            continue;
-          }
-
-          console.log("✅ Friend data:", requestUser);
-
-          // 🧠 Step 5: Display as fchat card
-          const card = document.createElement("div");
-          card.className = "fchat-card";
-
-          const left = document.createElement("div");
-          left.className = "fchat-left";
-
-          const img = document.createElement("img");
-          img.src = requestUser.profile_pic || "default.png";
-          img.className = "profile-pic";
-
-          const name = document.createElement("div");
-          name.className = "username";
-          name.innerText = requestUser.username;
-
-          left.appendChild(img);
-          left.appendChild(name);
-
-          card.appendChild(left);
-
-          // Optional — show email or other info below username
-          const extra = document.createElement("div");
-          extra.style.fontSize = "12px";
-          extra.style.color = "#bbb";
-          extra.innerText = requestUser.email || "No email";
-          card.appendChild(extra);
-
-          container.appendChild(card);
-        }
-      } catch (err) {
-        console.error("❌ Unexpected error:", err);
-        statusText.innerText = "Error fetching user data.";
+        container.appendChild(card);
+        addLog(`✅ Served '${username}' as fchat card.`);
       }
+
+      addLog("🎉 All requests displayed successfully.");
     }
 
     loadUserData();
