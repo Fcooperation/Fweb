@@ -4,174 +4,195 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Friend Requests</title>
-  <script src="https://unpkg.com/@supabase/supabase-js"></script>
   <style>
     body {
-      background: #0b0b0d;
-      color: #fff;
-      font-family: "Segoe UI", sans-serif;
       margin: 0;
+      background: #0b0c10;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
       padding: 20px;
     }
-    .container {
-      max-width: 620px;
-      margin: 0 auto;
+
+    h1 {
+      color: #66fcf1;
+      margin-bottom: 20px;
     }
-    h2 {
-      text-align: center;
-      margin-bottom: 25px;
-      color: #4da6ff;
+
+    #requests-container {
+      width: 100%;
+      max-width: 500px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
     }
+
     .fchat-card {
-      background: #16171a;
-      border-radius: 18px;
-      padding: 14px 16px;
-      margin-bottom: 14px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.4);
-      transition: transform 0.15s ease-in-out;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #1f2833;
+      padding: 14px;
+      border-radius: 10px;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+      transition: 0.3s;
     }
+
     .fchat-card:hover {
-      transform: translateY(-2px);
+      transform: scale(1.02);
+      background: #202833;
     }
+
+    .fchat-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .profile-pic {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #45a29e;
+    }
+
     .username {
-      font-size: 1.2rem;
-      font-weight: 600;
-      color: #4da6ff;
-      margin-bottom: 5px;
-    }
-    .email {
-      color: #999;
-      font-size: 0.9rem;
-      margin-bottom: 10px;
-    }
-    .actions button {
-      background: #222;
+      font-weight: bold;
       color: #fff;
-      border: none;
-      padding: 7px 12px;
-      border-radius: 8px;
-      margin-right: 8px;
-      cursor: pointer;
-      font-size: 0.9rem;
-      transition: 0.2s;
     }
-    .actions button:hover {
-      background: #4da6ff;
-    }
-    .no-req {
-      text-align: center;
-      color: #777;
-    }
-    /* Hidden background log bar (fades away) */
+
     #log {
-      text-align: center;
-      color: #4da6ff;
-      font-size: 0.9rem;
-      opacity: 0.7;
-      transition: opacity 0.8s ease;
+      background: #111;
+      color: #45a29e;
+      width: 90%;
+      max-width: 500px;
+      margin-top: 20px;
+      padding: 10px;
+      border-radius: 10px;
+      font-size: 13px;
+      white-space: pre-line;
+      overflow-y: auto;
+      max-height: 200px;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2>Friend Requests</h2>
-    <div id="log"></div>
-    <div id="requests"></div>
+  <h1>Friend Requests</h1>
+  <div id="requests-container">
+    <p id="status">Loading...</p>
   </div>
 
-  <script>
-    const SUPABASE_URL = "https://pwsxezhugsxosbwhkdvf.supabase.co";
-    const SUPABASE_KEY =
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  <div id="log"></div>
 
-    const reqDiv = document.getElementById("requests");
-    const logDiv = document.getElementById("log");
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-    function log(msg) {
-      console.log(msg); // console for dev
-      logDiv.innerText = msg;
-      logDiv.style.opacity = 0.7;
-      setTimeout(() => logDiv.style.opacity = 0, 1200);
+    const supabase = createClient(
+      "https://pwsxezhugsxosbwhkdvf.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
+    );
+
+    const container = document.getElementById("requests-container");
+    const statusText = document.getElementById("status");
+    const logBox = document.getElementById("log");
+
+    function addLog(msg) {
+      console.log(msg);
+      logBox.textContent += msg + "\n";
     }
 
-    async function loadRequests() {
-      log("Retrieving user info from local storage...");
-      reqDiv.innerHTML = "Loading...";
-      const id = localStorage.getItem("id");
-      if (!id) {
-        reqDiv.innerHTML = "<p class='no-req'>No user ID found.</p>";
+    async function loadUserData() {
+      addLog("🔹 Retrieving from local storage...");
+      const faccount = JSON.parse(localStorage.getItem("faccount"));
+
+      if (!faccount || !faccount.id) {
+        addLog("❌ No account found in localStorage.");
+        statusText.innerText = "No account found. Please log in again.";
         return;
       }
 
-      log("Checking fchat account storage...");
-      const { data: user, error } = await supabaseClient
+      addLog(`✅ Retrieved user ID: ${faccount.id}`);
+      addLog("🔹 Fetching from Supabase...");
+
+      const { data: user, error } = await supabase
         .from("fwebaccount")
         .select("*")
-        .eq("id", id)
-        .single();
+        .eq("id", faccount.id)
+        .maybeSingle();
 
       if (error || !user) {
-        reqDiv.innerHTML = "<p class='no-req'>Error fetching user data.</p>";
+        addLog(`❌ Error fetching user data: ${error?.message || "No data found"}`);
+        statusText.innerText = "Error loading data.";
         return;
       }
 
-      const requests = user.friend_requests || [];
+      addLog("✅ Found account data.");
+      addLog("🔹 Checking friend_requests column...");
+
+      const requests = Array.isArray(user.friend_requests)
+        ? user.friend_requests
+        : (user.friend_requests
+            ? user.friend_requests.split(",").map(r => r.trim()).filter(Boolean)
+            : []);
+
+      addLog(`📬 Friend requests found: ${requests.length ? requests.join(", ") : "none"}`);
+
       if (requests.length === 0) {
-        reqDiv.innerHTML = "<p class='no-req'>No friend requests found.</p>";
+        statusText.innerText = "No friend requests.";
+        addLog("ℹ️ No requests to show.");
         return;
       }
 
-      log("Found friend requests. Fetching details...");
-      reqDiv.innerHTML = "";
+      statusText.remove();
+      addLog("🔹 Fetching requester details...");
 
-      for (const friendId of requests) {
-        const { data: friend } = await supabaseClient
+      for (const requesterId of requests) {
+        addLog(`➡️ Fetching details for ID '${requesterId}'...`);
+
+        const { data: requestUser, error: reqErr } = await supabase
           .from("fwebaccount")
           .select("*")
-          .eq("id", friendId)
-          .single();
+          .eq("id", requesterId)
+          .maybeSingle();
 
-        if (!friend) continue;
+        if (reqErr || !requestUser) {
+          addLog(`⚠️ Could not fetch details for ID ${requesterId}`);
+          continue;
+        }
+
+        addLog(`✅ Found user: ${requestUser.username}`);
 
         const card = document.createElement("div");
         card.className = "fchat-card";
-        card.innerHTML = `
-          <div class="username">${friend.username}</div>
-          <div class="email">${friend.email}</div>
-          <div class="actions">
-            <button class="accept">Accept</button>
-            <button class="reject">Reject</button>
-          </div>
-        `;
 
-        card.querySelector(".accept").onclick = async () => {
-          log("Accepting friend...");
-          const updatedAccepted = user.accepted ? [...user.accepted, friendId] : [friendId];
-          const updatedRequests = requests.filter(r => r !== friendId);
-          await supabaseClient.from("fwebaccount").update({
-            accepted: updatedAccepted,
-            friend_requests: updatedRequests
-          }).eq("id", id);
-          location.reload();
-        };
+        const left = document.createElement("div");
+        left.className = "fchat-left";
 
-        card.querySelector(".reject").onclick = async () => {
-          log("Rejecting friend...");
-          const updatedRequests = requests.filter(r => r !== friendId);
-          await supabaseClient.from("fwebaccount").update({
-            friend_requests: updatedRequests
-          }).eq("id", id);
-          location.reload();
-        };
+        const img = document.createElement("img");
+        img.src = requestUser.profile_pic || "default.png";
+        img.className = "profile-pic";
 
-        reqDiv.appendChild(card);
+        const name = document.createElement("div");
+        name.className = "username";
+        name.innerText = requestUser.username;
+
+        left.appendChild(img);
+        left.appendChild(name);
+
+        card.appendChild(left);
+        container.appendChild(card);
+
+        addLog(`✅ Served '${requestUser.username}' as fchat card.`);
       }
 
-      log("Serving friend request cards...");
+      addLog("🎉 All requests displayed successfully.");
     }
 
-    loadRequests();
+    loadUserData();
   </script>
 </body>
 </html>
