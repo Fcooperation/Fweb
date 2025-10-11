@@ -1,34 +1,96 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Friend Requests</title>
-<style>
-  body { margin:0; font-family:'Poppins',sans-serif; background:#0d1117; color:#fff; display:flex; flex-direction:column; min-height:100vh; }
-  header { background:#161b22; padding:15px; text-align:center; font-size:20px; font-weight:bold; border-bottom:1px solid #30363d; color:#00c6ff; letter-spacing:1px; }
-  .requests { flex:1; padding:10px; overflow-y:auto; }
-  .card { display:flex; justify-content:space-between; align-items:center; background:#161b22; margin:10px 0; padding:10px 15px; border-radius:10px; border:1px solid #30363d; transition:background 0.3s ease; }
-  .card:hover { background:#1e242b; }
-  .user-info { display:flex; align-items:center; gap:10px; }
-  .user-info img { width:40px; height:40px; border-radius:50%; object-fit:cover; }
-  .card button { background:#238636; border:none; color:#fff; padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:500; transition:background 0.3s ease; }
-  .card button:hover { background:#2ea043; }
-  .card button.reject { background:#c0392b; }
-  .card button.reject:hover { background:#e74c3c; }
-  .status { text-align:center; padding:20px; color:#999; }
-  .bottom { background:#161b22; padding:15px; text-align:center; border-top:1px solid #30363d; }
-  .bottom button { width:100%; background:#238636; border:none; color:white; padding:12px; border-radius:10px; font-size:16px; cursor:pointer; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Friend Requests</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      background: #0d1117;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    header {
+      background: #161b22;
+      padding: 15px;
+      text-align: center;
+      font-size: 20px;
+      font-weight: bold;
+      border-bottom: 1px solid #30363d;
+      color: #00c6ff;
+      letter-spacing: 1px;
+    }
+    .requests {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+    }
+    .card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #161b22;
+      margin: 10px 0;
+      padding: 10px 15px;
+      border-radius: 10px;
+      border: 1px solid #30363d;
+      transition: background 0.3s ease;
+    }
+    .card:hover { background: #1e242b; }
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .user-info img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    .card button {
+      background: #238636;
+      border: none;
+      color: #fff;
+      padding: 8px 15px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background 0.3s ease;
+      margin-left: 5px;
+    }
+    .card button:hover { background: #2ea043; }
+    .status {
+      text-align: center;
+      padding: 20px;
+      color: #999;
+    }
+    .bottom {
+      background: #161b22;
+      padding: 15px;
+      text-align: center;
+      border-top: 1px solid #30363d;
+    }
+    .bottom button {
+      width: 100%;
+      background: #238636;
+      border: none;
+      color: white;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
 
 <header>Friend Requests</header>
-
-<div class="requests" id="requestsDiv">
-  <div class="status">Loading...</div>
-</div>
-
+<div class="requests" id="requestsDiv"><div class="status">Loading...</div></div>
 <div class="bottom">
   <button onclick="window.location.href='fchat.html'">Back</button>
 </div>
@@ -38,29 +100,45 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const supabase = createClient(
   "https://pwsxezhugsxosbwhkdvf.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
+  "YOUR_ANON_KEY_HERE"
 );
 
 const requestsDiv = document.getElementById("requestsDiv");
 const loggedInUser = localStorage.getItem("username");
 if (!loggedInUser) alert("No username found — please log in first.");
 
+// Load friend requests
 async function loadRequests() {
   requestsDiv.innerHTML = `<div class="status">Loading...</div>`;
 
-  // Get all users where friend_requests contains your username
-  const { data: users, error } = await supabase
+  const { data: userData, error } = await supabase
     .from("fwebaccount")
-    .select("username, profile_pic, friend_requests")
-    .ilike("friend_requests", `%${loggedInUser}%`);
+    .select("friend_requests")
+    .eq("username", loggedInUser)
+    .maybeSingle();
 
-  if (error) {
-    requestsDiv.innerHTML = `<div class="status">Error loading requests</div>`;
+  if (error || !userData) {
+    requestsDiv.innerHTML = `<div class="status">Error fetching user data</div>`;
     return;
   }
 
-  if (!users || users.length === 0) {
+  const requests = userData.friend_requests
+    ? userData.friend_requests.split(",").map(s => s.trim())
+    : [];
+
+  if (requests.length === 0) {
     requestsDiv.innerHTML = `<div class="status">No friend requests</div>`;
+    return;
+  }
+
+  // Fetch user info for each requester
+  const { data: users, error: userError } = await supabase
+    .from("fwebaccount")
+    .select("username, profile_pic")
+    .in("username", requests);
+
+  if (userError || !users) {
+    requestsDiv.innerHTML = `<div class="status">Error fetching user info</div>`;
     return;
   }
 
@@ -68,12 +146,12 @@ async function loadRequests() {
     return `
       <div class="card">
         <div class="user-info">
-          <img src="${u.profile_pic || 'https://via.placeholder.com/40'}" alt="profile">
+          <img src="${u.profile_pic || 'https://via.placeholder.com/40'}" alt="profile" />
           <span>${u.username}</span>
         </div>
         <div>
           <button onclick="acceptRequest('${u.username}')">Accept</button>
-          <button class="reject" onclick="rejectRequest('${u.username}')">Reject</button>
+          <button onclick="rejectRequest('${u.username}')">Reject</button>
         </div>
       </div>
     `;
@@ -82,29 +160,24 @@ async function loadRequests() {
 
 // Accept friend request
 window.acceptRequest = async (username) => {
-  // Get logged in user data safely using maybeSingle()
   const { data: user, error } = await supabase
     .from("fwebaccount")
     .select("accepted, friend_requests")
     .eq("username", loggedInUser)
     .maybeSingle();
 
-  if (error || !user) return alert("Error fetching user data");
+  if (error || !user) return alert("Error loading user data");
 
   let acceptedList = user.accepted ? user.accepted.split(",").map(s => s.trim()) : [];
   if (!acceptedList.includes(username)) acceptedList.push(username);
 
-  // Remove from friend_requests
   let updatedRequests = user.friend_requests
     ? user.friend_requests.split(",").map(s => s.trim()).filter(s => s !== username)
     : [];
 
   const { error: updateError } = await supabase
     .from("fwebaccount")
-    .update({
-      accepted: acceptedList.join(","),
-      friend_requests: updatedRequests.join(",")
-    })
+    .update({ accepted: acceptedList.join(","), friend_requests: updatedRequests.join(",") })
     .eq("username", loggedInUser);
 
   if (updateError) return alert("Error accepting request");
@@ -120,7 +193,7 @@ window.rejectRequest = async (username) => {
     .eq("username", loggedInUser)
     .maybeSingle();
 
-  if (error || !user) return alert("Error fetching user data");
+  if (error || !user) return alert("Error loading user data");
 
   let updatedRequests = user.friend_requests
     ? user.friend_requests.split(",").map(s => s.trim()).filter(s => s !== username)
