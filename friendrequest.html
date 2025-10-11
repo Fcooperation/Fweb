@@ -213,35 +213,62 @@
       card.appendChild(actions);
       container.appendChild(card);
 
-      // ✅ Accept button logic
-      acceptBtn.onclick = async () => {
-        acceptBtn.disabled = true;
-        rejectBtn.disabled = true;
-        acceptBtn.innerText = "Accepted ✓";
-        acceptBtn.style.background = "#2ecc71";
-        await showLog(`Accepting ${requestUser.username}...`);
+// ✅ Accept button logic
+acceptBtn.onclick = async () => {
+  acceptBtn.disabled = true;
+  rejectBtn.disabled = true;
+  acceptBtn.innerText = "Accepted ✓";
+  acceptBtn.style.background = "#2ecc71";
+  await showLog(`Accepting ${requestUser.username}...`);
 
-        const acceptedList = Array.isArray(user.accepted)
-          ? user.accepted
-          : (user.accepted
-              ? user.accepted.split(",").map(a => a.trim()).filter(Boolean)
-              : []);
-        if (!acceptedList.includes(requesterId)) acceptedList.push(requesterId);
+  const acceptedList = Array.isArray(user.accepted)
+    ? user.accepted
+    : (user.accepted
+        ? user.accepted.split(",").map(a => a.trim()).filter(Boolean)
+        : []);
+  if (!acceptedList.includes(requesterId)) acceptedList.push(requesterId);
 
-        const updatedRequests = requests.filter(id => id !== requesterId);
+  const updatedRequests = requests.filter(id => id !== requesterId);
 
-        await supabase
-          .from("fwebaccount")
-          .update({
-            accepted: acceptedList.join(","),
-            friend_requests: updatedRequests.join(","),
-          })
-          .eq("id", faccount.id);
+  // ✅ Update your own data (accepted + friend_requests)
+  await supabase
+    .from("fwebaccount")
+    .update({
+      accepted: acceptedList.join(","),
+      friend_requests: updatedRequests.join(","),
+    })
+    .eq("id", faccount.id);
 
-        await showLog(`${requestUser.username} accepted.`);
-        card.style.opacity = 0.3;
-      };
+  // ✅ Add your ID to the requester's accepted column (two-way friendship)
+  await showLog(`Adding your ID to ${requestUser.username}'s accepted list...`);
 
+  const { data: requesterData, error: requesterErr } = await supabase
+    .from("fwebaccount")
+    .select("accepted")
+    .eq("id", requesterId)
+    .maybeSingle();
+
+  if (!requesterErr && requesterData) {
+    const requesterAccepted = requesterData.accepted
+      ? requesterData.accepted.split(",").map(a => a.trim()).filter(Boolean)
+      : [];
+    if (!requesterAccepted.includes(faccount.id.toString())) {
+      requesterAccepted.push(faccount.id.toString());
+    }
+
+    await supabase
+      .from("fwebaccount")
+      .update({
+        accepted: requesterAccepted.join(","),
+      })
+      .eq("id", requesterId);
+
+    await showLog(`Your ID added to ${requestUser.username}'s accepted list.`);
+  }
+
+  await showLog(`${requestUser.username} accepted.`);
+  card.style.opacity = 0.3;
+};
       // ❌ Reject button logic
       rejectBtn.onclick = async () => {
         acceptBtn.disabled = true;
