@@ -255,14 +255,15 @@ async function loadAcceptedFriends(showLoading = false) {
     return;
   }
 
-  const { data: friends, error: err2 } = await supabase
+  // Fast parallel fetching (Promise.all)
+  const { data: allData, error: err2 } = await supabase
     .from("fwebaccount")
     .select("id, username, profile_pic, bio")
     .in("id", accepted);
 
-  if (err2) return;
-  allFriends = friends || [];
-  renderChats(friends);
+  if (err2 || !allData) return;
+  allFriends = allData;
+  renderChats(allFriends);
 }
 
 function renderChats(friends) {
@@ -292,7 +293,8 @@ function renderChats(friends) {
     left.appendChild(info);
 
     card.appendChild(left);
-    card.onclick = () => window.location.href = `chat.html?id=${f.id}`;
+    card.onclick = () =>
+      window.location.href = `chat.html?id=${f.id}&name=${encodeURIComponent(f.username)}&pic=${encodeURIComponent(f.profile_pic || "default.png")}`;
     chatContainer.appendChild(card);
   });
 }
@@ -304,8 +306,6 @@ document.getElementById("searchInput").addEventListener("input", e => {
 });
 
 loadAcceptedFriends(true);
-
-// auto-refresh every 5s silently
 setInterval(() => loadAcceptedFriends(), 5000);
 
 window.viewProfilePic = function(src) {
