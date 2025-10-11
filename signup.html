@@ -29,8 +29,8 @@
       width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;
     }
     .btn {
-      width: 100%; padding: 12px; background: #007bff; color: #fff; border: none;
-      border-radius: 8px; cursor: pointer; font-size: 15px; margin-top: 10px;
+      width: 100%; padding: 12px; background: #007bff; color: #fff;
+      border: none; border-radius: 8px; cursor: pointer; font-size: 15px; margin-top: 10px;
     }
     .btn:hover { background: #0056b3; }
     .toggle-link { text-align: center; margin-top: 15px; font-size: 14px; }
@@ -39,110 +39,138 @@
   </style>
 </head>
 <body>
-  <div class="account-box">
-    <h2>Signup to Fweb Account</h2>
+<div class="account-box">
+  <h2>Signup to Fweb Account</h2>
 
-    <div class="input-group">
-      <label for="username">Username</label>
-      <input type="text" id="username" placeholder="Username" />
-    </div>
-    <div class="input-group">
-      <label for="name">Full Name</label>
-      <input type="text" id="name" placeholder="Full Name" />
-    </div>
-    <div class="input-group">
-      <label for="email">Email</label>
-      <input type="email" id="email" placeholder="Email" />
-    </div>
-    <div class="input-group">
-      <label for="password">Password</label>
-      <input type="password" id="password" placeholder="Password" />
-    </div>
-    <div class="input-group">
-      <label for="secret">Secret Code</label>
-      <input type="text" id="secret" placeholder="Secret Code" />
-    </div>
-
-    <div class="captcha-group">
-      <input type="checkbox" id="human-check">
-      <label for="human-check">I am not a robot</label>
-    </div>
-
-    <button class="btn" id="signup-btn">Sign Up</button>
-
-    <div class="toggle-link">
-      Already have an account? <a href="login.html">Login here</a>
-    </div>
+  <div class="input-group">
+    <label for="username">Username</label>
+    <input type="text" id="username" placeholder="Username" />
+  </div>
+  <div class="input-group">
+    <label for="name">Full Name</label>
+    <input type="text" id="name" placeholder="Full Name" />
+  </div>
+  <div class="input-group">
+    <label for="email">Email</label>
+    <input type="email" id="email" placeholder="Email" />
+  </div>
+  <div class="input-group">
+    <label for="password">Password</label>
+    <input type="password" id="password" placeholder="Password" />
+  </div>
+  <div class="input-group">
+    <label for="secret">Secret Code</label>
+    <input type="text" id="secret" placeholder="Secret Code" />
   </div>
 
-  <script type="module">
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+  <div class="captcha-group">
+    <input type="checkbox" id="human-check">
+    <label for="human-check">I am not a robot</label>
+  </div>
 
-    const supabaseUrl = "https://pwsxezhugsxosbwhkdvf.supabase.co";
-    const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
+  <button class="btn" id="signup-btn">Sign Up</button>
 
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+  <div class="toggle-link">
+    Already have an account? <a href="login.html">Login here</a>
+  </div>
+</div>
 
-    document.getElementById("signup-btn").addEventListener("click", async () => {
-      const username = document.getElementById("username").value.trim();
-      const name = document.getElementById("name").value.trim();
-      const email = document.getElementById("email").value.trim().toLowerCase();
-      const password = document.getElementById("password").value;
-      const secret = document.getElementById("secret").value.trim();
-      const humanChecked = document.getElementById("human-check").checked;
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-      if (!username || !name || !email || !password || !secret) {
-        alert("Please fill in all fields.");
-        return;
-      }
-      if (!humanChecked) {
-        alert("Please confirm you are human.");
-        return;
-      }
+const supabaseUrl = "https://pwsxezhugsxosbwhkdvf.supabase.co";
+const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-      try {
-        // Generate unique ID up to 15 digits
-        let uniqueId;
-        let isUnique = false;
-        while (!isUnique) {
-          uniqueId = Math.floor(Math.random() * 10**15).toString();
-          const { data } = await supabase
-            .from("fwebaccount")
-            .select("id")
-            .eq("id", uniqueId)
-            .maybeSingle();
-          if (!data) isUnique = true;
+document.getElementById("signup-btn").addEventListener("click", async () => {
+  const btn = document.getElementById("signup-btn");
+  btn.innerText = "Signing Up...";
+  btn.disabled = true;
+
+  const username = document.getElementById("username").value.trim();
+  const name = document.getElementById("name").value.trim();
+  const email = document.getElementById("email").value.trim().toLowerCase();
+  const password = document.getElementById("password").value;
+  const secret = document.getElementById("secret").value.trim();
+  const humanChecked = document.getElementById("human-check").checked;
+
+  if (!username || !name || !email || !password || !secret) {
+    alert("Please fill in all fields.");
+    btn.innerText = "Sign Up";
+    btn.disabled = false;
+    return;
+  }
+  if (!humanChecked) {
+    alert("Please confirm you are human.");
+    btn.innerText = "Sign Up";
+    btn.disabled = false;
+    return;
+  }
+
+  try {
+    // Check if email already exists
+    const { data: emailData } = await supabase
+      .from("fwebaccount")
+      .select("email")
+      .eq("email", email)
+      .maybeSingle();
+
+    if (emailData) {
+      alert("Email already exists. Please login.");
+      btn.innerText = "Sign Up";
+      btn.disabled = false;
+      return;
+    }
+
+    // Generate a unique numeric ID (up to 15 digits)
+    let uniqueId;
+    while (true) {
+      uniqueId = Math.floor(Math.random() * 1e15);
+      const { data: idCheck } = await supabase
+        .from("fwebaccount")
+        .select("id")
+        .eq("id", uniqueId)
+        .maybeSingle();
+      if (!idCheck) break; // id is unique
+    }
+
+    // Insert new account
+    const { data, error } = await supabase
+      .from("fwebaccount")
+      .insert([
+        {
+          id: uniqueId,
+          username,
+          full_name: name,
+          email,
+          password_hash: password,
+          secret,
+          status: "active"
         }
+      ])
+      .select()
+      .maybeSingle();
 
-        // Insert new account (username can be duplicate)
-        const { data, error } = await supabase
-          .from("fwebaccount")
-          .insert([
-            {
-              id: uniqueId,
-              username: username,
-              full_name: name,
-              email: email,
-              password_hash: password,
-              secret: secret,
-              status: "active"
-            }
-          ])
-          .select();
+    if (error || !data) {
+      console.error("Error saving account:", error);
+      alert("Error: " + JSON.stringify(error));
+      btn.innerText = "Sign Up";
+      btn.disabled = false;
+      return;
+    }
 
-        if (error) {
-          console.error("Error saving account:", error);
-          alert("Error: " + JSON.stringify(error));
-        } else {
-          console.log("Account saved:", data);
-          alert("Account created successfully! You can now login.");
-          window.location.href = "login.html";
-        }
-      } catch (err) {
-        console.error("Unexpected error:", err);
-        alert("Unexpected error: " + err.message);
-      }
-    });
-  </script>
+    // Save to localStorage
+    localStorage.setItem("faccount", JSON.stringify(data));
+    alert("✅ Account created successfully! You are now logged in.");
+    window.location.href = "dashboard.html";
+
+  } catch (err) {
+    console.error("Unexpected error:", err);
+    alert("Unexpected error: " + err.message);
+    btn.innerText = "Sign Up";
+    btn.disabled = false;
+  }
+});
+</script>
 </body>
 </html>
