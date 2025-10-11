@@ -1,87 +1,162 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Friend Requests</title>
-<style>
-  body { font-family: sans-serif; background: #f5f7fa; padding: 20px; }
-  .fchat-card { background: #fff; padding: 15px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
-  .fchat-card img { width: 40px; height: 40px; border-radius: 50%; margin-right: 10px; }
-  .buttons button { margin-left: 5px; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Friend Requests</title>
+  <style>
+    body {
+      margin: 0;
+      background: #0b0c10;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    h1 {
+      color: #66fcf1;
+      margin-bottom: 20px;
+    }
+
+    #requests-container {
+      width: 100%;
+      max-width: 500px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .fchat-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #1f2833;
+      padding: 14px;
+      border-radius: 10px;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+      transition: 0.3s;
+    }
+
+    .fchat-card:hover {
+      transform: scale(1.02);
+      background: #202833;
+    }
+
+    .fchat-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .profile-pic {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #45a29e;
+    }
+
+    .username {
+      font-weight: bold;
+      color: #fff;
+    }
+
+    #status {
+      margin-top: 20px;
+      color: #888;
+    }
+  </style>
 </head>
 <body>
-<h2>Friend Requests</h2>
-<div id="friend-requests"></div>
+  <h1>Friend Requests</h1>
+  <div id="requests-container">
+    <p id="status">Loading...</p>
+  </div>
 
-<script type="module">
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-const supabaseUrl = "https://pwsxezhugsxosbwhkdvf.supabase.co";
-const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
+    const supabase = createClient(
+      "https://pwsxezhugsxosbwhkdvf.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
+    );
 
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const container = document.getElementById("requests-container");
+    const statusText = document.getElementById("status");
 
-async function loadFriendRequests() {
-  const faccount = JSON.parse(localStorage.getItem("faccount"));
-  if (!faccount || !faccount.id) {
-    alert("No account found in local storage. Please log in.");
-    return;
-  }
-
-  const userId = faccount.id;
-
-  // Fetch your own full data using id
-  const { data: userData, error: userError } = await supabase
-    .from("fwebaccount")
-    .select("*")
-    .eq("id", userId)
-    .maybeSingle();
-
-  if (userError || !userData) {
-    console.error("Error fetching user:", userError);
-    alert("Error fetching user data.");
-    return;
-  }
-
-  const friendRequestIds = userData.friend_request || []; // assume array of ids
-  const container = document.getElementById("friend-requests");
-
-  if (!friendRequestIds.length) {
-    container.innerHTML = "<p>No friend requests.</p>";
-    return;
-  }
-
-  container.innerHTML = ""; // clear
-
-  // Fetch each requester data
-  for (let fid of friendRequestIds) {
-    const { data: fdata } = await supabase
-      .from("fwebaccount")
-      .select("id, username, profile_pic")
-      .eq("id", fid)
-      .maybeSingle();
-
-    if (fdata) {
-      const card = document.createElement("div");
-      card.className = "fchat-card";
-      card.innerHTML = `
-        <div style="display:flex; align-items:center;">
-          <img src="${fdata.profile_pic || 'default.png'}" alt="${fdata.username}">
-          <span>${fdata.username}</span>
-        </div>
-        <div class="buttons">
-          <button disabled>Accept</button>
-          <button disabled>Reject</button>
-        </div>
-      `;
-      container.appendChild(card);
+    // Get account data from localStorage
+    const faccount = JSON.parse(localStorage.getItem("faccount"));
+    if (!faccount || !faccount.id) {
+      statusText.innerText = "No account found. Please log in again.";
+      window.location.href = "login.html";
     }
-  }
-}
 
-loadFriendRequests();
-</script>
+    async function loadFriendRequests() {
+      try {
+        // Fetch this user’s data by ID
+        const { data: user, error } = await supabase
+          .from("fwebaccount")
+          .select("friend_request")
+          .eq("id", faccount.id)
+          .maybeSingle();
+
+        if (error || !user) {
+          console.error(error);
+          statusText.innerText = "Error loading requests.";
+          return;
+        }
+
+        const requests = user.friend_request ? user.friend_request.split(",").map(r => r.trim()).filter(Boolean) : [];
+
+        if (requests.length === 0) {
+          statusText.innerText = "No friend requests.";
+          return;
+        }
+
+        statusText.remove();
+
+        // For each username in friend_request, fetch their profile
+        for (const username of requests) {
+          const { data: requestUser, error: reqErr } = await supabase
+            .from("fwebaccount")
+            .select("username, profile_pic")
+            .eq("username", username)
+            .maybeSingle();
+
+          if (reqErr || !requestUser) continue;
+
+          const card = document.createElement("div");
+          card.className = "fchat-card";
+
+          const left = document.createElement("div");
+          left.className = "fchat-left";
+
+          const img = document.createElement("img");
+          img.src = requestUser.profile_pic || "default.png";
+          img.className = "profile-pic";
+
+          const name = document.createElement("div");
+          name.className = "username";
+          name.innerText = requestUser.username;
+
+          left.appendChild(img);
+          left.appendChild(name);
+
+          card.appendChild(left);
+
+          container.appendChild(card);
+        }
+      } catch (err) {
+        console.error(err);
+        statusText.innerText = "Error fetching friend requests.";
+      }
+    }
+
+    loadFriendRequests();
+  </script>
 </body>
 </html>
