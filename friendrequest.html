@@ -19,7 +19,14 @@
 
     h1 {
       color: #66fcf1;
-      margin-bottom: 20px;
+      margin-bottom: 10px;
+    }
+
+    #logline {
+      font-size: 13px;
+      color: #45a29e;
+      margin-bottom: 15px;
+      transition: opacity 0.5s ease;
     }
 
     #requests-container {
@@ -65,28 +72,43 @@
       color: #fff;
     }
 
-    #log {
-      background: #111;
-      color: #45a29e;
-      width: 90%;
-      max-width: 500px;
-      margin-top: 20px;
-      padding: 10px;
-      border-radius: 10px;
+    .actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    button {
+      background: #45a29e;
+      border: none;
+      color: #fff;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: 0.2s;
       font-size: 13px;
-      white-space: pre-line;
-      overflow-y: auto;
-      max-height: 200px;
+    }
+
+    button:hover {
+      background: #66fcf1;
+      color: #0b0c10;
+    }
+
+    .reject {
+      background: #c0392b;
+    }
+
+    .reject:hover {
+      background: #e74c3c;
     }
   </style>
 </head>
 <body>
   <h1>Friend Requests</h1>
+  <p id="logline">Loading...</p>
+
   <div id="requests-container">
     <p id="status">Loading...</p>
   </div>
-
-  <div id="log"></div>
 
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
@@ -98,25 +120,27 @@
 
     const container = document.getElementById("requests-container");
     const statusText = document.getElementById("status");
-    const logBox = document.getElementById("log");
+    const logLine = document.getElementById("logline");
 
-    function addLog(msg) {
-      console.log(msg);
-      logBox.textContent += msg + "\n";
+    async function showLog(msg, delay = 1000) {
+      logLine.style.opacity = 0;
+      await new Promise(r => setTimeout(r, 200));
+      logLine.textContent = msg;
+      logLine.style.opacity = 1;
+      await new Promise(r => setTimeout(r, delay));
     }
 
     async function loadUserData() {
-      addLog("🔹 Retrieving from local storage...");
+      await showLog("Retrieving from local storage...");
       const faccount = JSON.parse(localStorage.getItem("faccount"));
 
       if (!faccount || !faccount.id) {
-        addLog("❌ No account found in localStorage.");
+        await showLog("No account found in localStorage.");
         statusText.innerText = "No account found. Please log in again.";
         return;
       }
 
-      addLog(`✅ Retrieved user ID: ${faccount.id}`);
-      addLog("🔹 Fetching from Supabase...");
+      await showLog("User ID found. Fetching from Supabase...");
 
       const { data: user, error } = await supabase
         .from("fwebaccount")
@@ -125,13 +149,12 @@
         .maybeSingle();
 
       if (error || !user) {
-        addLog(`❌ Error fetching user data: ${error?.message || "No data found"}`);
+        await showLog("Error fetching user data.");
         statusText.innerText = "Error loading data.";
         return;
       }
 
-      addLog("✅ Found account data.");
-      addLog("🔹 Checking friend_requests column...");
+      await showLog("Checking friend_requests column...");
 
       const requests = Array.isArray(user.friend_requests)
         ? user.friend_requests
@@ -139,19 +162,17 @@
             ? user.friend_requests.split(",").map(r => r.trim()).filter(Boolean)
             : []);
 
-      addLog(`📬 Friend requests found: ${requests.length ? requests.join(", ") : "none"}`);
-
       if (requests.length === 0) {
+        await showLog("No friend requests found.");
         statusText.innerText = "No friend requests.";
-        addLog("ℹ️ No requests to show.");
         return;
       }
 
       statusText.remove();
-      addLog("🔹 Fetching requester details...");
+      await showLog("Fetching requester details...");
 
       for (const requesterId of requests) {
-        addLog(`➡️ Fetching details for ID '${requesterId}'...`);
+        await showLog(`Loading ${requesterId}...`);
 
         const { data: requestUser, error: reqErr } = await supabase
           .from("fwebaccount")
@@ -160,11 +181,8 @@
           .maybeSingle();
 
         if (reqErr || !requestUser) {
-          addLog(`⚠️ Could not fetch details for ID ${requesterId}`);
           continue;
         }
-
-        addLog(`✅ Found user: ${requestUser.username}`);
 
         const card = document.createElement("div");
         card.className = "fchat-card";
@@ -183,13 +201,60 @@
         left.appendChild(img);
         left.appendChild(name);
 
+        const actions = document.createElement("div");
+        actions.className = "actions";
+
+        const acceptBtn = document.createElement("button");
+        acceptBtn.innerText = "Accept";
+        const rejectBtn = document.createElement("button");
+        rejectBtn.innerText = "Reject";
+        rejectBtn.className = "reject";
+
+        actions.appendChild(acceptBtn);
+        actions.appendChild(rejectBtn);
+
         card.appendChild(left);
+        card.appendChild(actions);
         container.appendChild(card);
 
-        addLog(`✅ Served '${requestUser.username}' as fchat card.`);
+        acceptBtn.onclick = async () => {
+          await showLog(`Accepting ${requestUser.username}...`);
+          const acceptedList = Array.isArray(user.accepted)
+            ? user.accepted
+            : (user.accepted
+                ? user.accepted.split(",").map(a => a.trim()).filter(Boolean)
+                : []);
+          if (!acceptedList.includes(requesterId)) acceptedList.push(requesterId);
+
+          const updatedRequests = requests.filter(id => id !== requesterId);
+
+          await supabase
+            .from("fwebaccount")
+            .update({
+              accepted: acceptedList,
+              friend_requests: updatedRequests
+            })
+            .eq("id", faccount.id);
+
+          location.reload();
+        };
+
+        rejectBtn.onclick = async () => {
+          await showLog(`Rejecting ${requestUser.username}...`);
+          const updatedRequests = requests.filter(id => id !== requesterId);
+
+          await supabase
+            .from("fwebaccount")
+            .update({
+              friend_requests: updatedRequests
+            })
+            .eq("id", faccount.id);
+
+          location.reload();
+        };
       }
 
-      addLog("🎉 All requests displayed successfully.");
+      await showLog("All requests displayed.");
     }
 
     loadUserData();
