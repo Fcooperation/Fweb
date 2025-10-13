@@ -72,7 +72,6 @@
   <h3>Live Logs</h3>
   <div id="logs">Logs will appear here...</div>
 </div>
-
 <script>
   const columnsContainer = document.getElementById("columns-container");
   const addColumnBtn = document.getElementById("add-column");
@@ -84,7 +83,7 @@
   const epochInput = document.getElementById("epochs");
 
   function log(msg) {
-    logs.innerText += "\\n" + msg;
+    logs.innerText += "\n" + msg;
     logs.scrollTop = logs.scrollHeight;
   }
 
@@ -119,6 +118,44 @@
 
   addColumnBtn.onclick = () => createColumn();
 
+  async function parseUploadedFile(file) {
+    try {
+      const text = await file.text();
+      let data = [];
+
+      // Try JSON array
+      try {
+        const parsed = JSON.parse(text);
+        if (Array.isArray(parsed)) {
+          data = parsed.filter(obj => obj.prompt && obj.response);
+          if (data.length) {
+            log(`✅ Parsed ${data.length} entries from JSON array file.`);
+            return data;
+          }
+        }
+      } catch {}
+
+      // Try line-separated JSON
+      text.split("\n").filter(l => l.trim() !== "").forEach(line => {
+        try {
+          const obj = JSON.parse(line);
+          if (obj.prompt && obj.response) data.push(obj);
+        } catch {}
+      });
+
+      if (data.length) {
+        log(`✅ Parsed ${data.length} entries from line-separated file.`);
+      } else {
+        log("⚠️ No valid data found in uploaded file.");
+      }
+
+      return data;
+    } catch (err) {
+      log("❌ File parsing error: " + err.message);
+      return [];
+    }
+  }
+
   async function collectData() {
     const mode = document.querySelector('input[name="mode"]:checked').value;
     let data = [];
@@ -132,14 +169,8 @@
     }
 
     if ((mode === "upload" || mode === "both") && fileUpload.files.length > 0) {
-      const file = fileUpload.files[0];
-      const text = await file.text();
-      text.split("\\n").filter(l => l.trim() !== "").forEach(line => {
-        try {
-          const obj = JSON.parse(line);
-          if (obj.prompt && obj.response) data.push(obj);
-        } catch {}
-      });
+      const uploadedData = await parseUploadedFile(fileUpload.files[0]);
+      data = data.concat(uploadedData);
     }
 
     return data;
@@ -152,7 +183,7 @@
 
   sendBtn.onclick = async () => {
     const data = await collectData();
-    const epochs = parseInt(epochInput.value);
+    const epochs = Math.max(1, Math.round(parseFloat(epochInput.value))); // Ensure whole number >= 1
 
     if (data.length === 0) {
       feedback.innerText = "❌ No valid data to send!";
@@ -185,8 +216,10 @@
     }
   };
 
-  fileUpload.addEventListener("change", updatePreview);
+  fileUpload.addEventListener("change", async () => {
+    log("📂 File selected: " + fileUpload.files[0].name);
+    await updatePreview();
+  });
 </script>
-
 </body>
 </html>
