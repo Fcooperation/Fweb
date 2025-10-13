@@ -48,7 +48,7 @@
 
 <!-- Section 3: File Upload -->
 <div class="section">
-  <h3>Upload JSON File</h3>
+  <h3>Upload JSON or TXT File</h3>
   <input type="file" id="file-upload" accept=".json,.txt">
 </div>
 
@@ -79,7 +79,7 @@
 <div id="test-section" class="section">
   <h3>Test Trained Model</h3>
   <input type="text" id="test-input" placeholder="Enter a prompt to test..." style="width:100%; padding:8px;">
-  <button id="test-btn" class="send-btn">🧠 Test Model</button>
+  <button id="test-btn" class="send-btn">🧠 Generate Response</button>
   <div id="test-output">Response will appear here...</div>
 </div>
 
@@ -139,32 +139,46 @@
   async function collectData() {
     let data = [];
 
-    // Columns
+    // Collect from prompt/response inputs
     document.querySelectorAll(".column").forEach(col => {
       const prompt = col.children[1].value.trim();
       const response = col.children[2].value.trim();
       if (prompt && response) data.push({ prompt, response });
     });
 
-    // Raw JSON
-    const rawLines = rawJson.value.trim().split("\n").filter(l => l.trim() !== "");
-    rawLines.forEach(line => {
+    // Collect from raw JSON
+    const rawText = rawJson.value.trim();
+    if (rawText) {
       try {
-        const obj = JSON.parse(line);
-        if (obj.prompt && obj.response) data.push(obj);
-      } catch(e) {}
-    });
+        const parsed = JSON.parse(rawText);
+        if (Array.isArray(parsed)) data = data.concat(parsed);
+        else if (parsed.prompt && parsed.response) data.push(parsed);
+      } catch {
+        rawText.split("\n").forEach(line => {
+          try {
+            const obj = JSON.parse(line);
+            if (obj.prompt && obj.response) data.push(obj);
+          } catch {}
+        });
+      }
+    }
 
-    // File Upload
+    // Collect from uploaded file
     if (fileUpload.files.length > 0) {
       const file = fileUpload.files[0];
       const text = await file.text();
-      text.split("\n").filter(l => l.trim() !== "").forEach(line => {
-        try {
-          const obj = JSON.parse(line);
-          if (obj.prompt && obj.response) data.push(obj);
-        } catch(e) {}
-      });
+      try {
+        const parsed = JSON.parse(text);
+        if (Array.isArray(parsed)) data = data.concat(parsed);
+        else if (parsed.prompt && parsed.response) data.push(parsed);
+      } catch {
+        text.split("\n").forEach(line => {
+          try {
+            const obj = JSON.parse(line);
+            if (obj.prompt && obj.response) data.push(obj);
+          } catch {}
+        });
+      }
     }
 
     return data;
@@ -191,11 +205,13 @@
           body: JSON.stringify({ data, epoch })
         });
 
-        const result = await res.json();
+        const text = await res.text();
+        let result;
+        try { result = JSON.parse(text); } catch { throw new Error(text.slice(0, 200)); }
 
         if (result.success) {
           trainedModel = result.model || trainedModel;
-          log(`✅ Epoch ${epoch} completed successfully.`);
+          log(`✅ Epoch ${epoch} completed.`);
         } else {
           log(`⚠️ Epoch ${epoch} failed: ${result.error || "Unknown error"}`);
           break;
@@ -206,18 +222,21 @@
         break;
       }
 
-      await new Promise(r => setTimeout(r, 1000)); // 1 sec delay between epochs
+      await new Promise(r => setTimeout(r, 800)); // slight delay
     }
 
-    feedback.innerText = `✅ Training complete! (${currentEpoch}/${maxEpochs} epochs)`;
-    log(`🎉 Training finished after ${currentEpoch} epochs.`);
+    feedback.innerText = `✅ Training complete (${currentEpoch}/${maxEpochs})`;
+    log(`🎉 Training finished.`);
     downloadBtn.style.display = "inline-block";
   }
 
   sendBtn.onclick = async () => {
     const data = await collectData();
     const maxEpochs = parseInt(maxEpochsInput.value);
-    if (!data.length) return feedback.innerText = "❌ No valid data to train!";
+    if (!data.length) {
+      feedback.innerText = "❌ No valid data to train!";
+      return;
+    }
     await trainModel(data, maxEpochs);
   };
 
@@ -238,15 +257,17 @@
   testBtn.onclick = async () => {
     const prompt = testInput.value.trim();
     if (!prompt) return testOutput.innerText = "❌ Enter a prompt first!";
-    testOutput.innerText = "⏳ Testing...";
+    testOutput.innerText = "⏳ Generating...";
     try {
-      const res = await fetch("https://fweb-backend.onrender.com/test", {
+      const res = await fetch("https://fweb-backend.onrender.com/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt })
       });
-      const result = await res.json();
-      testOutput.innerText = "🧠 " + (result.response || "No response received.");
+      const text = await res.text();
+      let result;
+      try { result = JSON.parse(text); } catch { throw new Error(text.slice(0, 200)); }
+      testOutput.innerText = "🧠 " + (result.response || result.output || "No response received.");
     } catch (err) {
       testOutput.innerText = "❌ Test failed: " + err.message;
     }
