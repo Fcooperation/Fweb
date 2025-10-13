@@ -8,20 +8,17 @@
   body { font-family: Arial, sans-serif; background: #f5f7fa; margin: 0; padding: 20px; }
   h2 { color: #007bff; }
   .section { background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 25px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
-  .columns { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 10px; transition: all 0.3s ease; }
-  .column { background: #f1f3f6; padding: 15px; border-radius: 6px; display: flex; flex-direction: column; min-width: 250px; position: relative; transition: transform 0.2s ease; }
+  .columns { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 10px; }
+  .column { background: #f1f3f6; padding: 15px; border-radius: 6px; display: flex; flex-direction: column; min-width: 250px; position: relative; }
   .column input { margin-bottom: 10px; padding: 8px; border-radius: 4px; border: 1px solid #ccc; }
-  .column:hover { transform: scale(1.02); }
   .remove-btn { position: absolute; top: 5px; right: 5px; background: #dc3545; color: #fff; border: none; border-radius: 4px; padding: 2px 6px; cursor: pointer; font-size: 12px; }
   button { padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s; }
   .add-btn { background: #28a745; color: #fff; margin-bottom: 15px; }
-  .add-btn:hover { background: #1e7e34; }
   .send-btn { background: #007bff; color: #fff; }
   .send-btn:hover { background: #0056b3; }
   textarea { width: 100%; min-height: 120px; padding: 10px; border-radius: 6px; border: 1px solid #ccc; resize: vertical; font-family: monospace; }
-  input[type="file"] { margin-top: 10px; }
+  input[type="file"], input[type="number"] { margin-top: 10px; }
   #preview { background: #272822; color: #f8f8f2; font-family: monospace; padding: 15px; border-radius: 6px; max-height: 300px; overflow-y: auto; margin-top: 10px; white-space: pre-wrap; }
-  #feedback { margin-top: 15px; font-weight: bold; color: #333; }
   #logs { margin-top: 15px; background: #f1f1f1; padding: 10px; border-radius: 6px; max-height: 250px; overflow-y: auto; font-family: monospace; white-space: pre-wrap; }
 </style>
 </head>
@@ -39,7 +36,7 @@
 <!-- Section 2: Raw JSON Input -->
 <div class="section">
   <h3>Raw JSON Input</h3>
-  <textarea id="raw-json" placeholder='{"prompt": "repeat what you just said", "response": "repeat what you just said"}'></textarea>
+  <textarea id="raw-json" placeholder='{"prompt": "Hello", "response": "Hi there!"}'></textarea>
 </div>
 
 <!-- Section 3: File Upload -->
@@ -48,18 +45,25 @@
   <input type="file" id="file-upload" accept=".json,.txt">
 </div>
 
+<!-- Section 4: Max Epoch -->
+<div class="section">
+  <h3>Training Settings</h3>
+  <label for="max-epoch">Max Epochs:</label>
+  <input type="number" id="max-epoch" min="1" value="2">
+</div>
+
 <!-- Preview Section -->
 <div class="section">
   <h3>Live JSON Preview</h3>
   <div id="preview">{}</div>
 </div>
 
-<button id="send-data" class="send-btn">🚀 Send to Train</button>
+<button id="send-data" class="send-btn">🚀 Start Training</button>
 <div id="feedback"></div>
 
 <!-- Logs Section -->
 <div class="section">
-  <h3>Logs</h3>
+  <h3>Training Logs</h3>
   <div id="logs">Logs will appear here...</div>
 </div>
 
@@ -72,6 +76,7 @@
   const fileUpload = document.getElementById("file-upload");
   const preview = document.getElementById("preview");
   const logs = document.getElementById("logs");
+  const maxEpochInput = document.getElementById("max-epoch");
 
   function log(message) {
     logs.innerText += "\n" + message;
@@ -81,64 +86,54 @@
   function createColumn(promptVal = "", responseVal = "") {
     const col = document.createElement("div");
     col.className = "column";
-
     const promptInput = document.createElement("input");
     promptInput.placeholder = "Prompt";
     promptInput.value = promptVal;
-    promptInput.oninput = updatePreview;
-
     const responseInput = document.createElement("input");
     responseInput.placeholder = "Response";
     responseInput.value = responseVal;
-    responseInput.oninput = updatePreview;
-
     const removeBtn = document.createElement("button");
     removeBtn.className = "remove-btn";
     removeBtn.innerText = "✖";
     removeBtn.onclick = () => { col.remove(); updatePreview(); };
-
-    col.appendChild(removeBtn);
-    col.appendChild(promptInput);
-    col.appendChild(responseInput);
+    col.append(removeBtn, promptInput, responseInput);
     columnsContainer.appendChild(col);
-
     updatePreview();
   }
 
-  // Initialize first column
   createColumn();
-
   addColumnBtn.onclick = () => createColumn();
 
   async function collectData() {
     let data = [];
 
-    // Columns
+    // From manual columns
     document.querySelectorAll(".column").forEach(col => {
       const prompt = col.children[1].value.trim();
       const response = col.children[2].value.trim();
       if (prompt && response) data.push({ prompt, response });
     });
 
-    // Raw JSON
-    const rawLines = rawJson.value.trim().split("\n").filter(l => l.trim() !== "");
-    rawLines.forEach(line => {
+    // From textarea
+    if (rawJson.value.trim() !== "") {
       try {
-        const obj = JSON.parse(line);
-        if (obj.prompt && obj.response) data.push(obj);
-      } catch(e) {}
-    });
+        const parsed = JSON.parse(rawJson.value);
+        if (Array.isArray(parsed)) data.push(...parsed);
+        else if (parsed.prompt && parsed.response) data.push(parsed);
+      } catch(e) {
+        log("⚠️ Raw JSON parsing failed, skipping...");
+      }
+    }
 
-    // File Upload
+    // From uploaded file
     if (fileUpload.files.length > 0) {
-      const file = fileUpload.files[0];
-      const text = await file.text();
-      text.split("\n").filter(l => l.trim() !== "").forEach(line => {
-        try {
-          const obj = JSON.parse(line);
-          if (obj.prompt && obj.response) data.push(obj);
-        } catch(e) {}
-      });
+      const text = await fileUpload.files[0].text();
+      try {
+        const parsed = JSON.parse(text);
+        if (Array.isArray(parsed)) data.push(...parsed);
+      } catch(e) {
+        log("⚠️ Uploaded file invalid JSON, skipping...");
+      }
     }
 
     return data;
@@ -149,42 +144,55 @@
     preview.innerText = JSON.stringify(data, null, 2);
   }
 
+  fileUpload.addEventListener("change", async () => {
+    log(`📂 File selected: ${fileUpload.files[0].name}`);
+    await updatePreview();
+  });
+  rawJson.addEventListener("input", updatePreview);
+
   sendBtn.onclick = async () => {
     const data = await collectData();
+    const maxEpoch = parseFloat(maxEpochInput.value);
+
     if (data.length === 0) {
       feedback.innerText = "❌ No valid data to send!";
       log("❌ No valid data to send!");
       return;
     }
 
-    feedback.innerText = "⏳ Sending data to train...";
-    log("⏳ Sending data to backend...");
+    feedback.innerText = "⏳ Training started...";
+    log(`🚀 Starting training for max ${maxEpoch} epochs...`);
 
-    try {
-      const res = await fetch("https://fweb-backend.onrender.com/train", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ data })
-      });
+    let currentEpoch = 0;
 
-      const result = await res.json();
+    while (currentEpoch < maxEpoch) {
+      try {
+        log(`⏳ Epoch ${currentEpoch + 1} in progress...`);
+        const res = await fetch("https://fweb-backend.onrender.com/train", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ data })
+        });
+        const result = await res.json();
 
-      if (result.success) {
-        feedback.innerText = "✅ Training completed successfully!";
-        log("✅ Backend processed data successfully.");
-        log("📤 Data sent to Colab and echoed back: " + JSON.stringify(result.result || result.received || result, null, 2));
-      } else {
-        feedback.innerText = "❌ Training failed: " + (result.error || "Unknown error");
-        log("❌ Backend returned error: " + (result.error || "Unknown error"));
+        if (result.success) {
+          log(`✅ Epoch ${currentEpoch + 1} complete: Loss logs -> ${JSON.stringify(result.result?.training_logs || [], null, 2)}`);
+          currentEpoch++;
+        } else {
+          log("❌ Training error: " + (result.error || "Unknown error"));
+          break;
+        }
+      } catch (err) {
+        log("❌ Network error: " + err.message);
+        break;
       }
-    } catch(err) {
-      feedback.innerText = "❌ Error: " + err.message;
-      log("❌ Failed to reach backend: " + err.message);
+    }
+
+    if (currentEpoch >= maxEpoch) {
+      feedback.innerText = "✅ Training completed!";
+      log("🎯 All epochs completed successfully.");
     }
   };
-
-  rawJson.addEventListener("input", updatePreview);
-  fileUpload.addEventListener("change", updatePreview);
 </script>
 
 </body>
