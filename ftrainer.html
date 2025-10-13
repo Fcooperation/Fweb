@@ -1,281 +1,176 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FTrainer</title>
-<style>
-  body { font-family: Arial, sans-serif; background: #f5f7fa; margin: 0; padding: 20px; }
-  h2 { color: #007bff; }
-  .section { background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 25px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
-  .columns { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 10px; transition: all 0.3s ease; }
-  .column { background: #f1f3f6; padding: 15px; border-radius: 6px; display: flex; flex-direction: column; min-width: 250px; position: relative; transition: transform 0.2s ease; }
-  .column input { margin-bottom: 10px; padding: 8px; border-radius: 4px; border: 1px solid #ccc; }
-  .column:hover { transform: scale(1.02); }
-  .remove-btn { position: absolute; top: 5px; right: 5px; background: #dc3545; color: #fff; border: none; border-radius: 4px; padding: 2px 6px; cursor: pointer; font-size: 12px; }
-  button { padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-  .add-btn { background: #28a745; color: #fff; margin-bottom: 15px; }
-  .add-btn:hover { background: #1e7e34; }
-  .send-btn { background: #007bff; color: #fff; }
-  .send-btn:hover { background: #0056b3; }
-  textarea { width: 100%; min-height: 120px; padding: 10px; border-radius: 6px; border: 1px solid #ccc; resize: vertical; font-family: monospace; }
-  input[type="file"], input[type="number"] { margin-top: 10px; padding: 8px; border-radius: 6px; border: 1px solid #ccc; }
-  #preview { background: #272822; color: #f8f8f2; font-family: monospace; padding: 15px; border-radius: 6px; max-height: 300px; overflow-y: auto; margin-top: 10px; white-space: pre-wrap; }
-  #feedback { margin-top: 15px; font-weight: bold; color: #333; }
-  #logs { margin-top: 15px; background: #f1f1f1; padding: 10px; border-radius: 6px; max-height: 250px; overflow-y: auto; font-family: monospace; white-space: pre-wrap; }
-  #download-model { display: none; background: #17a2b8; color: #fff; margin-top: 10px; }
-  #download-model:hover { background: #117a8b; }
-  #test-section input, #test-section button { margin-top: 10px; }
-  #test-output { background: #f1f1f1; padding: 10px; border-radius: 6px; margin-top: 10px; white-space: pre-wrap; }
-</style>
+  <meta charset="UTF-8">
+  <title>FTrainer - Train Your Model</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: "Poppins", sans-serif;
+      background: #0e0e10;
+      color: #fff;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #00ff99;
+    }
+    .container {
+      max-width: 800px;
+      margin: auto;
+      background: #1b1b1f;
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 0 12px rgba(0, 255, 153, 0.3);
+    }
+    textarea, input, button {
+      width: 100%;
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      font-size: 14px;
+    }
+    textarea {
+      min-height: 120px;
+      background: #121214;
+      color: #fff;
+    }
+    input[type="file"] {
+      background: #121214;
+      color: #ccc;
+    }
+    button {
+      background: #00ff99;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button:hover {
+      background: #00cc7a;
+    }
+    pre {
+      background: #121214;
+      padding: 10px;
+      border-radius: 8px;
+      white-space: pre-wrap;
+      color: #00ff99;
+    }
+  </style>
 </head>
 <body>
+  <h1>🤖 FTrainer</h1>
 
-<h2>FTrainer - Train Your Model</h2>
+  <div class="container">
+    <h3>📂 Upload or Paste Dataset</h3>
+    <input type="file" id="fileInput" accept=".json,.txt,.csv">
+    <textarea id="dataset" placeholder='Or paste JSON array like [{"prompt": "Hi", "response": "Hello"}]'></textarea>
 
-<!-- Section 1: Prompt/Response Columns -->
-<div class="section">
-  <h3>Prompt/Response Input</h3>
-  <div id="columns-container" class="columns"></div>
-  <button id="add-column" class="add-btn">➕ Add Prompt/Response</button>
-</div>
+    <button onclick="startTraining()">🚀 Train Model</button>
 
-<!-- Section 2: Raw JSON Input -->
-<div class="section">
-  <h3>Raw JSON Input</h3>
-  <textarea id="raw-json" placeholder='{"prompt": "repeat what you just said", "response": "repeat what you just said"}'></textarea>
-</div>
+    <h3>Training Logs</h3>
+    <pre id="trainLogs">Waiting for training...</pre>
 
-<!-- Section 3: File Upload -->
-<div class="section">
-  <h3>Upload JSON or TXT File</h3>
-  <input type="file" id="file-upload" accept=".json,.txt">
-</div>
+    <button onclick="downloadModel()">⬇️ Download Trained Model</button>
 
-<!-- Section 4: Training Settings -->
-<div class="section">
-  <h3>Training Settings</h3>
-  <label>Max Epochs:</label>
-  <input type="number" id="max-epochs" min="1" value="5">
-</div>
+    <hr>
+    <h3>🧠 Test Trained Model</h3>
+    <textarea id="testInput" placeholder="Type your test prompt..."></textarea>
+    <button onclick="testModel()">Generate</button>
+    <pre id="testOutput">Model output will appear here...</pre>
+  </div>
 
-<!-- Preview Section -->
-<div class="section">
-  <h3>Live JSON Preview</h3>
-  <div id="preview">{}</div>
-</div>
+  <script>
+    const backend = "https://fweb-backend.onrender.com";
 
-<button id="send-data" class="send-btn">🚀 Start Training</button>
-<button id="download-model">⬇️ Download Trained Model</button>
-<div id="feedback"></div>
-
-<!-- Logs Section -->
-<div class="section">
-  <h3>Logs</h3>
-  <div id="logs">Logs will appear here...</div>
-</div>
-
-<!-- Section: Test Trained Model -->
-<div id="test-section" class="section">
-  <h3>Test Trained Model</h3>
-  <input type="text" id="test-input" placeholder="Enter a prompt to test..." style="width:100%; padding:8px;">
-  <button id="test-btn" class="send-btn">🧠 Generate Response</button>
-  <div id="test-output">Response will appear here...</div>
-</div>
-
-<script>
-  const columnsContainer = document.getElementById("columns-container");
-  const addColumnBtn = document.getElementById("add-column");
-  const sendBtn = document.getElementById("send-data");
-  const feedback = document.getElementById("feedback");
-  const rawJson = document.getElementById("raw-json");
-  const fileUpload = document.getElementById("file-upload");
-  const preview = document.getElementById("preview");
-  const logs = document.getElementById("logs");
-  const maxEpochsInput = document.getElementById("max-epochs");
-  const downloadBtn = document.getElementById("download-model");
-  const testBtn = document.getElementById("test-btn");
-  const testInput = document.getElementById("test-input");
-  const testOutput = document.getElementById("test-output");
-
-  let trainedModel = null;
-  let currentEpoch = 0;
-
-  function log(message) {
-    logs.innerText += "\n" + message;
-    logs.scrollTop = logs.scrollHeight;
-  }
-
-  function createColumn(promptVal = "", responseVal = "") {
-    const col = document.createElement("div");
-    col.className = "column";
-
-    const promptInput = document.createElement("input");
-    promptInput.placeholder = "Prompt";
-    promptInput.value = promptVal;
-    promptInput.oninput = updatePreview;
-
-    const responseInput = document.createElement("input");
-    responseInput.placeholder = "Response";
-    responseInput.value = responseVal;
-    responseInput.oninput = updatePreview;
-
-    const removeBtn = document.createElement("button");
-    removeBtn.className = "remove-btn";
-    removeBtn.innerText = "✖";
-    removeBtn.onclick = () => { col.remove(); updatePreview(); };
-
-    col.appendChild(removeBtn);
-    col.appendChild(promptInput);
-    col.appendChild(responseInput);
-    columnsContainer.appendChild(col);
-
-    updatePreview();
-  }
-
-  createColumn();
-  addColumnBtn.onclick = () => createColumn();
-
-  async function collectData() {
-    let data = [];
-
-    // Collect from prompt/response inputs
-    document.querySelectorAll(".column").forEach(col => {
-      const prompt = col.children[1].value.trim();
-      const response = col.children[2].value.trim();
-      if (prompt && response) data.push({ prompt, response });
-    });
-
-    // Collect from raw JSON
-    const rawText = rawJson.value.trim();
-    if (rawText) {
-      try {
-        const parsed = JSON.parse(rawText);
-        if (Array.isArray(parsed)) data = data.concat(parsed);
-        else if (parsed.prompt && parsed.response) data.push(parsed);
-      } catch {
-        rawText.split("\n").forEach(line => {
-          try {
-            const obj = JSON.parse(line);
-            if (obj.prompt && obj.response) data.push(obj);
-          } catch {}
-        });
-      }
+    async function readFileContent(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result);
+        reader.onerror = e => reject(e);
+        reader.readAsText(file);
+      });
     }
 
-    // Collect from uploaded file
-    if (fileUpload.files.length > 0) {
-      const file = fileUpload.files[0];
-      const text = await file.text();
+    async function startTraining() {
+      const file = document.getElementById("fileInput").files[0];
+      const text = document.getElementById("dataset").value.trim();
+      const logBox = document.getElementById("trainLogs");
+
+      logBox.textContent = "⏳ Preparing dataset...";
+
+      let data = [];
       try {
-        const parsed = JSON.parse(text);
-        if (Array.isArray(parsed)) data = data.concat(parsed);
-        else if (parsed.prompt && parsed.response) data.push(parsed);
-      } catch {
-        text.split("\n").forEach(line => {
-          try {
-            const obj = JSON.parse(line);
-            if (obj.prompt && obj.response) data.push(obj);
-          } catch {}
-        });
+        if (file) {
+          const content = await readFileContent(file);
+          data = JSON.parse(content);
+        } else if (text) {
+          data = JSON.parse(text);
+        } else {
+          alert("Please upload or paste dataset first!");
+          return;
+        }
+      } catch (e) {
+        alert("Invalid dataset format. Must be a valid JSON array.");
+        return;
       }
-    }
 
-    return data;
-  }
-
-  async function updatePreview() {
-    const data = await collectData();
-    preview.innerText = JSON.stringify(data, null, 2);
-  }
-
-  async function trainModel(data, maxEpochs) {
-    currentEpoch = 0;
-    feedback.innerText = `Training started for ${maxEpochs} epochs...`;
-    log(`🚀 Starting training for ${maxEpochs} epochs...`);
-
-    for (let epoch = 1; epoch <= maxEpochs; epoch++) {
-      currentEpoch = epoch;
-      log(`⏳ Training epoch ${epoch}/${maxEpochs}...`);
+      logBox.textContent = "🚀 Sending to server for training...";
 
       try {
-        const res = await fetch("https://fweb-backend.onrender.com/train", {
+        const res = await fetch(`${backend}/train`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ data, epoch })
+          body: JSON.stringify({ data })
         });
 
-        const text = await res.text();
-        let result;
-        try { result = JSON.parse(text); } catch { throw new Error(text.slice(0, 200)); }
-
+        const result = await res.json();
         if (result.success) {
-          trainedModel = result.model || trainedModel;
-          log(`✅ Epoch ${epoch} completed.`);
+          logBox.textContent =
+            "✅ Training complete!\n\n" +
+            result.result.training_logs.join("\n") +
+            `\n\nModel ready for testing!\nDownload: ${result.result.download_url}`;
         } else {
-          log(`⚠️ Epoch ${epoch} failed: ${result.error || "Unknown error"}`);
-          break;
+          logBox.textContent = "❌ Training failed: " + (result.error || JSON.stringify(result));
         }
-
       } catch (err) {
-        log(`❌ Error at epoch ${epoch}: ${err.message}`);
-        break;
+        logBox.textContent = "⚠️ Network error: " + err.message;
+      }
+    }
+
+    async function testModel() {
+      const input = document.getElementById("testInput").value.trim();
+      const outputBox = document.getElementById("testOutput");
+      if (!input) {
+        alert("Please type something to test.");
+        return;
       }
 
-      await new Promise(r => setTimeout(r, 800)); // slight delay
+      outputBox.textContent = "⏳ Generating...";
+
+      try {
+        const res = await fetch(`${backend}/generate`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt: input })
+        });
+
+        const result = await res.json();
+        if (result.success) {
+          outputBox.textContent = "🧠 Response:\n" + result.generated;
+        } else {
+          outputBox.textContent = "❌ Error: " + (result.error || "Unknown");
+        }
+      } catch (err) {
+        outputBox.textContent = "⚠️ Network error: " + err.message;
+      }
     }
 
-    feedback.innerText = `✅ Training complete (${currentEpoch}/${maxEpochs})`;
-    log(`🎉 Training finished.`);
-    downloadBtn.style.display = "inline-block";
-  }
-
-  sendBtn.onclick = async () => {
-    const data = await collectData();
-    const maxEpochs = parseInt(maxEpochsInput.value);
-    if (!data.length) {
-      feedback.innerText = "❌ No valid data to train!";
-      return;
+    async function downloadModel() {
+      window.open(`${backend}/download`, "_blank");
     }
-    await trainModel(data, maxEpochs);
-  };
-
-  downloadBtn.onclick = () => {
-    if (!trainedModel) {
-      alert("No model trained yet!");
-      return;
-    }
-    const blob = new Blob([JSON.stringify(trainedModel, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "ftrainer_model.json";
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  testBtn.onclick = async () => {
-    const prompt = testInput.value.trim();
-    if (!prompt) return testOutput.innerText = "❌ Enter a prompt first!";
-    testOutput.innerText = "⏳ Generating...";
-    try {
-      const res = await fetch("https://fweb-backend.onrender.com/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt })
-      });
-      const text = await res.text();
-      let result;
-      try { result = JSON.parse(text); } catch { throw new Error(text.slice(0, 200)); }
-      testOutput.innerText = "🧠 " + (result.response || result.output || "No response received.");
-    } catch (err) {
-      testOutput.innerText = "❌ Test failed: " + err.message;
-    }
-  };
-
-  rawJson.addEventListener("input", updatePreview);
-  fileUpload.addEventListener("change", updatePreview);
-</script>
-
+  </script>
 </body>
 </html>
