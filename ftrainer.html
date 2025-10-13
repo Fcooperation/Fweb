@@ -1,472 +1,192 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>FTrainer — Frontend (Complete)</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FTrainer</title>
 <style>
-  :root{--bg:#f5f7fa;--card:#fff;--accent:#007bff;--muted:#6c757d;--success:#28a745}
-  body{font-family:Inter,system-ui,Arial;margin:0;background:var(--bg);color:#111}
-  .wrap{max-width:1150px;margin:24px auto;padding:18px}
-  header{display:flex;gap:12px;align-items:center;margin-bottom:18px}
-  header h1{margin:0;color:var(--accent);font-size:20px}
-  .grid{display:grid;grid-template-columns:1fr 420px;gap:18px}
-  .card{background:var(--card);border-radius:10px;padding:14px;box-shadow:0 6px 20px rgba(14,30,37,0.06)}
-  .columns{display:flex;gap:12px;flex-wrap:wrap}
-  .col{background:#f1f3f6;border-radius:8px;padding:10px;min-width:230px;position:relative}
-  .col input{width:100%;padding:8px;border-radius:6px;border:1px solid #dfe6ee;margin-bottom:8px}
-  .remove{position:absolute;right:6px;top:6px;background:#e55353;border:0;color:#fff;border-radius:6px;padding:4px 6px;cursor:pointer}
-  .controls{display:flex;gap:8px;margin-top:10px;align-items:center}
-  button{cursor:pointer;border:0;border-radius:8px;padding:10px 12px;font-weight:700}
-  .btn-add{background:linear-gradient(90deg,#28a745,#1e7e34);color:#fff}
-  .btn-send{background:linear-gradient(90deg,var(--accent),#1e5aa8);color:#fff}
-  textarea{width:100%;min-height:120px;padding:12px;border-radius:8px;border:1px solid #e1e7ef;font-family:monospace;resize:vertical}
-  #preview{background:#0b1220;color:#dff3ff;padding:12px;border-radius:8px;min-height:80px;overflow:auto;font-family:monospace}
-  .small{font-size:13px;color:var(--muted)}
-  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px}
-  label{font-weight:600;font-size:13px}
-  .logs{height:260px;overflow:auto;background:#fbfbfc;border-radius:8px;padding:12px;border:1px solid #eef3f7;font-family:monospace;white-space:pre-wrap}
-  .right-panel .card{margin-bottom:12px}
-  .chat textarea{min-height:64px}
-  .badge{display:inline-block;padding:6px 8px;border-radius:999px;font-size:12px;background:#eef6ff;color:var(--accent);font-weight:700}
-  input[type="file"]{border-radius:8px}
-  .muted{color:var(--muted);font-size:13px}
-  @media(max-width:980px){.grid{grid-template-columns:1fr}.right-panel{order:-1}}
+  body { font-family: Arial, sans-serif; background: #f5f7fa; margin: 0; padding: 20px; }
+  h2 { color: #007bff; }
+  .section { background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 25px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+  .columns { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 10px; transition: all 0.3s ease; }
+  .column { background: #f1f3f6; padding: 15px; border-radius: 6px; display: flex; flex-direction: column; min-width: 250px; position: relative; transition: transform 0.2s ease; }
+  .column input { margin-bottom: 10px; padding: 8px; border-radius: 4px; border: 1px solid #ccc; }
+  .column:hover { transform: scale(1.02); }
+  .remove-btn { position: absolute; top: 5px; right: 5px; background: #dc3545; color: #fff; border: none; border-radius: 4px; padding: 2px 6px; cursor: pointer; font-size: 12px; }
+  button { padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+  .add-btn { background: #28a745; color: #fff; margin-bottom: 15px; }
+  .add-btn:hover { background: #1e7e34; }
+  .send-btn { background: #007bff; color: #fff; }
+  .send-btn:hover { background: #0056b3; }
+  textarea { width: 100%; min-height: 120px; padding: 10px; border-radius: 6px; border: 1px solid #ccc; resize: vertical; font-family: monospace; }
+  input[type="file"] { margin-top: 10px; }
+  #preview { background: #272822; color: #f8f8f2; font-family: monospace; padding: 15px; border-radius: 6px; max-height: 300px; overflow-y: auto; margin-top: 10px; white-space: pre-wrap; }
+  #feedback { margin-top: 15px; font-weight: bold; color: #333; }
+  #logs { margin-top: 15px; background: #f1f1f1; padding: 10px; border-radius: 6px; max-height: 250px; overflow-y: auto; font-family: monospace; white-space: pre-wrap; }
+  .epoch-control { margin-top: 10px; }
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <h1>FTrainer — Train & Chat</h1>
-      <div class="small">Complete UI for dataset → train → download → chat → update workflows</div>
-    </header>
 
-    <div style="margin-bottom:10px" class="small">Backend base URL:
-      <input id="apiBaseInput" style="padding:6px 8px;border-radius:6px;border:1px solid #dfe6ee;width:360px;margin-left:8px" value="https://fweb-backend.onrender.com">
-      <button id="saveApi" style="padding:8px 10px;margin-left:8px">Save</button>
-      <span id="apiSaved" class="muted" style="margin-left:12px"></span>
-    </div>
+<h2>FTrainer - Train Your Model</h2>
 
-    <div class="grid">
-      <!-- LEFT -->
-      <div>
-        <div class="card">
-          <h3>Prompt / Response Columns</h3>
-          <div class="small">Add one prompt → one response per column. You can add as many columns as you want. These will be merged with file/raw inputs.</div>
-          <div id="columns" class="columns" style="margin-top:12px"></div>
-          <div class="controls" style="margin-top:10px">
-            <button id="addCol" class="btn-add">➕ Add Column</button>
-            <button id="clearCols" style="background:#f0f0f0">Clear Columns</button>
-            <div style="margin-left:auto" class="small">Columns: <span id="colCount">0</span></div>
-          </div>
-        </div>
+<!-- Mode Selection -->
+<div class="section">
+  <h3>Training Mode</h3>
+  <label><input type="radio" name="mode" value="manual" checked> Manual Q&A Only</label><br>
+  <label><input type="radio" name="mode" value="upload"> Upload File Only</label><br>
+  <label><input type="radio" name="mode" value="both"> Both (Combine Upload + Manual)</label>
+</div>
 
-        <div class="card" style="margin-top:14px">
-          <h3>Raw JSON Input</h3>
-          <div class="small">Paste JSONL (one object per line) or JSON array. Each object must have <code>prompt</code> and <code>response</code>.</div>
-          <textarea id="raw" placeholder='{"prompt":"repeat","response":"repeat what you said"}'></textarea>
-        </div>
+<!-- Section 1: Prompt/Response Columns -->
+<div class="section" id="manual-section">
+  <h3>Prompt/Response Input</h3>
+  <div id="columns-container" class="columns"></div>
+  <button id="add-column" class="add-btn">➕ Add Prompt/Response</button>
+</div>
 
-        <div class="card" style="margin-top:14px">
-          <h3>Upload File (JSON / JSONL / TXT)</h3>
-          <div class="small">Upload a JSON array file or JSONL (one JSON object per line). If file-only, training will use file content.</div>
-          <input id="file" type="file" accept=".json,.txt"/>
-          <div class="row" style="margin-top:12px">
-            <label for="epochs">Epochs</label>
-            <input id="epochs" type="number" min="1" value="2" style="width:80px;padding:8px;border-radius:6px;border:1px solid #e1e7ef"/>
-            <label for="maxlen">Max Seq</label>
-            <input id="maxlen" type="number" min="16" value="128" style="width:90px;padding:8px;border-radius:6px;border:1px solid #e1e7ef"/>
-            <label for="lr">LR</label>
-            <input id="lr" type="number" step="1e-6" value="0.00001" style="width:120px;padding:8px;border-radius:6px;border:1px solid #e1e7ef"/>
-          </div>
+<!-- Section 2: File Upload -->
+<div class="section" id="upload-section">
+  <h3>Upload JSON File</h3>
+  <input type="file" id="file-upload" accept=".json,.txt">
+</div>
 
-          <div class="row" style="margin-top:12px">
-            <button id="previewBtn" style="background:#eef2ff;padding:8px 12px;border-radius:8px">Preview Payload</button>
-            <button id="trainBtn" class="btn-send">🚀 Train (POST /train)</button>
-            <button id="updateBtn" style="background:#f6f6f6;padding:8px 12px;border-radius:8px">🔁 Update (POST /update)</button>
-            <div style="margin-left:auto" class="small">Backend: <span id="apiBadge" class="badge">fweb-backend.onrender.com</span></div>
-          </div>
-        </div>
+<!-- Epoch Control -->
+<div class="section">
+  <h3>Training Settings</h3>
+  <label for="epochs">Max Epochs:</label>
+  <input type="number" id="epochs" min="1" max="100" value="5" class="epoch-control">
+</div>
 
-        <div class="card" style="margin-top:14px">
-          <h3>Live Preview (payload)</h3>
-          <div id="preview">{}</div>
-        </div>
+<!-- Preview Section -->
+<div class="section">
+  <h3>Live JSON Preview</h3>
+  <div id="preview">{}</div>
+</div>
 
-        <div class="card" style="margin-top:14px">
-          <h3>Training Logs</h3>
-          <div class="small">Server logs and messages appear below. After training you'll see download link if backend returns it.</div>
-          <div id="logs" class="logs">Logs will appear here...</div>
-        </div>
-      </div>
+<button id="send-data" class="send-btn">🚀 Start Training</button>
+<div id="feedback"></div>
 
-      <!-- RIGHT -->
-      <div class="right-panel">
-        <div class="card">
-          <h3>Model Info & Checkpoint</h3>
-          <div class="row" style="margin-top:6px">
-            <button id="refreshInfo" style="background:#eef2ff;padding:8px 10px;border-radius:8px">Refresh /info</button>
-            <button id="downloadChk" style="background:#fff;padding:8px 10px;border-radius:8px" disabled>Download Checkpoint</button>
-          </div>
-          <pre id="infoBox" style="margin-top:12px;background:#fbfbfb;padding:10px;border-radius:6px;white-space:pre-wrap;font-family:monospace">No info yet.</pre>
-
-          <div style="margin-top:12px">
-            <h4 class="small">Upload local checkpoint to server</h4>
-            <input id="uploadModelFile" type="file" accept=".zip,.tar,.pth,.bin" />
-            <div class="row" style="margin-top:8px">
-              <button id="uploadModelBtn" style="background:#fff;padding:8px 10px;border-radius:8px">Upload to /upload_checkpoint</button>
-              <div class="small" id="uploadStatus" style="margin-left:auto"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card" style="margin-top:12px">
-          <h3>Chat / Generate</h3>
-          <div class="small">After training, test the model via <code>/generate</code>.</div>
-          <div style="margin-top:8px" class="chat">
-            <textarea id="chatPrompt" placeholder="Write your prompt..."></textarea>
-            <div class="row">
-              <input id="temp" type="number" step="0.1" value="0.7" style="width:80px;padding:8px;border-radius:6px;border:1px solid #e1e7ef"/>
-              <input id="maxTokens" type="number" value="80" style="width:100px;padding:8px;border-radius:6px;border:1px solid #e1e7ef"/>
-              <input id="topP" type="number" step="0.05" value="0.95" style="width:100px;padding:8px;border-radius:6px;border:1px solid #e1e7ef"/>
-              <button id="generateBtn" class="btn-send">💬 Generate</button>
-            </div>
-            <div id="chatOut" class="logs" style="margin-top:8px">Chat output will appear here...</div>
-          </div>
-        </div>
-
-        <div class="card" style="margin-top:12px">
-          <h3>Quick Tips</h3>
-          <ul class="small">
-            <li>Provide descriptive responses (1-3 sentences) for better generalization.</li>
-            <li>Use file uploads when you have many pairs (JSON array or JSONL).</li>
-            <li>After training, click Download Checkpoint (or use the returned download_url).</li>
-            <li>Upload a checkpoint via <em>Upload local checkpoint</em> to continue training that model.</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </div>
+<!-- Logs Section -->
+<div class="section">
+  <h3>Live Logs</h3>
+  <div id="logs">Logs will appear here...</div>
+</div>
 
 <script>
-(() => {
-  // ====== Config and elements ======
-  const apiBaseInput = document.getElementById('apiBaseInput');
-  const saveApi = document.getElementById('saveApi');
-  const apiBadge = document.getElementById('apiBadge');
-  const apiSaved = document.getElementById('apiSaved');
+  const columnsContainer = document.getElementById("columns-container");
+  const addColumnBtn = document.getElementById("add-column");
+  const sendBtn = document.getElementById("send-data");
+  const feedback = document.getElementById("feedback");
+  const fileUpload = document.getElementById("file-upload");
+  const preview = document.getElementById("preview");
+  const logs = document.getElementById("logs");
+  const epochInput = document.getElementById("epochs");
 
-  let API_BASE = localStorage.getItem('FTRAINER_API') || apiBaseInput.value || 'https://fweb-backend.onrender.com';
-  apiBaseInput.value = API_BASE;
-  apiBadge.innerText = API_BASE.replace(/^https?:\/\//,'').replace(/\/$/,'');
-
-  // elements
-  const colsEl = document.getElementById('columns');
-  const addColBtn = document.getElementById('addCol');
-  const clearColsBtn = document.getElementById('clearCols');
-  const colCountEl = document.getElementById('colCount');
-  const rawEl = document.getElementById('raw');
-  const fileEl = document.getElementById('file');
-  const previewEl = document.getElementById('preview');
-  const previewBtn = document.getElementById('previewBtn');
-  const trainBtn = document.getElementById('trainBtn');
-  const updateBtn = document.getElementById('updateBtn');
-  const logsEl = document.getElementById('logs');
-  const epochsInput = document.getElementById('epochs');
-  const lrInput = document.getElementById('lr');
-  const maxlenInput = document.getElementById('maxlen');
-  const infoBox = document.getElementById('infoBox');
-  const refreshInfo = document.getElementById('refreshInfo');
-  const downloadChk = document.getElementById('downloadChk');
-  const uploadModelFile = document.getElementById('uploadModelFile');
-  const uploadModelBtn = document.getElementById('uploadModelBtn');
-  const uploadStatus = document.getElementById('uploadStatus');
-  const generateBtn = document.getElementById('generateBtn');
-  const chatPrompt = document.getElementById('chatPrompt');
-  const chatOut = document.getElementById('chatOut');
-  const tempEl = document.getElementById('temp');
-  const maxTokensEl = document.getElementById('maxTokens');
-  const topPEl = document.getElementById('topP');
-
-  // helper logs
-  function log(msg){
-    const ts = new Date().toISOString().replace('T',' ').replace('Z','');
-    logsEl.innerText += `\n[${ts}] ${msg}`;
-    logsEl.scrollTop = logsEl.scrollHeight;
+  function log(msg) {
+    logs.innerText += "\\n" + msg;
+    logs.scrollTop = logs.scrollHeight;
   }
 
-  function setAPISaved(msg){
-    apiSaved.innerText = msg || '';
-    setTimeout(()=> apiSaved.innerText = '', 3000);
-  }
+  function createColumn(promptVal = "", responseVal = "") {
+    const col = document.createElement("div");
+    col.className = "column";
 
-  saveApi.onclick = () => {
-    API_BASE = apiBaseInput.value.trim() || API_BASE;
-    localStorage.setItem('FTRAINER_API', API_BASE);
-    apiBadge.innerText = API_BASE.replace(/^https?:\/\//,'').replace(/\/$/,'');
-    setAPISaved('Saved');
-    log('API base set to ' + API_BASE);
-  };
+    const promptInput = document.createElement("input");
+    promptInput.placeholder = "Prompt";
+    promptInput.value = promptVal;
+    promptInput.oninput = updatePreview;
 
-  // ===== columns management =====
-  function createColumn(promptVal='', respVal=''){
-    const col = document.createElement('div');
-    col.className = 'col';
-    const rem = document.createElement('button');
-    rem.className = 'remove'; rem.textContent = '✖';
-    rem.onclick = ()=> { col.remove(); updatePreview(); };
-    const p = document.createElement('input'); p.placeholder = 'Prompt'; p.value = promptVal;
-    const r = document.createElement('input'); r.placeholder = 'Response'; r.value = respVal;
-    p.oninput = updatePreview; r.oninput = updatePreview;
-    col.appendChild(rem); col.appendChild(p); col.appendChild(r);
-    colsEl.appendChild(col);
+    const responseInput = document.createElement("input");
+    responseInput.placeholder = "Response";
+    responseInput.value = responseVal;
+    responseInput.oninput = updatePreview;
+
+    const removeBtn = document.createElement("button");
+    removeBtn.className = "remove-btn";
+    removeBtn.innerText = "✖";
+    removeBtn.onclick = () => { col.remove(); updatePreview(); };
+
+    col.appendChild(removeBtn);
+    col.appendChild(promptInput);
+    col.appendChild(responseInput);
+    columnsContainer.appendChild(col);
+
     updatePreview();
   }
-  addColBtn.onclick = ()=> createColumn();
-  clearColsBtn.onclick = ()=> { colsEl.innerHTML=''; updatePreview(); };
 
-  // initialize a couple sample columns
-  if(colsEl.children.length === 0){
-    createColumn('Hi', 'Hello — I am FTrainer!');
-    createColumn('Who built you?', 'I was created by Francis, the founder of F_cooperation.');
-  }
+  createColumn();
 
-  function getColumnsData(){
-    const arr=[];
-    document.querySelectorAll('#columns .col').forEach(div=>{
-      const inputs = div.querySelectorAll('input');
-      const prompt = (inputs[0].value||'').trim();
-      const response = (inputs[1].value||'').trim();
-      if(prompt && response) arr.push({prompt,response});
-    });
-    colCountEl.innerText = arr.length;
-    return arr;
-  }
+  addColumnBtn.onclick = () => createColumn();
 
-  // parse file
-  async function parseFile(file){
-    const text = await file.text();
-    // try JSON array
-    try {
-      const parsed = JSON.parse(text);
-      if(Array.isArray(parsed)){
-        return parsed.filter(x=>x && x.prompt && x.response).map(x=>({prompt:String(x.prompt),response:String(x.response)}));
-      }
-    } catch(e){}
-    // fallback: JSONL per-line
-    const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
-    const out=[];
-    for(const line of lines){
-      try { const obj = JSON.parse(line); if(obj.prompt && obj.response) out.push({prompt:String(obj.prompt),response:String(obj.response)}); }
-      catch(e){}
+  async function collectData() {
+    const mode = document.querySelector('input[name="mode"]:checked').value;
+    let data = [];
+
+    if (mode === "manual" || mode === "both") {
+      document.querySelectorAll(".column").forEach(col => {
+        const prompt = col.children[1].value.trim();
+        const response = col.children[2].value.trim();
+        if (prompt && response) data.push({ prompt, response });
+      });
     }
-    return out;
-  }
 
-  // collect data: columns + raw + file (merged)
-  async function collectData(){
-    let data = getColumnsData();
-    // raw
-    const raw = rawEl.value.trim();
-    if(raw){
-      const lines = raw.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
-      for(const line of lines){
-        try { const obj = JSON.parse(line); if(obj.prompt && obj.response) data.push({prompt:String(obj.prompt),response:String(obj.response)}); }
-        catch(e){}
-      }
+    if ((mode === "upload" || mode === "both") && fileUpload.files.length > 0) {
+      const file = fileUpload.files[0];
+      const text = await file.text();
+      text.split("\\n").filter(l => l.trim() !== "").forEach(line => {
+        try {
+          const obj = JSON.parse(line);
+          if (obj.prompt && obj.response) data.push(obj);
+        } catch {}
+      });
     }
-    // file
-    if(fileEl.files && fileEl.files.length > 0){
-      const file = fileEl.files[0];
-      const parsed = await parseFile(file);
-      if(parsed.length > 0) {
-        data = data.concat(parsed);
-        log(`📁 parsed ${parsed.length} prompt/response pairs from ${file.name}`);
-      } else {
-        log(`⚠️ file parsed but no pairs found in ${file.name}`);
-      }
-    }
+
     return data;
   }
 
-  // preview
-  async function updatePreview(){
+  async function updatePreview() {
     const data = await collectData();
-    previewEl.innerText = JSON.stringify(data, null, 2) || '{}';
+    preview.innerText = JSON.stringify(data, null, 2);
   }
-  previewBtn.onclick = updatePreview;
-  rawEl.addEventListener('input', updatePreview);
-  fileEl.addEventListener('change', ()=> { log('📤 File selected: ' + (fileEl.files[0] ? fileEl.files[0].name : '')); updatePreview(); });
 
-  // ====== train & update ======
-  async function doTrainOrUpdate(endpoint){
+  sendBtn.onclick = async () => {
     const data = await collectData();
-    if(data.length === 0){
-      // if no columns/raw but file exists, parse file-only
-      if(fileEl.files && fileEl.files.length > 0){
-        // collectData already attempted parsing file; still nothing -> invalid file
-        log('❌ No valid data found in file or inputs.');
-        alert('No valid prompt/response pairs found. Make sure your file is JSON array or JSONL with prompt+response.');
-        return;
-      }
-      log('❌ No training data found.');
-      alert('No training data found. Add pairs, paste JSON, or upload a file.');
+    const epochs = parseInt(epochInput.value);
+
+    if (data.length === 0) {
+      feedback.innerText = "❌ No valid data to send!";
+      log("❌ No valid data to send!");
       return;
     }
 
-    const params = {
-      epochs: Number(epochsInput.value || 1),
-      max_length: Number(maxlenInput.value || 128),
-      lr: Number(lrInput.value || 1e-5)
-    };
-
-    const payload = { data, params };
-
-    log(`⏳ Sending ${data.length} pairs to ${endpoint} (epochs=${params.epochs}, max_len=${params.max_length}, lr=${params.lr})`);
-    disableTrainButtons(true);
+    feedback.innerText = "⏳ Sending data to backend...";
+    log("⏳ Sending data to backend...");
 
     try {
-      const res = await fetch(API_BASE.replace(/\/$/,'') + endpoint, {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify(payload)
+      const res = await fetch("https://fweb-backend.onrender.com/train", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ data, epochs })
       });
-      const json = await res.json();
-      if(json.success){
-        log('✅ Backend returned success.');
-        if(Array.isArray(json.training_logs)) log('Training logs:\\n' + json.training_logs.join('\\n'));
-        if(json.loss_curve_file) log('Loss curve: ' + (API_BASE.replace(/\/$/,'') + '/' + json.loss_curve_file));
-        if(json.download_url) {
-          log('Download URL: ' + json.download_url);
-          downloadChk.dataset.url = json.download_url;
-          downloadChk.disabled = false;
-        } else {
-          // fallback
-          downloadChk.dataset.url = API_BASE.replace(/\/$/,'') + '/download_checkpoint';
-          downloadChk.disabled = true; // enable only if /info confirms exists
-        }
-        infoBox.innerText = JSON.stringify({
-          dataset_size: json.dataset_size || data.length,
-          device: json.device || 'unknown',
-          training_time_seconds: json.training_time_seconds || null
-        }, null, 2);
+
+      const result = await res.json();
+      if (result.success) {
+        feedback.innerText = "✅ Training completed!";
+        log("✅ Training complete ✅");
+        log(JSON.stringify(result, null, 2));
       } else {
-        log('❌ Backend error: ' + (json.error || 'unknown'));
-        alert('Training error: ' + (json.error || 'unknown'));
+        feedback.innerText = "❌ Training failed: " + (result.error || "Unknown error");
+        log("❌ Backend error: " + (result.error || "Unknown error"));
       }
-    } catch(err){
-      log('❌ Network error: ' + err.message);
-      alert('Network error: ' + err.message);
-    } finally {
-      disableTrainButtons(false);
-    }
-  }
-
-  trainBtn.onclick = ()=> doTrainOrUpdate('/train');
-  updateBtn.onclick = ()=> doTrainOrUpdate('/update');
-
-  function disableTrainButtons(state){
-    trainBtn.disabled = state; updateBtn.disabled = state;
-    trainBtn.innerText = state ? '⏳ Training...' : '🚀 Train (POST /train)';
-    updateBtn.innerText = state ? '⏳ Updating...' : '🔁 Update (POST /update)';
-  }
-
-  // ===== info / download =====
-  refreshInfo.onclick = async ()=>{
-    try{
-      const res = await fetch(API_BASE.replace(/\/$/,'') + '/info');
-      const json = await res.json();
-      infoBox.innerText = JSON.stringify(json, null, 2);
-      log('ℹ️ /info fetched');
-      if(json.checkpoint_exists || json.checkpoint_dir) {
-        downloadChk.disabled = false;
-        downloadChk.dataset.url = API_BASE.replace(/\/$/,'') + '/download_checkpoint';
-      }
-    } catch(e){
-      log('❌ /info failed: ' + e.message);
+    } catch (err) {
+      feedback.innerText = "❌ Network error: " + err.message;
+      log("❌ Network error: " + err.message);
     }
   };
 
-  downloadChk.onclick = ()=>{
-    const url = downloadChk.dataset.url || API_BASE.replace(/\/$/,'') + '/download_checkpoint';
-    if(!url){ alert('No download URL. Run /train first or check /info.'); return; }
-    window.open(url, '_blank');
-    log('🔗 Opened checkpoint download: ' + url);
-  };
-
-  // ===== upload local checkpoint to backend =====
-  uploadModelBtn.onclick = async ()=>{
-    if(!uploadModelFile.files || uploadModelFile.files.length === 0){
-      alert('Choose a local checkpoint file first (zip/pth/bin).');
-      return;
-    }
-    const file = uploadModelFile.files[0];
-    log('📤 Uploading local checkpoint ' + file.name + ' to /upload_checkpoint ...');
-    uploadStatus.innerText = 'Uploading...';
-
-    try {
-      const fd = new FormData();
-      fd.append('file', file);
-      const res = await fetch(API_BASE.replace(/\/$/,'') + '/upload_checkpoint', {
-        method:'POST',
-        body: fd
-      });
-      const json = await res.json();
-      if(json.success){
-        uploadStatus.innerText = 'Uploaded';
-        log('✅ Upload successful. Server loaded checkpoint.');
-      } else {
-        uploadStatus.innerText = 'Failed';
-        log('❌ Upload failed: ' + (json.error || 'unknown'));
-      }
-    } catch(err){
-      uploadStatus.innerText = 'Error';
-      log('❌ Upload network error: ' + err.message);
-    }
-    setTimeout(()=> uploadStatus.innerText = '', 4000);
-  };
-
-  // ===== generate (chat) =====
-  generateBtn.onclick = async ()=>{
-    const prompt = chatPrompt.value.trim();
-    if(!prompt){ alert('Type a prompt'); return; }
-    const body = {
-      prompt,
-      max_new_tokens: Number(maxTokensEl.value || 80),
-      temperature: Number(tempEl.value || 0.7),
-      top_p: Number(topPEl.value || 0.95),
-      top_k: 50
-    };
-    log('💬 /generate request sent');
-    generateBtn.disabled = true;
-    try {
-      const res = await fetch(API_BASE.replace(/\/$/,'') + '/generate', {
-        method: 'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify(body)
-      });
-      const json = await res.json();
-      if(json.success){
-        chatOut.innerText = `[prompt]\n${json.prompt}\n\n[generated]\n${json.generated || json.output || ''}`;
-        log('✅ /generate OK');
-      } else {
-        chatOut.innerText = 'Error: ' + (json.error || 'unknown');
-        log('❌ generate error: ' + (json.error || 'unknown'));
-      }
-    } catch(err){
-      chatOut.innerText = 'Network error: ' + err.message;
-      log('❌ generate network error: ' + err.message);
-    } finally { generateBtn.disabled = false; }
-  };
-
-  // initial preview and info fetch
-  updatePreview();
-  refreshInfo();
-
-  // expose updatePreview to other events
-  window.updateFTrainerPreview = updatePreview;
-})();
+  fileUpload.addEventListener("change", updatePreview);
 </script>
+
 </body>
 </html>
