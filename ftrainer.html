@@ -1,225 +1,232 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FTrainer</title>
-<style>
-  body { font-family: Arial, sans-serif; background: #f5f7fa; margin: 0; padding: 20px; }
-  h2 { color: #007bff; }
-  .section { background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 25px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
-  .columns { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 10px; transition: all 0.3s ease; }
-  .column { background: #f1f3f6; padding: 15px; border-radius: 6px; display: flex; flex-direction: column; min-width: 250px; position: relative; transition: transform 0.2s ease; }
-  .column input { margin-bottom: 10px; padding: 8px; border-radius: 4px; border: 1px solid #ccc; }
-  .column:hover { transform: scale(1.02); }
-  .remove-btn { position: absolute; top: 5px; right: 5px; background: #dc3545; color: #fff; border: none; border-radius: 4px; padding: 2px 6px; cursor: pointer; font-size: 12px; }
-  button { padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-  .add-btn { background: #28a745; color: #fff; margin-bottom: 15px; }
-  .add-btn:hover { background: #1e7e34; }
-  .send-btn { background: #007bff; color: #fff; }
-  .send-btn:hover { background: #0056b3; }
-  textarea { width: 100%; min-height: 120px; padding: 10px; border-radius: 6px; border: 1px solid #ccc; resize: vertical; font-family: monospace; }
-  input[type="file"] { margin-top: 10px; }
-  #preview { background: #272822; color: #f8f8f2; font-family: monospace; padding: 15px; border-radius: 6px; max-height: 300px; overflow-y: auto; margin-top: 10px; white-space: pre-wrap; }
-  #feedback { margin-top: 15px; font-weight: bold; color: #333; }
-  #logs { margin-top: 15px; background: #f1f1f1; padding: 10px; border-radius: 6px; max-height: 250px; overflow-y: auto; font-family: monospace; white-space: pre-wrap; }
-  .epoch-control { margin-top: 10px; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FTrainer by F_cooperation</title>
+  <style>
+    body {
+      background: #0f172a;
+      color: #f8fafc;
+      font-family: "Segoe UI", sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      text-align: center;
+      padding: 20px;
+      background: #1e293b;
+      font-size: 1.8em;
+      font-weight: bold;
+    }
+    main {
+      max-width: 800px;
+      margin: 30px auto;
+      padding: 20px;
+      background: #1e293b;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+    }
+    h2 {
+      border-bottom: 2px solid #334155;
+      padding-bottom: 5px;
+    }
+    textarea {
+      width: 100%;
+      height: 120px;
+      border: none;
+      outline: none;
+      border-radius: 8px;
+      padding: 10px;
+      background: #0f172a;
+      color: #f8fafc;
+      resize: vertical;
+    }
+    button {
+      background: #3b82f6;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+      transition: 0.2s;
+    }
+    button:hover {
+      background: #2563eb;
+    }
+    #logs {
+      background: #0f172a;
+      padding: 10px;
+      border-radius: 8px;
+      min-height: 150px;
+      overflow-y: auto;
+      white-space: pre-line;
+      margin-top: 10px;
+    }
+    .file {
+      background: #334155;
+      padding: 10px;
+      border-radius: 8px;
+    }
+    .section {
+      margin-bottom: 30px;
+    }
+    #downloadModel {
+      display: none;
+      background: #22c55e;
+    }
+    #testSection {
+      display: none;
+      background: #1e293b;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 20px;
+    }
+    #testPrompt {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      background: #0f172a;
+      color: #f8fafc;
+    }
+    #testResponse {
+      margin-top: 10px;
+      background: #0f172a;
+      padding: 10px;
+      border-radius: 8px;
+      min-height: 80px;
+    }
+  </style>
 </head>
 <body>
+  <header>🤖 FTrainer — AI Model Trainer</header>
+  <main>
+    <div class="section">
+      <h2>1️⃣ Upload or Type Your Training Data</h2>
+      <input type="file" id="fileInput" class="file" accept=".json" />
+      <p>or type questions and answers below:</p>
+      <textarea id="manualInput" placeholder='Example: Who built you? -> Francis'></textarea>
+    </div>
 
-<h2>FTrainer - Train Your Model</h2>
+    <div class="section">
+      <h2>2️⃣ Training Settings</h2>
+      <label>Max Epochs: </label>
+      <input type="number" id="maxEpochs" value="5" min="1" max="100" style="width: 60px;" />
+      <br><br>
+      <button id="trainBtn">🚀 Start Training</button>
+      <button id="downloadModel">⬇️ Download Model</button>
+    </div>
 
-<!-- Mode Selection -->
-<div class="section">
-  <h3>Training Mode</h3>
-  <label><input type="radio" name="mode" value="manual" checked> Manual Q&A Only</label><br>
-  <label><input type="radio" name="mode" value="upload"> Upload File Only</label><br>
-  <label><input type="radio" name="mode" value="both"> Both (Combine Upload + Manual)</label>
-</div>
+    <div class="section">
+      <h2>3️⃣ Live Logs</h2>
+      <div id="logs">Logs will appear here...</div>
+    </div>
 
-<!-- Section 1: Prompt/Response Columns -->
-<div class="section" id="manual-section">
-  <h3>Prompt/Response Input</h3>
-  <div id="columns-container" class="columns"></div>
-  <button id="add-column" class="add-btn">➕ Add Prompt/Response</button>
-</div>
+    <div id="testSection">
+      <h2>4️⃣ Test Your Trained Model</h2>
+      <input type="text" id="testPrompt" placeholder="Type your question..." />
+      <button id="testBtn">Ask Model</button>
+      <div id="testResponse"></div>
+    </div>
+  </main>
 
-<!-- Section 2: File Upload -->
-<div class="section" id="upload-section">
-  <h3>Upload JSON File</h3>
-  <input type="file" id="file-upload" accept=".json,.txt">
-</div>
+  <script>
+    const backendUrl = "https://mindy-sinistrous-fortuitously.ngrok-free.dev";
+    const logsDiv = document.getElementById("logs");
+    const trainBtn = document.getElementById("trainBtn");
+    const downloadBtn = document.getElementById("downloadModel");
+    const testSection = document.getElementById("testSection");
+    const testPrompt = document.getElementById("testPrompt");
+    const testBtn = document.getElementById("testBtn");
+    const testResponse = document.getElementById("testResponse");
 
-<!-- Epoch Control -->
-<div class="section">
-  <h3>Training Settings</h3>
-  <label for="epochs">Max Epochs:</label>
-  <input type="number" id="epochs" min="1" max="100" value="5" class="epoch-control">
-</div>
+    let trainingData = [];
 
-<!-- Preview Section -->
-<div class="section">
-  <h3>Live JSON Preview</h3>
-  <div id="preview">{}</div>
-</div>
+    document.getElementById("fileInput").addEventListener("change", handleFileUpload);
 
-<button id="send-data" class="send-btn">🚀 Start Training</button>
-<div id="feedback"></div>
-
-<!-- Logs Section -->
-<div class="section">
-  <h3>Live Logs</h3>
-  <div id="logs">Logs will appear here...</div>
-</div>
-<script>
-  const columnsContainer = document.getElementById("columns-container");
-  const addColumnBtn = document.getElementById("add-column");
-  const sendBtn = document.getElementById("send-data");
-  const feedback = document.getElementById("feedback");
-  const fileUpload = document.getElementById("file-upload");
-  const preview = document.getElementById("preview");
-  const logs = document.getElementById("logs");
-  const epochInput = document.getElementById("epochs");
-
-  function log(msg) {
-    logs.innerText += "\n" + msg;
-    logs.scrollTop = logs.scrollHeight;
-  }
-
-  function createColumn(promptVal = "", responseVal = "") {
-    const col = document.createElement("div");
-    col.className = "column";
-
-    const promptInput = document.createElement("input");
-    promptInput.placeholder = "Prompt";
-    promptInput.value = promptVal;
-    promptInput.oninput = updatePreview;
-
-    const responseInput = document.createElement("input");
-    responseInput.placeholder = "Response";
-    responseInput.value = responseVal;
-    responseInput.oninput = updatePreview;
-
-    const removeBtn = document.createElement("button");
-    removeBtn.className = "remove-btn";
-    removeBtn.innerText = "✖";
-    removeBtn.onclick = () => { col.remove(); updatePreview(); };
-
-    col.appendChild(removeBtn);
-    col.appendChild(promptInput);
-    col.appendChild(responseInput);
-    columnsContainer.appendChild(col);
-
-    updatePreview();
-  }
-
-  createColumn();
-
-  addColumnBtn.onclick = () => createColumn();
-
-  async function parseUploadedFile(file) {
-    try {
+    async function handleFileUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      logsDiv.textContent += `\n📂 File selected: ${file.name}`;
       const text = await file.text();
-      let data = [];
-
-      // Try JSON array
       try {
         const parsed = JSON.parse(text);
-        if (Array.isArray(parsed)) {
-          data = parsed.filter(obj => obj.prompt && obj.response);
-          if (data.length) {
-            log(`✅ Parsed ${data.length} entries from JSON array file.`);
-            return data;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          trainingData = parsed;
+          logsDiv.textContent += `\n✅ Loaded ${parsed.length} items from file.`;
+        } else {
+          logsDiv.textContent += "\n⚠️ No valid data found in uploaded file.";
+        }
+      } catch {
+        logsDiv.textContent += "\n⚠️ Invalid JSON file format.";
+      }
+    }
+
+    trainBtn.addEventListener("click", async () => {
+      const manualText = document.getElementById("manualInput").value.trim();
+      const maxEpochs = parseInt(document.getElementById("maxEpochs").value);
+
+      if (manualText) {
+        const lines = manualText.split("\n").filter(Boolean);
+        for (let line of lines) {
+          if (line.includes("->")) {
+            const [prompt, response] = line.split("->").map(s => s.trim());
+            trainingData.push({ prompt, response });
           }
         }
-      } catch {}
-
-      // Try line-separated JSON
-      text.split("\n").filter(l => l.trim() !== "").forEach(line => {
-        try {
-          const obj = JSON.parse(line);
-          if (obj.prompt && obj.response) data.push(obj);
-        } catch {}
-      });
-
-      if (data.length) {
-        log(`✅ Parsed ${data.length} entries from line-separated file.`);
-      } else {
-        log("⚠️ No valid data found in uploaded file.");
       }
 
-      return data;
-    } catch (err) {
-      log("❌ File parsing error: " + err.message);
-      return [];
-    }
-  }
+      if (trainingData.length === 0) {
+        logsDiv.textContent += "\n❌ No valid data to send!";
+        return;
+      }
 
-  async function collectData() {
-    const mode = document.querySelector('input[name="mode"]:checked').value;
-    let data = [];
+      logsDiv.textContent = "⏳ Sending data to backend...";
+      trainBtn.disabled = true;
 
-    if (mode === "manual" || mode === "both") {
-      document.querySelectorAll(".column").forEach(col => {
-        const prompt = col.children[1].value.trim();
-        const response = col.children[2].value.trim();
-        if (prompt && response) data.push({ prompt, response });
-      });
-    }
+      let currentEpoch = 0;
+      while (currentEpoch < maxEpochs) {
+        logsDiv.textContent += `\n⚙️ Training Epoch ${currentEpoch + 1}...`;
 
-    if ((mode === "upload" || mode === "both") && fileUpload.files.length > 0) {
-      const uploadedData = await parseUploadedFile(fileUpload.files[0]);
-      data = data.concat(uploadedData);
-    }
+        const res = await fetch(`${backendUrl}/train`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            dataset: trainingData,
+            max_epochs: currentEpoch + 1
+          }),
+        });
 
-    return data;
-  }
+        const result = await res.json();
+        logsDiv.textContent += `\n${JSON.stringify(result, null, 2)}`;
+        currentEpoch++;
+      }
 
-  async function updatePreview() {
-    const data = await collectData();
-    preview.innerText = JSON.stringify(data, null, 2);
-  }
+      logsDiv.textContent += "\n✅ Training complete ✅";
+      downloadBtn.style.display = "inline-block";
+      testSection.style.display = "block";
+      trainBtn.disabled = false;
+    });
 
-  sendBtn.onclick = async () => {
-    const data = await collectData();
-    const epochs = Math.max(1, Math.round(parseFloat(epochInput.value))); // Ensure whole number >= 1
+    downloadBtn.addEventListener("click", () => {
+      window.open(`${backendUrl}/download_checkpoint`, "_blank");
+    });
 
-    if (data.length === 0) {
-      feedback.innerText = "❌ No valid data to send!";
-      log("❌ No valid data to send!");
-      return;
-    }
+    testBtn.addEventListener("click", async () => {
+      const prompt = testPrompt.value.trim();
+      if (!prompt) return;
 
-    feedback.innerText = "⏳ Sending data to backend...";
-    log("⏳ Sending data to backend...");
-
-    try {
-      const res = await fetch("https://fweb-backend.onrender.com/train", {
+      testResponse.textContent = "⏳ Generating response...";
+      const res = await fetch(`${backendUrl}/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ data, epochs })
+        body: JSON.stringify({ prompt }),
       });
-
-      const result = await res.json();
-      if (result.success) {
-        feedback.innerText = "✅ Training completed!";
-        log("✅ Training complete ✅");
-        log(JSON.stringify(result, null, 2));
-      } else {
-        feedback.innerText = "❌ Training failed: " + (result.error || "Unknown error");
-        log("❌ Backend error: " + (result.error || "Unknown error"));
-      }
-    } catch (err) {
-      feedback.innerText = "❌ Network error: " + err.message;
-      log("❌ Network error: " + err.message);
-    }
-  };
-
-  fileUpload.addEventListener("change", async () => {
-    log("📂 File selected: " + fileUpload.files[0].name);
-    await updatePreview();
-  });
-</script>
+      const data = await res.json();
+      testResponse.textContent = data.generated || "No response.";
+    });
+  </script>
 </body>
 </html>
