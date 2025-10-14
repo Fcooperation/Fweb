@@ -1,199 +1,196 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FTrainer</title>
-<style>
-  body { font-family: Arial, sans-serif; background: #f5f7fa; margin: 0; padding: 20px; }
-  h2 { color: #007bff; }
-  .section { background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 25px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
-  .columns { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 10px; }
-  .column { background: #f1f3f6; padding: 15px; border-radius: 6px; display: flex; flex-direction: column; min-width: 250px; position: relative; }
-  .column input { margin-bottom: 10px; padding: 8px; border-radius: 4px; border: 1px solid #ccc; }
-  .remove-btn { position: absolute; top: 5px; right: 5px; background: #dc3545; color: #fff; border: none; border-radius: 4px; padding: 2px 6px; cursor: pointer; font-size: 12px; }
-  button { padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-  .add-btn { background: #28a745; color: #fff; margin-bottom: 15px; }
-  .send-btn { background: #007bff; color: #fff; }
-  .send-btn:hover { background: #0056b3; }
-  textarea { width: 100%; min-height: 120px; padding: 10px; border-radius: 6px; border: 1px solid #ccc; resize: vertical; font-family: monospace; }
-  input[type="file"], input[type="number"] { margin-top: 10px; }
-  #preview { background: #272822; color: #f8f8f2; font-family: monospace; padding: 15px; border-radius: 6px; max-height: 300px; overflow-y: auto; margin-top: 10px; white-space: pre-wrap; }
-  #logs { margin-top: 15px; background: #f1f1f1; padding: 10px; border-radius: 6px; max-height: 250px; overflow-y: auto; font-family: monospace; white-space: pre-wrap; }
-</style>
+  <meta charset="UTF-8">
+  <title>FCOOPERATION Trainer</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+      color: #fff;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      padding: 20px;
+      text-align: center;
+      background: rgba(0,0,0,0.4);
+    }
+    header h1 {
+      font-size: 2.5rem;
+      margin: 0;
+      color: #00ffcc;
+    }
+    .container {
+      max-width: 800px;
+      margin: 30px auto;
+      background: rgba(255,255,255,0.05);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.5);
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    input, select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 8px;
+      border-radius: 6px;
+      border: none;
+      font-size: 1rem;
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    button {
+      margin-top: 20px;
+      padding: 12px;
+      width: 100%;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      background: #00ffcc;
+      color: #000;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    button:hover {
+      background: #00ccaa;
+    }
+    #logs {
+      margin-top: 20px;
+      padding: 10px;
+      background: rgba(0,0,0,0.4);
+      border-radius: 6px;
+      max-height: 300px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 0.9rem;
+      white-space: pre-wrap;
+    }
+  </style>
 </head>
 <body>
+  <header>
+    <h1>FCOOPERATION Trainer</h1>
+    <p>Train your AI models easily</p>
+  </header>
+  <div class="container">
+    <form id="trainerForm">
+      <label for="dataset">Upload Dataset</label>
+      <input type="file" id="dataset" name="dataset" required>
 
-<h2>FTrainer - Train Your Model</h2>
+      <label for="parameters">Parameters</label>
+      <select id="parameters" name="parameters">
+        <option value="200m">200M</option>
+        <option value="500m">500M</option>
+        <option value="1b">1B</option>
+        <option value="2b">2B</option>
+      </select>
 
-<!-- Section 1: Prompt/Response Columns -->
-<div class="section">
-  <h3>Prompt/Response Input</h3>
-  <div id="columns-container" class="columns"></div>
-  <button id="add-column" class="add-btn">➕ Add Prompt/Response</button>
-</div>
+      <label for="gpu">GPU Type</label>
+      <select id="gpu" name="gpu">
+        <option value="t4">NVIDIA T4</option>
+        <option value="v100">NVIDIA V100</option>
+        <option value="a100">NVIDIA A100</option>
+      </select>
 
-<!-- Section 2: Raw JSON Input -->
-<div class="section">
-  <h3>Raw JSON Input</h3>
-  <textarea id="raw-json" placeholder='{"prompt": "Hello", "response": "Hi there!"}'></textarea>
-</div>
+      <label for="storage">Save Model To</label>
+      <select id="storage" name="storage">
+        <option value="drive">Google Drive</option>
+        <option value="local">Colab Storage</option>
+      </select>
 
-<!-- Section 3: File Upload -->
-<div class="section">
-  <h3>Upload JSON File</h3>
-  <input type="file" id="file-upload" accept=".json,.txt">
-</div>
+      <div class="row">
+        <button type="submit">Start Training</button>
+        <input type="number" id="iterations" name="iterations" min="1" max="100" value="1" title="Number of training runs">
+      </div>
+    </form>
 
-<!-- Section 4: Max Epoch -->
-<div class="section">
-  <h3>Training Settings</h3>
-  <label for="max-epoch">Max Epochs:</label>
-  <input type="number" id="max-epoch" min="1" value="2">
-</div>
+    <div id="logs">Logs will appear here...</div>
+  </div>
 
-<!-- Preview Section -->
-<div class="section">
-  <h3>Live JSON Preview</h3>
-  <div id="preview">{}</div>
-</div>
+  <script>
+    const form = document.getElementById("trainerForm");
+    const logsBox = document.getElementById("logs");
+    let sessionId = null;
+    let pollInterval = null;
 
-<button id="send-data" class="send-btn">🚀 Start Training</button>
-<div id="feedback"></div>
+    const BASE_URL = "https://mindy-sinistrous-fortuitously.ngrok-free.dev";
 
-<!-- Logs Section -->
-<div class="section">
-  <h3>Training Logs</h3>
-  <div id="logs">Logs will appear here...</div>
-</div>
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      clearInterval(pollInterval);
+      logsBox.innerText = "⏳ Reading dataset...";
 
-<script>
-  const columnsContainer = document.getElementById("columns-container");
-  const addColumnBtn = document.getElementById("add-column");
-  const sendBtn = document.getElementById("send-data");
-  const feedback = document.getElementById("feedback");
-  const rawJson = document.getElementById("raw-json");
-  const fileUpload = document.getElementById("file-upload");
-  const preview = document.getElementById("preview");
-  const logs = document.getElementById("logs");
-  const maxEpochInput = document.getElementById("max-epoch");
+      const fileInput = document.getElementById("dataset");
+      const iterations = parseInt(document.getElementById("iterations").value) || 1;
 
-  function log(message) {
-    logs.innerText += "\n" + message;
-    logs.scrollTop = logs.scrollHeight;
-  }
+      if (!fileInput.files[0]) return alert("Please upload a dataset!");
 
-  function createColumn(promptVal = "", responseVal = "") {
-    const col = document.createElement("div");
-    col.className = "column";
-    const promptInput = document.createElement("input");
-    promptInput.placeholder = "Prompt";
-    promptInput.value = promptVal;
-    const responseInput = document.createElement("input");
-    responseInput.placeholder = "Response";
-    responseInput.value = responseVal;
-    const removeBtn = document.createElement("button");
-    removeBtn.className = "remove-btn";
-    removeBtn.innerText = "✖";
-    removeBtn.onclick = () => { col.remove(); updatePreview(); };
-    col.append(removeBtn, promptInput, responseInput);
-    columnsContainer.appendChild(col);
-    updatePreview();
-  }
+      const reader = new FileReader();
+      reader.onload = async function() {
+        const datasetArray = reader.result.split(/\r?\n/).filter(l => l.trim() !== "");
+        const payload = { dataset: datasetArray };
 
-  createColumn();
-  addColumnBtn.onclick = () => createColumn();
+        logsBox.innerText = "⏳ Sending training request...";
 
-  async function collectData() {
-    let data = [];
+        for (let i = 1; i <= iterations; i++) {
+          logsBox.innerText += `\n➡️ Starting training run ${i} of ${iterations}...\n`;
+          try {
+            const res = await fetch(`${BASE_URL}/train`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (!data.success || !data.session_id) {
+              logsBox.innerText += `❌ Failed to start training run ${i}:\n` + JSON.stringify(data, null, 2) + "\n";
+              continue;
+            }
 
-    // From manual columns
-    document.querySelectorAll(".column").forEach(col => {
-      const prompt = col.children[1].value.trim();
-      const response = col.children[2].value.trim();
-      if (prompt && response) data.push({ prompt, response });
-    });
+            sessionId = data.session_id;
 
-    // From textarea
-    if (rawJson.value.trim() !== "") {
-      try {
-        const parsed = JSON.parse(rawJson.value);
-        if (Array.isArray(parsed)) data.push(...parsed);
-        else if (parsed.prompt && parsed.response) data.push(parsed);
-      } catch(e) {
-        log("⚠️ Raw JSON parsing failed, skipping...");
-      }
-    }
+            await new Promise((resolve) => {
+              pollInterval = setInterval(async () => {
+                try {
+                  const logRes = await fetch(`${BASE_URL}/logs/${sessionId}`);
+                  const logData = await logRes.json();
 
-    // From uploaded file
-    if (fileUpload.files.length > 0) {
-      const text = await fileUpload.files[0].text();
-      try {
-        const parsed = JSON.parse(text);
-        if (Array.isArray(parsed)) data.push(...parsed);
-      } catch(e) {
-        log("⚠️ Uploaded file invalid JSON, skipping...");
-      }
-    }
+                  if (logData.logs) {
+                    // Append new logs instead of replacing
+                    logsBox.innerText += logData.logs.replace(/\n$/, '') + "\n";
+                    logsBox.scrollTop = logsBox.scrollHeight;
+                  }
 
-    return data;
-  }
+                  if (logData.completed) {
+                    clearInterval(pollInterval);
+                    logsBox.innerText += `✅ Training run ${i} completed!\n`;
+                    resolve();
+                  }
+                } catch (err) {
+                  logsBox.innerText += "\n❌ Error fetching logs: " + err.message + "\n";
+                  resolve();
+                }
+              }, 1000);
+            });
 
-  async function updatePreview() {
-    const data = await collectData();
-    preview.innerText = JSON.stringify(data, null, 2);
-  }
-
-  fileUpload.addEventListener("change", async () => {
-    log(`📂 File selected: ${fileUpload.files[0].name}`);
-    await updatePreview();
-  });
-  rawJson.addEventListener("input", updatePreview);
-
-  sendBtn.onclick = async () => {
-    const data = await collectData();
-    const maxEpoch = parseFloat(maxEpochInput.value);
-
-    if (data.length === 0) {
-      feedback.innerText = "❌ No valid data to send!";
-      log("❌ No valid data to send!");
-      return;
-    }
-
-    feedback.innerText = "⏳ Training started...";
-    log(`🚀 Starting training for max ${maxEpoch} epochs...`);
-
-    let currentEpoch = 0;
-
-    while (currentEpoch < maxEpoch) {
-      try {
-        log(`⏳ Epoch ${currentEpoch + 1} in progress...`);
-        const res = await fetch("https://fweb-backend.onrender.com/train", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ data })
-        });
-        const result = await res.json();
-
-        if (result.success) {
-          log(`✅ Epoch ${currentEpoch + 1} complete: Loss logs -> ${JSON.stringify(result.result?.training_logs || [], null, 2)}`);
-          currentEpoch++;
-        } else {
-          log("❌ Training error: " + (result.error || "Unknown error"));
-          break;
+          } catch (err) {
+            logsBox.innerText += "❌ Error: " + err.message + "\n";
+          }
         }
-      } catch (err) {
-        log("❌ Network error: " + err.message);
-        break;
-      }
-    }
 
-    if (currentEpoch >= maxEpoch) {
-      feedback.innerText = "✅ Training completed!";
-      log("🎯 All epochs completed successfully.");
-    }
-  };
-</script>
-        
+        logsBox.innerText += "\n🏁 All training runs finished!";
+      };
+
+      reader.readAsText(fileInput.files[0]);
+    });
+  </script>
 </body>
 </html>
