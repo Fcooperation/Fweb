@@ -104,54 +104,53 @@ function createColumn(promptVal = "", responseVal = "") {
   updatePreview();
 }
 
-// Initialize first column
 createColumn();
-
 addColumnBtn.onclick = () => createColumn();
 
 async function collectData() {
   let data = [];
 
-  // Columns
+  // From input columns
   document.querySelectorAll(".column").forEach(col => {
     const prompt = col.children[1].value.trim();
     const response = col.children[2].value.trim();
     if (prompt && response) data.push({ prompt, response });
   });
 
-  // Raw JSON
-  const rawLines = rawJson.value.trim().split("\n").filter(l => l.trim() !== "");
-  rawLines.forEach((line, idx) => {
+  // From raw JSON textarea
+  const raw = rawJson.value.trim();
+  if (raw) {
     try {
-      const obj = JSON.parse(line);
-      if (obj.prompt && obj.response) {
-        data.push(obj);
-        log(`➕ Added from raw JSON line ${idx+1}: ${JSON.stringify(obj)}`);
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        data = data.concat(parsed);
+        log(`➕ Added ${parsed.length} entries from JSON array.`);
+      } else if (parsed.prompt && parsed.response) {
+        data.push(parsed);
+        log(`➕ Added single JSON object: ${JSON.stringify(parsed)}`);
       }
-    } catch(e) {
-      log(`⚠️ Invalid raw JSON at line ${idx+1}, ignored.`);
+    } catch (e) {
+      log("⚠️ Could not parse raw JSON — please ensure it's valid JSON.");
     }
-  });
+  }
 
-  // File Upload
+  // From file upload
   if (fileUpload.files.length > 0) {
     const file = fileUpload.files[0];
     try {
       const text = await file.text();
-      log(`📄 Uploaded file: ${file.name}`);
-      text.split("\n").filter(l => l.trim() !== "").forEach((line, idx) => {
-        try {
-          const obj = JSON.parse(line);
-          if (obj.prompt && obj.response) {
-            data.push(obj);
-            log(`➕ Added from file line ${idx + 1}: ${JSON.stringify(obj)}`);
-          }
-        } catch (e) {
-          log(`⚠️ Invalid JSON in file at line ${idx + 1}, ignored.`);
-        }
-      });
+      const parsed = JSON.parse(text);
+      if (Array.isArray(parsed)) {
+        data = data.concat(parsed);
+        log(`📁 Added ${parsed.length} entries from file ${file.name}.`);
+      } else if (parsed.prompt && parsed.response) {
+        data.push(parsed);
+        log(`📁 Added single object from file ${file.name}.`);
+      } else {
+        log(`⚠️ File ${file.name} didn't contain valid greeting objects.`);
+      }
     } catch (err) {
-      log(`❌ Failed to read file: ${err.message}`);
+      log(`❌ Could not parse file ${file.name}: ${err.message}`);
     }
   }
 
@@ -187,12 +186,12 @@ sendBtn.onclick = async () => {
     if (result.success) {
       feedback.innerText = "✅ Training completed successfully!";
       log("✅ Backend processed data successfully.");
-      log("📤 Data sent to backend: " + JSON.stringify(result.result || result.received || result, null, 2));
+      log("📤 Data sent to backend: " + JSON.stringify(result, null, 2));
     } else {
       feedback.innerText = "❌ Training failed: " + (result.error || "Unknown error");
       log("❌ Backend returned error: " + (result.error || "Unknown error"));
     }
-  } catch(err) {
+  } catch (err) {
     feedback.innerText = "❌ Error: " + err.message;
     log("❌ Failed to reach backend: " + err.message);
   }
