@@ -18,8 +18,12 @@
   .add-btn:hover { background: #1e7e34; }
   .send-btn { background: #007bff; color: #fff; }
   .send-btn:hover { background: #0056b3; }
+  .test-btn { background: #6f42c1; color: #fff; }
+  .test-btn:hover { background: #563d7c; }
+  .download-btn { background: #17a2b8; color: #fff; margin-left: 10px; }
+  .download-btn:hover { background: #117a8b; }
   textarea { width: 100%; min-height: 120px; padding: 10px; border-radius: 6px; border: 1px solid #ccc; resize: vertical; font-family: monospace; }
-  input[type="file"] { margin-top: 10px; }
+  input[type="file"], select { margin-top: 10px; }
   #preview { background: #272822; color: #f8f8f2; font-family: monospace; padding: 15px; border-radius: 6px; max-height: 300px; overflow-y: auto; margin-top: 10px; white-space: pre-wrap; }
   #feedback { margin-top: 15px; font-weight: bold; color: #333; }
   #logs { margin-top: 15px; background: #f1f1f1; padding: 10px; border-radius: 6px; max-height: 250px; overflow-y: auto; font-family: monospace; white-space: pre-wrap; }
@@ -47,6 +51,19 @@
   <input type="file" id="file-upload" accept=".json,.txt">
 </div>
 
+<!-- Section 4: Retrain Count -->
+<div class="section">
+  <h3>Retrain Options</h3>
+  <label for="retrain-count">How many times to retrain:</label>
+  <select id="retrain-count">
+    <option value="1">1 time</option>
+    <option value="2">2 times</option>
+    <option value="3">3 times</option>
+    <option value="5">5 times</option>
+    <option value="10">10 times</option>
+  </select>
+</div>
+
 <!-- Preview Section -->
 <div class="section">
   <h3>Live JSON Preview</h3>
@@ -54,7 +71,16 @@
 </div>
 
 <button id="send-data" class="send-btn">🚀 Send to Train</button>
+<button id="download-model" class="download-btn" disabled>⬇️ Download Model</button>
 <div id="feedback"></div>
+
+<!-- Test Section -->
+<div class="section">
+  <h3>Test Trained Model</h3>
+  <input type="text" id="test-prompt" placeholder="Enter test prompt..." style="width:100%;padding:10px;border-radius:6px;border:1px solid #ccc;">
+  <button id="test-btn" class="test-btn">💬 Test Model</button>
+  <div id="test-result" style="margin-top:10px;font-weight:bold;"></div>
+</div>
 
 <!-- Logs Section -->
 <div class="section">
@@ -71,6 +97,11 @@ const rawJson = document.getElementById("raw-json");
 const fileUpload = document.getElementById("file-upload");
 const preview = document.getElementById("preview");
 const logs = document.getElementById("logs");
+const retrainCount = document.getElementById("retrain-count");
+const downloadBtn = document.getElementById("download-model");
+const testBtn = document.getElementById("test-btn");
+const testPrompt = document.getElementById("test-prompt");
+const testResult = document.getElementById("test-result");
 
 function log(message) {
   logs.innerText += "\n" + message;
@@ -109,49 +140,29 @@ addColumnBtn.onclick = () => createColumn();
 
 async function collectData() {
   let data = [];
-
-  // From input columns
   document.querySelectorAll(".column").forEach(col => {
     const prompt = col.children[1].value.trim();
     const response = col.children[2].value.trim();
     if (prompt && response) data.push({ prompt, response });
   });
 
-  // From raw JSON textarea
   const raw = rawJson.value.trim();
   if (raw) {
     try {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) {
-        data = data.concat(parsed);
-        log(`➕ Added ${parsed.length} entries from JSON array.`);
-      } else if (parsed.prompt && parsed.response) {
-        data.push(parsed);
-        log(`➕ Added single JSON object: ${JSON.stringify(parsed)}`);
-      }
-    } catch (e) {
-      log("⚠️ Could not parse raw JSON — please ensure it's valid JSON.");
-    }
+      if (Array.isArray(parsed)) data = data.concat(parsed);
+      else if (parsed.prompt && parsed.response) data.push(parsed);
+    } catch (e) { log("⚠️ Invalid JSON in Raw Input."); }
   }
 
-  // From file upload
   if (fileUpload.files.length > 0) {
     const file = fileUpload.files[0];
     try {
       const text = await file.text();
       const parsed = JSON.parse(text);
-      if (Array.isArray(parsed)) {
-        data = data.concat(parsed);
-        log(`📁 Added ${parsed.length} entries from file ${file.name}.`);
-      } else if (parsed.prompt && parsed.response) {
-        data.push(parsed);
-        log(`📁 Added single object from file ${file.name}.`);
-      } else {
-        log(`⚠️ File ${file.name} didn't contain valid greeting objects.`);
-      }
-    } catch (err) {
-      log(`❌ Could not parse file ${file.name}: ${err.message}`);
-    }
+      if (Array.isArray(parsed)) data = data.concat(parsed);
+      else if (parsed.prompt && parsed.response) data.push(parsed);
+    } catch (err) { log(`❌ Error reading file: ${err.message}`); }
   }
 
   return data;
@@ -160,40 +171,75 @@ async function collectData() {
 async function updatePreview() {
   const data = await collectData();
   preview.innerText = JSON.stringify(data, null, 2);
-  log(`🖼 Preview updated with ${data.length} total entries.`);
 }
 
 sendBtn.onclick = async () => {
   const data = await collectData();
   if (data.length === 0) {
     feedback.innerText = "❌ No valid data to send!";
-    log("❌ No valid data to send!");
     return;
   }
 
-  feedback.innerText = "⏳ Sending data to train...";
-  log("⏳ Sending data to backend...");
+  const times = parseInt(retrainCount.value);
+  feedback.innerText = `⏳ Starting ${times} training cycle(s)...`;
+  log(`⏳ Starting ${times} training cycles...`);
+
+  for (let i = 1; i <= times; i++) {
+    feedback.innerText = `🔁 Training round ${i}/${times}...`;
+    log(`🔁 Training round ${i}/${times}...`);
+
+    try {
+      const res = await fetch("https://fweb-backend.onrender.com/train", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ data })
+      });
+
+      const result = await res.json();
+      if (result.success) {
+        log(`✅ Training round ${i} complete.`);
+        if (i === times) {
+          feedback.innerText = "✅ All training rounds completed!";
+          downloadBtn.disabled = false;
+        }
+      } else {
+        log(`❌ Error in round ${i}: ${result.error}`);
+      }
+    } catch (err) {
+      log(`❌ Network error during round ${i}: ${err.message}`);
+      break;
+    }
+  }
+};
+
+downloadBtn.onclick = () => {
+  const modelData = { trainedAt: new Date(), source: "FTrainer" };
+  const blob = new Blob([JSON.stringify(modelData, null, 2)], { type: "application/json" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "ftrainer-model.json";
+  link.click();
+  log("⬇️ Model downloaded to device.");
+};
+
+testBtn.onclick = async () => {
+  const prompt = testPrompt.value.trim();
+  if (!prompt) return testResult.innerText = "⚠️ Please enter a test prompt.";
+  testResult.innerText = "⏳ Testing...";
+  log(`💬 Sending test prompt: "${prompt}"`);
 
   try {
-    const res = await fetch("https://fweb-backend.onrender.com/train", {
+    const res = await fetch("https://fweb-backend.onrender.com/test", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ data })
+      body: JSON.stringify({ prompt })
     });
-
     const result = await res.json();
-
-    if (result.success) {
-      feedback.innerText = "✅ Training completed successfully!";
-      log("✅ Backend processed data successfully.");
-      log("📤 Data sent to backend: " + JSON.stringify(result, null, 2));
-    } else {
-      feedback.innerText = "❌ Training failed: " + (result.error || "Unknown error");
-      log("❌ Backend returned error: " + (result.error || "Unknown error"));
-    }
+    testResult.innerText = `🧠 Response: ${result.response || "No response"}`;
+    log(`🧠 Model replied: ${result.response}`);
   } catch (err) {
-    feedback.innerText = "❌ Error: " + err.message;
-    log("❌ Failed to reach backend: " + err.message);
+    testResult.innerText = "❌ Error testing model.";
+    log(`❌ Error testing: ${err.message}`);
   }
 };
 
