@@ -15,9 +15,10 @@
     height:100vh;
     overflow:hidden;
   }
+  /* Top banner */
   .top-banner {
     height:60px;
-    background:rgba(0,0,0,0.85);
+    background:rgba(0,0,0,0.95);
     display:flex;
     justify-content:space-between;
     align-items:center;
@@ -25,21 +26,45 @@
     font-size:20px;
     font-weight:700;
     border-bottom:1px solid rgba(255,255,255,0.1);
+    position:relative;
+    z-index:100;
   }
   .menu-btn { cursor:pointer; font-size:18px; }
+  .dropdown-menu {
+    display:none;
+    position:absolute;
+    top:60px;
+    right:10px;
+    background:rgba(0,0,0,0.95);
+    border:1px solid rgba(255,255,255,0.1);
+    border-radius:10px;
+    padding:10px;
+    min-width:150px;
+    z-index:200;
+  }
+  .dropdown-menu a {
+    display:block;
+    color:#fff;
+    text-decoration:none;
+    padding:8px;
+    border-radius:5px;
+    transition:all 0.2s;
+  }
+  .dropdown-menu a:hover { background:rgba(255,255,255,0.1); }
+
+  /* Main content */
   .main {
     flex:1;
     display:flex;
     flex-direction:column;
-    justify-content:center;
-    align-items:center;
     position:relative;
-    padding-bottom:60px;
+    overflow-y:auto;
+    padding-bottom:70px;
   }
-  #logs { color:#00c6ff; font-size:15px; white-space:nowrap; margin-top:10px; opacity:0; transition:opacity 0.6s;}
+  #logs { color:#00c6ff; font-size:15px; white-space:nowrap; margin:15px; opacity:0; transition:opacity 0.6s;}
   .fab {
     position:absolute;
-    bottom:70px;
+    bottom:80px;
     right:20px;
     width:60px;
     height:60px;
@@ -51,92 +76,131 @@
     font-size:28px;
     cursor:pointer;
     box-shadow:0 4px 10px rgba(0,0,0,0.3);
+    z-index:50;
   }
+
+  /* Bottom nav */
   .bottom-nav {
     height:60px;
-    background:rgba(0,0,0,0.85);
+    background:rgba(0,0,0,0.95);
     display:flex;
     justify-content:space-around;
     align-items:center;
     border-top:1px solid rgba(255,255,255,0.1);
+    position:relative;
+    z-index:50;
   }
   .nav-item { text-align:center; font-size:14px; cursor:pointer; opacity:0.8; }
   .nav-item.active { opacity:1; font-weight:700; }
+
+  /* Chat cards */
+  .chat-card {
+    display:flex;
+    align-items:center;
+    padding:10px 15px;
+    border-bottom:1px solid rgba(255,255,255,0.05);
+    cursor:pointer;
+    transition: background 0.2s;
+  }
+  .chat-card:hover { background:rgba(255,255,255,0.05); }
+  .chat-card img {
+    width:50px;
+    height:50px;
+    border-radius:50%;
+    margin-right:15px;
+    object-fit:cover;
+    border:1px solid rgba(255,255,255,0.1);
+  }
+  .chat-card .username { font-size:16px; font-weight:600; }
+  .loading-container {
+    flex:1;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    flex-direction:column;
+    color:#00c6ff;
+    font-size:16px;
+  }
 </style>
 </head>
 <body>
-  <div class="top-banner">
+  <div class="top-banner" id="topBanner">
     <div>FCHAT</div>
     <div class="menu-btn" id="menuBtn">☰</div>
+    <div class="dropdown-menu" id="dropdownMenu">
+      <a href="fchatsettings.html">Settings</a>
+    </div>
   </div>
 
   <div class="main" id="mainContent">
-    <div id="loading">
+    <div class="loading-container" id="loadingContainer">
       <h2>Loading FWEB data...</h2>
       <div id="logs"></div>
     </div>
-    <div id="chatInterface" style="display:none;width:100%;height:100%;flex-direction:column;">
-      <!-- WhatsApp style chat blank -->
-      <div style="flex:1; display:flex; justify-content:center; align-items:center; font-size:18px; color:#aaa;">
-        FCHAT Home
-      </div>
-      <div class="fab" id="addBtn">+</div>
-    </div>
   </div>
 
-  <div class="bottom-nav">
+  <div class="fab" id="addBtn">+</div>
+
+  <div class="bottom-nav" id="bottomNav">
     <div class="nav-item active" id="navFchat">FCHAT</div>
-    <div class="nav-item" id="navStatus">Status</div>
+    <div class="nav-item" id="navFriends">Friend Requests</div>
     <div class="nav-item" id="navUpdates">Updates</div>
     <div class="nav-item" id="navMe">Me</div>
   </div>
 
 <script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const supabaseUrl = "https://pwsxezhugsxosbwhkdvf.supabase.co";
+const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
+const supabase = createClient(supabaseUrl,supabaseAnonKey);
+
 const logsEl = document.getElementById('logs');
-const loadingEl = document.getElementById('loading');
-const chatInterface = document.getElementById('chatInterface');
+const mainContent = document.getElementById('mainContent');
+const loadingContainer = document.getElementById('loadingContainer');
+const addBtn = document.getElementById('addBtn');
+const dropdownMenu = document.getElementById('dropdownMenu');
+const menuBtn = document.getElementById('menuBtn');
+const topBanner = document.getElementById('topBanner');
+const bottomNav = document.getElementById('bottomNav');
 
-// Floating Add button
-document.getElementById('addBtn').addEventListener('click', ()=>{
-  window.location.href='add.html';
+// Hide menu/nav initially
+topBanner.style.display='none';
+bottomNav.style.display='none';
+addBtn.style.display='none';
+
+// Menu dropdown
+menuBtn.addEventListener('click', ()=>{
+  dropdownMenu.style.display = dropdownMenu.style.display==='block' ? 'none':'block';
 });
 
-// Menu button -> Settings
-document.getElementById('menuBtn').addEventListener('click', ()=>{
-  window.location.href='fchatsettings.html';
-});
+// FAB button
+addBtn.addEventListener('click', ()=> window.location.href='add.html');
 
 // Bottom nav click handlers
-document.getElementById('navFchat').addEventListener('click', ()=>setActiveNav('navFchat'));
-document.getElementById('navStatus').addEventListener('click', ()=>setActiveNav('navStatus'));
-document.getElementById('navUpdates').addEventListener('click', ()=>setActiveNav('navUpdates'));
-document.getElementById('navMe').addEventListener('click', ()=>setActiveNav('navMe'));
+document.getElementById('navFchat').addEventListener('click', ()=> window.location.href='fchat.html');
+document.getElementById('navFriends').addEventListener('click', ()=> window.location.href='friendrequests.html');
+document.getElementById('navUpdates').addEventListener('click', ()=> window.location.href='updates.html');
+document.getElementById('navMe').addEventListener('click', ()=> window.location.href='me.html');
 
-function setActiveNav(id){
-  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-}
-
-// Simulate logs & read user storage
+// Load FWEB data and accepted IDs
 async function loadFwebData(){
-  const logSteps=[
+  const logSteps = [
     "Accessing device storage...",
     "Fetching FWEB data...",
-    "Loading account details...",
+    "Loading accepted friends...",
+    "Fetching details from server...",
     "Preparing FCHAT interface...",
     "✅ FCHAT ready!"
   ];
 
   let fwebData = null;
-
   try{
-    // File System Access API read
     const dirHandle = await window.showDirectoryPicker();
     const fileHandle = await dirHandle.getFileHandle('fweb_account.json');
     const file = await fileHandle.getFile();
     const text = await file.text();
     fwebData = JSON.parse(text);
-    console.log('FWEB data loaded:', fwebData);
   }catch(e){
     console.warn("Could not read user storage", e);
   }
@@ -149,8 +213,31 @@ async function loadFwebData(){
     await new Promise(r=>setTimeout(r,1000));
   }
 
-  loadingEl.style.display='none';
-  chatInterface.style.display='flex';
+  // After loading show menu/nav
+  topBanner.style.display='flex';
+  bottomNav.style.display='flex';
+  addBtn.style.display='flex';
+  loadingContainer.style.display='none';
+
+  // If there are accepted IDs, fetch details from Supabase
+  if(fwebData?.accepted && fwebData.accepted.length>0){
+    for(let id of fwebData.accepted){
+      const {data,error} = await supabase.from('fwebaccount').select('username,profile_pic').eq('id',id).single();
+      if(data){
+        const card = document.createElement('div');
+        card.classList.add('chat-card');
+        card.innerHTML = `<img src="${data.profile_pic || 'https://via.placeholder.com/50'}" alt="Profile Pic">
+                          <div class="username">${data.username}</div>`;
+        mainContent.appendChild(card);
+      }
+    }
+  } else {
+    const msg = document.createElement('div');
+    msg.style.color='#aaa';
+    msg.style.marginTop='20px';
+    msg.textContent="No accepted FCHAT friends yet.";
+    mainContent.appendChild(msg);
+  }
 }
 
 loadFwebData();
