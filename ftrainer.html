@@ -197,6 +197,75 @@ sendBtn.onclick = async () => {
 rawJson.addEventListener("input", updatePreview);
 fileUpload.addEventListener("change", updatePreview);
 </script>
+<script>
+  // === CONFIG ===
+  const NGROK_BASE = "https://mindy-sinistrous-fortuitously.ngrok-free.dev";
 
+  // === ADD TEST & DOWNLOAD SECTION ===
+  const section = document.createElement("div");
+  section.style.textAlign = "center";
+  section.style.marginTop = "25px";
+  section.innerHTML = `
+    <div style="margin-bottom: 20px;">
+      <button id="testModelBtn" style="padding:10px 20px; margin:5px; border:none; border-radius:8px; background:#28a745; color:white; cursor:pointer;">
+        💬 Test Model
+      </button>
+      <button id="downloadModelBtn" style="padding:10px 20px; margin:5px; border:none; border-radius:8px; background:#007bff; color:white; cursor:pointer;">
+        ⬇️ Download Model
+      </button>
+    </div>
+    <div id="testInterface" style="display:none; margin:auto; max-width:400px; background:#1a1a1a; padding:15px; border-radius:10px;">
+      <input id="userInput" type="text" placeholder="Type your message..." style="width:100%; padding:10px; border:none; border-radius:6px; margin-bottom:10px;">
+      <button id="sendBtn" style="width:100%; padding:10px; background:#28a745; border:none; border-radius:6px; color:white; cursor:pointer;">Send</button>
+      <div id="responseBox" style="margin-top:10px; color:#fff; text-align:left; white-space:pre-wrap;"></div>
+    </div>
+  `;
+  document.body.appendChild(section);
+
+  // === DOWNLOAD ===
+  document.getElementById("downloadModelBtn").addEventListener("click", () => {
+    window.open(`${NGROK_BASE}/download_checkpoint`, "_blank");
+  });
+
+  // === SHOW TEST INTERFACE ===
+  document.getElementById("testModelBtn").addEventListener("click", () => {
+    document.getElementById("testInterface").style.display = "block";
+  });
+
+  // === SEND QUERY TO MODEL ===
+  document.getElementById("sendBtn").addEventListener("click", async () => {
+    const query = document.getElementById("userInput").value.trim();
+    const box = document.getElementById("responseBox");
+
+    if (!query) {
+      box.innerText = "⚠️ Please enter a message first.";
+      return;
+    }
+
+    box.innerText = "⏳ Thinking...";
+    try {
+      const res = await fetch(`${NGROK_BASE}/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: query })
+      });
+      const data = await res.json();
+      box.innerText = `🧠 Model: ${data.response || "No response"}`;
+    } catch (err) {
+      box.innerText = `❌ Error: ${err.message}`;
+    }
+  });
+
+  // === FIX: Re-enable epoch display if lost ===
+  const oldLog = window.log;
+  window.log = function (msg) {
+    const logsEl = document.getElementById("logs");
+    if (logsEl) {
+      logsEl.textContent += `\n${msg}`;
+      logsEl.scrollTop = logsEl.scrollHeight;
+    }
+    if (oldLog) oldLog(msg);
+  };
+</script>
 </body>
 </html>
