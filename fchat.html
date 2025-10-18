@@ -29,7 +29,7 @@
     position:relative;
     z-index:100;
   }
-  .menu-btn { cursor:pointer; font-size:18px; }
+  .menu-btn, .refresh-btn { cursor:pointer; font-size:18px; margin-left:10px; }
   .dropdown-menu {
     display:none;
     position:absolute;
@@ -126,7 +126,10 @@
 <body>
   <div class="top-banner" id="topBanner">
     <div>FCHAT</div>
-    <div class="menu-btn" id="menuBtn">☰</div>
+    <div>
+      <span class="refresh-btn" id="refreshBtn">⟳</span>
+      <span class="menu-btn" id="menuBtn">☰</span>
+    </div>
     <div class="dropdown-menu" id="dropdownMenu">
       <a href="fchatsettings.html">Settings</a>
     </div>
@@ -155,16 +158,15 @@ const supabaseUrl = "https://pwsxezhugsxosbwhkdvf.supabase.co";
 const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
 const supabase = createClient(supabaseUrl,supabaseAnonKey);
 
-const logsEl = document.getElementById('logs');
 const mainContent = document.getElementById('mainContent');
-const loadingContainer = document.getElementById('loadingContainer');
 const addBtn = document.getElementById('addBtn');
 const dropdownMenu = document.getElementById('dropdownMenu');
 const menuBtn = document.getElementById('menuBtn');
 const topBanner = document.getElementById('topBanner');
 const bottomNav = document.getElementById('bottomNav');
+const refreshBtn = document.getElementById('refreshBtn');
 
-// Hide menu/nav initially
+// Hide initially
 topBanner.style.display='none';
 bottomNav.style.display='none';
 addBtn.style.display='none';
@@ -183,8 +185,17 @@ document.getElementById('navFriends').addEventListener('click', ()=> window.loca
 document.getElementById('navUpdates').addEventListener('click', ()=> window.location.href='updates.html');
 document.getElementById('navMe').addEventListener('click', ()=> window.location.href='me.html');
 
-// Load FWEB data and accepted IDs
+// Refresh button triggers reload
+refreshBtn.addEventListener('click', ()=> loadFwebData());
+
+// Main function to load FWEB friends/cards
 async function loadFwebData(){
+  mainContent.innerHTML = '<div class="loading-container" id="loadingContainer"><h2>Loading FWEB data...</h2><div id="logs"></div></div>';
+  const logsEl = document.getElementById('logs');
+  topBanner.style.display='none';
+  bottomNav.style.display='none';
+  addBtn.style.display='none';
+
   const logSteps = [
     "Accessing device storage...",
     "Fetching FWEB data...",
@@ -213,14 +224,15 @@ async function loadFwebData(){
     await new Promise(r=>setTimeout(r,1000));
   }
 
-  // After loading show menu/nav
+  // Show main interface after loading
   topBanner.style.display='flex';
   bottomNav.style.display='flex';
   addBtn.style.display='flex';
-  loadingContainer.style.display='none';
+  const mainCardsContainer = document.createElement('div');
+  mainCardsContainer.style.marginTop = "10px";
+  mainContent.appendChild(mainCardsContainer);
 
-  // If there are accepted IDs, fetch details from Supabase
-  if(fwebData?.accepted && fwebData.accepted.length>0){
+  if(fwebData?.accepted && fwebData.accepted.length > 0){
     for(let id of fwebData.accepted){
       const {data,error} = await supabase.from('fwebaccount').select('username,profile_pic').eq('id',id).single();
       if(data){
@@ -228,7 +240,7 @@ async function loadFwebData(){
         card.classList.add('chat-card');
         card.innerHTML = `<img src="${data.profile_pic || 'https://via.placeholder.com/50'}" alt="Profile Pic">
                           <div class="username">${data.username}</div>`;
-        mainContent.appendChild(card);
+        mainCardsContainer.appendChild(card);
       }
     }
   } else {
@@ -236,11 +248,9 @@ async function loadFwebData(){
     msg.style.color='#aaa';
     msg.style.marginTop='20px';
     msg.textContent="No accepted FCHAT friends yet.";
-    mainContent.appendChild(msg);
+    mainCardsContainer.appendChild(msg);
   }
 }
-
-loadFwebData();
 </script>
 </body>
 </html>
