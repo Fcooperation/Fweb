@@ -1,166 +1,159 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Chat</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Poppins', 'Segoe UI', sans-serif;
-      background: #0a0a0a;
-      color: #fff;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    header {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 12px 15px;
-      background: #121212;
-      border-bottom: 1px solid #222;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-      cursor: pointer;
-    }
-
-    header img {
-      width: 45px;
-      height: 45px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 2px solid #00c6ff;
-    }
-
-    header h3 {
-      font-size: 17px;
-      font-weight: 600;
-      color: #fff;
-    }
-
-    main {
-      flex: 1;
-      overflow-y: auto;
-      padding: 15px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      scroll-behavior: smooth;
-    }
-
-    .msg {
-      max-width: 75%;
-      padding: 10px 14px;
-      border-radius: 15px;
-      font-size: 14px;
-      line-height: 1.4;
-      word-wrap: break-word;
-      animation: fadeIn 0.2s ease-in;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(8px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .sent {
-      align-self: flex-end;
-      background: #00c6ff;
-      color: #000;
-      border-bottom-right-radius: 3px;
-    }
-
-    .received {
-      align-self: flex-start;
-      background: #1a1a1a;
-      border-bottom-left-radius: 3px;
-    }
-
-    footer {
-      display: flex;
-      align-items: center;
-      padding: 10px;
-      background: #121212;
-      border-top: 1px solid #222;
-      position: sticky;
-      bottom: 0;
-    }
-
-    #messageInput {
-      flex: 1;
-      padding: 10px;
-      border-radius: 20px;
-      border: none;
-      outline: none;
-      background: rgba(255,255,255,0.1);
-      color: #fff;
-      font-size: 14px;
-      margin-right: 10px;
-    }
-
-    #sendBtn {
-      background: #00c6ff;
-      border: none;
-      color: #000;
-      padding: 10px 16px;
-      border-radius: 20px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    #sendBtn:active { transform: scale(0.96); }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FCHAT</title>
+<style>
+  body {
+    font-family: 'Poppins','Segoe UI',sans-serif;
+    background: linear-gradient(135deg,#000,#1a1a1a);
+    color:#fff;
+    margin:0;
+    display:flex;
+    flex-direction:column;
+    height:100vh;
+    overflow:hidden;
+  }
+  .top-banner {
+    height:60px;
+    background:rgba(0,0,0,0.85);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:0 15px;
+    font-size:20px;
+    font-weight:700;
+    border-bottom:1px solid rgba(255,255,255,0.1);
+  }
+  .menu-btn { cursor:pointer; font-size:18px; }
+  .main {
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    position:relative;
+    padding-bottom:60px;
+  }
+  #logs { color:#00c6ff; font-size:15px; white-space:nowrap; margin-top:10px; opacity:0; transition:opacity 0.6s;}
+  .fab {
+    position:absolute;
+    bottom:70px;
+    right:20px;
+    width:60px;
+    height:60px;
+    border-radius:50%;
+    background:linear-gradient(135deg,#0072ff,#00c6ff);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-size:28px;
+    cursor:pointer;
+    box-shadow:0 4px 10px rgba(0,0,0,0.3);
+  }
+  .bottom-nav {
+    height:60px;
+    background:rgba(0,0,0,0.85);
+    display:flex;
+    justify-content:space-around;
+    align-items:center;
+    border-top:1px solid rgba(255,255,255,0.1);
+  }
+  .nav-item { text-align:center; font-size:14px; cursor:pointer; opacity:0.8; }
+  .nav-item.active { opacity:1; font-weight:700; }
+</style>
 </head>
 <body>
+  <div class="top-banner">
+    <div>FCHAT</div>
+    <div class="menu-btn" id="menuBtn">☰</div>
+  </div>
 
-<header id="chatHeader">
-  <img id="chatUserPic" src="default.png" alt="Profile" />
-  <h3 id="chatUserName">Username</h3>
-</header>
+  <div class="main" id="mainContent">
+    <div id="loading">
+      <h2>Loading FWEB data...</h2>
+      <div id="logs"></div>
+    </div>
+    <div id="chatInterface" style="display:none;width:100%;height:100%;flex-direction:column;">
+      <!-- WhatsApp style chat blank -->
+      <div style="flex:1; display:flex; justify-content:center; align-items:center; font-size:18px; color:#aaa;">
+        FCHAT Home
+      </div>
+      <div class="fab" id="addBtn">+</div>
+    </div>
+  </div>
 
-<main id="messagesContainer">
-  <div class="msg received">Hey there 👋</div>
-  <div class="msg sent">Hi! How’s everything?</div>
-  <div class="msg received">All good, you?</div>
-  <div class="msg sent">Building FChat 😎</div>
-</main>
+  <div class="bottom-nav">
+    <div class="nav-item active" id="navFchat">FCHAT</div>
+    <div class="nav-item" id="navStatus">Status</div>
+    <div class="nav-item" id="navUpdates">Updates</div>
+    <div class="nav-item" id="navMe">Me</div>
+  </div>
 
-<footer>
-  <input type="text" id="messageInput" placeholder="Type a message..." />
-  <button id="sendBtn">Send</button>
-</footer>
+<script type="module">
+const logsEl = document.getElementById('logs');
+const loadingEl = document.getElementById('loading');
+const chatInterface = document.getElementById('chatInterface');
 
-<script>
-const params = new URLSearchParams(window.location.search);
-const username = params.get("username") || "Unknown User";
-const profilePic = params.get("profile") || "default.png";
+// Floating Add button
+document.getElementById('addBtn').addEventListener('click', ()=>{
+  window.location.href='add.html';
+});
 
-document.getElementById("chatUserName").textContent = username;
-document.getElementById("chatUserPic").src = profilePic;
+// Menu button -> Settings
+document.getElementById('menuBtn').addEventListener('click', ()=>{
+  window.location.href='fchatsettings.html';
+});
 
-document.getElementById("chatHeader").onclick = () => {
-  window.location.href = `user.html?username=${encodeURIComponent(username)}`;
-};
+// Bottom nav click handlers
+document.getElementById('navFchat').addEventListener('click', ()=>setActiveNav('navFchat'));
+document.getElementById('navStatus').addEventListener('click', ()=>setActiveNav('navStatus'));
+document.getElementById('navUpdates').addEventListener('click', ()=>setActiveNav('navUpdates'));
+document.getElementById('navMe').addEventListener('click', ()=>setActiveNav('navMe'));
 
-document.getElementById("sendBtn").onclick = () => {
-  const input = document.getElementById("messageInput");
-  const text = input.value.trim();
-  if (!text) return;
+function setActiveNav(id){
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
 
-  const msgDiv = document.createElement("div");
-  msgDiv.className = "msg sent";
-  msgDiv.textContent = text;
-  document.getElementById("messagesContainer").appendChild(msgDiv);
-  input.value = "";
-  document.getElementById("messagesContainer").scrollTop =
-    document.getElementById("messagesContainer").scrollHeight;
-};
+// Simulate logs & read user storage
+async function loadFwebData(){
+  const logSteps=[
+    "Accessing device storage...",
+    "Fetching FWEB data...",
+    "Loading account details...",
+    "Preparing FCHAT interface...",
+    "✅ FCHAT ready!"
+  ];
+
+  let fwebData = null;
+
+  try{
+    // File System Access API read
+    const dirHandle = await window.showDirectoryPicker();
+    const fileHandle = await dirHandle.getFileHandle('fweb_account.json');
+    const file = await fileHandle.getFile();
+    const text = await file.text();
+    fwebData = JSON.parse(text);
+    console.log('FWEB data loaded:', fwebData);
+  }catch(e){
+    console.warn("Could not read user storage", e);
+  }
+
+  for(let step of logSteps){
+    logsEl.style.opacity=0;
+    await new Promise(r=>setTimeout(r,400));
+    logsEl.textContent = step;
+    logsEl.style.opacity=1;
+    await new Promise(r=>setTimeout(r,1000));
+  }
+
+  loadingEl.style.display='none';
+  chatInterface.style.display='flex';
+}
+
+loadFwebData();
 </script>
-
 </body>
 </html>
