@@ -1,103 +1,107 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Welcome to FCHAT</title>
   <style>
     body {
-      font-family: 'Poppins', 'Segoe UI', sans-serif;
-      background: linear-gradient(135deg, #000000, #1a1a1a);
-      color: #fff;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-      flex-direction: column;
-      text-align: center;
-      overflow: hidden;
+      font-family: 'Poppins','Segoe UI',sans-serif;
+      background: linear-gradient(135deg,#000000,#1a1a1a);
+      color:#fff;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      height:100vh;
+      margin:0;
+      flex-direction:column;
+      text-align:center;
+      overflow:hidden;
     }
     .card {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(12px);
-      border-radius: 24px;
-      padding: 40px 25px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.5);
-      width: 90%;
-      max-width: 420px;
-      animation: fadeInCard 1.5s ease-in-out forwards;
+      background:rgba(255,255,255,0.05);
+      border:1px solid rgba(255,255,255,0.1);
+      backdrop-filter:blur(12px);
+      border-radius:24px;
+      padding:40px 25px;
+      box-shadow:0 0 20px rgba(0,0,0,0.5);
+      width:90%;
+      max-width:420px;
+      animation:fadeInCard 1.5s ease-in-out forwards;
     }
     @keyframes fadeInCard {
-      from { opacity: 0; transform: translateY(30px); }
-      to { opacity: 1; transform: translateY(0); opacity: 1; }
+      from{opacity:0;transform:translateY(30px);}
+      to{opacity:1;transform:translateY(0);}
     }
-    h1 {
-      font-size: 38px;
-      font-weight: 800;
-      letter-spacing: 1px;
-      margin: 0;
-      background: linear-gradient(90deg, #00c6ff, #0072ff);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      opacity: 0;
-      animation: fadeIn 1.5s ease-in-out forwards;
+    h1{
+      font-size:38px;
+      font-weight:800;
+      letter-spacing:1px;
+      margin:0;
+      background:linear-gradient(90deg,#00c6ff,#0072ff);
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+      opacity:0;
+      animation:fadeIn 1.5s ease-in-out forwards;
     }
-    h2 {
-      font-size: 24px;
-      font-weight: 600;
-      margin-top: 20px;
-      opacity: 0;
-      animation: fadeIn 1.5s ease-in-out forwards;
+    h2{
+      font-size:24px;
+      font-weight:600;
+      margin-top:20px;
+      opacity:0;
+      animation:fadeIn 1.5s ease-in-out forwards;
     }
-    p { color: #aaa; font-size: 15px; }
-    .hidden { display: none; }
-
-    .btn {
-      background: linear-gradient(135deg, #0072ff, #00c6ff);
-      color: #fff;
-      border: none;
-      padding: 12px 35px;
-      border-radius: 10px;
-      font-size: 15px;
-      cursor: pointer;
-      margin-top: 25px;
-      transition: all 0.3s ease;
+    p{color:#aaa;font-size:15px;}
+    .hidden{display:none;}
+    .btn{
+      background:linear-gradient(135deg,#0072ff,#00c6ff);
+      color:#fff;
+      border:none;
+      padding:12px 35px;
+      border-radius:10px;
+      font-size:15px;
+      cursor:pointer;
+      margin-top:25px;
+      transition:all .3s ease;
     }
-    .btn:hover { transform: scale(1.05); opacity: 0.9; }
-
-    .input-box {
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      gap: 15px;
-      animation: fadeIn 1.2s ease-in-out forwards;
+    .btn:hover{transform:scale(1.05);opacity:.9;}
+    .input-box{
+      display:none;
+      flex-direction:column;
+      align-items:center;
+      gap:15px;
+      animation:fadeIn 1.2s ease-in-out forwards;
     }
-    input, textarea {
-      width: 90%;
-      max-width: 350px;
-      padding: 12px;
-      border: none;
-      border-radius: 10px;
-      background: rgba(255,255,255,0.1);
-      color: #fff;
-      font-size: 15px;
-      outline: none;
-      text-align: center;
-      transition: all 0.3s ease;
+    input,textarea{
+      width:90%;
+      max-width:350px;
+      padding:12px;
+      border:none;
+      border-radius:10px;
+      background:rgba(255,255,255,0.1);
+      color:#fff;
+      font-size:15px;
+      outline:none;
+      text-align:center;
+      transition:all .3s ease;
     }
-    input:focus, textarea:focus {
-      background: rgba(255,255,255,0.15);
+    input:focus,textarea:focus{background:rgba(255,255,255,0.15);}
+    textarea{resize:none;height:100px;}
+    @keyframes fadeIn{
+      from{opacity:0;transform:translateY(15px);}
+      to{opacity:1;transform:translateY(0);}
     }
-    textarea {
-      resize: none;
-      height: 100px;
+    /* log line */
+    #log-line{
+      margin-top:20px;
+      font-size:16px;
+      color:#00c6ff;
+      white-space:nowrap;
+      overflow:hidden;
+      border-right:2px solid #00c6ff;
+      animation:blink 1s step-end infinite;
     }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(15px); }
-      to { opacity: 1; transform: translateY(0); opacity: 1; }
-    }
+    @keyframes blink{50%{border-color:transparent;}}
   </style>
 </head>
 <body>
@@ -119,92 +123,132 @@
       <button class="btn" id="save-bio">Next</button>
       <button class="btn" id="skip-bio" style="background:rgba(255,255,255,0.1);">Skip</button>
     </div>
+
+    <!-- final Fchat section -->
+    <div id="final-box" class="hidden">
+      <h2 id="final-title">Finalizing FCHAT Setup...</h2>
+      <div id="log-line"></div>
+    </div>
   </div>
 
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-
     const supabaseUrl = "https://pwsxezhugsxosbwhkdvf.supabase.co";
     const supabaseAnonKey =
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-    const brand = document.getElementById("brand");
-    const welcomeText = document.getElementById("welcome-text");
-    const hiUser = document.getElementById("hiUser");
-    const dobBox = document.getElementById("dob-box");
-    const bioBox = document.getElementById("bio-box");
-    const user = JSON.parse(localStorage.getItem("faccount"));
+    const brand=document.getElementById("brand");
+    const welcomeText=document.getElementById("welcome-text");
+    const hiUser=document.getElementById("hiUser");
+    const dobBox=document.getElementById("dob-box");
+    const bioBox=document.getElementById("bio-box");
+    const finalBox=document.getElementById("final-box");
+    const logLine=document.getElementById("log-line");
+    const user=JSON.parse(localStorage.getItem("faccount"));
 
-    // Step 1 — Brand fade in then Welcome
-    setTimeout(() => {
-      brand.style.opacity = "1";
-      setTimeout(() => {
+    /* brand fade */
+    setTimeout(()=>{
+      brand.style.opacity="1";
+      setTimeout(()=>{
         brand.classList.add("hidden");
         welcomeText.classList.remove("hidden");
-        welcomeText.style.opacity = "1";
-      }, 2000);
-    }, 200);
+        welcomeText.style.opacity="1";
+      },2000);
+    },200);
 
-    // Step 2 — After welcome done, show hiUser text then Next button
-    setTimeout(() => {
+    /* show hiUser */
+    setTimeout(()=>{
       welcomeText.classList.add("hidden");
       hiUser.classList.remove("hidden");
-      hiUser.innerHTML = `<h2 style="animation-delay:0s;">Hi ${user?.username || "User"}<br>Welcome to FCHAT</h2>
-                          <button class='btn hidden' id='next-btn'>Next</button>`;
-
-      setTimeout(() => {
-        document.getElementById("next-btn").classList.remove("hidden");
-      }, 1500);
-      document.getElementById("next-btn").addEventListener("click", () => {
+      hiUser.innerHTML=`<h2>Hi ${user?.username||"User"}<br>Welcome to FCHAT</h2>
+        <button class='btn hidden' id='next-btn'>Next</button>`;
+      setTimeout(()=>document.getElementById("next-btn").classList.remove("hidden"),1500);
+      document.getElementById("next-btn").addEventListener("click",()=>{
         hiUser.classList.add("hidden");
-        setTimeout(() => dobBox.style.display = "flex", 200);
+        setTimeout(()=>dobBox.style.display="flex",200);
       });
-    }, 4500);
+    },4500);
 
-    // Step 3 — Save DOB
-    document.getElementById("save-dob").addEventListener("click", async () => {
-      const dob = document.getElementById("dob").value;
-      if (!dob) return alert("Please enter your date of birth.");
-
-      const { error } = await supabase
-        .from("fwebaccount")
-        .update({ dob })
-        .eq("email", user.email);
-
-      if (error) return alert("Error saving DOB: " + error.message);
-
-      user.dob = dob;
-      localStorage.setItem("faccount", JSON.stringify(user));
-      dobBox.style.display = "none";
-      setTimeout(() => bioBox.style.display = "flex", 200);
+    /* save dob */
+    document.getElementById("save-dob").addEventListener("click",async()=>{
+      const dob=document.getElementById("dob").value;
+      if(!dob)return alert("Please enter your date of birth.");
+      const {error}=await supabase.from("fwebaccount").update({dob}).eq("email",user.email);
+      if(error)return alert("Error saving DOB: "+error.message);
+      user.dob=dob;
+      localStorage.setItem("faccount",JSON.stringify(user));
+      dobBox.style.display="none";
+      setTimeout(()=>bioBox.style.display="flex",200);
     });
 
-    // Step 4 — Save BIO + mark fchat
-    async function completeFchat(bioValue) {
-      const updates = { bio: bioValue, fchat: "yes" };
-      const { error } = await supabase
-        .from("fwebaccount")
-        .update(updates)
-        .eq("email", user.email);
-
-      if (error) return alert("Error saving data: " + error.message);
-
-      user.bio = bioValue;
-      user.fchat = "yes";
-      localStorage.setItem("faccount", JSON.stringify(user));
-
-      alert("🎉 Your FCHAT account is ready!");
-      window.location.href = "fchat.html";
+    /* complete fchat */
+    async function completeFchat(bioValue){
+      const updates={bio:bioValue,fchat:"yes"};
+      const {error}=await supabase.from("fwebaccount").update(updates).eq("email",user.email);
+      if(error)return alert("Error saving data: "+error.message);
+      user.bio=bioValue;user.fchat="yes";
+      localStorage.setItem("faccount",JSON.stringify(user));
+      bioBox.style.display="none";
+      setTimeout(()=>startFinalPhase(),300);
     }
 
-    document.getElementById("save-bio").addEventListener("click", () => {
-      const bio = document.getElementById("bio").value.trim();
+    document.getElementById("save-bio").addEventListener("click",()=>{
+      const bio=document.getElementById("bio").value.trim();
       completeFchat(bio);
     });
-    document.getElementById("skip-bio").addEventListener("click", () => {
-      completeFchat("");
-    });
+    document.getElementById("skip-bio").addEventListener("click",()=>completeFchat(""));
+
+    /* final log + saving */
+    async function startFinalPhase(){
+      finalBox.classList.remove("hidden");
+      await typeLog("Syncing account...");
+      const {data,error}=await supabase.from("fwebaccount").select("*");
+      if(error){await typeLog("Error syncing ❌");return;}
+      await pause(500);
+      await typeLog("Copying data to device...");
+      try{
+        localStorage.setItem("fweb_table",JSON.stringify(data));
+        await pause(500);
+        await typeLog("Creating local FWEB and FCHAT storage...");
+        // simulate folders using IndexedDB
+        await saveIndexed("fweb_data",data);
+        await saveIndexed("fchat_data",data);
+        await pause(700);
+        await typeLog("Setup complete ✅");
+      }catch(e){
+        await typeLog("Failed saving locally ❌");
+        console.error(e);
+      }
+    }
+
+    function pause(ms){return new Promise(r=>setTimeout(r,ms));}
+    async function typeLog(text){
+      logLine.textContent=text;
+      await pause(1200);
+      logLine.textContent=text+" done";
+      await pause(500);
+    }
+
+    async function saveIndexed(dbName,data){
+      return new Promise((resolve,reject)=>{
+        const req=indexedDB.open(dbName,1);
+        req.onupgradeneeded=e=>{
+          const db=e.target.result;
+          if(!db.objectStoreNames.contains("records"))
+            db.createObjectStore("records",{keyPath:"id",autoIncrement:true});
+        };
+        req.onsuccess=e=>{
+          const db=e.target.result;
+          const tx=db.transaction("records","readwrite");
+          const store=tx.objectStore("records");
+          data.forEach(row=>store.add(row));
+          tx.oncomplete=()=>resolve(true);
+          tx.onerror=()=>reject(tx.error);
+        };
+        req.onerror=()=>reject(req.error);
+      });
+    }
   </script>
 </body>
 </html>
