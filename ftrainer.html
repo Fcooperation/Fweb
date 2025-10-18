@@ -22,49 +22,43 @@
   input[type="file"] { margin-top: 10px; }
   #preview { background: #272822; color: #f8f8f2; font-family: monospace; padding: 15px; border-radius: 6px; max-height: 300px; overflow-y: auto; margin-top: 10px; white-space: pre-wrap; }
   #feedback { margin-top: 15px; font-weight: bold; color: #333; }
-  #logs { margin-top: 15px; background: #f1f1f1; padding: 10px; border-radius: 6px; max-height: 250px; overflow-y: auto; font-family: monospace; white-space: pre-wrap; }
-  .train-settings { margin-top: 15px; display: flex; align-items: center; gap: 10px; }
-  .train-settings input { width: 80px; padding: 6px; border-radius: 4px; border: 1px solid #ccc; }
+  #logs { margin-top: 15px; background: #f1f1f1; padding: 10px; border-radius: 6px; max-height: 300px; overflow-y: auto; font-family: monospace; white-space: pre-wrap; }
 </style>
 </head>
 <body>
+
 <h2>FTrainer - Train Your Model</h2>
 
-<!-- Section 1: Prompt/Response Columns -->
 <div class="section">
   <h3>Prompt/Response Input</h3>
   <div id="columns-container" class="columns"></div>
   <button id="add-column" class="add-btn">➕ Add Prompt/Response</button>
 </div>
 
-<!-- Section 2: Raw JSON Input -->
 <div class="section">
   <h3>Raw JSON Input</h3>
   <textarea id="raw-json" placeholder='{"prompt": "repeat what you just said", "response": "repeat what you just said"}'></textarea>
 </div>
 
-<!-- Section 3: File Upload -->
 <div class="section">
   <h3>Upload JSON File</h3>
   <input type="file" id="file-upload" accept=".json,.txt">
 </div>
 
-<!-- Preview Section -->
+<div class="section">
+  <label for="train-cycles">Training cycles:</label>
+  <input type="number" id="train-cycles" value="1" min="1" style="width:60px;">
+</div>
+
 <div class="section">
   <h3>Live JSON Preview</h3>
   <div id="preview">{}</div>
 </div>
 
-<!-- Training Controls -->
-<div class="train-settings">
-  <label for="train-cycles">Training Cycles:</label>
-  <input type="number" id="train-cycles" value="1" min="1">
-  <button id="send-data" class="send-btn">🚀 Send to Train</button>
-</div>
-
+<button id="send-data" class="send-btn">🚀 Send to Train</button>
+<button id="download-model" disabled>⬇️ Download Model</button>
 <div id="feedback"></div>
 
-<!-- Logs Section -->
 <div class="section">
   <h3>Logs</h3>
   <div id="logs">Logs will appear here...</div>
@@ -80,9 +74,10 @@ const fileUpload = document.getElementById("file-upload");
 const preview = document.getElementById("preview");
 const logs = document.getElementById("logs");
 const trainCyclesInput = document.getElementById("train-cycles");
+const downloadBtn = document.getElementById("download-model");
 
 function log(message) {
-  logs.innerText += "\\n" + message;
+  logs.innerText += "\n" + message;
   logs.scrollTop = logs.scrollHeight;
 }
 
@@ -131,7 +126,7 @@ async function collectData() {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) data = data.concat(parsed);
       else if (parsed.prompt && parsed.response) data.push(parsed);
-    } catch (e) { log("⚠️ Invalid JSON in Raw Input"); }
+    } catch(e) { log("⚠️ Invalid JSON in Raw Input"); }
   }
 
   if (fileUpload.files.length > 0) {
@@ -141,7 +136,7 @@ async function collectData() {
       const parsed = JSON.parse(text);
       if (Array.isArray(parsed)) data = data.concat(parsed);
       else if (parsed.prompt && parsed.response) data.push(parsed);
-    } catch (err) { log("❌ Could not parse file: " + err.message); }
+    } catch(err) { log("❌ Could not parse file: " + err.message); }
   }
 
   return data;
@@ -157,19 +152,37 @@ async function sendTrainingRequest(data, round, totalRounds) {
   log(`🔁 Training round ${round}/${totalRounds}...`);
   feedback.innerText = `⏳ Training round ${round} of ${totalRounds}...`;
 
-  const res = await fetch("https://fweb-backend.onrender.com/train", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ data })
-  });
+  try {
+    const res = await fetch("https://fweb-backend.onrender.com/train", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ data })
+    });
 
-  const result = await res.json();
-  if (result.success) {
-    log(`✅ Training round ${round} complete.`);
-  } else {
-    log(`❌ Training round ${round} failed: ${result.error || "Unknown error"}`);
+    const result = await res.json();
+
+    // Show epoch logs if any
+    if (result.training_logs && result.training_logs.length > 0) {
+      result.training_logs.forEach(line => log("🧠 " + line));
+    }
+
+    if (result.success) {
+      log(`✅ Training round ${round} complete.`);
+      if (result.download_url) {
+        downloadBtn.disabled = false;
+        downloadBtn.onclick = () => window.open(result.download_url, "_blank");
+        log(`📦 Model ready for download: ${result.download_url}`);
+      }
+    } else {
+      log(`❌ Training round ${round} failed: ${result.error || "Unknown error"}`);
+    }
+
+    return result.success;
+
+  } catch(err) {
+    log(`❌ Could not reach backend: ${err.message}`);
+    return false;
   }
-  return result.success;
 }
 
 sendBtn.onclick = async () => {
@@ -196,76 +209,6 @@ sendBtn.onclick = async () => {
 
 rawJson.addEventListener("input", updatePreview);
 fileUpload.addEventListener("change", updatePreview);
-</script>
-<script>
-  // === CONFIG ===
-  const NGROK_BASE = "https://mindy-sinistrous-fortuitously.ngrok-free.dev";
-
-  // === ADD TEST & DOWNLOAD SECTION ===
-  const section = document.createElement("div");
-  section.style.textAlign = "center";
-  section.style.marginTop = "25px";
-  section.innerHTML = `
-    <div style="margin-bottom: 20px;">
-      <button id="testModelBtn" style="padding:10px 20px; margin:5px; border:none; border-radius:8px; background:#28a745; color:white; cursor:pointer;">
-        💬 Test Model
-      </button>
-      <button id="downloadModelBtn" style="padding:10px 20px; margin:5px; border:none; border-radius:8px; background:#007bff; color:white; cursor:pointer;">
-        ⬇️ Download Model
-      </button>
-    </div>
-    <div id="testInterface" style="display:none; margin:auto; max-width:400px; background:#1a1a1a; padding:15px; border-radius:10px;">
-      <input id="userInput" type="text" placeholder="Type your message..." style="width:100%; padding:10px; border:none; border-radius:6px; margin-bottom:10px;">
-      <button id="sendBtn" style="width:100%; padding:10px; background:#28a745; border:none; border-radius:6px; color:white; cursor:pointer;">Send</button>
-      <div id="responseBox" style="margin-top:10px; color:#fff; text-align:left; white-space:pre-wrap;"></div>
-    </div>
-  `;
-  document.body.appendChild(section);
-
-  // === DOWNLOAD ===
-  document.getElementById("downloadModelBtn").addEventListener("click", () => {
-    window.open(`${NGROK_BASE}/download_checkpoint`, "_blank");
-  });
-
-  // === SHOW TEST INTERFACE ===
-  document.getElementById("testModelBtn").addEventListener("click", () => {
-    document.getElementById("testInterface").style.display = "block";
-  });
-
-  // === SEND QUERY TO MODEL ===
-  document.getElementById("sendBtn").addEventListener("click", async () => {
-    const query = document.getElementById("userInput").value.trim();
-    const box = document.getElementById("responseBox");
-
-    if (!query) {
-      box.innerText = "⚠️ Please enter a message first.";
-      return;
-    }
-
-    box.innerText = "⏳ Thinking...";
-    try {
-      const res = await fetch(`${NGROK_BASE}/generate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: query })
-      });
-      const data = await res.json();
-      box.innerText = `🧠 Model: ${data.response || "No response"}`;
-    } catch (err) {
-      box.innerText = `❌ Error: ${err.message}`;
-    }
-  });
-
-  // === FIX: Re-enable epoch display if lost ===
-  const oldLog = window.log;
-  window.log = function (msg) {
-    const logsEl = document.getElementById("logs");
-    if (logsEl) {
-      logsEl.textContent += `\n${msg}`;
-      logsEl.scrollTop = logsEl.scrollHeight;
-    }
-    if (oldLog) oldLog(msg);
-  };
 </script>
 </body>
 </html>
