@@ -3,37 +3,119 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Add Friends</title>
+<title>FCHAT Search</title>
 <style>
-  body { margin:0; font-family:'Poppins',sans-serif; background:#0d1117; color:#fff; display:flex; flex-direction:column; min-height:100vh; }
-  header { background:#161b22; padding:15px; text-align:center; font-size:20px; font-weight:bold; border-bottom:1px solid #30363d; color:#00c6ff; letter-spacing:1px; position:relative;}
-  .reload-btn { position:absolute; top:15px; right:15px; background:#238636; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; color:#fff; font-weight:500; }
-  .search-box { padding:15px; }
-  input[type="text"] { width:100%; padding:12px; border-radius:10px; border:none; outline:none; font-size:16px; background:#21262d; color:#fff; }
-  .results { flex:1; padding:10px; overflow-y:auto; }
-  .card { display:flex; justify-content:space-between; align-items:center; background:#161b22; margin:10px 0; padding:15px; border-radius:10px; border:1px solid #30363d; transition: background 0.3s ease; }
-  .card:hover { background:#1e242b; }
-  .card span { font-weight:500; font-size:16px; }
-  .card .pending { color:#facc15; font-size:14px; }
-  .card button { background:#238636; border:none; color:#fff; padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:500; transition:background 0.3s; }
-  .card button:hover { background:#2ea043; }
-  .card button:disabled { background:#444; cursor:not-allowed; }
-  .status { text-align:center; padding:20px; color:#999; }
-  .bottom { background:#161b22; padding:15px; text-align:center; border-top:1px solid #30363d; }
-  .bottom button { width:100%; background:#238636; border:none; color:white; padding:12px; border-radius:10px; font-size:16px; cursor:pointer; }
+  body {
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+    background: #0d1117;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+  header {
+    background: #161b22;
+    padding: 15px;
+    text-align: center;
+    font-size: 20px;
+    font-weight: bold;
+    border-bottom: 1px solid #30363d;
+    color: #00c6ff;
+    letter-spacing: 1px;
+  }
+  .search-box {
+    padding: 15px;
+  }
+  input[type="text"] {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    outline: none;
+    font-size: 16px;
+    background: #21262d;
+    color: #fff;
+  }
+  .results {
+    flex: 1;
+    padding: 10px;
+    overflow-y: auto;
+  }
+  .card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #161b22;
+    margin: 10px 0;
+    padding: 12px 15px;
+    border-radius: 10px;
+    border: 1px solid #30363d;
+    transition: all 0.2s ease;
+  }
+  .card:hover { background: #1e242b; }
+  .card .username {
+    font-weight: 600;
+    font-size: 16px;
+  }
+  .card img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 12px;
+    border: 1px solid #444;
+  }
+  .card button {
+    background: #238636;
+    border: none;
+    color: #fff;
+    padding: 8px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.2s;
+  }
+  .card button:hover { background: #2ea043; }
+  .card button:disabled {
+    background: #444;
+    cursor: not-allowed;
+  }
+  .log {
+    text-align: center;
+    font-size: 14px;
+    color: #00c6ff;
+    padding: 6px 0;
+    border-top: 1px solid #30363d;
+    background: #161b22;
+  }
+  .bottom {
+    background: #161b22;
+    padding: 15px;
+    text-align: center;
+    border-top: 1px solid #30363d;
+  }
+  .bottom button {
+    width: 100%;
+    background: #238636;
+    border: none;
+    color: white;
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 16px;
+    cursor: pointer;
+  }
 </style>
 </head>
 <body>
-<header>
-  Add Friends
-  <button class="reload-btn" id="reloadBtn">Reload</button>
-</header>
+<header>FCHAT Search</header>
 
 <div class="search-box">
   <input type="text" id="searchInput" placeholder="Search username..." />
 </div>
 
-<div id="resultsContainer" class="results"></div>
+<div id="results" class="results"></div>
+<div id="logArea" class="log"></div>
 
 <div class="bottom">
   <button onclick="window.location.href='fchat.html'">Back</button>
@@ -48,142 +130,121 @@ const supabase = createClient(
 );
 
 const searchInput = document.getElementById("searchInput");
-const resultsContainer = document.getElementById("resultsContainer");
-const reloadBtn = document.getElementById("reloadBtn");
+const resultsContainer = document.getElementById("results");
+const logArea = document.getElementById("logArea");
 
-// Load logged-in account from device storage
-let faccount = null;
-let dirHandle = null;
-async function loadLocalAccount() {
-  try {
-    dirHandle = await window.showDirectoryPicker();
-    const fileHandle = await dirHandle.getFileHandle('fweb_account.json');
-    const file = await fileHandle.getFile();
-    faccount = JSON.parse(await file.text());
-  } catch(e) {
-    alert("Could not load account from storage.");
-  }
+// Load logged-in user from local storage
+let faccount = JSON.parse(localStorage.getItem("faccount"));
+if(!faccount || !faccount.id){
+  alert("No account found. Please log in first.");
 }
 
-// Helper to write back to storage
-async function writeLocalAccount() {
-  if (!dirHandle || !faccount) return;
-  const fileHandle = await dirHandle.getFileHandle('fweb_account.json', { create:true });
-  const writable = await fileHandle.createWritable();
-  await writable.write(JSON.stringify(faccount));
-  await writable.close();
-}
+// Keep track of shown user IDs to avoid duplicates
+const shownIds = new Set();
 
-// Show users as cards
-function displayUsers(users) {
-  resultsContainer.innerHTML = users.length === 0 
-    ? `<div class="status">No users to show</div>`
-    : users.map(u => {
-        const alreadyAdded = faccount.accepted?.includes(String(u.id));
-        return `
-          <div class="card">
-            <span>${u.username}</span>
-            ${
-              alreadyAdded
-                ? `<button disabled>Added ✓</button>`
-                : `<button onclick="sendRequest('${u.id}','${u.username}')">Add</button>`
-            }
-          </div>`;
-      }).join('');
-}
-
-// Load accepted users from storage first
-async function loadAcceptedUsers() {
-  if (!faccount?.accepted || faccount.accepted.length===0) return [];
-  const acceptedIds = faccount.accepted.map(String);
-  const { data, error } = await supabase
-    .from('fwebaccount')
-    .select('id,username')
-    .in('id', acceptedIds);
-
-  if (error || !data) return [];
-  return data;
-}
-
-// Load broadcast users and merge with storage
-async function loadAllUsers() {
-  resultsContainer.innerHTML = `<div class="status">Loading...</div>`;
-  let users = await loadAcceptedUsers();
-  const shownIds = users.map(u => u.id);
-
-  const { data: allUsers } = await supabase
-    .from('fwebaccount')
-    .select('id,username,friend_requests,fchat')
-    .eq('fchat','yes');
-
-  if (allUsers) {
-    for (const u of allUsers) {
-      if (u.id !== faccount.id && !shownIds.includes(u.id)) {
-        users.push(u);
-      }
+// Render cards
+function renderCards(users){
+  users.forEach(u=>{
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+      <div style="display:flex;align-items:center">
+        <img src="${u.profile_pic || 'https://via.placeholder.com/40'}" alt="Profile">
+        <div class="username">${u.username}</div>
+      </div>
+      <button ${u.alreadyAdded?'disabled':''}>${u.alreadyAdded?'Added ✓':'Add'}</button>
+    `;
+    const btn = card.querySelector("button");
+    if(!u.alreadyAdded){
+      btn.addEventListener("click", ()=>sendRequest(u));
     }
+    resultsContainer.appendChild(card);
+  });
+}
+
+// Send friend request
+async function sendRequest(user){
+  try{
+    const nowUTC = new Date().toISOString();
+    // Get target's current friend_requests
+    const { data: target, error } = await supabase
+      .from("fwebaccount")
+      .select("friend_requests,accepted")
+      .eq("id", user.id)
+      .maybeSingle();
+    if(error || !target) return logArea.textContent = "Error sending request";
+
+    let requests = target.friend_requests ? target.friend_requests.split(",").map(s=>s.trim()) : [];
+    if(requests.includes(String(faccount.id))) return logArea.textContent = "Already sent";
+
+    requests.push(String(faccount.id));
+    // Update Supabase
+    const { error: updateErr } = await supabase
+      .from("fwebaccount")
+      .update({ friend_requests: requests.join(","), sent_at: nowUTC })
+      .eq("id", user.id);
+    if(updateErr) return logArea.textContent = "Error sending request";
+
+    // Add to accepted locally
+    let localData = JSON.parse(localStorage.getItem("faccount")) || {};
+    let accepted = localData.accepted ? localData.accepted.split(",").map(a=>a.trim()) : [];
+    if(!accepted.includes(String(user.id))) accepted.push(String(user.id));
+    localData.accepted = accepted.join(",");
+    localStorage.setItem("faccount", JSON.stringify(localData));
+
+    btn = user.buttonElement;
+    if(btn) btn.disabled=true;
+    logArea.textContent = `✅ Request sent to ${user.username}`;
+
+  }catch(e){
+    console.error(e);
+    logArea.textContent = "Error sending request";
   }
-  displayUsers(users);
 }
 
 // Search users
 let typingTimer;
 const delay = 400;
-searchInput.addEventListener("input", () => {
+searchInput.addEventListener("input", ()=>{
   clearTimeout(typingTimer);
-  const query = searchInput.value.trim();
-  if (query==="") { loadAllUsers(); return; }
-  typingTimer = setTimeout(()=>searchUsers(query), delay);
+  typingTimer = setTimeout(async ()=>{
+    const query = searchInput.value.trim();
+    resultsContainer.innerHTML = "";
+    if(!query){
+      logArea.textContent = "";
+      return;
+    }
+    logArea.textContent = "🔍 Searching...";
+    try{
+      const { data, error } = await supabase
+        .from("fwebaccount")
+        .select("id,username,profile_pic,friend_requests")
+        .ilike("username", `%${query}%`)
+        .limit(20);
+      if(error) throw error;
+      if(!data || data.length===0){
+        logArea.textContent = "No results found";
+        return;
+      }
+
+      const localData = JSON.parse(localStorage.getItem("faccount")) || {};
+      const acceptedList = localData.accepted ? localData.accepted.split(",").map(a=>a.trim()) : [];
+
+      const users = data
+        .filter(u => u.id != faccount.id)
+        .map(u => ({
+          ...u,
+          alreadyAdded: acceptedList.includes(String(u.id))
+        }));
+
+      renderCards(users);
+      logArea.textContent = "";
+    }catch(err){
+      console.error(err);
+      logArea.textContent = "Error fetching results";
+    }
+  }, delay);
 });
-
-async function searchUsers(query) {
-  const { data, error } = await supabase
-    .from('fwebaccount')
-    .select('id,username,friend_requests,fchat')
-    .ilike('username', `%${query}%`);
-
-  if (error || !data) { resultsContainer.innerHTML=`<div class="status">Error</div>`; return; }
-
-  const filtered = data.filter(u => u.id!==faccount.id);
-  displayUsers(filtered);
-}
-
-// Send friend request
-window.sendRequest = async (targetId,targetName) => {
-  if (!faccount) return;
-  // Fetch target's friend_requests
-  const { data: target } = await supabase
-    .from('fwebaccount')
-    .select('friend_requests')
-    .eq('id', targetId)
-    .maybeSingle();
-
-  let requests = target.friend_requests ? target.friend_requests.split(',').map(s=>s.trim()) : [];
-  if (!requests.includes(String(faccount.id))) requests.push(String(faccount.id));
-
-  // Update target in supabase
-  await supabase.from('fwebaccount').update({friend_requests:requests.join(',')}).eq('id',targetId);
-
-  // Update local storage accepted
-  faccount.accepted = faccount.accepted || [];
-  if (!faccount.accepted.includes(String(targetId))) faccount.accepted.push(String(targetId));
-
-  await writeLocalAccount();
-  loadAllUsers();
-  alert(`✅ Added ${targetName}`);
-};
-
-// Reload button
-reloadBtn.addEventListener('click', async ()=>{
-  await loadLocalAccount();
-  loadAllUsers();
-});
-
-// Initial load
-(async()=>{
-  await loadLocalAccount();
-  loadAllUsers();
-})();
 </script>
 </body>
 </html>
