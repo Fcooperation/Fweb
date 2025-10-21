@@ -1,91 +1,152 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FTrainer Frontend</title>
-<style>
-  body { font-family: Arial, sans-serif; padding: 20px; }
-  #logs { white-space: pre-line; background: #f0f0f0; padding: 10px; height: 300px; overflow-y: auto; border: 1px solid #ccc; margin-top: 10px; }
-  #downloadBtn { display: none; margin-top: 10px; padding: 10px 20px; background: #28a745; color: white; border: none; cursor: pointer; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FTrainer Frontend</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      height: 100vh;
+      padding: 30px;
+    }
+    h1 {
+      color: #38bdf8;
+      margin-bottom: 10px;
+    }
+    textarea {
+      width: 90%;
+      height: 120px;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      outline: none;
+      margin-bottom: 10px;
+      font-family: monospace;
+      font-size: 14px;
+      background: #1e293b;
+      color: #e2e8f0;
+      resize: none;
+    }
+    button {
+      background: #38bdf8;
+      border: none;
+      color: #0f172a;
+      font-weight: bold;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    button:disabled {
+      background: #64748b;
+      cursor: not-allowed;
+    }
+    #logs {
+      width: 90%;
+      height: 300px;
+      background: #1e293b;
+      padding: 10px;
+      overflow-y: auto;
+      border-radius: 8px;
+      white-space: pre-wrap;
+      margin-top: 10px;
+      font-family: monospace;
+      font-size: 14px;
+    }
+  </style>
 </head>
 <body>
+  <h1>FTrainer 🧠</h1>
+  <p>Enter your JSON training data (prompt-response pairs):</p>
 
-<h1>FTrainer</h1>
+  <textarea id="trainingData" placeholder='[
+  { "prompt": "Hello", "response": "Hi there!" },
+  { "prompt": "How are you?", "response": "I am great, thanks!" }
+]'></textarea>
 
-<input type="file" id="jsonFile" accept=".json" />
-<button id="trainBtn">Start Training</button>
+  <div>
+    <button id="startBtn" onclick="startTraining()">Start Training</button>
+    <button id="downloadBtn" onclick="downloadModel()" disabled>Download Model</button>
+  </div>
 
-<div id="logs"></div>
-<button id="downloadBtn">Download Trained Model</button>
+  <div id="logs">💤 Waiting to start training...</div>
 
-<script>
-const trainBtn = document.getElementById("trainBtn");
-const jsonFile = document.getElementById("jsonFile");
-const logsDiv = document.getElementById("logs");
-const downloadBtn = document.getElementById("downloadBtn");
+  <script>
+    const BACKEND_URL = "https://fweb-backend.onrender.com"; // your Render backend
+    const COLAB_URL = "https://mindy-sinistrous-fortuitously.ngrok-free.dev"; // your Colab ngrok URL
 
-const BACKEND_URL = "https://fweb-backend.onrender.com"; // replace with your Render backend URL
+    async function startTraining() {
+      const logs = document.getElementById("logs");
+      const btn = document.getElementById("startBtn");
+      const downloadBtn = document.getElementById("downloadBtn");
+      btn.disabled = true;
+      downloadBtn.disabled = true;
+      logs.textContent = "🚀 Sending training data...\n";
 
-trainBtn.addEventListener("click", () => {
-  if (!jsonFile.files[0]) {
-    alert("Please select a JSON file!");
-    return;
-  }
-
-  const reader = new FileReader();
-  reader.onload = async (e) => {
-    let jsonData;
-    try {
-      jsonData = JSON.parse(e.target.result);
-    } catch (err) {
-      alert("Invalid JSON file.");
-      return;
-    }
-
-    logsDiv.textContent = "🚀 Starting training...\n";
-
-    // Use EventSource polyfill for SSE via fetch + ReadableStream
-    try {
-      const res = await fetch(`${BACKEND_URL}/train`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(jsonData)
-      });
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder("utf-8");
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value);
-        chunk.split("\n\n").forEach(line => {
-          if (line.startsWith("data:")) {
-            const msg = line.replace("data: ", "").trim();
-            logsDiv.textContent += msg + "\n";
-            logsDiv.scrollTop = logsDiv.scrollHeight;
-
-            if (msg === "TRAINING_COMPLETE") {
-              downloadBtn.style.display = "inline-block";
-            }
-          }
-        });
+      let data;
+      try {
+        data = JSON.parse(document.getElementById("trainingData").value);
+      } catch (err) {
+        logs.textContent += "❌ Invalid JSON format.";
+        btn.disabled = false;
+        return;
       }
-    } catch (err) {
-      logsDiv.textContent += "\n❌ Error: " + err.message;
+
+      // Send to Render, which sends to Colab
+      try {
+        const response = await fetch(`${BACKEND_URL}/train`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ data })
+        });
+
+        if (!response.ok) {
+          logs.textContent += `\n❌ Failed to start training (${response.status})`;
+          btn.disabled = false;
+          return;
+        }
+
+        // Open live stream directly from Colab
+        const sse = new EventSource(`${COLAB_URL}/train_stream`);
+
+        logs.textContent += "\n📡 Connected to Colab...\n";
+        sse.onmessage = (event) => {
+          if (event.data.includes("TRAINING_COMPLETE")) {
+            logs.textContent += "\n✅ Training complete! You can now download the model.\n";
+            downloadBtn.disabled = false;
+            sse.close();
+          } else {
+            logs.textContent += event.data + "\n";
+          }
+          logs.scrollTop = logs.scrollHeight;
+        };
+
+        sse.onerror = (err) => {
+          logs.textContent += "\n⚠️ Connection lost or error.\n";
+          console.error(err);
+          sse.close();
+          btn.disabled = false;
+        };
+
+      } catch (err) {
+        logs.textContent += "\n❌ Error connecting to backend.\n";
+        console.error(err);
+        btn.disabled = false;
+      }
     }
-  };
 
-  reader.readAsText(jsonFile.files[0]);
-});
-
-downloadBtn.addEventListener("click", () => {
-  window.open(`${BACKEND_URL}/download_checkpoint`, "_blank");
-});
-</script>
-
+    function downloadModel() {
+      const link = document.createElement("a");
+      link.href = `${COLAB_URL}/download_checkpoint`;
+      link.click();
+    }
+  </script>
 </body>
 </html>
