@@ -5,74 +5,87 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FTrainer Frontend</title>
 <style>
-  body { font-family: sans-serif; padding: 20px; }
-  #logs { height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; margin-top: 10px; background: #f9f9f9; }
-  #downloadBtn { display: none; margin-top: 10px; padding: 8px 12px; background: #4caf50; color: white; text-decoration: none; border-radius: 4px; }
+  body { font-family: Arial, sans-serif; padding: 20px; }
+  #logs { white-space: pre-line; background: #f0f0f0; padding: 10px; height: 300px; overflow-y: auto; border: 1px solid #ccc; margin-top: 10px; }
+  #downloadBtn { display: none; margin-top: 10px; padding: 10px 20px; background: #28a745; color: white; border: none; cursor: pointer; }
 </style>
 </head>
 <body>
-<h2>FTrainer</h2>
 
-<input type="file" id="jsonFile" accept=".json"/>
+<h1>FTrainer</h1>
+
+<input type="file" id="jsonFile" accept=".json" />
 <button id="trainBtn">Start Training</button>
 
 <div id="logs"></div>
-<a id="downloadBtn" href="">Download Trained Model</a>
+<button id="downloadBtn">Download Trained Model</button>
 
 <script>
-const fileInput = document.getElementById("jsonFile");
 const trainBtn = document.getElementById("trainBtn");
+const jsonFile = document.getElementById("jsonFile");
 const logsDiv = document.getElementById("logs");
 const downloadBtn = document.getElementById("downloadBtn");
 
-// Replace with your Colab ngrok URL
-const COLAB_URL = "YOUR_NGROK_URL";
+const BACKEND_URL = "https://YOUR_RENDER_URL_HERE"; // replace with your Render backend URL
 
-trainBtn.onclick = () => {
-  const file = fileInput.files[0];
-  if (!file) return alert("Please select a JSON file first.");
+trainBtn.addEventListener("click", () => {
+  if (!jsonFile.files[0]) {
+    alert("Please select a JSON file!");
+    return;
+  }
 
   const reader = new FileReader();
-  reader.onload = () => {
-    let data;
+  reader.onload = async (e) => {
+    let jsonData;
     try {
-      data = JSON.parse(reader.result);
-    } catch(e) {
-      return alert("Invalid JSON file.");
+      jsonData = JSON.parse(e.target.result);
+    } catch (err) {
+      alert("Invalid JSON file.");
+      return;
     }
 
-    logsDiv.innerHTML = "<p>🚀 Training started...</p>";
-    downloadBtn.style.display = "none";
+    logsDiv.textContent = "🚀 Starting training...\n";
 
-    // SSE connection for live logs
-    const evtSource = new EventSource(`${COLAB_URL}/train_stream`);
+    // Use EventSource polyfill for SSE via fetch + ReadableStream
+    try {
+      const res = await fetch(`${BACKEND_URL}/train`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(jsonData)
+      });
 
-    // Send JSON data via fetch separately to trigger training
-    fetch(`${COLAB_URL}/train_stream`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ data })
-    }).catch(err => console.error(err));
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder("utf-8");
 
-    evtSource.onmessage = (e) => {
-      if (e.data === "TRAINING_COMPLETE") {
-        logsDiv.innerHTML += "<p>✅ Training complete!</p>";
-        downloadBtn.href = `${COLAB_URL}/download_checkpoint`;
-        downloadBtn.style.display = "inline-block";
-        evtSource.close();
-        return;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        chunk.split("\n\n").forEach(line => {
+          if (line.startsWith("data:")) {
+            const msg = line.replace("data: ", "").trim();
+            logsDiv.textContent += msg + "\n";
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+
+            if (msg === "TRAINING_COMPLETE") {
+              downloadBtn.style.display = "inline-block";
+            }
+          }
+        });
       }
-      logsDiv.innerHTML += `<p>${e.data}</p>`;
-      logsDiv.scrollTop = logsDiv.scrollHeight;
-    };
-
-    evtSource.onerror = (err) => {
-      console.error("SSE Error:", err);
-      evtSource.close();
-    };
+    } catch (err) {
+      logsDiv.textContent += "\n❌ Error: " + err.message;
+    }
   };
-  reader.readAsText(file);
-};
+
+  reader.readAsText(jsonFile.files[0]);
+});
+
+downloadBtn.addEventListener("click", () => {
+  window.open(`${BACKEND_URL}/download_checkpoint`, "_blank");
+});
 </script>
+
 </body>
 </html>
