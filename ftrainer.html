@@ -19,12 +19,11 @@
   .send-btn { background: #007bff; color: #fff; }
   .send-btn:hover { background: #0056b3; }
   textarea { width: 100%; min-height: 120px; padding: 10px; border-radius: 6px; border: 1px solid #ccc; resize: vertical; font-family: monospace; }
-  input[type="file"] { margin-top: 10px; }
   #preview { background: #272822; color: #f8f8f2; font-family: monospace; padding: 15px; border-radius: 6px; max-height: 300px; overflow-y: auto; margin-top: 10px; white-space: pre-wrap; }
   #feedback { margin-top: 15px; font-weight: bold; color: #333; }
   #logs { margin-top: 15px; background: #f1f1f1; padding: 10px; border-radius: 6px; max-height: 250px; overflow-y: auto; font-family: monospace; white-space: pre-wrap; }
   .train-settings { margin-top: 15px; display: flex; align-items: center; gap: 10px; }
-  .train-settings input { width: 80px; padding: 6px; border-radius: 4px; border: 1px solid #ccc; }
+  .train-settings input, select { padding: 6px; border-radius: 4px; border: 1px solid #ccc; }
 </style>
 </head>
 <body>
@@ -59,6 +58,17 @@
 <div class="train-settings">
   <label for="train-cycles">Training Cycles:</label>
   <input type="number" id="train-cycles" value="1" min="1">
+
+  <label for="model-size">Model Size:</label>
+  <select id="model-size">
+    <option value="200M">200M</option>
+    <option value="500M">500M</option>
+    <option value="1B">1B</option>
+    <option value="2B">2B</option>
+    <option value="5B">5B</option>
+    <option value="10B">10B</option>
+  </select>
+
   <button id="send-data" class="send-btn">🚀 Send to Train</button>
 </div>
 
@@ -68,6 +78,13 @@
 <div class="section">
   <h3>Logs</h3>
   <div id="logs">Logs will appear here...</div>
+</div>
+
+<!-- Download Section -->
+<div class="section" style="text-align:center;">
+  <button id="downloadModelBtn" style="padding:10px 20px; border:none; border-radius:8px; background:#007bff; color:white; cursor:pointer;">
+    ⬇️ Download Model
+  </button>
 </div>
 
 <script>
@@ -80,9 +97,11 @@ const fileUpload = document.getElementById("file-upload");
 const preview = document.getElementById("preview");
 const logs = document.getElementById("logs");
 const trainCyclesInput = document.getElementById("train-cycles");
+const modelSizeSelect = document.getElementById("model-size");
+const downloadBtn = document.getElementById("downloadModelBtn");
 
 function log(message) {
-  logs.innerText += "\\n" + message;
+  logs.innerText += "\n" + message;
   logs.scrollTop = logs.scrollHeight;
 }
 
@@ -154,22 +173,34 @@ async function updatePreview() {
 }
 
 async function sendTrainingRequest(data, round, totalRounds) {
-  log(`🔁 Training round ${round}/${totalRounds}...`);
+  const modelSize = modelSizeSelect.value;
+  log(`🔁 Training round ${round}/${totalRounds} with model size ${modelSize}...`);
   feedback.innerText = `⏳ Training round ${round} of ${totalRounds}...`;
 
-  const res = await fetch("https://fweb-backend.onrender.com/train", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ data })
-  });
+  try {
+    const res = await fetch("https://fweb-backend.onrender.com/train", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ data, modelSize })
+    });
 
-  const result = await res.json();
-  if (result.success) {
-    log(`✅ Training round ${round} complete.`);
-  } else {
-    log(`❌ Training round ${round} failed: ${result.error || "Unknown error"}`);
+    const result = await res.json();
+
+    // send logs to /logs
+    await fetch("https://fweb-backend.onrender.com/logs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ round, totalRounds, modelSize, entries: data.length, logs: logs.innerText })
+    });
+
+    if (result.success) log(`✅ Training round ${round} complete.`);
+    else log(`❌ Training round ${round} failed: ${result.error || "Unknown error"}`);
+
+    return result.success;
+  } catch (err) {
+    log(`❌ Training request failed: ${err.message}`);
+    return false;
   }
-  return result.success;
 }
 
 sendBtn.onclick = async () => {
@@ -196,128 +227,11 @@ sendBtn.onclick = async () => {
 
 rawJson.addEventListener("input", updatePreview);
 fileUpload.addEventListener("change", updatePreview);
-</script>
-<script>
-  // === CONFIG ===
-  const NGROK_BASE = "https://mindy-sinistrous-fortuitously.ngrok-free.dev";
 
-  // === ADD TEST & DOWNLOAD SECTION ===
-  const section = document.createElement("div");
-  section.style.textAlign = "center";
-  section.style.marginTop = "25px";
-  section.innerHTML = `
-    <div style="margin-bottom: 20px;">
-      <button id="testModelBtn" style="padding:10px 20px; margin:5px; border:none; border-radius:8px; background:#28a745; color:white; cursor:pointer;">
-        💬 Test Model
-      </button>
-      <button id="downloadModelBtn" style="padding:10px 20px; margin:5px; border:none; border-radius:8px; background:#007bff; color:white; cursor:pointer;">
-        ⬇️ Download Model
-      </button>
-    </div>
-    <div id="testInterface" style="display:none; margin:auto; max-width:400px; background:#1a1a1a; padding:15px; border-radius:10px;">
-      <input id="userInput" type="text" placeholder="Type your message..." style="width:100%; padding:10px; border:none; border-radius:6px; margin-bottom:10px;">
-      <button id="sendBtn" style="width:100%; padding:10px; background:#28a745; border:none; border-radius:6px; color:white; cursor:pointer;">Send</button>
-      <div id="responseBox" style="margin-top:10px; color:#fff; text-align:left; white-space:pre-wrap;"></div>
-    </div>
-  `;
-  document.body.appendChild(section);
-
-  // === DOWNLOAD ===
-  document.getElementById("downloadModelBtn").addEventListener("click", () => {
-    window.open(`${NGROK_BASE}/download_checkpoint`, "_blank");
-  });
-
-  // === SHOW TEST INTERFACE ===
-  document.getElementById("testModelBtn").addEventListener("click", () => {
-    document.getElementById("testInterface").style.display = "block";
-  });
-
-  // === SEND QUERY TO MODEL ===
-  document.getElementById("sendBtn").addEventListener("click", async () => {
-    const query = document.getElementById("userInput").value.trim();
-    const box = document.getElementById("responseBox");
-
-    if (!query) {
-      box.innerText = "⚠️ Please enter a message first.";
-      return;
-    }
-
-    box.innerText = "⏳ Thinking...";
-    try {
-      const res = await fetch(`${NGROK_BASE}/generate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: query })
-      });
-      const data = await res.json();
-      box.innerText = `🧠 Model: ${data.response || "No response"}`;
-    } catch (err) {
-      box.innerText = `❌ Error: ${err.message}`;
-    }
-  });
-
-  // === FIX: Re-enable epoch display if lost ===
-  const oldLog = window.log;
-  window.log = function (msg) {
-    const logsEl = document.getElementById("logs");
-    if (logsEl) {
-      logsEl.textContent += `\n${msg}`;
-      logsEl.scrollTop = logsEl.scrollHeight;
-    }
-    if (oldLog) oldLog(msg);
-  };
-</script>
-<script>
-  // === PRETRAIN SECTION ===
-  const pretrainSection = document.createElement("div");
-  pretrainSection.className = "section";
-  pretrainSection.innerHTML = `
-    <h3>Pretrain Existing Model</h3>
-    <input type="file" id="pretrainFile" accept=".pt,.bin,.json" />
-    <button id="pretrainBtn" style="padding:10px 15px; border:none; border-radius:6px; background:#ffc107; color:#000; cursor:pointer; margin-left:10px;">⚡ Pretrain Model</button>
-    <div id="pretrainFeedback" style="margin-top:10px; font-weight:bold;"></div>
-  `;
-  document.body.appendChild(pretrainSection);
-
-  const pretrainFile = document.getElementById("pretrainFile");
-  const pretrainBtn = document.getElementById("pretrainBtn");
-  const pretrainFeedback = document.getElementById("pretrainFeedback");
-
-  pretrainBtn.addEventListener("click", async () => {
-    if (!pretrainFile.files[0]) {
-      pretrainFeedback.innerText = "⚠️ Please select a model file to pretrain.";
-      return;
-    }
-
-    const file = pretrainFile.files[0];
-    const formData = new FormData();
-    formData.append("model_file", file);
-
-    // Optional: add metadata like training cycles
-    formData.append("cycles", trainCyclesInput.value || 1);
-
-    pretrainFeedback.innerText = "⏳ Sending model for pretraining...";
-    log(`⚡ Sending model ${file.name} for pretraining...`);
-
-    try {
-      const res = await fetch("https://fweb-backend.onrender.com/pretrain", {
-        method: "POST",
-        body: formData
-      });
-      const result = await res.json();
-
-      if (result.success) {
-        pretrainFeedback.innerText = `✅ Pretraining started successfully!`;
-        log(`✅ Pretraining request sent successfully.`);
-      } else {
-        pretrainFeedback.innerText = `❌ Pretraining failed: ${result.error || "Unknown error"}`;
-        log(`❌ Pretraining failed: ${result.error || "Unknown error"}`);
-      }
-    } catch (err) {
-      pretrainFeedback.innerText = `❌ Error sending pretrain request: ${err.message}`;
-      log(`❌ Pretraining error: ${err.message}`);
-    }
-  });
+// === Download ===
+downloadBtn.addEventListener("click", () => {
+  window.open(`https://fweb-backend.onrender.com/download_checkpoint`, "_blank");
+});
 </script>
 </body>
 </html>
