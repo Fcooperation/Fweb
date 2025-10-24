@@ -1,152 +1,323 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FTrainer Frontend</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #0f172a;
-      color: #f8fafc;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      height: 100vh;
-      padding: 30px;
-    }
-    h1 {
-      color: #38bdf8;
-      margin-bottom: 10px;
-    }
-    textarea {
-      width: 90%;
-      height: 120px;
-      padding: 10px;
-      border-radius: 8px;
-      border: none;
-      outline: none;
-      margin-bottom: 10px;
-      font-family: monospace;
-      font-size: 14px;
-      background: #1e293b;
-      color: #e2e8f0;
-      resize: none;
-    }
-    button {
-      background: #38bdf8;
-      border: none;
-      color: #0f172a;
-      font-weight: bold;
-      padding: 10px 20px;
-      border-radius: 8px;
-      cursor: pointer;
-      margin: 5px;
-    }
-    button:disabled {
-      background: #64748b;
-      cursor: not-allowed;
-    }
-    #logs {
-      width: 90%;
-      height: 300px;
-      background: #1e293b;
-      padding: 10px;
-      overflow-y: auto;
-      border-radius: 8px;
-      white-space: pre-wrap;
-      margin-top: 10px;
-      font-family: monospace;
-      font-size: 14px;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FTrainer</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #f5f7fa; margin: 0; padding: 20px; }
+  h2 { color: #007bff; }
+  .section { background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 25px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+  .columns { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 10px; transition: all 0.3s ease; }
+  .column { background: #f1f3f6; padding: 15px; border-radius: 6px; display: flex; flex-direction: column; min-width: 250px; position: relative; transition: transform 0.2s ease; }
+  .column input { margin-bottom: 10px; padding: 8px; border-radius: 4px; border: 1px solid #ccc; }
+  .column:hover { transform: scale(1.02); }
+  .remove-btn { position: absolute; top: 5px; right: 5px; background: #dc3545; color: #fff; border: none; border-radius: 4px; padding: 2px 6px; cursor: pointer; font-size: 12px; }
+  button { padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+  .add-btn { background: #28a745; color: #fff; margin-bottom: 15px; }
+  .add-btn:hover { background: #1e7e34; }
+  .send-btn { background: #007bff; color: #fff; }
+  .send-btn:hover { background: #0056b3; }
+  textarea { width: 100%; min-height: 120px; padding: 10px; border-radius: 6px; border: 1px solid #ccc; resize: vertical; font-family: monospace; }
+  input[type="file"] { margin-top: 10px; }
+  #preview { background: #272822; color: #f8f8f2; font-family: monospace; padding: 15px; border-radius: 6px; max-height: 300px; overflow-y: auto; margin-top: 10px; white-space: pre-wrap; }
+  #feedback { margin-top: 15px; font-weight: bold; color: #333; }
+  #logs { margin-top: 15px; background: #f1f1f1; padding: 10px; border-radius: 6px; max-height: 250px; overflow-y: auto; font-family: monospace; white-space: pre-wrap; }
+  .train-settings { margin-top: 15px; display: flex; align-items: center; gap: 10px; }
+  .train-settings input { width: 80px; padding: 6px; border-radius: 4px; border: 1px solid #ccc; }
+</style>
 </head>
 <body>
-  <h1>FTrainer 🧠</h1>
-  <p>Enter your JSON training data (prompt-response pairs):</p>
+<h2>FTrainer - Train Your Model</h2>
 
-  <textarea id="trainingData" placeholder='[
-  { "prompt": "Hello", "response": "Hi there!" },
-  { "prompt": "How are you?", "response": "I am great, thanks!" }
-]'></textarea>
+<!-- Section 1: Prompt/Response Columns -->
+<div class="section">
+  <h3>Prompt/Response Input</h3>
+  <div id="columns-container" class="columns"></div>
+  <button id="add-column" class="add-btn">➕ Add Prompt/Response</button>
+</div>
 
-  <div>
-    <button id="startBtn" onclick="startTraining()">Start Training</button>
-    <button id="downloadBtn" onclick="downloadModel()" disabled>Download Model</button>
-  </div>
+<!-- Section 2: Raw JSON Input -->
+<div class="section">
+  <h3>Raw JSON Input</h3>
+  <textarea id="raw-json" placeholder='{"prompt": "repeat what you just said", "response": "repeat what you just said"}'></textarea>
+</div>
 
-  <div id="logs">💤 Waiting to start training...</div>
+<!-- Section 3: File Upload -->
+<div class="section">
+  <h3>Upload JSON File</h3>
+  <input type="file" id="file-upload" accept=".json,.txt">
+</div>
 
-  <script>
-    const BACKEND_URL = "https://fweb-backend.onrender.com"; // your Render backend
-    const COLAB_URL = "https://mindy-sinistrous-fortuitously.ngrok-free.dev"; // your Colab ngrok URL
+<!-- Preview Section -->
+<div class="section">
+  <h3>Live JSON Preview</h3>
+  <div id="preview">{}</div>
+</div>
 
-    async function startTraining() {
-      const logs = document.getElementById("logs");
-      const btn = document.getElementById("startBtn");
-      const downloadBtn = document.getElementById("downloadBtn");
-      btn.disabled = true;
-      downloadBtn.disabled = true;
-      logs.textContent = "🚀 Sending training data...\n";
+<!-- Training Controls -->
+<div class="train-settings">
+  <label for="train-cycles">Training Cycles:</label>
+  <input type="number" id="train-cycles" value="1" min="1">
+  <button id="send-data" class="send-btn">🚀 Send to Train</button>
+</div>
 
-      let data;
-      try {
-        data = JSON.parse(document.getElementById("trainingData").value);
-      } catch (err) {
-        logs.textContent += "❌ Invalid JSON format.";
-        btn.disabled = false;
-        return;
-      }
+<div id="feedback"></div>
 
-      // Send to Render, which sends to Colab
-      try {
-        const response = await fetch(`${BACKEND_URL}/train`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ data })
-        });
+<!-- Logs Section -->
+<div class="section">
+  <h3>Logs</h3>
+  <div id="logs">Logs will appear here...</div>
+</div>
 
-        if (!response.ok) {
-          logs.textContent += `\n❌ Failed to start training (${response.status})`;
-          btn.disabled = false;
-          return;
-        }
+<script>
+const columnsContainer = document.getElementById("columns-container");
+const addColumnBtn = document.getElementById("add-column");
+const sendBtn = document.getElementById("send-data");
+const feedback = document.getElementById("feedback");
+const rawJson = document.getElementById("raw-json");
+const fileUpload = document.getElementById("file-upload");
+const preview = document.getElementById("preview");
+const logs = document.getElementById("logs");
+const trainCyclesInput = document.getElementById("train-cycles");
 
-        // Open live stream directly from Colab
-        const sse = new EventSource(`${COLAB_URL}/train_stream`);
+function log(message) {
+  logs.innerText += "\\n" + message;
+  logs.scrollTop = logs.scrollHeight;
+}
 
-        logs.textContent += "\n📡 Connected to Colab...\n";
-        sse.onmessage = (event) => {
-          if (event.data.includes("TRAINING_COMPLETE")) {
-            logs.textContent += "\n✅ Training complete! You can now download the model.\n";
-            downloadBtn.disabled = false;
-            sse.close();
-          } else {
-            logs.textContent += event.data + "\n";
-          }
-          logs.scrollTop = logs.scrollHeight;
-        };
+function createColumn(promptVal = "", responseVal = "") {
+  const col = document.createElement("div");
+  col.className = "column";
 
-        sse.onerror = (err) => {
-          logs.textContent += "\n⚠️ Connection lost or error.\n";
-          console.error(err);
-          sse.close();
-          btn.disabled = false;
-        };
+  const promptInput = document.createElement("input");
+  promptInput.placeholder = "Prompt";
+  promptInput.value = promptVal;
+  promptInput.oninput = updatePreview;
 
-      } catch (err) {
-        logs.textContent += "\n❌ Error connecting to backend.\n";
-        console.error(err);
-        btn.disabled = false;
-      }
+  const responseInput = document.createElement("input");
+  responseInput.placeholder = "Response";
+  responseInput.value = responseVal;
+  responseInput.oninput = updatePreview;
+
+  const removeBtn = document.createElement("button");
+  removeBtn.className = "remove-btn";
+  removeBtn.innerText = "✖";
+  removeBtn.onclick = () => { col.remove(); updatePreview(); };
+
+  col.appendChild(removeBtn);
+  col.appendChild(promptInput);
+  col.appendChild(responseInput);
+  columnsContainer.appendChild(col);
+
+  updatePreview();
+}
+
+createColumn();
+addColumnBtn.onclick = () => createColumn();
+
+async function collectData() {
+  let data = [];
+
+  document.querySelectorAll(".column").forEach(col => {
+    const prompt = col.children[1].value.trim();
+    const response = col.children[2].value.trim();
+    if (prompt && response) data.push({ prompt, response });
+  });
+
+  const raw = rawJson.value.trim();
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) data = data.concat(parsed);
+      else if (parsed.prompt && parsed.response) data.push(parsed);
+    } catch (e) { log("⚠️ Invalid JSON in Raw Input"); }
+  }
+
+  if (fileUpload.files.length > 0) {
+    const file = fileUpload.files[0];
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      if (Array.isArray(parsed)) data = data.concat(parsed);
+      else if (parsed.prompt && parsed.response) data.push(parsed);
+    } catch (err) { log("❌ Could not parse file: " + err.message); }
+  }
+
+  return data;
+}
+
+async function updatePreview() {
+  const data = await collectData();
+  preview.innerText = JSON.stringify(data, null, 2);
+  log(`🖼 Preview updated with ${data.length} total entries.`);
+}
+
+async function sendTrainingRequest(data, round, totalRounds) {
+  log(`🔁 Training round ${round}/${totalRounds}...`);
+  feedback.innerText = `⏳ Training round ${round} of ${totalRounds}...`;
+
+  const res = await fetch("https://fweb-backend.onrender.com/train", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ data })
+  });
+
+  const result = await res.json();
+  if (result.success) {
+    log(`✅ Training round ${round} complete.`);
+  } else {
+    log(`❌ Training round ${round} failed: ${result.error || "Unknown error"}`);
+  }
+  return result.success;
+}
+
+sendBtn.onclick = async () => {
+  const data = await collectData();
+  const totalRounds = parseInt(trainCyclesInput.value) || 1;
+
+  if (data.length === 0) {
+    feedback.innerText = "❌ No valid data to send!";
+    log("❌ No valid data to send!");
+    return;
+  }
+
+  feedback.innerText = "⏳ Starting training...";
+  log(`🚀 Starting ${totalRounds} training cycle(s)...`);
+
+  for (let i = 1; i <= totalRounds; i++) {
+    const success = await sendTrainingRequest(data, i, totalRounds);
+    if (!success) break;
+  }
+
+  feedback.innerText = "✅ All training cycles complete.";
+  log("🏁 Training process finished.");
+};
+
+rawJson.addEventListener("input", updatePreview);
+fileUpload.addEventListener("change", updatePreview);
+</script>
+<script>
+  // === CONFIG ===
+  const NGROK_BASE = "https://mindy-sinistrous-fortuitously.ngrok-free.dev";
+
+  // === ADD TEST & DOWNLOAD SECTION ===
+  const section = document.createElement("div");
+  section.style.textAlign = "center";
+  section.style.marginTop = "25px";
+  section.innerHTML = `
+    <div style="margin-bottom: 20px;">
+      <button id="testModelBtn" style="padding:10px 20px; margin:5px; border:none; border-radius:8px; background:#28a745; color:white; cursor:pointer;">
+        💬 Test Model
+      </button>
+      <button id="downloadModelBtn" style="padding:10px 20px; margin:5px; border:none; border-radius:8px; background:#007bff; color:white; cursor:pointer;">
+        ⬇️ Download Model
+      </button>
+    </div>
+    <div id="testInterface" style="display:none; margin:auto; max-width:400px; background:#1a1a1a; padding:15px; border-radius:10px;">
+      <input id="userInput" type="text" placeholder="Type your message..." style="width:100%; padding:10px; border:none; border-radius:6px; margin-bottom:10px;">
+      <button id="sendBtn" style="width:100%; padding:10px; background:#28a745; border:none; border-radius:6px; color:white; cursor:pointer;">Send</button>
+      <div id="responseBox" style="margin-top:10px; color:#fff; text-align:left; white-space:pre-wrap;"></div>
+    </div>
+  `;
+  document.body.appendChild(section);
+
+  // === DOWNLOAD ===
+  document.getElementById("downloadModelBtn").addEventListener("click", () => {
+    window.open(`${NGROK_BASE}/download_checkpoint`, "_blank");
+  });
+
+  // === SHOW TEST INTERFACE ===
+  document.getElementById("testModelBtn").addEventListener("click", () => {
+    document.getElementById("testInterface").style.display = "block";
+  });
+
+  // === SEND QUERY TO MODEL ===
+  document.getElementById("sendBtn").addEventListener("click", async () => {
+    const query = document.getElementById("userInput").value.trim();
+    const box = document.getElementById("responseBox");
+
+    if (!query) {
+      box.innerText = "⚠️ Please enter a message first.";
+      return;
     }
 
-    function downloadModel() {
-      const link = document.createElement("a");
-      link.href = `${COLAB_URL}/download_checkpoint`;
-      link.click();
+    box.innerText = "⏳ Thinking...";
+    try {
+      const res = await fetch(`${NGROK_BASE}/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: query })
+      });
+      const data = await res.json();
+      box.innerText = `🧠 Model: ${data.response || "No response"}`;
+    } catch (err) {
+      box.innerText = `❌ Error: ${err.message}`;
     }
-  </script>
+  });
+
+  // === FIX: Re-enable epoch display if lost ===
+  const oldLog = window.log;
+  window.log = function (msg) {
+    const logsEl = document.getElementById("logs");
+    if (logsEl) {
+      logsEl.textContent += `\n${msg}`;
+      logsEl.scrollTop = logsEl.scrollHeight;
+    }
+    if (oldLog) oldLog(msg);
+  };
+</script>
+<script>
+  // === PRETRAIN SECTION ===
+  const pretrainSection = document.createElement("div");
+  pretrainSection.className = "section";
+  pretrainSection.innerHTML = `
+    <h3>Pretrain Existing Model</h3>
+    <input type="file" id="pretrainFile" accept=".pt,.bin,.json" />
+    <button id="pretrainBtn" style="padding:10px 15px; border:none; border-radius:6px; background:#ffc107; color:#000; cursor:pointer; margin-left:10px;">⚡ Pretrain Model</button>
+    <div id="pretrainFeedback" style="margin-top:10px; font-weight:bold;"></div>
+  `;
+  document.body.appendChild(pretrainSection);
+
+  const pretrainFile = document.getElementById("pretrainFile");
+  const pretrainBtn = document.getElementById("pretrainBtn");
+  const pretrainFeedback = document.getElementById("pretrainFeedback");
+
+  pretrainBtn.addEventListener("click", async () => {
+    if (!pretrainFile.files[0]) {
+      pretrainFeedback.innerText = "⚠️ Please select a model file to pretrain.";
+      return;
+    }
+
+    const file = pretrainFile.files[0];
+    const formData = new FormData();
+    formData.append("model_file", file);
+
+    // Optional: add metadata like training cycles
+    formData.append("cycles", trainCyclesInput.value || 1);
+
+    pretrainFeedback.innerText = "⏳ Sending model for pretraining...";
+    log(`⚡ Sending model ${file.name} for pretraining...`);
+
+    try {
+      const res = await fetch("https://fweb-backend.onrender.com/pretrain", {
+        method: "POST",
+        body: formData
+      });
+      const result = await res.json();
+
+      if (result.success) {
+        pretrainFeedback.innerText = `✅ Pretraining started successfully!`;
+        log(`✅ Pretraining request sent successfully.`);
+      } else {
+        pretrainFeedback.innerText = `❌ Pretraining failed: ${result.error || "Unknown error"}`;
+        log(`❌ Pretraining failed: ${result.error || "Unknown error"}`);
+      }
+    } catch (err) {
+      pretrainFeedback.innerText = `❌ Error sending pretrain request: ${err.message}`;
+      log(`❌ Pretraining error: ${err.message}`);
+    }
+  });
+</script>
 </body>
 </html>
