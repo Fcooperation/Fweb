@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="https://richinfo.co/richpartners/in-page/js/richads-ob.js?pubid=988012&siteid=372755" async></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/site.webmanifest">
+
+  <title>Fweb</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      background: #fff;
+      color: #000;
+      transition: padding 0.3s ease;
+    }
+    header {
+      text-align: center;
+      padding: 40px 10px 10px;
+      transition: all 0.4s ease;
+    }
+    #title {
+      font-size: 3em;
+      font-weight: 700;
+      letter-spacing: 1px;
+      transition: opacity 0.3s ease;
+    }
+    .hidden { display: none !important; }
+    .search-container {
+      text-align: center;
+      margin: 30px auto;
+      transition: all 0.3s ease;
+      max-width: 600px;
+    }
+    .search-up {
+      position: fixed;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 600px;
+      padding: 8px 0;
+      background: #fff;
+      border-bottom: 1px solid #ddd;
+      z-index: 1000;
+      height: 105px;
+    }
+    #searchBox {
+      width: 90%;
+      padding: 10px;
+      font-size: 15px;
+      border: 1px solid #000;
+      border-radius: 5px;
+      outline: none;
+      box-sizing: border-box;
+    }
+    #searchButton {
+      margin-top: 6px;
+      width: 90%;
+      padding: 10px 0;
+      background: #000;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    nav.tabs {
+      display: none;
+      overflow-x: auto;
+      white-space: nowrap;
+      background: #fff;
+      border-bottom: 1px solid #ddd;
+      z-index: 999;
+      position: fixed;
+      top: 155px;
+      left: 0;
+      width: 100%;
+      padding: 5px 10px;
+    }
+    nav.tabs.active { display: flex; }
+    nav.tabs button {
+      padding: 10px 20px;
+      font-size: 15px;
+      border: 1px solid #fff;
+      background: #fff;
+      color: #000;
+      cursor: pointer;
+      margin-right: 8px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+    nav.tabs button.active { border: 2px solid #000; }
+    section.result-tab {
+      display: none;
+      padding: 20px;
+      max-width: 900px;
+      margin: auto;
+    }
+    section.result-tab.active { display: block; }
+    .loading {
+      text-align: center;
+      padding: 20px;
+      font-size: 14px;
+      color: #666;
+    }
+    .result-item {
+      margin-bottom: 15px;
+    }
+    .result-item a {
+      font-weight: bold;
+      color: #000;
+      text-decoration: none;
+    }
+    .result-item a:hover { text-decoration: underline; }
+
+    /* ===== Fcards ===== */
+    .fcards-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, 320px);
+      gap: 20px;
+      padding: 20px;
+      justify-content: center;
+    }
+    .fcard {
+      display: block;
+      background: #fff;
+      border: 1px solid #eee;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+      text-decoration: none;
+      color: inherit;
+      transition: all 0.2s ease;
+    }
+    .fcard:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.12);
+    }
+    .fcard-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .fcard-header img {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+    }
+    .fcard-header h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0;
+      line-height: 1.3;
+    }
+    .fcard-snippet {
+      font-size: 14px;
+      line-height: 1.5;
+      color: #333;
+      margin: 0 0 12px;
+    }
+    .fcard-url {
+      font-size: 12px;
+      color: #555;
+      word-break: break-all;
+    }
+    .fcard-footer {
+      margin-top: 10px;
+      font-size: 11px;
+      color: #888;
+      text-align: center;
+    }
+
+    /* ===== Image Grid ===== */
+    .image-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 10px;
+    }
+    .image-grid img {
+      width: 100%;
+      border-radius: 6px;
+      object-fit: cover;
+      cursor: pointer;
+    }
+
+    /* ===== Videos ===== */
+    .video-item {
+      margin-bottom: 15px;
+      cursor: pointer;
+    }
+    iframe {
+      width: 100%;
+      height: 200px;
+      border: none;
+      border-radius: 6px;
+    }
+
+    /* ===== Modal ===== */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 2000;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.85);
+      justify-content: center;
+      align-items: center;
+    }
+    .modal.active { display: flex; }
+    .modal-content {
+      max-width: 90%;
+      max-height: 90%;
+    }
+    .modal-content iframe,
+    .modal-content img {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+    .close-btn {
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      font-size: 30px;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    footer {
+      margin-top: 40px;
+      text-align: center;
+      font-size: 12px;
+      color: #777;
+    }
+    .account-btn {
+  position: absolute;
+  top: 40px;
+  right: 10px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #f0f0f0;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transition: background-color 0.2s ease;
+}
+.account-btn:hover {
+  background-color: #333;
+}
+.account-btn img {
+  width: 24px;
+  height: 24px;
+}
+.menu-button {
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 35px;
+  height: 28px;
+  position: fixed;
+  top: 100px;
+  right: 12px;
+  z-index: 10000;
+}.menu-dots span {
+  display: block;
+  width: 35px;
+  height: 4px;
+  background-color: #333;
+  border-radius: 2px;
+  margin: 4px 0;   /* 👈 adds spacing between each line */
+}
+#side-menu {
+  position: fixed;
+  top: 0;
+  left: -320px;
+  width: 280px;
+  height: 100%;
+  background: #333;
+  color: #fff;
+  padding: 20px;
+  box-shadow: 3px 0 12px rgba(0,0,0,0.25);
+  transition: left 0.35s ease;
+  z-index: 9999;
+}
+#side-menu a {
+  display: block;
+  color: #fff;
+  text-decoration: none;
+  font-weight: bold;
+  margin: 12px 0;
+}
+#side-menu a:hover {
+  background: rgba(255,255,255,0.15);
+  padding-left: 8px;
+  border-radius: 6px;
+}
+#side-menu .menu-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+#side-menu img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 10px;
+}
+#side-menu .username {
+  font-size: 18px;
+  font-weight: bold;
+}
+/* toggle via checkbox */
+#menu-toggle:checked + label + #side-menu {
+  left: 0;
+}
+.search-notice {
+  position: fixed;
+  top: 130px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #000;
+  color: #fff;
+  padding: 12px 18px;
+  border-radius: 6px;
+  font-size: 14px;
+  z-index: 2000;
+  display: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translate(-50%, -10px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+    body.dark-mode, html.dark-mode {
+  background: #111;
+  color: #f5f5f5;
+}
+
+body.dark-mode * {
+  background: inherit !important;
+  color: inherit !important;
+}
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header id="header">
+    <h1 id="title">Fweb</h1>
+    <div class="search-container" id="searchContainer">
+      <input type="text" id="searchBox" placeholder="Search Fweb..." />
+      <button id="searchButton">Search</button>
+    </div>
+  </header>
+
+  <!-- Tabs -->
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-tab="web">Web</button>
+    <button class="tab" data-tab="images">Images</button>
+    <button class="tab" data-tab="vids">Vids</button>
+  </nav>
+
+  <!-- Results -->
+  <main>
+    <section class="result-tab active" id="web"></section>
+    <section class="result-tab" id="images"></section>
+    <section class="result-tab" id="vids"></section>
+  </main>
+
+  <!-- Modal -->
+  <div class="modal" id="modal">
+    <span class="close-btn" id="closeModal">&times;</span>
+    <div class="modal-content" id="modalContent"></div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <p>© 2025 Fcooperation • Meant for Africa</p>
+  </footer>
+
+  <script>
+    // ===== Tabs =====
+    const tabs = document.querySelectorAll('nav.tabs button');
+    const results = document.querySelectorAll('section.result-tab');
+    const tabBar = document.getElementById('tabs');
+
+    tabs.forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelector('nav.tabs button.active')?.classList.remove('active');
+        btn.classList.add('active');
+        results.forEach(tab => tab.classList.remove('active'));
+        document.getElementById(btn.dataset.tab).classList.add('active');
+      });
+    });
+
+    // ===== Modal =====
+    const modal = document.getElementById("modal");
+    const modalContent = document.getElementById("modalContent");
+    const closeModal = document.getElementById("closeModal");
+
+    closeModal.addEventListener("click", () => {
+      modal.classList.remove("active");
+      modalContent.innerHTML = "";
+    });
+
+    function openModal(content) {
+      modalContent.innerHTML = content;
+      modal.classList.add("active");
+    }
+
+    // ===== Search bar animation =====
+    function raiseSearchUI() {
+      document.getElementById('title').classList.add('hidden');
+      document.getElementById('searchContainer').classList.add('search-up');
+      document.body.style.paddingTop = "170px";
+      tabBar.classList.add('active');
+    }
+
+    const searchBtn = document.getElementById('searchButton');
+    const searchBox = document.getElementById('searchBox');
+    searchBtn.addEventListener('click', () => handleSearch());
+    searchBox.addEventListener('keydown', (e) => {
+      if (e.key === "Enter") handleSearch();
+    });
+
+    // ===== Render Fcards =====
+    function renderFcards(results) {
+      const webResults = document.getElementById("web");
+      webResults.innerHTML = "";
+
+      const container = document.createElement("div");
+      container.className = "fcards-container";
+
+      results.forEach(r => {
+        if (r.type === "link") {
+          // Load like a browser if backend says it's a link
+          window.location.href = r.url;
+          return;
+        }
+        const card = document.createElement("a");
+        card.href = r.url;
+        card.target = "_blank";
+        card.className = "fcard";
+        card.innerHTML = `
+          <div class="fcard-header">
+            <img src="${r.favicon || "https://www.google.com/s2/favicons?sz=64&domain_url=" + r.url}" alt="">
+            <h3>${r.title || r.url}</h3>
+          </div>
+          <p class="fcard-snippet">${r.snippet || ""}</p>
+          <p class="fcard-url">${r.url}</p>
+          <div class="fcard-footer">FCOOPERATION • Meant for Africa</div>
+        `;
+        container.appendChild(card);
+      });
+
+      if (!container.hasChildNodes()) {
+        webResults.innerHTML = "<p></p>";
+      } else {
+        webResults.appendChild(container);
+      }
+    }
+
+    // ===== Handle Search =====
+    async function handleSearch() {
+      const query = searchBox.value.trim();
+      if (!query) return;
+      raiseSearchUI();
+
+      document.getElementById("web").innerHTML = "<p class='loading'>Loading web results...</p>";
+      document.getElementById("images").innerHTML = "<p class='loading'>Loading images...</p>";
+      document.getElementById("vids").innerHTML = "<p class='loading'>Loading videos...</p>";
+
+      // Web search
+      fetch("https://fweb-backend.onrender.com/search?q=" + encodeURIComponent(query))
+        .then(res => res.json())
+        .then(data => renderFcards(data))
+        .catch(() => document.getElementById("web").innerHTML = "<p>Error loading web results.</p>");
+
+      // Images (Pixabay)
+      fetch(`https://pixabay.com/api/?key=52236532-a5106c580da4b432f21d142e7&q=${encodeURIComponent(query)}&image_type=photo`)
+        .then(res => res.json())
+        .then(data => {
+          const container = document.getElementById("images");
+          if (!data.hits || data.hits.length === 0) {
+            container.innerHTML = "<p>No images found.</p>";
+          } else {
+            container.innerHTML = `<div class="image-grid">${data.hits.map(img =>
+              `<img src="${img.webformatURL}" alt="${query}" onclick="openModal('<img src=${img.largeImageURL} />')">`
+            ).join("")}</div>`;
+          }
+        })
+        .catch(() => document.getElementById("images").innerHTML = "<p>Error loading images.</p>");
+
+      // Videos (YouTube)
+      fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=6&q=${encodeURIComponent(query)}&key=AIzaSyB6IdRR6pdOLJ3m6T-GuTZ7usoaKp4kbOA`)
+        .then(res => res.json())
+        .then(data => {
+          const container = document.getElementById("vids");
+          if (!data.items || data.items.length === 0) {
+            container.innerHTML = "<p>No videos found.</p>";
+          } else {
+            container.innerHTML = data.items.map(v =>
+              `<div class="video-item" onclick="openModal('<iframe src=https://www.youtube.com/embed/${v.id.videoId} allowfullscreen></iframe>')">
+                <iframe src="https://www.youtube.com/embed/${v.id.videoId}" allowfullscreen></iframe>
+                <p>${v.snippet.title}</p>
+              </div>`
+            ).join("");
+          }
+        })
+        .catch(() => document.getElementById("vids").innerHTML = "<p>Error loading videos.</p>");
+    }
+    
+
+  </script>
+  <a href="dashboard.html" class="account-btn">
+  <img src="https://img.icons8.com/ios-filled/50/user.png" alt="Account" />
+</a>
+<input type="checkbox" id="menu-toggle" style="display:none;">
+<label for="menu-toggle" class="menu-button">
+  <div class="menu-dots">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</label>
+
+<nav id="side-menu">
+  <!-- Somewhere in your header/menu -->
+<div class="account-info">
+  <img id="profile-pic" src="default-avatar.png" alt="Profile" width="40" height="40" style="border-radius:50%">
+  <span id="username">Guest</span>
+</div>
+  <a href="home.html">Home</a>
+  <a href="about.html">About</a>
+  <a href="blog.html">Blog</a>
+  <a href="faq.html">FAQ</a>
+  <a href="help.html">Help</a>
+  <a href="privacy.html">Privacy policy</a>
+  <a href="contact.html">Contact</a>
+  <a href="settings.html">Settings
+  <a href="fminers.html">Fminers</a>
+</nav>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  // ===== Create notice element =====
+  const notice = document.createElement("div");
+  notice.className = "search-notice";
+  notice.textContent = "⏳ Searches can take from 1 to 10 seconds. We appreciate your patience.";
+  Object.assign(notice.style, {
+    display: "none",
+    position: "fixed",
+    bottom: "20px",
+    height:"70px",
+    left: "50%",
+    transform: "translateX(-50%)",
+    background: "#000",
+    color: "#fff",
+    padding: "10px 20px",
+    borderRadius: "6px",
+    fontSize: "14px",
+    zIndex: "9999",
+    boxShadow: "0 2px 6px rgba(0,0,0,0.2)"
+  });
+  document.body.appendChild(notice);
+
+  // ===== Show/hide logic =====
+  function showNotice() {
+    notice.style.display = "block";
+    setTimeout(() => {
+      notice.style.display = "none";
+    }, 5000);
+  }
+
+  // ===== Patch search function =====
+  const originalHandleSearch = window.handleSearch;
+  window.handleSearch = async function() {
+    showNotice();
+    if (originalHandleSearch) {
+      await originalHandleSearch.apply(this, arguments);
+    }
+  };
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const account = JSON.parse(localStorage.getItem("faccount"));
+  if (account) {
+    const usernameEl = document.getElementById("username");
+    const profilePicEl = document.getElementById("profile-pic");
+
+    if (usernameEl) {
+      usernameEl.textContent = account.username || "User";
+    }
+    if (profilePicEl && account.profile_pic) {
+      profilePicEl.src = account.profile_pic;
+    }
+  }
+});
+</script>
+
+  <!-- Fweb Intro Animation -->
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600&display=swap');
+
+  .fweb-intro {
+    position: relative;
+    width: 100%;
+    text-align: center;
+    color: black;
+    font-family: 'Orbitron', sans-serif;
+    overflow: hidden;
+    margin-top: 50px;
+  }
+
+  .magnify {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto;
+    animation: scan 4s ease-in-out infinite;
+  }
+
+  @keyframes scan {
+    0% { transform: translateX(-60px) scale(1); opacity: 0.8; }
+    25% { transform: translateX(0) scale(1.1); opacity: 1; }
+    50% { transform: translateX(60px) scale(1); opacity: 0.8; }
+    75% { transform: translateX(0) scale(1.05); opacity: 1; }
+    100% { transform: translateX(-60px) scale(1); opacity: 0.8; }
+  }
+
+  .fweb-text {
+    font-size: 60px;
+    opacity: 0.2;
+    animation: fadeFweb 8s ease-in-out infinite;
+  }
+
+  @keyframes fadeFweb {
+    0%, 20% { opacity: 0.1; transform: scale(0.9); }
+    30%, 60% { opacity: 0.6; transform: scale(1); }
+    80%, 100% { opacity: 0.2; transform: scale(0.95); }
+  }
+
+  .description {
+    font-size: 18px;
+    max-width: 700px;
+    margin: 20px auto;
+    line-height: 1.5;
+    opacity: 0;
+    animation: showDesc 8s ease-in-out infinite;
+  }
+
+  @keyframes showDesc {
+    0%, 30% { opacity: 0; transform: translateY(20px); }
+    40%, 70% { opacity: 1; transform: translateY(0); }
+    80%, 100% { opacity: 0; transform: translateY(-20px); }
+  }
+
+  .word-anim {
+    font-size: 50px;
+    margin-top: 30px;
+    opacity: 0;
+    animation: wordCycle 8s ease-in-out infinite;
+  }
+
+  @keyframes wordCycle {
+    0%, 40% { opacity: 0; }
+    50% { opacity: 1; content: "Then f it up on..."; }
+    60%, 100% { opacity: 0; }
+  }
+
+  .highlight {
+    color: #00e0ff;
+    font-weight: 700;
+  }
+</style>
+
+<div class="fweb-intro">
+  <svg class="magnify" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="27" cy="27" r="16" stroke="#00e0ff" stroke-width="4"/>
+    <line x1="40" y1="40" x2="60" y2="60" stroke="#00e0ff" stroke-width="4" stroke-linecap="round"/>
+  </svg>
+  <div class="fweb-text">fweb</div>
+  <div class="description">
+    Looking for a way to <b>conveniently search?</b><br>
+    Built for <span class="highlight">Africa</span>, accessible worldwide — 
+    a search engine that <span class="highlight">respects your privacy</span>.
+  </div>
+  <div class="word-anim">Then <span class="highlight">f</span> it up on <span class="highlight">web</span></div>
+</div>
+
+  <script async="async" data-cfasync="false" src="//pl27736418.revenuecpmgate.com/66f7e9f0e3b7d4c73d45d726370fbc8a/invoke.js"></script>
+<div id="container-66f7e9f0e3b7d4c73d45d726370fbc8a"></div>
+  <style>
+  :root {
+    --bg-color-light: #fff;
+    --text-color-light: #000;
+    --bg-color-dark: #111;
+    --text-color-dark: #f5f5f5;
+  }
+
+  body.light-mode {
+    background: var(--bg-color-light);
+    color: var(--text-color-light);
+  }
+
+  body.dark-mode {
+    background: var(--bg-color-dark);
+    color: var(--text-color-dark);
+  }
+
+  body.dark-mode .btn,
+  body.dark-mode nav a {
+    background: #1f1f1f !important;
+    color: #f5f5f5 !important;
+    border: 1px solid rgba(255,255,255,0.2) !important;
+  }
+
+  body.light-mode .btn,
+  body.light-mode nav a {
+    background: #000 !important;
+    color: #fff !important;
+    border: 1px solid rgba(0,0,0,0.1) !important;
+  }
+
+  body.dark-mode label {
+    color: #f5f5f5 !important;
+  }
+</style>
+
+<script>
+(function(){
+  const savedTheme = localStorage.getItem('theme') || 'light';
+  const savedFont = localStorage.getItem('fontsize') || '16px';
+  const savedSafe = localStorage.getItem('safesearch') === 'true';
+
+  // --- Apply theme ---
+  function applyTheme(theme){
+    document.body.classList.remove("light-mode", "dark-mode");
+    document.body.classList.add(theme + "-mode");
+  }
+
+  // --- Apply font size ---
+  function applyFont(size){
+    document.body.style.fontSize = size;
+  }
+
+  // --- Apply Safe Search ---
+  function applySafeSearch(on){
+    const preview = document.querySelector('.preview');
+    if(preview) preview.innerText = 'Safe Search: ' + (on ? 'On' : 'Off');
+  }
+
+  // --- Apply all saved settings ---
+  applyTheme(savedTheme);
+  applyFont(savedFont);
+  applySafeSearch(savedSafe);
+
+  // --- Optional: set radio states ---
+  const themeRadio = document.getElementById(savedTheme==='dark' ? 'darkmode' : 'lightmode');
+  if(themeRadio) themeRadio.checked = true;
+
+  const fontRadio = document.getElementById({
+    '14px':'fontsize-small',
+    '16px':'fontsize-medium',
+    '18px':'fontsize-large'
+  }[savedFont]);
+  if(fontRadio) fontRadio.checked = true;
+
+  const safeCheckbox = document.getElementById('safesearch');
+  if(safeCheckbox) safeCheckbox.checked = savedSafe;
+})();
+                                            </script>
+</body>
+</html>
