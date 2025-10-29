@@ -44,14 +44,14 @@
 <script>
   const checkConnection = () => {
     if (navigator.onLine) {
-      location.href = "fweb.html";
+      location.href = "index.html";
     }
   };
 
   window.addEventListener("online", checkConnection);
 
   if (navigator.onLine) {
-    location.href = "fweb.html";
+    location.href = "index.html";
   } else {
     document.getElementById('no-internet').style.display = 'flex';
   }
