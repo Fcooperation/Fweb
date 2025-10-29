@@ -246,41 +246,76 @@
   </script>
 <button id="fchat-btn" class="btn">Open FCHAT</button>
 
+<!-- Your Fchat Button -->
+<button id="fchat-btn">Go to Fchat</button>
+
+<!-- Styles & Script -->
+<style>
+  /* Full-width black button */
+  #fchat-btn {
+    display: block;
+    width: 100%;
+    padding: 15px 0;
+    background-color: black;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+
+  #fchat-btn:hover {
+    background-color: #222; /* Slight hover effect */
+  }
+</style>
+
 <script type="module">
   import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
   const supabaseUrl = "https://pwsxezhugsxosbwhkdvf.supabase.co";
-  const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
+  const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
   document.getElementById("fchat-btn").addEventListener("click", async () => {
-    // Get user info from dashboard local storage
+    // Get user info from local storage
     const faccount = JSON.parse(localStorage.getItem("faccount"));
     if (!faccount || !faccount.email) {
       alert("No user data found. Please log in first.");
       return;
     }
 
-    // Check if user has FCHAT access
-    const { data, error } = await supabase
-      .from("fwebaccount")
-      .select("*")
-      .eq("email", faccount.email)
-      .single();
+    // Optional: Show loading state
+    document.getElementById("fchat-btn").innerText = "Checking access...";
+    document.getElementById("fchat-btn").disabled = true;
 
-    if (error || !data) {
-      console.warn("Error loading account:", error?.message);
-      return (window.location.href = "welcometofchat.html");
-    }
+    try {
+      // Check if user has FCHAT access
+      const { data, error } = await supabase
+        .from("fwebaccount")
+        .select("*")
+        .eq("email", faccount.email)
+        .single();
 
-    // If fchat column = 'yes', redirect to fchat.html
-    if (data.fchat && data.fchat.toLowerCase() === "yes") {
-      localStorage.setItem("fweb_user", JSON.stringify(data));
-      window.location.href = "fchat.html";
-    } 
-    // If fchat is null or empty → onboarding
-    else {
-      window.location.href = "welcometofchat.html";
+      if (error || !data) {
+        console.warn("Error loading account:", error?.message);
+        window.location.href = "welcometofchat.html";
+        return;
+      }
+
+      // Redirect based on FCHAT access
+      if (data.fchat && data.fchat.toLowerCase() === "yes") {
+        localStorage.setItem("fweb_user", JSON.stringify(data));
+        window.location.href = "fchat.html";
+      } else {
+        window.location.href = "welcometofchat.html";
+      }
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      alert("Something went wrong. Please try again.");
+      document.getElementById("fchat-btn").innerText = "Go to Fchat";
+      document.getElementById("fchat-btn").disabled = false;
     }
   });
 </script>
