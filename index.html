@@ -473,9 +473,16 @@ body.dark-mode * {
 
     // ===== Handle Search =====
     async function handleSearch() {
-      const query = searchBox.value.trim();
-      if (!query) return;
-      raiseSearchUI();
+  const query = searchBox.value.trim();
+  if (!query) return;
+
+  // ✅ Check for network connection
+  if (!navigator.onLine) {
+    window.location.href = "nonetwork.html";
+    return;
+  }
+
+  raiseSearchUI();
 
       document.getElementById("web").innerHTML = "<p class='loading'>Loading web results...</p>";
       document.getElementById("images").innerHTML = "<p class='loading'>Loading images...</p>";
