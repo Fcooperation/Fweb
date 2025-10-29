@@ -483,10 +483,25 @@ body.dark-mode * {
 
       // Web search
       fetch("https://fweb-backend.onrender.com/search?q=" + encodeURIComponent(query))
-        .then(res => res.json())
-        .then(data => renderFcards(data))
-        .catch(() => document.getElementById("web").innerHTML = "<p>Error loading web results.</p>");
+  .then(res => res.json())
+  .then(data => {
+    // ✅ If backend says site not found, redirect
+    if (
+      Array.isArray(data) &&
+      data.length === 1 &&
+      data[0].type === "link-error" &&
+      data[0].title === "Site Does Not Exist"
+    ) {
+      window.location.href = "sitenotfound.html";
+      return;
+    }
 
+    // Otherwise show normal results
+    renderFcards(data);
+  })
+  .catch(() => {
+    document.getElementById("web").innerHTML = "<p>Error loading web results.</p>";
+  });
       // Images (Pixabay)
       fetch(`https://pixabay.com/api/?key=52236532-a5106c580da4b432f21d142e7&q=${encodeURIComponent(query)}&image_type=photo`)
         .then(res => res.json())
