@@ -54,6 +54,25 @@
       background: inherit !important;
       color: inherit !important;
     }
+
+    /* Full-width black Fchat button */
+    #fchat-btn {
+      display: block;
+      width: 100%;
+      padding: 15px 0;
+      background-color: black;
+      color: white;
+      font-size: 18px;
+      font-weight: bold;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      margin-top: 20px;
+    }
+    #fchat-btn:hover {
+      background-color: #222;
+    }
   </style>
 </head>
 <body>
@@ -84,23 +103,32 @@
     <button id="delete-btn" style="background:#6c757d; margin-top:10px;">Delete Account</button>
   </div>
 
+  <!-- Quick Navigation Buttons -->
+  <div class="details-section" style="margin-top:15px;">
+    <button style="background:#28a745; width:100%; padding:10px; color:#fff; border:none; border-radius:6px; cursor:pointer; margin-bottom:10px;" onclick="window.location.href='fminers.html'">Fminers</button>
+    <button style="background:#17a2b8; width:100%; padding:10px; color:#fff; border:none; border-radius:6px; cursor:pointer; margin-bottom:10px;" onclick="window.location.href='fpublisher.html'">Fpublisher</button>
+    <button style="background:#ffc107; width:100%; padding:10px; color:#fff; border:none; border-radius:6px; cursor:pointer;" onclick="window.location.href='fadvertisers.html'">Fadvertisers</button>
+  </div>
+
+  <!-- Fchat Button -->
+  <button id="fchat-btn">Go to Fchat</button>
+
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
     const supabase = createClient(
       "https://pwsxezhugsxosbwhkdvf.supabase.co",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
     );
 
     const faccount = JSON.parse(localStorage.getItem("faccount"));
     if (!faccount) {
       alert("No account found in local storage. Please log in again.");
       window.location.href = "login.html";
+    } else {
+      document.getElementById("username").innerText = faccount.username || "No Username";
+      if (faccount.profile_pic) document.getElementById("profile-pic").src = faccount.profile_pic;
     }
-
-    // Show basic info
-    document.getElementById("username").innerText = faccount.username || "No Username";
-    if (faccount.profile_pic) document.getElementById("profile-pic").src = faccount.profile_pic;
 
     // --- Upload Image ---
     async function uploadImage() {
@@ -150,7 +178,7 @@
       alert("Account updated!");
     }
 
-    // Logout/Delete buttons
+    // Logout/Delete
     document.getElementById("logout-btn").addEventListener("click", () => {
       localStorage.removeItem("faccount");
       alert("Logged out successfully!");
@@ -172,7 +200,7 @@
     window.uploadImage = uploadImage;
     window.updateDetails = updateDetails;
 
-    // 🔁 Real-Time Status Check (Fixed for 'banned' + suspension)
+    // 🔁 Real-Time Status Check
     async function checkAccountStatus() {
       const { data, error } = await supabase
         .from("fwebaccount")
@@ -188,17 +216,14 @@
         return;
       }
 
-      // Normalize status
       const status = (data.status || "").toString().trim().toLowerCase();
 
-      // 🚫 Check if banned
       if (status === "banned") {
         console.log("Account is banned — redirecting...");
         window.location.replace("fbanned.html");
         return;
       }
 
-      // ⏳ Check if suspended
       if (data.suspended_until) {
         const suspendedUTC = new Date(data.suspended_until);
         const nowUTC = new Date(new Date().toISOString());
@@ -210,114 +235,40 @@
       }
     }
 
-    // Run immediately + check every 5 seconds
     checkAccountStatus();
     setInterval(checkAccountStatus, 5000);
-  </script>
 
-  <!-- Quick Navigation -->
-  <script>
-    const lastSection = document.querySelectorAll('.details-section');
-    if (lastSection.length) {
-      const container = document.createElement('div');
-      container.className = 'details-section';
-      container.style.marginTop = '15px';
-      const buttons = [
-        { text: 'Fminers', href: 'fminers.html', color: '#28a745' },
-        { text: 'Fpublisher', href: 'fpublisher.html', color: '#17a2b8' },
-        { text: 'Fadvertisers', href: 'fadvertisers.html', color: '#ffc107' }
-      ];
-      buttons.forEach(btn => {
-        const b = document.createElement('button');
-        b.innerText = btn.text;
-        b.style.background = btn.color;
-        b.style.border = 'none';
-        b.style.color = '#fff';
-        b.style.padding = '10px';
-        b.style.width = '100%';
-        b.style.borderRadius = '6px';
-        b.style.cursor = 'pointer';
-        b.style.marginBottom = '10px';
-        b.onclick = () => window.location.href = btn.href;
-        container.appendChild(b);
-      });
-      lastSection[lastSection.length - 1].after(container);
-    }
-  </script>
-<button id="fchat-btn" class="btn">Open FCHAT</button>
+    // --- Fchat Button ---
+    const fchatBtn = document.getElementById("fchat-btn");
+    fchatBtn.addEventListener("click", async () => {
+      fchatBtn.innerHTML = "Checking access... ⏳";
+      fchatBtn.disabled = true;
 
-<!-- Your Fchat Button -->
-<button id="fchat-btn">Go to Fchat</button>
+      try {
+        const { data, error } = await supabase
+          .from("fwebaccount")
+          .select("*")
+          .eq("email", faccount.email)
+          .single();
 
-<!-- Styles & Script -->
-<style>
-  /* Full-width black button */
-  #fchat-btn {
-    display: block;
-    width: 100%;
-    padding: 15px 0;
-    background-color: black;
-    color: white;
-    font-size: 18px;
-    font-weight: bold;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-  }
+        if (error || !data) {
+          window.location.href = "welcometofchat.html";
+          return;
+        }
 
-  #fchat-btn:hover {
-    background-color: #222; /* Slight hover effect */
-  }
-</style>
-
-<script type="module">
-  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-
-  const supabaseUrl = "https://pwsxezhugsxosbwhkdvf.supabase.co";
-  const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
-  const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-  document.getElementById("fchat-btn").addEventListener("click", async () => {
-    // Get user info from local storage
-    const faccount = JSON.parse(localStorage.getItem("faccount"));
-    if (!faccount || !faccount.email) {
-      alert("No user data found. Please log in first.");
-      return;
-    }
-
-    // Optional: Show loading state
-    document.getElementById("fchat-btn").innerText = "Checking access...";
-    document.getElementById("fchat-btn").disabled = true;
-
-    try {
-      // Check if user has FCHAT access
-      const { data, error } = await supabase
-        .from("fwebaccount")
-        .select("*")
-        .eq("email", faccount.email)
-        .single();
-
-      if (error || !data) {
-        console.warn("Error loading account:", error?.message);
-        window.location.href = "welcometofchat.html";
-        return;
+        if (data.fchat && data.fchat.toLowerCase() === "yes") {
+          localStorage.setItem("fweb_user", JSON.stringify(data));
+          window.location.href = "fchat.html";
+        } else {
+          window.location.href = "welcometofchat.html";
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Something went wrong.");
+        fchatBtn.innerText = "Go to Fchat";
+        fchatBtn.disabled = false;
       }
-
-      // Redirect based on FCHAT access
-      if (data.fchat && data.fchat.toLowerCase() === "yes") {
-        localStorage.setItem("fweb_user", JSON.stringify(data));
-        window.location.href = "fchat.html";
-      } else {
-        window.location.href = "welcometofchat.html";
-      }
-    } catch (err) {
-      console.error("Unexpected error:", err);
-      alert("Something went wrong. Please try again.");
-      document.getElementById("fchat-btn").innerText = "Go to Fchat";
-      document.getElementById("fchat-btn").disabled = false;
-    }
-  });
-</script>
-  </body>
+    });
+  </script>
+</body>
 </html>
