@@ -128,6 +128,9 @@ async function loadUsers() {
 
 // Render users as FCHAT cards
 function renderUsers(users) {
+  const currentUser = JSON.parse(localStorage.getItem('faccount'));
+  const currentUserId = currentUser?.id;
+
   container.innerHTML = '';
   if (users.length === 0) {
     container.innerHTML = '<p style="text-align:center;">No users found</p>';
@@ -164,34 +167,36 @@ function renderUsers(users) {
     info.appendChild(username);
     card.appendChild(info);
 
-    // Add button if fchat yes
     if (u.fchat === 'yes') {
       const addBtn = document.createElement('button');
       addBtn.className = 'add-btn';
-      addBtn.textContent = 'Add';
-      addBtn.onclick = async (e) => {
-        e.stopPropagation();
-        const currentUser = JSON.parse(localStorage.getItem('faccount'));
-        if (!currentUser?.id) return;
 
-        const requests = u.friend_requests?.split(',').map(x => x.trim()).filter(Boolean) || [];
-        if (!requests.includes(String(currentUser.id))) requests.push(currentUser.id);
+      // Check if current user already sent request
+      const requests = u.friend_requests?.split(',').map(x => x.trim()).filter(Boolean) || [];
+      if (currentUserId && requests.includes(String(currentUserId))) {
+        addBtn.textContent = 'Sent';
+        addBtn.disabled = true;
+      } else {
+        addBtn.textContent = 'Add';
+        addBtn.disabled = false;
 
-        const utcNow = new Date().toISOString();
+        addBtn.onclick = async (e) => {
+          e.stopPropagation();
+          const utcNow = new Date().toISOString();
+          const newRequests = [...requests, currentUserId];
 
-        const { error } = await supabase.from('fwebaccount')
-          .update({ 
-            friend_requests: requests.join(','), 
-            sent_at: utcNow 
-          })
-          .eq('id', u.id);
+          const { error } = await supabase.from('fwebaccount')
+            .update({ friend_requests: newRequests.join(','), sent_at: utcNow })
+            .eq('id', u.id);
 
-        if (!error) {
-          u.friend_requests = requests.join(',');
-          addBtn.textContent = 'Pending';
-          addBtn.disabled = true;
-        }
-      };
+          if (!error) {
+            u.friend_requests = newRequests.join(',');
+            addBtn.textContent = 'Sent';
+            addBtn.disabled = true;
+          }
+        };
+      }
+
       card.appendChild(addBtn);
     } else {
       const cannot = document.createElement('div');
@@ -200,7 +205,6 @@ function renderUsers(users) {
       card.appendChild(cannot);
     }
 
-    // Show user ID
     const idDiv = document.createElement('div');
     idDiv.className = 'user-id';
     idDiv.textContent = 'User ID: ' + u.id;
