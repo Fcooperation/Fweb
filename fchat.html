@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>FCHAT - Accepted Users</title>
+<title>FCHAT - Users</title>
 <style>
   body {
     font-family: 'Poppins','Segoe UI',sans-serif;
@@ -11,9 +11,8 @@
     color: #000;
     margin: 0;
     display: flex;
-    justify-content: flex-start;
-    align-items: center;
     flex-direction: column;
+    align-items: center;
     padding: 20px;
     min-height: 100vh;
   }
@@ -31,16 +30,16 @@
     background: #f9f9f9;
   }
   .label { font-weight: bold; }
-  #reload-btn {
-    margin-top: 20px;
+  button {
+    margin: 10px 0;
     padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
     background: #0072ff;
     color: #fff;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
   }
-  #reload-btn:hover {
+  button:hover {
     opacity: 0.9;
     transform: scale(1.05);
     transition: all 0.2s ease;
@@ -49,8 +48,13 @@
 </head>
 <body>
 
-<h1>Accepted Users</h1>
-<div id="users-container"></div>
+<h1>FCHAT Account</h1>
+
+<div id="my-details"></div>
+
+<button id="show-accepted-btn">Show Accepted Users</button>
+<div id="accepted-container"></div>
+
 <button id="reload-btn">Reload from Server</button>
 
 <script type="module">
@@ -60,64 +64,92 @@ const supabaseUrl = "https://pwsxezhugsxosbwhkdvf.supabase.co";
 const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-const container = document.getElementById('users-container');
+const myContainer = document.getElementById('my-details');
+const acceptedContainer = document.getElementById('accepted-container');
+const showAcceptedBtn = document.getElementById('show-accepted-btn');
 const reloadBtn = document.getElementById('reload-btn');
 
-// Function to render accepted users from localStorage
-function renderAcceptedUsers() {
-  const user = JSON.parse(localStorage.getItem('faccount'));
+// Function to render user data
+function renderUserData(user, container) {
   container.innerHTML = '';
-
-  if (!user || !Array.isArray(user.accepted)) {
-    container.innerHTML = '<p>No accepted users found.</p>';
+  if (!user) {
+    container.innerHTML = '<p>No data found.</p>';
     return;
   }
+  const card = document.createElement('div');
+  card.className = 'user-card';
+  Object.keys(user).forEach(key => {
+    const line = document.createElement('div');
+    line.innerHTML = `<span class="label">${key}:</span> ${user[key]}`;
+    card.appendChild(line);
+  });
+  container.appendChild(card);
+}
 
-  user.accepted.forEach(accId => {
-    const acceptedUser = JSON.parse(localStorage.getItem(accId));
-    if (acceptedUser) {
-      const card = document.createElement('div');
-      card.className = 'user-card';
-      Object.keys(acceptedUser).forEach(key => {
-        const line = document.createElement('div');
-        line.innerHTML = `<span class="label">${key}:</span> ${acceptedUser[key]}`;
-        card.appendChild(line);
-      });
-      container.appendChild(card);
-    } else {
-      // Show placeholder if localStorage doesn't have accepted user data
-      const card = document.createElement('div');
-      card.className = 'user-card';
-      card.innerHTML = `<p>User ID ${accId} data not loaded yet.</p>`;
-      container.appendChild(card);
+// Render my own details from localStorage
+function renderMyDetails() {
+  const myData = JSON.parse(localStorage.getItem('faccount'));
+  renderUserData(myData, myContainer);
+}
+
+// Render accepted users from localStorage
+function renderAcceptedUsers() {
+  const myData = JSON.parse(localStorage.getItem('faccount'));
+  acceptedContainer.innerHTML = '';
+  if (!myData || !Array.isArray(myData.accepted) || myData.accepted.length === 0) {
+    acceptedContainer.innerHTML = '<p>No accepted users.</p>';
+    return;
+  }
+  myData.accepted.forEach(accId => {
+    const accUser = JSON.parse(localStorage.getItem(accId));
+    if (accUser) renderUserData(accUser, acceptedContainer);
+    else {
+      const placeholder = document.createElement('div');
+      placeholder.className = 'user-card';
+      placeholder.innerHTML = `<p>User ID ${accId} data not loaded yet.</p>`;
+      acceptedContainer.appendChild(placeholder);
     }
   });
 }
 
-// Function to fetch accepted users data from Supabase and update localStorage
-async function reloadAcceptedUsers() {
-  const user = JSON.parse(localStorage.getItem('faccount'));
-  if (!user || !Array.isArray(user.accepted)) return;
+// Reload all users (my account + accepted users) from Supabase
+async function reloadAllUsers() {
+  const myData = JSON.parse(localStorage.getItem('faccount'));
+  if (!myData?.email) return;
 
-  for (let accId of user.accepted) {
-    const { data, error } = await supabase
-      .from('fwebaccount')
-      .select('*')
-      .eq('id', accId)
-      .single();
-    if (!error && data) {
-      localStorage.setItem(accId, JSON.stringify(data));
+  // Reload my account
+  const { data: meData, error: meError } = await supabase
+    .from('fwebaccount')
+    .select('*')
+    .eq('email', myData.email)
+    .single();
+
+  if (!meError && meData) {
+    localStorage.setItem('faccount', JSON.stringify(meData));
+
+    // Reload accepted users
+    if (Array.isArray(meData.accepted)) {
+      for (let accId of meData.accepted) {
+        const { data, error } = await supabase
+          .from('fwebaccount')
+          .select('*')
+          .eq('id', accId)
+          .single();
+        if (!error && data) localStorage.setItem(accId, JSON.stringify(data));
+      }
     }
   }
 
+  renderMyDetails();
   renderAcceptedUsers();
 }
 
-// Initial render
-renderAcceptedUsers();
+// Button events
+showAcceptedBtn.addEventListener('click', renderAcceptedUsers);
+reloadBtn.addEventListener('click', reloadAllUsers);
 
-// Reload button click
-reloadBtn.addEventListener('click', reloadAcceptedUsers);
+// Initial render
+renderMyDetails();
 </script>
 
 </body>
