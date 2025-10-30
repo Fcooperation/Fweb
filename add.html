@@ -237,6 +237,30 @@ modal.addEventListener('click', () => modal.style.display = 'none');
 
 init();
 </script>
+<script type="module">
+(async () => {
+  // Filter broadcast users initially
+  const broadcastUsers = allUsers.filter(u => u.broadcast === 'yes');
+  if (broadcastUsers.length > 0 && !searchInput.value.trim()) {
+    renderUsers(broadcastUsers);
+  }
 
+  // Listen for input to hide broadcast cards when searching
+  searchInput.addEventListener('input', () => {
+    const term = searchInput.value.toLowerCase().trim();
+    if (!term) {
+      // Show broadcast users again if search is cleared
+      renderUsers(broadcastUsers);
+      return;
+    }
+
+    const filtered = allUsers.filter(u =>
+      (u.username && u.username.toLowerCase().includes(term)) || String(u.id).includes(term)
+    );
+
+    renderUsers(filtered);
+  });
+})();
+</script>
 </body>
 </html>
