@@ -119,19 +119,18 @@ const modal = document.getElementById('profile-modal');
 const modalImg = document.getElementById('profile-view');
 let allUsers = [];
 
-// Load all users initially
 async function loadUsers() {
-  const { data, error } = await supabase.from('fwebaccount')
-    .select('id, username, profile_pic, fchat, friend_requests');
+  const { data, error } = await supabase
+    .from('fwebaccount')
+    .select('id, username, profile_pic, fchat, friend_requests, broadcast');
   if (!error && data) allUsers = data;
 }
 
-// Render users as FCHAT cards
 function renderUsers(users) {
   const currentUser = JSON.parse(localStorage.getItem('faccount'));
   const currentUserId = currentUser?.id;
-
   container.innerHTML = '';
+
   if (users.length === 0) {
     container.innerHTML = '<p style="text-align:center;">No users found</p>';
     return;
@@ -162,7 +161,6 @@ function renderUsers(users) {
     const username = document.createElement('div');
     username.className = 'username';
     username.textContent = u.username || 'Unknown';
-
     info.appendChild(profile);
     info.appendChild(username);
     card.appendChild(info);
@@ -171,15 +169,12 @@ function renderUsers(users) {
       const addBtn = document.createElement('button');
       addBtn.className = 'add-btn';
 
-      // Check if current user already sent request
       const requests = u.friend_requests?.split(',').map(x => x.trim()).filter(Boolean) || [];
       if (currentUserId && requests.includes(String(currentUserId))) {
         addBtn.textContent = 'Sent';
         addBtn.disabled = true;
       } else {
         addBtn.textContent = 'Add';
-        addBtn.disabled = false;
-
         addBtn.onclick = async (e) => {
           e.stopPropagation();
           const utcNow = new Date().toISOString();
@@ -214,42 +209,16 @@ function renderUsers(users) {
   });
 }
 
-// Initialize search
 async function init() {
   await loadUsers();
 
-  searchInput.addEventListener('input', () => {
-    const term = searchInput.value.toLowerCase().trim();
-    if (!term) {
-      container.innerHTML = '';
-      return;
-    }
-
-    const filtered = allUsers.filter(u =>
-      (u.username && u.username.toLowerCase().includes(term)) || String(u.id).includes(term)
-    );
-
-    renderUsers(filtered);
-  });
-}
-
-modal.addEventListener('click', () => modal.style.display = 'none');
-
-init();
-</script>
-<script type="module">
-(async () => {
-  // Filter broadcast users initially
+  // Show broadcast users first
   const broadcastUsers = allUsers.filter(u => u.broadcast === 'yes');
-  if (broadcastUsers.length > 0 && !searchInput.value.trim()) {
-    renderUsers(broadcastUsers);
-  }
+  if (broadcastUsers.length > 0) renderUsers(broadcastUsers);
 
-  // Listen for input to hide broadcast cards when searching
   searchInput.addEventListener('input', () => {
     const term = searchInput.value.toLowerCase().trim();
     if (!term) {
-      // Show broadcast users again if search is cleared
       renderUsers(broadcastUsers);
       return;
     }
@@ -257,10 +226,12 @@ init();
     const filtered = allUsers.filter(u =>
       (u.username && u.username.toLowerCase().includes(term)) || String(u.id).includes(term)
     );
-
     renderUsers(filtered);
   });
-})();
+}
+
+modal.addEventListener('click', () => modal.style.display = 'none');
+init();
 </script>
 </body>
 </html>
