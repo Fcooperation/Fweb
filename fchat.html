@@ -309,6 +309,51 @@ searchBar.addEventListener('input', (e) => {
 
 loadUsers();
 </script>
+<script type="module">
+// --- Reload Button Setup ---
+const header = document.querySelector('header');
+const reloadBtn = document.createElement('button');
+reloadBtn.textContent = '🔄';
+reloadBtn.style.fontSize = '20px';
+reloadBtn.style.background = 'none';
+reloadBtn.style.border = 'none';
+reloadBtn.style.cursor = 'pointer';
+reloadBtn.style.marginRight = '10px';
 
+// Insert reload button before the menu button
+header.insertBefore(reloadBtn, document.getElementById('menu-btn'));
+
+// Reload logic
+reloadBtn.addEventListener('click', async () => {
+  reloadBtn.textContent = '⏳'; // show loading
+
+  const currentUser = JSON.parse(localStorage.getItem('faccount'));
+  if (!currentUser?.id) {
+    alert('No user logged in.');
+    reloadBtn.textContent = '🔄';
+    return;
+  }
+
+  // Fetch the latest accepted column from Supabase
+  const { data, error } = await supabase
+    .from('fwebaccount')
+    .select('accepted')
+    .eq('id', currentUser.id)
+    .single();
+
+  if (error) {
+    alert('Failed to reload data.');
+    reloadBtn.textContent = '🔄';
+    return;
+  }
+
+  // Update localStorage and refresh page
+  currentUser.accepted = data.accepted || '';
+  localStorage.setItem('faccount', JSON.stringify(currentUser));
+
+  reloadBtn.textContent = '✅';
+  setTimeout(() => location.reload(), 800);
+});
+</script>
 </body>
 </html>
