@@ -7,9 +7,9 @@
   <style>
     body {
       margin: 0;
-      background: #0b0c10;
-      color: #fff;
-      font-family: Arial, sans-serif;
+      background: #fff;
+      color: #000;
+      font-family: 'Poppins','Segoe UI',sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -17,12 +17,12 @@
       padding: 20px;
     }
     h1 {
-      color: #66fcf1;
+      color: #000;
       margin-bottom: 10px;
     }
     #logline {
       font-size: 13px;
-      color: #45a29e;
+      color: #555;
       margin-bottom: 15px;
       transition: opacity 0.3s ease;
       height: 18px;
@@ -38,15 +38,15 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: #1f2833;
+      background: #f2f2f2;
       padding: 14px;
       border-radius: 10px;
-      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
       transition: 0.3s;
     }
     .fchat-card:hover {
       transform: scale(1.02);
-      background: #202833;
+      background: #eaeaea;
     }
     .fchat-left {
       display: flex;
@@ -58,18 +58,18 @@
       height: 50px;
       border-radius: 50%;
       object-fit: cover;
-      border: 2px solid #45a29e;
+      border: 2px solid #000;
     }
     .username {
       font-weight: bold;
-      color: #fff;
+      color: #000;
     }
     .actions {
       display: flex;
       gap: 10px;
     }
     button {
-      background: #45a29e;
+      background: #000;
       border: none;
       color: #fff;
       padding: 6px 10px;
@@ -79,8 +79,7 @@
       font-size: 13px;
     }
     button:hover {
-      background: #66fcf1;
-      color: #0b0c10;
+      background: #333;
     }
     .reject {
       background: #c0392b;
@@ -132,10 +131,10 @@ async function loadUserData() {
   }
 
   const loop = showLogSequence([
-    "Retrieving from local storage...",
-    "Fetching your account data...",
-    "Checking friend requests...",
-    "Loading all requesters at once..."
+    "Retrieving account...",
+    "Fetching data...",
+    "Checking requests...",
+    "Almost done..."
   ]);
 
   const { data: user, error } = await supabase
@@ -166,10 +165,9 @@ async function loadUserData() {
 
   statusText.remove();
 
-  // ⚡ One single query to fetch all requesters at once
   const { data: requesters, error: reqErr } = await supabase
     .from("fwebaccount")
-    .select("*")
+    .select("id, username, profile_pic, accepted")
     .in("id", requests);
 
   clearInterval(loop);
@@ -182,7 +180,6 @@ async function loadUserData() {
     return;
   }
 
-  // 🔥 Render all at once
   for (const requestUser of requesters) {
     const card = document.createElement("div");
     card.className = "fchat-card";
@@ -218,61 +215,61 @@ async function loadUserData() {
 
     // ✅ Accept
     acceptBtn.onclick = async () => {
+      logLine.textContent = `Accepting ${requestUser.username}...`;
       acceptBtn.disabled = true;
       rejectBtn.disabled = true;
-      acceptBtn.innerText = "Accepted ✓";
-      acceptBtn.style.background = "#2ecc71";
 
-      const acceptedList = user.accepted
-        ? user.accepted.split(",").map(a => a.trim()).filter(Boolean)
-        : [];
-      if (!acceptedList.includes(requestUser.id.toString()))
-        acceptedList.push(requestUser.id.toString());
+      try {
+        const acceptedList = (user.accepted || "")
+          .split(",").map(a => a.trim()).filter(Boolean);
+        if (!acceptedList.includes(requestUser.id.toString()))
+          acceptedList.push(requestUser.id.toString());
 
-      const updatedRequests = requests.filter(id => id !== requestUser.id.toString());
+        const updatedRequests = requests.filter(id => id !== requestUser.id.toString());
 
-      await supabase
-        .from("fwebaccount")
-        .update({
-          accepted: acceptedList.join(","),
-          friend_requests: updatedRequests.join(","),
-        })
-        .eq("id", faccount.id);
+        await supabase
+          .from("fwebaccount")
+          .update({
+            accepted: acceptedList.join(","),
+            friend_requests: updatedRequests.join(","),
+          })
+          .eq("id", faccount.id);
 
-      const { data: requesterData } = await supabase
-        .from("fwebaccount")
-        .select("accepted")
-        .eq("id", requestUser.id)
-        .maybeSingle();
+        const requesterAccepted = (requestUser.accepted || "")
+          .split(",").map(a => a.trim()).filter(Boolean);
+        if (!requesterAccepted.includes(faccount.id.toString()))
+          requesterAccepted.push(faccount.id.toString());
 
-      const requesterAccepted = requesterData?.accepted
-        ? requesterData.accepted.split(",").map(a => a.trim()).filter(Boolean)
-        : [];
-      if (!requesterAccepted.includes(faccount.id.toString()))
-        requesterAccepted.push(faccount.id.toString());
+        await supabase
+          .from("fwebaccount")
+          .update({ accepted: requesterAccepted.join(",") })
+          .eq("id", requestUser.id);
 
-      await supabase
-        .from("fwebaccount")
-        .update({ accepted: requesterAccepted.join(",") })
-        .eq("id", requestUser.id);
-
-      card.style.opacity = 0.3;
+        logLine.textContent = `✅ ${requestUser.username} added successfully!`;
+        setTimeout(() => location.reload(), 800);
+      } catch (err) {
+        logLine.textContent = "Error accepting user.";
+      }
     };
 
     // ❌ Reject
     rejectBtn.onclick = async () => {
+      logLine.textContent = `Rejecting ${requestUser.username}...`;
       acceptBtn.disabled = true;
       rejectBtn.disabled = true;
-      rejectBtn.innerText = "Rejected ✗";
-      rejectBtn.style.background = "#e74c3c";
 
-      const updatedRequests = requests.filter(id => id !== requestUser.id.toString());
-      await supabase
-        .from("fwebaccount")
-        .update({ friend_requests: updatedRequests.join(",") })
-        .eq("id", faccount.id);
+      try {
+        const updatedRequests = requests.filter(id => id !== requestUser.id.toString());
+        await supabase
+          .from("fwebaccount")
+          .update({ friend_requests: updatedRequests.join(",") })
+          .eq("id", faccount.id);
 
-      card.style.opacity = 0.3;
+        logLine.textContent = `✗ Rejected ${requestUser.username}`;
+        setTimeout(() => location.reload(), 800);
+      } catch (err) {
+        logLine.textContent = "Error rejecting user.";
+      }
     };
   }
 
