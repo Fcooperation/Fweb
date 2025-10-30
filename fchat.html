@@ -7,223 +7,51 @@
 <style>
   body {
     font-family: 'Poppins','Segoe UI',sans-serif;
-    background: linear-gradient(135deg,#000,#1a1a1a);
-    color:#fff;
-    margin:0;
-    display:flex;
-    flex-direction:column;
-    height:100vh;
-    overflow:hidden;
+    background: #fff;
+    color: #000;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 20px;
+    min-height: 100vh;
   }
-  .top-banner {
-    height:60px;
-    background:rgba(0,0,0,0.95);
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    padding:0 15px;
-    font-size:20px;
-    font-weight:700;
-    border-bottom:1px solid rgba(255,255,255,0.1);
-    position:relative;
-    z-index:100;
+  h1 {
+    font-size: 28px;
+    margin-bottom: 15px;
   }
-  .menu-btn { cursor:pointer; font-size:18px; }
-  .dropdown-menu {
-    display:none;
-    position:absolute;
-    top:60px;
-    right:10px;
-    background:rgba(0,0,0,0.95);
-    border:1px solid rgba(255,255,255,0.1);
-    border-radius:10px;
-    padding:10px;
-    min-width:150px;
-    z-index:200;
+  .detail {
+    margin-bottom: 10px;
+    font-size: 16px;
   }
-  .dropdown-menu a {
-    display:block;
-    color:#fff;
-    text-decoration:none;
-    padding:8px;
-    border-radius:5px;
-    transition:all 0.2s;
-  }
-  .dropdown-menu a:hover { background:rgba(255,255,255,0.1); }
-
-  .main {
-    flex:1;
-    display:flex;
-    flex-direction:column;
-    position:relative;
-    overflow-y:auto;
-    padding-bottom:80px;
-  }
-  .fab {
-    position:absolute;
-    bottom:90px;
-    right:20px;
-    width:60px;
-    height:60px;
-    border-radius:50%;
-    background:linear-gradient(135deg,#0072ff,#00c6ff);
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    font-size:28px;
-    cursor:pointer;
-    box-shadow:0 4px 10px rgba(0,0,0,0.3);
-    z-index:50;
-  }
-  .bottom-nav {
-    height:60px;
-    background:rgba(0,0,0,0.95);
-    display:flex;
-    justify-content:space-around;
-    align-items:center;
-    border-top:1px solid rgba(255,255,255,0.1);
-    position:relative;
-    z-index:50;
-  }
-  .nav-item { text-align:center; font-size:14px; cursor:pointer; opacity:0.8; }
-  .nav-item.active { opacity:1; font-weight:700; }
-
-  .chat-card {
-    display:flex;
-    align-items:center;
-    padding:10px 15px;
-    border-bottom:1px solid rgba(255,255,255,0.05);
-    cursor:pointer;
-    transition: background 0.2s;
-  }
-  .chat-card:hover { background:rgba(255,255,255,0.05); }
-  .chat-card img {
-    width:50px;
-    height:50px;
-    border-radius:50%;
-    margin-right:15px;
-    object-fit:cover;
-    border:1px solid rgba(255,255,255,0.1);
-  }
-  .chat-card .username { font-size:16px; font-weight:600; }
-
-  #logs-container {
-    height:25px;
-    text-align:center;
-    font-size:14px;
-    color:#00c6ff;
+  .label {
+    font-weight: bold;
   }
 </style>
 </head>
 <body>
-  <div class="top-banner" id="topBanner">
-    <div>FCHAT</div>
-    <div style="display:flex; align-items:center;">
-      <button id="reloadBtn" title="Reload" style="margin-right:10px; font-size:20px; background:transparent; border:none; color:#00c6ff; cursor:pointer;">⟳</button>
-      <div class="menu-btn" id="menuBtn">☰</div>
-    </div>
-    <div class="dropdown-menu" id="dropdownMenu">
-      <a href="fchatsettings.html">Settings</a>
-    </div>
-  </div>
 
-  <div class="main" id="mainContent">
-    <!-- Chat cards appear here -->
-  </div>
+<h1>Welcome to FCHAT</h1>
+<div id="user-details"></div>
 
-  <div class="fab" id="addBtn">+</div>
+<script>
+  // Get user data from localStorage
+  const user = JSON.parse(localStorage.getItem('faccount'));
+  const container = document.getElementById('user-details');
 
-  <div class="bottom-nav" id="bottomNav">
-    <div class="nav-item active" id="navFchat">FCHAT</div>
-    <div class="nav-item" id="navFriends">Friend Requests</div>
-    <div class="nav-item" id="navUpdates">Updates</div>
-    <div class="nav-item" id="navMe">Me</div>
-  </div>
-
-  <div id="logs-container"><span id="logs"></span></div>
-
-<script type="module">
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-
-const supabaseUrl = "https://pwsxezhugsxosbwhkdvf.supabase.co";
-const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
-const supabase = createClient(supabaseUrl,supabaseAnonKey);
-
-const logsEl = document.getElementById('logs');
-const mainContent = document.getElementById('mainContent');
-const addBtn = document.getElementById('addBtn');
-const dropdownMenu = document.getElementById('dropdownMenu');
-const menuBtn = document.getElementById('menuBtn');
-const reloadBtn = document.getElementById('reloadBtn');
-
-// Menu toggle
-menuBtn.addEventListener('click', ()=>{
-  dropdownMenu.style.display = dropdownMenu.style.display==='block'?'none':'block';
-});
-
-// FAB
-addBtn.addEventListener('click', ()=> window.location.href='add.html');
-
-// Bottom nav
-document.getElementById('navFchat').addEventListener('click', ()=> window.location.href='fchat.html');
-document.getElementById('navFriends').addEventListener('click', ()=> window.location.href='friendrequest.html');
-document.getElementById('navUpdates').addEventListener('click', ()=> window.location.href='updates.html');
-document.getElementById('navMe').addEventListener('click', ()=> window.location.href='me.html');
-
-// Show menu/nav
-document.getElementById('topBanner').style.display='flex';
-document.getElementById('bottomNav').style.display='flex';
-addBtn.style.display='flex';
-
-// Load accepted friends
-async function loadFwebData(){
-  logsEl.textContent = "Updating FCHAT...";
-
-  let fwebData = {};
-  try{
-    const dirHandle = await window.showDirectoryPicker();
-    const fileHandle = await dirHandle.getFileHandle('fweb_account.json');
-    const file = await fileHandle.getFile();
-    const text = await file.text();
-    fwebData = JSON.parse(text);
-  }catch(e){
-    console.warn("Could not read user storage", e);
-  }
-
-  // Remove all previous chat cards/messages
-  mainContent.querySelectorAll('.chat-card, .no-friends-msg').forEach(c=>c.remove());
-
-  if(fwebData?.accepted?.length > 0){
-    for(let id of fwebData.accepted){
-      const {data,error} = await supabase.from('fwebaccount').select('username,profile_pic').eq('id',id).single();
-      if(data){
-        const card = document.createElement('div');
-        card.classList.add('chat-card');
-        card.innerHTML = `<img src="${data.profile_pic || 'https://via.placeholder.com/50'}" alt="Profile Pic">
-                          <div class="username">${data.username}</div>`;
-        mainContent.appendChild(card);
-      }
-    }
+  if (!user) {
+    container.innerHTML = '<p>No user data found. Please log in again.</p>';
   } else {
-    const msg = document.createElement('div');
-    msg.classList.add('no-friends-msg');
-    msg.style.color='#aaa';
-    msg.style.margin='10px';
-    msg.textContent = "No accepted FCHAT friends yet.";
-    mainContent.appendChild(msg);
+    // Loop through all properties and display them
+    Object.keys(user).forEach(key => {
+      const div = document.createElement('div');
+      div.className = 'detail';
+      div.innerHTML = `<span class="label">${key}:</span> ${user[key]}`;
+      container.appendChild(div);
+    });
   }
-
-  logsEl.textContent = "✅ FCHAT updated!";
-  setTimeout(()=> logsEl.textContent="", 2000);
-}
-
-// Load on first visit
-loadFwebData();
-
-// Reload button
-reloadBtn.addEventListener('click', ()=>{
-  loadFwebData();
-});
 </script>
+
 </body>
 </html>
