@@ -52,6 +52,49 @@
     });
   }
 </script>
+  <script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const supabaseUrl = "https://pwsxezhugsxosbwhkdvf.supabase.co";
+const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+const container = document.getElementById('user-details');
+
+async function reloadUser() {
+  const userLS = JSON.parse(localStorage.getItem('faccount'));
+  if (!userLS?.email) {
+    container.innerHTML = '<p>No user email found in localStorage.</p>';
+    return;
+  }
+
+  const { data, error } = await supabase
+    .from('fwebaccount')
+    .select('*')
+    .eq('email', userLS.email)
+    .single();
+
+  if (error) {
+    container.innerHTML = `<p>Error fetching data: ${error.message}</p>`;
+    return;
+  }
+
+  // Update localStorage
+  localStorage.setItem('faccount', JSON.stringify(data));
+
+  // Re-render user details
+  container.innerHTML = '';
+  Object.keys(data).forEach(key => {
+    const div = document.createElement('div');
+    div.className = 'detail';
+    div.innerHTML = `<span class="label">${key}:</span> ${data[key]}`;
+    container.appendChild(div);
+  });
+}
+
+// Run immediately
+reloadUser();
+  </script>
 
 </body>
 </html>
