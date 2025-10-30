@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>FCHAT</title>
+<title>FCHAT - Accepted Users</title>
 <style>
   body {
     font-family: 'Poppins','Segoe UI',sans-serif;
@@ -21,13 +21,16 @@
     font-size: 28px;
     margin-bottom: 15px;
   }
-  .detail {
+  .user-card {
+    width: 100%;
+    max-width: 500px;
+    border: 1px solid #ccc;
+    padding: 10px 15px;
     margin-bottom: 10px;
-    font-size: 16px;
+    border-radius: 8px;
+    background: #f9f9f9;
   }
-  .label {
-    font-weight: bold;
-  }
+  .label { font-weight: bold; }
   #reload-btn {
     margin-top: 20px;
     padding: 10px 20px;
@@ -46,8 +49,8 @@
 </head>
 <body>
 
-<h1>Welcome to FCHAT</h1>
-<div id="user-details"></div>
+<h1>Accepted Users</h1>
+<div id="users-container"></div>
 <button id="reload-btn">Reload from Server</button>
 
 <script type="module">
@@ -57,57 +60,64 @@ const supabaseUrl = "https://pwsxezhugsxosbwhkdvf.supabase.co";
 const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-const container = document.getElementById('user-details');
+const container = document.getElementById('users-container');
 const reloadBtn = document.getElementById('reload-btn');
 
-// Function to render user data from localStorage
-function renderUserData() {
+// Function to render accepted users from localStorage
+function renderAcceptedUsers() {
   const user = JSON.parse(localStorage.getItem('faccount'));
   container.innerHTML = '';
 
-  if (!user) {
-    container.innerHTML = '<p>No user data found. Please log in again.</p>';
+  if (!user || !Array.isArray(user.accepted)) {
+    container.innerHTML = '<p>No accepted users found.</p>';
     return;
   }
 
-  Object.keys(user).forEach(key => {
-    const div = document.createElement('div');
-    div.className = 'detail';
-    div.innerHTML = `<span class="label">${key}:</span> ${user[key]}`;
-    container.appendChild(div);
+  user.accepted.forEach(accId => {
+    const acceptedUser = JSON.parse(localStorage.getItem(accId));
+    if (acceptedUser) {
+      const card = document.createElement('div');
+      card.className = 'user-card';
+      Object.keys(acceptedUser).forEach(key => {
+        const line = document.createElement('div');
+        line.innerHTML = `<span class="label">${key}:</span> ${acceptedUser[key]}`;
+        card.appendChild(line);
+      });
+      container.appendChild(card);
+    } else {
+      // Show placeholder if localStorage doesn't have accepted user data
+      const card = document.createElement('div');
+      card.className = 'user-card';
+      card.innerHTML = `<p>User ID ${accId} data not loaded yet.</p>`;
+      container.appendChild(card);
+    }
   });
 }
 
-// Function to fetch user data from Supabase and update localStorage
-async function reloadUserData() {
-  const userLS = JSON.parse(localStorage.getItem('faccount'));
-  if (!userLS?.email) {
-    container.innerHTML = '<p>No user email found in localStorage.</p>';
-    return;
+// Function to fetch accepted users data from Supabase and update localStorage
+async function reloadAcceptedUsers() {
+  const user = JSON.parse(localStorage.getItem('faccount'));
+  if (!user || !Array.isArray(user.accepted)) return;
+
+  for (let accId of user.accepted) {
+    const { data, error } = await supabase
+      .from('fwebaccount')
+      .select('*')
+      .eq('id', accId)
+      .single();
+    if (!error && data) {
+      localStorage.setItem(accId, JSON.stringify(data));
+    }
   }
 
-  const { data, error } = await supabase
-    .from('fwebaccount')
-    .select('*')
-    .eq('email', userLS.email)
-    .single();
-
-  if (error) {
-    container.innerHTML = `<p>Error fetching data: ${error.message}</p>`;
-    return;
-  }
-
-  localStorage.setItem('faccount', JSON.stringify(data));
-  renderUserData();
+  renderAcceptedUsers();
 }
 
 // Initial render
-renderUserData();
+renderAcceptedUsers();
 
-// Reload button click event
-reloadBtn.addEventListener('click', () => {
-  reloadUserData();
-});
+// Reload button click
+reloadBtn.addEventListener('click', reloadAcceptedUsers);
 </script>
 
 </body>
