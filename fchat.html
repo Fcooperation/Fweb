@@ -313,7 +313,7 @@ loadUsers();
 // --- Reload Button Setup ---
 const header = document.querySelector('header');
 const reloadBtn = document.createElement('button');
-reloadBtn.textContent = '🔄';
+reloadBtn.textContent = '🔃';
 reloadBtn.style.fontSize = '20px';
 reloadBtn.style.background = 'none';
 reloadBtn.style.border = 'none';
@@ -330,7 +330,7 @@ reloadBtn.addEventListener('click', async () => {
   const currentUser = JSON.parse(localStorage.getItem('faccount'));
   if (!currentUser?.id) {
     alert('No user logged in.');
-    reloadBtn.textContent = '🔄';
+    reloadBtn.textContent = '🔃';
     return;
   }
 
@@ -343,16 +343,28 @@ reloadBtn.addEventListener('click', async () => {
 
   if (error) {
     alert('Failed to reload data.');
-    reloadBtn.textContent = '🔄';
+    reloadBtn.textContent = '🔃';
     return;
   }
 
-  // Update localStorage and refresh page
+  // Update localStorage
   currentUser.accepted = data.accepted || '';
   localStorage.setItem('faccount', JSON.stringify(currentUser));
 
   reloadBtn.textContent = '✅';
-  setTimeout(() => location.reload(), 800);
+
+  // Wait briefly, then reload page
+  setTimeout(() => {
+    location.reload();
+  }, 800);
+});
+
+// Detect when page reload is complete
+window.addEventListener('load', () => {
+  if (performance.getEntriesByType('navigation')[0]?.type === 'reload') {
+    alert('✅ Fchat refreshed successfully!');
+    reloadBtn.textContent = '🔃';
+  }
 });
 </script>
 </body>
