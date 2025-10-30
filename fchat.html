@@ -1,34 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>FCHAT</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FCHAT Cards</title>
 <style>
   body {
     font-family: 'Poppins','Segoe UI',sans-serif;
     background: #fff;
     color: #000;
     margin: 0;
-    display: flex;
-    justify-content: flex-start;
-    align-items: flex-start;
-    flex-direction: column;
     padding: 20px;
-    min-height: 100vh;
   }
-  h1, h2 {
+  h1 { margin-bottom: 20px; }
+  .fchat-card {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: #f0f0f0;
+    padding: 12px 15px;
+    border-radius: 12px;
     margin-bottom: 10px;
   }
-  .detail {
-    margin-bottom: 8px;
-    font-size: 16px;
-  }
-  .label {
+  .profile-pic {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: #0072ff;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     font-weight: bold;
+    font-size: 18px;
+    overflow: hidden;
   }
-  button {
-    margin-top: 15px;
+  .username { font-size: 16px; font-weight: bold; }
+  #reload-btn {
+    margin-top: 20px;
     padding: 10px 20px;
     background: #0072ff;
     color: #fff;
@@ -36,24 +45,14 @@
     border-radius: 8px;
     cursor: pointer;
   }
-  button:hover {
-    opacity: 0.9;
-    transform: scale(1.05);
-    transition: all 0.2s ease;
-  }
+  #reload-btn:hover { opacity: 0.9; transform: scale(1.05); transition: all 0.2s ease; }
 </style>
 </head>
 <body>
 
-<h1>Welcome to FCHAT</h1>
-
-<h2>Your Details:</h2>
-<div id="user-details"></div>
-
-<h2>Accepted Users:</h2>
-<div id="accepted-users"></div>
-
-<button id="reload-btn">Reload from Server</button>
+<h1>FCHAT Users</h1>
+<div id="fchat-container"></div>
+<button id="reload-btn">Reload All</button>
 
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
@@ -62,89 +61,92 @@ const supabaseUrl = "https://pwsxezhugsxosbwhkdvf.supabase.co";
 const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-const userContainer = document.getElementById('user-details');
-const acceptedContainer = document.getElementById('accepted-users');
+const container = document.getElementById('fchat-container');
 const reloadBtn = document.getElementById('reload-btn');
 
-// Render your user details from localStorage
-function renderUserData() {
+async function renderFchatCards() {
+  container.innerHTML = '';
+
+  // Get logged-in user from localStorage
   const user = JSON.parse(localStorage.getItem('faccount'));
-  userContainer.innerHTML = '';
   if (!user) {
-    userContainer.innerHTML = '<p>No user data found.</p>';
-    return;
-  }
-  Object.keys(user).forEach(key => {
-    const div = document.createElement('div');
-    div.className = 'detail';
-    div.innerHTML = `<span class="label">${key}:</span> ${user[key]}`;
-    userContainer.appendChild(div);
-  });
-}
-
-// Render accepted users from localStorage
-async function renderAcceptedUsers() {
-  const user = JSON.parse(localStorage.getItem('faccount'));
-  acceptedContainer.innerHTML = '';
-
-  if (!user?.accepted) {
-    acceptedContainer.innerHTML = '<p>No accepted users.</p>';
+    container.innerHTML = '<p>No user data found.</p>';
     return;
   }
 
-  // Split comma-separated string and filter empty
-  const ids = user.accepted.split(',').filter(id => id.trim() !== '');
-  if (ids.length === 0) {
-    acceptedContainer.innerHTML = '<p>No accepted users.</p>';
-    return;
-  }
+  // User card
+  const userCard = createCard(user);
+  container.appendChild(userCard);
 
-  // Fetch each accepted user's details from Supabase
-  for (const id of ids) {
-    const { data, error } = await supabase
-      .from('fwebaccount')
-      .select('*')
-      .eq('id', id)
-      .single();
-    
-    const div = document.createElement('div');
-    div.className = 'detail';
-    if (error || !data) {
-      div.textContent = `Accepted ID: ${id} (details not found)`;
-    } else {
-      div.innerHTML = `<span class="label">Username:</span> ${data.username || 'N/A'} | <span class="label">Email:</span> ${data.email || 'N/A'}`;
+  // Accepted users
+  const acceptedIds = user.accepted?.split(',').map(id => id.trim()).filter(Boolean) || [];
+  if (acceptedIds.length === 0) {
+    const noAccepted = document.createElement('p');
+    noAccepted.textContent = 'No accepted users';
+    container.appendChild(noAccepted);
+  } else {
+    for (let id of acceptedIds) {
+      const { data, error } = await supabase.from('fwebaccount').select('username, profile_pic').eq('id', id).single();
+      if (!error && data) {
+        const card = createCard(data);
+        container.appendChild(card);
+      }
     }
-    acceptedContainer.appendChild(div);
   }
 }
 
-// Reload user + accepted users from Supabase
-async function reloadUserData() {
+// Helper to create FCHAT card
+function createCard(userData) {
+  const card = document.createElement('div');
+  card.className = 'fchat-card';
+
+  const profile = document.createElement('div');
+  profile.className = 'profile-pic';
+  if (userData.profile_pic) {
+    const img = document.createElement('img');
+    img.src = userData.profile_pic;
+    img.style.width = '100%';
+    img.style.height = '100%';
+    img.style.objectFit = 'cover';
+    profile.appendChild(img);
+  } else {
+    profile.textContent = userData.username?.charAt(0).toUpperCase() || 'U';
+  }
+
+  const username = document.createElement('div');
+  username.className = 'username';
+  username.textContent = userData.username || 'Unknown';
+
+  card.appendChild(profile);
+  card.appendChild(username);
+
+  return card;
+}
+
+// Reload all data from Supabase to localStorage
+async function reloadAllData() {
   const userLS = JSON.parse(localStorage.getItem('faccount'));
-  if (!userLS?.email) return alert('No user email in localStorage');
+  if (!userLS?.email) return;
 
-  // Reload your user data
-  const { data, error } = await supabase
-    .from('fwebaccount')
-    .select('*')
-    .eq('email', userLS.email)
-    .single();
+  const { data, error } = await supabase.from('fwebaccount').select('*').eq('email', userLS.email).single();
+  if (!error && data) localStorage.setItem('faccount', JSON.stringify(data));
 
-  if (error || !data) return alert('Error fetching user data: ' + error?.message);
+  // Also fetch accepted users to update localStorage
+  const acceptedIds = data.accepted?.split(',').map(id => id.trim()).filter(Boolean) || [];
+  for (let id of acceptedIds) {
+    const { data: accData, error: accErr } = await supabase.from('fwebaccount').select('*').eq('id', id).single();
+    if (!accErr && accData) localStorage.setItem(`faccount_${id}`, JSON.stringify(accData));
+  }
 
-  localStorage.setItem('faccount', JSON.stringify(data));
-
-  // Re-render everything
-  renderUserData();
-  renderAcceptedUsers();
+  renderFchatCards();
 }
 
 // Initial render
-renderUserData();
-renderAcceptedUsers();
+renderFchatCards();
 
 // Reload button
-reloadBtn.addEventListener('click', reloadUserData);
+reloadBtn.addEventListener('click', reloadAllData);
+
 </script>
 
 </body>
