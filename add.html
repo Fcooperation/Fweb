@@ -72,7 +72,7 @@
     color: #555;
     margin-top: 5px;
   }
-  .friend-requests, .user-id {
+  .user-id {
     font-size: 12px;
     color: #333;
     margin-top: 5px;
@@ -174,14 +174,11 @@ function renderUsers(users) {
         const currentUser = JSON.parse(localStorage.getItem('faccount'));
         if (!currentUser?.id) return;
 
-        // Friend requests array
         const requests = u.friend_requests?.split(',').map(x => x.trim()).filter(Boolean) || [];
         if (!requests.includes(String(currentUser.id))) requests.push(currentUser.id);
 
-        // Current UTC time
         const utcNow = new Date().toISOString();
 
-        // Update Supabase
         const { error } = await supabase.from('fwebaccount')
           .update({ 
             friend_requests: requests.join(','), 
@@ -191,9 +188,8 @@ function renderUsers(users) {
 
         if (!error) {
           u.friend_requests = requests.join(',');
-          addBtn.textContent = 'Requested';
+          addBtn.textContent = 'Pending';
           addBtn.disabled = true;
-          renderUsers([u]); // refresh card
         }
       };
       card.appendChild(addBtn);
@@ -209,12 +205,6 @@ function renderUsers(users) {
     idDiv.className = 'user-id';
     idDiv.textContent = 'User ID: ' + u.id;
     card.appendChild(idDiv);
-
-    // Show friend requests IDs
-    const frDiv = document.createElement('div');
-    frDiv.className = 'friend-requests';
-    frDiv.textContent = u.friend_requests ? 'Friend Requests: ' + u.friend_requests : 'No friend requests yet';
-    card.appendChild(frDiv);
 
     container.appendChild(card);
   });
