@@ -9,48 +9,157 @@
     font-family: 'Poppins','Segoe UI',sans-serif;
     background: #fff;
     color: #000;
-    margin: 0;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    flex-direction: column;
-    padding: 20px;
-    min-height: 100vh;
+    margin:0;
+    padding:0;
   }
-  h1 {
-    font-size: 28px;
-    margin-bottom: 15px;
+  .top-bar {
+    display:flex;
+    justify-content: space-between;
+    align-items:center;
+    padding:10px 20px;
+    border-bottom:1px solid #ccc;
   }
-  .detail {
-    margin-bottom: 10px;
-    font-size: 16px;
+  .reload-btn {
+    background:#0072ff;
+    color:#fff;
+    border:none;
+    padding:8px 15px;
+    border-radius:8px;
+    cursor:pointer;
   }
-  .label {
-    font-weight: bold;
+  .fchat-container {
+    display:flex;
+    flex-direction:column;
+    padding:10px 20px;
+    gap:15px;
+  }
+  .fchat-card {
+    display:flex;
+    align-items:center;
+    padding:12px;
+    border:1px solid #ccc;
+    border-radius:12px;
+    gap:12px;
+  }
+  .profile-pic {
+    width:50px;
+    height:50px;
+    border-radius:50%;
+    background:#eee;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-weight:bold;
+    font-size:18px;
+    color:#555;
+    overflow:hidden;
+  }
+  .username {
+    font-weight:600;
   }
 </style>
 </head>
 <body>
 
-<h1>Welcome to FCHAT</h1>
-<div id="user-details"></div>
+<div class="top-bar">
+  <h2>FCHAT</h2>
+  <button class="reload-btn" id="reload-btn">Reload</button>
+</div>
 
-<script>
-  // Get user data from localStorage
-  const user = JSON.parse(localStorage.getItem('faccount'));
-  const container = document.getElementById('user-details');
+<div class="fchat-container" id="fchat-container">
+  <!-- FCHAT cards will be injected here -->
+</div>
 
-  if (!user) {
-    container.innerHTML = '<p>No user data found. Please log in again.</p>';
-  } else {
-    // Loop through all properties and display them
-    Object.keys(user).forEach(key => {
-      const div = document.createElement('div');
-      div.className = 'detail';
-      div.innerHTML = `<span class="label">${key}:</span> ${user[key]}`;
-      container.appendChild(div);
-    });
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const supabaseUrl = "https://pwsxezhugsxosbwhkdvf.supabase.co";
+const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+const fchatContainer = document.getElementById("fchat-container");
+const reloadBtn = document.getElementById("reload-btn");
+
+let user = JSON.parse(localStorage.getItem("faccount"));
+
+// Function to load FCHAT cards
+async function loadFchatCards() {
+  fchatContainer.innerHTML = ''; // clear container
+
+  if (!user?.accepted || user.accepted.length === 0) {
+    fchatContainer.innerHTML = "<p>No friends accepted yet.</p>";
+    return;
   }
+
+  // Loop through accepted IDs
+  for (const friendId of user.accepted) {
+    // Find friend in local storage first
+    let friendData = null;
+    const allUsers = JSON.parse(localStorage.getItem("allUsers") || "[]"); 
+    friendData = allUsers.find(u => u.id == friendId);
+
+    // If not in local storage, fetch from Supabase
+    if (!friendData) {
+      const { data, error } = await supabase.from("fwebaccount").select("*").eq("id", friendId).single();
+      if (error) {
+        console.warn("Could not load user", friendId, error.message);
+        continue;
+      }
+      friendData = data;
+      // save to local storage for next time
+      allUsers.push(friendData);
+      localStorage.setItem("allUsers", JSON.stringify(allUsers));
+    }
+
+    // Build card
+    const card = document.createElement("div");
+    card.classList.add("fchat-card");
+
+    const profilePic = document.createElement("div");
+    profilePic.classList.add("profile-pic");
+
+    if (friendData.profile_pic) {
+      const img = document.createElement("img");
+      img.src = friendData.profile_pic;
+      img.style.width = "100%";
+      img.style.height = "100%";
+      img.style.objectFit = "cover";
+      profilePic.appendChild(img);
+    } else {
+      // fallback text initials
+      const initials = friendData.username.slice(0,2).toUpperCase();
+      profilePic.textContent = initials;
+    }
+
+    const usernameDiv = document.createElement("div");
+    usernameDiv.classList.add("username");
+    usernameDiv.textContent = friendData.username;
+
+    card.appendChild(profilePic);
+    card.appendChild(usernameDiv);
+
+    fchatContainer.appendChild(card);
+  }
+}
+
+// Reload function
+async function reloadFchat() {
+  if (!user) return;
+  // Refresh own data from Supabase
+  const { data, error } = await supabase.from("fwebaccount").select("*").eq("id", user.id).single();
+  if (!error && data) {
+    user = data;
+    localStorage.setItem("faccount", JSON.stringify(user));
+  }
+  // Clear friend cache for fresh load
+  localStorage.removeItem("allUsers");
+  await loadFchatCards();
+}
+
+reloadBtn.addEventListener("click", reloadFchat);
+
+// Initial load
+loadFchatCards();
 </script>
 
 </body>
