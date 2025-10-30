@@ -11,8 +11,8 @@
     color: #000;
     margin: 0;
     display: flex;
-    justify-content: center;
-    align-items: flex-start;
+    justify-content: flex-start;
+    align-items: center;
     flex-direction: column;
     padding: 20px;
     min-height: 100vh;
@@ -28,31 +28,29 @@
   .label {
     font-weight: bold;
   }
+  #reload-btn {
+    margin-top: 20px;
+    padding: 10px 20px;
+    background: #0072ff;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  #reload-btn:hover {
+    opacity: 0.9;
+    transform: scale(1.05);
+    transition: all 0.2s ease;
+  }
 </style>
 </head>
 <body>
 
 <h1>Welcome to FCHAT</h1>
 <div id="user-details"></div>
+<button id="reload-btn">Reload from Server</button>
 
-<script>
-  // Get user data from localStorage
-  const user = JSON.parse(localStorage.getItem('faccount'));
-  const container = document.getElementById('user-details');
-
-  if (!user) {
-    container.innerHTML = '<p>No user data found. Please log in again.</p>';
-  } else {
-    // Loop through all properties and display them
-    Object.keys(user).forEach(key => {
-      const div = document.createElement('div');
-      div.className = 'detail';
-      div.innerHTML = `<span class="label">${key}:</span> ${user[key]}`;
-      container.appendChild(div);
-    });
-  }
-</script>
-  <script type="module">
+<script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
 const supabaseUrl = "https://pwsxezhugsxosbwhkdvf.supabase.co";
@@ -60,8 +58,28 @@ const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 const container = document.getElementById('user-details');
+const reloadBtn = document.getElementById('reload-btn');
 
-async function reloadUser() {
+// Function to render user data from localStorage
+function renderUserData() {
+  const user = JSON.parse(localStorage.getItem('faccount'));
+  container.innerHTML = '';
+
+  if (!user) {
+    container.innerHTML = '<p>No user data found. Please log in again.</p>';
+    return;
+  }
+
+  Object.keys(user).forEach(key => {
+    const div = document.createElement('div');
+    div.className = 'detail';
+    div.innerHTML = `<span class="label">${key}:</span> ${user[key]}`;
+    container.appendChild(div);
+  });
+}
+
+// Function to fetch user data from Supabase and update localStorage
+async function reloadUserData() {
   const userLS = JSON.parse(localStorage.getItem('faccount'));
   if (!userLS?.email) {
     container.innerHTML = '<p>No user email found in localStorage.</p>';
@@ -79,22 +97,18 @@ async function reloadUser() {
     return;
   }
 
-  // Update localStorage
   localStorage.setItem('faccount', JSON.stringify(data));
-
-  // Re-render user details
-  container.innerHTML = '';
-  Object.keys(data).forEach(key => {
-    const div = document.createElement('div');
-    div.className = 'detail';
-    div.innerHTML = `<span class="label">${key}:</span> ${data[key]}`;
-    container.appendChild(div);
-  });
+  renderUserData();
 }
 
-// Run immediately
-reloadUser();
-  </script>
+// Initial render
+renderUserData();
+
+// Reload button click event
+reloadBtn.addEventListener('click', () => {
+  reloadUserData();
+});
+</script>
 
 </body>
 </html>
