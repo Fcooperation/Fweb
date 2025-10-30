@@ -1,250 +1,248 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>FCHAT Search</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Add Users - FCHAT</title>
 <style>
   body {
+    font-family: 'Poppins','Segoe UI',sans-serif;
+    background: #fff;
+    color: #000;
     margin: 0;
-    font-family: 'Poppins', sans-serif;
-    background: #0d1117;
-    color: #fff;
+    padding: 20px;
+  }
+  h1 { margin-bottom: 15px; }
+  #search-input {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    margin-bottom: 15px;
+  }
+  #user-container {
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+    gap: 10px;
   }
-  header {
-    background: #161b22;
-    padding: 15px;
-    text-align: center;
-    font-size: 20px;
-    font-weight: bold;
-    border-bottom: 1px solid #30363d;
-    color: #00c6ff;
-    letter-spacing: 1px;
-  }
-  .search-box {
-    padding: 15px;
-  }
-  input[type="text"] {
-    width: 100%;
-    padding: 12px;
-    border-radius: 10px;
-    border: none;
-    outline: none;
-    font-size: 16px;
-    background: #21262d;
-    color: #fff;
-  }
-  .results {
-    flex: 1;
-    padding: 10px;
-    overflow-y: auto;
-  }
-  .card {
+  .fchat-card {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: #161b22;
-    margin: 10px 0;
+    flex-direction: column;
+    background: #f0f0f0;
     padding: 12px 15px;
-    border-radius: 10px;
-    border: 1px solid #30363d;
-    transition: all 0.2s ease;
+    border-radius: 12px;
   }
-  .card:hover { background: #1e242b; }
-  .card .username {
-    font-weight: 600;
-    font-size: 16px;
+  .user-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
-  .card img {
-    width: 40px;
-    height: 40px;
+  .profile-pic {
+    width: 50px;
+    height: 50px;
     border-radius: 50%;
-    object-fit: cover;
-    margin-right: 12px;
-    border: 1px solid #444;
-  }
-  .card button {
-    background: #238636;
-    border: none;
+    background: #0072ff;
     color: #fff;
-    padding: 8px 15px;
-    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    font-size: 18px;
+    overflow: hidden;
+    flex-shrink: 0;
     cursor: pointer;
-    font-weight: 500;
-    transition: background 0.2s;
   }
-  .card button:hover { background: #2ea043; }
-  .card button:disabled {
-    background: #444;
-    cursor: not-allowed;
-  }
-  .log {
-    text-align: center;
-    font-size: 14px;
-    color: #00c6ff;
-    padding: 6px 0;
-    border-top: 1px solid #30363d;
-    background: #161b22;
-  }
-  .bottom {
-    background: #161b22;
-    padding: 15px;
-    text-align: center;
-    border-top: 1px solid #30363d;
-  }
-  .bottom button {
+  .profile-pic img {
     width: 100%;
-    background: #238636;
+    height: 100%;
+    object-fit: cover;
+  }
+  .username { font-size: 16px; font-weight: bold; }
+  .add-btn {
+    padding: 6px 12px;
+    background: #0072ff;
+    color: #fff;
     border: none;
-    color: white;
-    padding: 12px;
-    border-radius: 10px;
-    font-size: 16px;
+    border-radius: 6px;
     cursor: pointer;
   }
+  .cannot-add {
+    font-size: 14px;
+    color: #555;
+    margin-top: 5px;
+  }
+  .friend-requests, .user-id {
+    font-size: 12px;
+    color: #333;
+    margin-top: 5px;
+  }
+  /* Modal */
+  #profile-modal {
+    display: none;
+    position: fixed;
+    z-index: 100;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85);
+    justify-content: center;
+    align-items: center;
+  }
+  #profile-modal img {
+    width: 80%;
+    max-width: 400px;
+    border-radius: 15px;
+    box-shadow: 0 0 15px rgba(255,255,255,0.3);
+  }
+  #profile-modal:active { display: none; }
 </style>
 </head>
 <body>
-<header>FCHAT Search</header>
 
-<div class="search-box">
-  <input type="text" id="searchInput" placeholder="Search username..." />
-</div>
+<h1>Add Users</h1>
+<input type="text" id="search-input" placeholder="Search by username or ID..." />
+<div id="user-container"></div>
 
-<div id="results" class="results"></div>
-<div id="logArea" class="log"></div>
-
-<div class="bottom">
-  <button onclick="window.location.href='fchat.html'">Back</button>
-</div>
+<!-- Profile Modal -->
+<div id="profile-modal"><img id="profile-view" src=""></div>
 
 <script type="module">
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-const supabase = createClient(
-  "https://pwsxezhugsxosbwhkdvf.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
-);
+const supabaseUrl = "https://pwsxezhugsxosbwhkdvf.supabase.co";
+const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-const searchInput = document.getElementById("searchInput");
-const resultsContainer = document.getElementById("results");
-const logArea = document.getElementById("logArea");
+const searchInput = document.getElementById('search-input');
+const container = document.getElementById('user-container');
+const modal = document.getElementById('profile-modal');
+const modalImg = document.getElementById('profile-view');
+let allUsers = [];
 
-// Load logged-in user from local storage
-let faccount = JSON.parse(localStorage.getItem("faccount"));
-if(!faccount || !faccount.id){
-  alert("No account found. Please log in first.");
+// Load all users initially
+async function loadUsers() {
+  const { data, error } = await supabase.from('fwebaccount')
+    .select('id, username, profile_pic, fchat, friend_requests');
+  if (!error && data) allUsers = data;
 }
 
-// Keep track of shown user IDs to avoid duplicates
-const shownIds = new Set();
+// Render users as FCHAT cards
+function renderUsers(users) {
+  container.innerHTML = '';
+  if (users.length === 0) {
+    container.innerHTML = '<p style="text-align:center;">No users found</p>';
+    return;
+  }
 
-// Render cards
-function renderCards(users){
-  users.forEach(u=>{
-    const card = document.createElement("div");
-    card.className = "card";
-    card.innerHTML = `
-      <div style="display:flex;align-items:center">
-        <img src="${u.profile_pic || 'https://via.placeholder.com/40'}" alt="Profile">
-        <div class="username">${u.username}</div>
-      </div>
-      <button ${u.alreadyAdded?'disabled':''}>${u.alreadyAdded?'Added ✓':'Add'}</button>
-    `;
-    const btn = card.querySelector("button");
-    if(!u.alreadyAdded){
-      btn.addEventListener("click", ()=>sendRequest(u));
+  users.forEach(u => {
+    const card = document.createElement('div');
+    card.className = 'fchat-card';
+
+    const info = document.createElement('div');
+    info.className = 'user-info';
+
+    const profile = document.createElement('div');
+    profile.className = 'profile-pic';
+    if (u.profile_pic) {
+      const img = document.createElement('img');
+      img.src = u.profile_pic;
+      img.onclick = (e) => {
+        e.stopPropagation();
+        modal.style.display = 'flex';
+        modalImg.src = img.src;
+      };
+      profile.appendChild(img);
+    } else {
+      profile.textContent = u.username?.charAt(0).toUpperCase() || 'U';
     }
-    resultsContainer.appendChild(card);
+
+    const username = document.createElement('div');
+    username.className = 'username';
+    username.textContent = u.username || 'Unknown';
+
+    info.appendChild(profile);
+    info.appendChild(username);
+    card.appendChild(info);
+
+    // Add button if fchat yes
+    if (u.fchat === 'yes') {
+      const addBtn = document.createElement('button');
+      addBtn.className = 'add-btn';
+      addBtn.textContent = 'Add';
+      addBtn.onclick = async (e) => {
+        e.stopPropagation();
+        const currentUser = JSON.parse(localStorage.getItem('faccount'));
+        if (!currentUser?.id) return;
+
+        // Friend requests array
+        const requests = u.friend_requests?.split(',').map(x => x.trim()).filter(Boolean) || [];
+        if (!requests.includes(String(currentUser.id))) requests.push(currentUser.id);
+
+        // Current UTC time
+        const utcNow = new Date().toISOString();
+
+        // Update Supabase
+        const { error } = await supabase.from('fwebaccount')
+          .update({ 
+            friend_requests: requests.join(','), 
+            sent_at: utcNow 
+          })
+          .eq('id', u.id);
+
+        if (!error) {
+          u.friend_requests = requests.join(',');
+          addBtn.textContent = 'Requested';
+          addBtn.disabled = true;
+          renderUsers([u]); // refresh card
+        }
+      };
+      card.appendChild(addBtn);
+    } else {
+      const cannot = document.createElement('div');
+      cannot.className = 'cannot-add';
+      cannot.textContent = 'User is not in FCHAT';
+      card.appendChild(cannot);
+    }
+
+    // Show user ID
+    const idDiv = document.createElement('div');
+    idDiv.className = 'user-id';
+    idDiv.textContent = 'User ID: ' + u.id;
+    card.appendChild(idDiv);
+
+    // Show friend requests IDs
+    const frDiv = document.createElement('div');
+    frDiv.className = 'friend-requests';
+    frDiv.textContent = u.friend_requests ? 'Friend Requests: ' + u.friend_requests : 'No friend requests yet';
+    card.appendChild(frDiv);
+
+    container.appendChild(card);
   });
 }
 
-// Send friend request
-async function sendRequest(user){
-  try{
-    const nowUTC = new Date().toISOString();
-    // Get target's current friend_requests
-    const { data: target, error } = await supabase
-      .from("fwebaccount")
-      .select("friend_requests,accepted")
-      .eq("id", user.id)
-      .maybeSingle();
-    if(error || !target) return logArea.textContent = "Error sending request";
+// Initialize search
+async function init() {
+  await loadUsers();
 
-    let requests = target.friend_requests ? target.friend_requests.split(",").map(s=>s.trim()) : [];
-    if(requests.includes(String(faccount.id))) return logArea.textContent = "Already sent";
-
-    requests.push(String(faccount.id));
-    // Update Supabase
-    const { error: updateErr } = await supabase
-      .from("fwebaccount")
-      .update({ friend_requests: requests.join(","), sent_at: nowUTC })
-      .eq("id", user.id);
-    if(updateErr) return logArea.textContent = "Error sending request";
-
-    // Add to accepted locally
-    let localData = JSON.parse(localStorage.getItem("faccount")) || {};
-    let accepted = localData.accepted ? localData.accepted.split(",").map(a=>a.trim()) : [];
-    if(!accepted.includes(String(user.id))) accepted.push(String(user.id));
-    localData.accepted = accepted.join(",");
-    localStorage.setItem("faccount", JSON.stringify(localData));
-
-    btn = user.buttonElement;
-    if(btn) btn.disabled=true;
-    logArea.textContent = `✅ Request sent to ${user.username}`;
-
-  }catch(e){
-    console.error(e);
-    logArea.textContent = "Error sending request";
-  }
-}
-
-// Search users
-let typingTimer;
-const delay = 400;
-searchInput.addEventListener("input", ()=>{
-  clearTimeout(typingTimer);
-  typingTimer = setTimeout(async ()=>{
-    const query = searchInput.value.trim();
-    resultsContainer.innerHTML = "";
-    if(!query){
-      logArea.textContent = "";
+  searchInput.addEventListener('input', () => {
+    const term = searchInput.value.toLowerCase().trim();
+    if (!term) {
+      container.innerHTML = '';
       return;
     }
-    logArea.textContent = "🔍 Searching...";
-    try{
-      const { data, error } = await supabase
-        .from("fwebaccount")
-        .select("id,username,profile_pic,friend_requests")
-        .ilike("username", `%${query}%`)
-        .limit(20);
-      if(error) throw error;
-      if(!data || data.length===0){
-        logArea.textContent = "No results found";
-        return;
-      }
 
-      const localData = JSON.parse(localStorage.getItem("faccount")) || {};
-      const acceptedList = localData.accepted ? localData.accepted.split(",").map(a=>a.trim()) : [];
+    const filtered = allUsers.filter(u =>
+      (u.username && u.username.toLowerCase().includes(term)) || String(u.id).includes(term)
+    );
 
-      const users = data
-        .filter(u => u.id != faccount.id)
-        .map(u => ({
-          ...u,
-          alreadyAdded: acceptedList.includes(String(u.id))
-        }));
+    renderUsers(filtered);
+  });
+}
 
-      renderCards(users);
-      logArea.textContent = "";
-    }catch(err){
-      console.error(err);
-      logArea.textContent = "Error fetching results";
-    }
-  }, delay);
-});
+modal.addEventListener('click', () => modal.style.display = 'none');
+
+init();
 </script>
+
 </body>
 </html>
