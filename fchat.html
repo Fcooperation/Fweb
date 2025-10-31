@@ -1,396 +1,379 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FCHAT</title>
-<style>
-  * { box-sizing: border-box; }
-  body {
-    font-family: 'Poppins','Segoe UI',sans-serif;
-    background: #fff;
-    color: #000;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    overflow: hidden;
-  }
+<!DOCTYPE html>  <html lang="en">  
+<head>  
+<meta charset="UTF-8">  
+<meta name="viewport" content="width=device-width, initial-scale=1.0">  
+<title>FCHAT</title>  
+<style>  
+  * { box-sizing: border-box; }  
+  body {  
+    font-family: 'Poppins','Segoe UI',sans-serif;  
+    background: #fff;  
+    color: #000;  
+    margin: 0;  
+    padding: 0;  
+    display: flex;  
+    flex-direction: column;  
+    height: 100vh;  
+    overflow: hidden;  
+  }  /* Header */
+header {
+background: #fff;
+color: #000;
+text-align: center;
+padding: 12px 15px;
+font-weight: 600;
+font-size: 18px;
+border-bottom: 1px solid #ddd;
+display: flex;
+justify-content: space-between;
+align-items: center;
+position: relative;
+z-index: 30;
+}
 
-  /* Header */
-  header {
-    background: #fff;
-    color: #000;
-    text-align: center;
-    padding: 12px 15px;
-    font-weight: 600;
-    font-size: 18px;
-    border-bottom: 1px solid #ddd;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    position: relative;
-    z-index: 30;
-  }
+header button {
+background: none;
+border: none;
+color: #000;
+font-size: 22px;
+cursor: pointer;
+}
 
-  header button {
-    background: none;
-    border: none;
-    color: #000;
-    font-size: 22px;
-    cursor: pointer;
-  }
+/* Menu items */
+#menu-items {
+position: absolute;
+top: 50px;
+right: 15px;
+background: #fff;
+border-radius: 10px;
+box-shadow: 0 3px 15px rgba(0,0,0,0.15);
+display: none;
+flex-direction: column;
+z-index: 100;
+}
 
-  /* Menu items */
-  #menu-items {
-    position: absolute;
-    top: 50px;
-    right: 15px;
-    background: #fff;
-    border-radius: 10px;
-    box-shadow: 0 3px 15px rgba(0,0,0,0.15);
-    display: none;
-    flex-direction: column;
-    z-index: 100;
-  }
+#menu-items a {
+padding: 10px 15px;
+color: #000;
+text-decoration: none;
+font-weight: 500;
+}
 
-  #menu-items a {
-    padding: 10px 15px;
-    color: #000;
-    text-decoration: none;
-    font-weight: 500;
-  }
+#menu-items a:hover {
+background: #f0f0f0;
+}
 
-  #menu-items a:hover {
-    background: #f0f0f0;
-  }
+/* Search bar */
+#search-bar {
+margin: 10px 15px;
+padding: 10px;
+border-radius: 10px;
+border: 1px solid #ccc;
+font-size: 15px;
+width: calc(100% - 30px);
+}
 
-  /* Search bar */
-  #search-bar {
-    margin: 10px 15px;
-    padding: 10px;
-    border-radius: 10px;
-    border: 1px solid #ccc;
-    font-size: 15px;
-    width: calc(100% - 30px);
-  }
+/* Chat container */
+#fchat-container {
+flex: 1;
+overflow-y: auto;
+padding: 10px 15px;
+background: #fafafa;
+}
 
-  /* Chat container */
-  #fchat-container {
-    flex: 1;
-    overflow-y: auto;
-    padding: 10px 15px;
-    background: #fafafa;
-  }
+.fchat-card {
+display: flex;
+align-items: center;
+gap: 15px;
+background: #f0f0f0;
+padding: 12px 15px;
+border-radius: 12px;
+margin-bottom: 10px;
+cursor: pointer;
+transition: background 0.2s ease;
+}
+.fchat-card:hover { background: #e0e0e0; }
 
-  .fchat-card {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    background: #f0f0f0;
-    padding: 12px 15px;
-    border-radius: 12px;
-    margin-bottom: 10px;
-    cursor: pointer;
-    transition: background 0.2s ease;
-  }
-  .fchat-card:hover { background: #e0e0e0; }
+.profile-pic {
+width: 55px;
+height: 55px;
+border-radius: 50%;
+background: #000;
+color: #fff;
+display: flex;
+justify-content: center;
+align-items: center;
+font-weight: bold;
+font-size: 18px;
+overflow: hidden;
+flex-shrink: 0;
+}
 
-  .profile-pic {
-    width: 55px;
-    height: 55px;
-    border-radius: 50%;
-    background: #000;
-    color: #fff;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-weight: bold;
-    font-size: 18px;
-    overflow: hidden;
-    flex-shrink: 0;
-  }
+.profile-pic img {
+width: 100%;
+height: 100%;
+object-fit: cover;
+}
 
-  .profile-pic img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
+.username { font-size: 16px; font-weight: bold; color: #000; }
 
-  .username { font-size: 16px; font-weight: bold; color: #000; }
+/* Bottom Navigation Bar */
+nav {
+background: #fff;
+border-top: 1px solid #ddd;
+display: flex;
+justify-content: space-around;
+align-items: center;
+padding: 8px 0;
+position: fixed;
+bottom: 0;
+left: 0;
+width: 100%;
+z-index: 20;
+}
 
-  /* Bottom Navigation Bar */
-  nav {
-    background: #fff;
-    border-top: 1px solid #ddd;
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    padding: 8px 0;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    z-index: 20;
-  }
+nav button {
+background: none;
+border: none;
+color: #555;
+font-size: 15px;
+cursor: pointer;
+font-weight: 500;
+}
 
-  nav button {
-    background: none;
-    border: none;
-    color: #555;
-    font-size: 15px;
-    cursor: pointer;
-    font-weight: 500;
-  }
+nav button.active { color: #000; font-weight: 600; }
 
-  nav button.active { color: #000; font-weight: 600; }
+/* Profile Modal */
+#profile-modal {
+display: none;
+position: fixed;
+z-index: 200;
+left: 0; top: 0;
+width: 100%; height: 100%;
+background: rgba(0,0,0,0.85);
+justify-content: center;
+align-items: center;
+}
 
-  /* Profile Modal */
-  #profile-modal {
-    display: none;
-    position: fixed;
-    z-index: 200;
-    left: 0; top: 0;
-    width: 100%; height: 100%;
-    background: rgba(0,0,0,0.85);
-    justify-content: center;
-    align-items: center;
-  }
-
-  #profile-modal img {
-    width: 80%;
-    max-width: 400px;
-    border-radius: 15px;
-    box-shadow: 0 0 15px rgba(255,255,255,0.3);
-  }
- .fchat-log {
-  font-size: 13px;
-  color: gray;
-  margin-top: 3px;
- }
+#profile-modal img {
+width: 80%;
+max-width: 400px;
+border-radius: 15px;
+box-shadow: 0 0 15px rgba(255,255,255,0.3);
+}
+.fchat-log {
+font-size: 13px;
+color: gray;
+margin-top: 3px;
+}
 </style>
-</head>
-<body>
 
-<header>
-  <button id="add-btn">➕</button>
-  <div>FCHAT</div>
-  <button id="menu-btn">☰</button>
-  <div id="menu-items">
-    <a href="friendrequest.html">Friend Requests</a>
-    <a href="fwebsetting.html">Settings</a>
-  </div>
-</header>
-
-<input type="text" id="search-bar" placeholder="Search users by username...">
-
-<div id="fchat-container"></div>
-
-<!-- Bottom Navigation -->
-<nav>
-  <button class="active" onclick="location.href='fchat.html'">FCHAT</button>
-  <button onclick="location.href='fchatupdate.html'">Updates</button>
-  <button onclick="location.href='fvids.html'">Fvids</button>
-  <button onclick="location.href='fchatme.html'">Me</button>
-</nav>
-
-<!-- Profile Modal -->
-<div id="profile-modal"><img id="profile-view" src=""></div>
-
-<script type="module">
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-
-const supabaseUrl = "https://pwsxezhugsxosbwhkdvf.supabase.co";
-const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-const container = document.getElementById('fchat-container');
-const menuBtn = document.getElementById('menu-btn');
-const menuItems = document.getElementById('menu-items');
-const modal = document.getElementById('profile-modal');
-const modalImg = document.getElementById('profile-view');
-const searchBar = document.getElementById('search-bar');
-const addBtn = document.getElementById('add-btn');
-
-menuBtn.addEventListener('click', () => {
-  menuItems.style.display = menuItems.style.display === 'flex' ? 'none' : 'flex';
-});
-
-addBtn.addEventListener('click', () => {
-  location.href = 'add.html';
-});
-
-modal.addEventListener('click', () => {
-  modal.style.display = 'none';
-});
-
-let allUsers = [];
-
-async function renderFchatCards(filter = '') {
-  container.innerHTML = '';
-
-  const user = JSON.parse(localStorage.getItem('faccount'));
-  if (!user) {
-    container.innerHTML = '<p style="text-align:center;">No user data found.</p>';
-    return;
-  }
-
-  const acceptedIds = user.accepted?.split(',').map(id => id.trim()).filter(Boolean) || [];
-  if (acceptedIds.length === 0) {
-    container.innerHTML = '<p style="text-align:center;">No accepted users yet.</p>';
-    return;
-  }
-
-  const filteredUsers = allUsers.filter(u =>
-    u.username?.toLowerCase().includes(filter.toLowerCase())
-  );
-
-  if (filteredUsers.length === 0) {
-    container.innerHTML = '<p style="text-align:center;">No users match your search.</p>';
-    return;
-  }
-
-  filteredUsers.forEach(u => {
-    const card = createCard(u);
-    container.appendChild(card);
-  });
-}
-
-function createCard(userData) {
-  const card = document.createElement('div');
-  card.className = 'fchat-card';
-
-  const profile = document.createElement('div');
-  profile.className = 'profile-pic';
-
-  if (userData.profile_pic) {
-    const img = document.createElement('img');
-    img.src = userData.profile_pic;
-    img.onclick = (e) => {
-      e.stopPropagation();
-      modal.style.display = 'flex';
-      modalImg.src = img.src;
-    };
-    profile.appendChild(img);
-  } else {
-    profile.textContent = userData.username?.charAt(0).toUpperCase() || 'U';
-  }
-
-  const infoDiv = document.createElement('div');
-  infoDiv.style.display = 'flex';
-  infoDiv.style.flexDirection = 'column';
-  infoDiv.style.justifyContent = 'center';
-
-  const username = document.createElement('div');
-  username.className = 'username';
-  username.textContent = userData.username || 'Unknown';
-
-  const log = document.createElement('div');
-  log.className = 'fchat-log';
-  log.textContent = userData.fchat_logs || 'offline';
-
-  infoDiv.appendChild(username);
-  infoDiv.appendChild(log);
-
-  card.appendChild(profile);
-  card.appendChild(infoDiv);
-
-  card.addEventListener('click', () => {
-    localStorage.setItem('chatting', userData.id);
-    location.href = 'chat.html';
-  });
-
-  return card;
-}
-
-async function loadUsers() {
-  const user = JSON.parse(localStorage.getItem('faccount'));
-  if (!user?.accepted) return;
-
-  const ids = user.accepted.split(',').map(i => i.trim()).filter(Boolean);
-  allUsers = [];
-
-  for (let id of ids) {
-    const { data, error } = await supabase.from('fwebaccount').select('id, username, profile_pic').eq('id', id).single();
-    if (!error && data) allUsers.push(data);
-  }
-
-  renderFchatCards();
-}
-
-searchBar.addEventListener('input', (e) => {
-  renderFchatCards(e.target.value);
-});
-
-loadUsers();
-
-// --- Reload Button Setup ---
-const header = document.querySelector('header');
-const reloadBtn = document.createElement('button');
-reloadBtn.innerHTML = `
-  <svg xmlns="http://www.w3.org/2000/svg" height="24" width="24" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <polyline points="23 4 23 10 17 10"></polyline>
-    <path d="M20.49 15a9 9 0 1 1 2.13-9"></path>
-  </svg>`;
-reloadBtn.style.background = 'none';
-reloadBtn.style.border = 'none';
-reloadBtn.style.cursor = 'pointer';
-reloadBtn.style.marginRight = '10px';
-
-header.insertBefore(reloadBtn, document.getElementById('menu-btn'));
-
-// Helper toast message
-function showMessage(text, color = '#333') {
-  const msg = document.createElement('div');
-  msg.textContent = text;
-  msg.style.position = 'fixed';
-  msg.style.bottom = '20px';
-  msg.style.left = '50%';
-  msg.style.transform = 'translateX(-50%)';
-  msg.style.background = color;
-  msg.style.color = 'white';
-  msg.style.padding = '10px 18px';
-  msg.style.borderRadius = '12px';
-  msg.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
-  msg.style.zIndex = '9999';
-  msg.style.fontFamily = 'Poppins, sans-serif';
-  document.body.appendChild(msg);
-  setTimeout(() => msg.remove(), 2500);
-}
-
-reloadBtn.addEventListener('click', async () => {
-  showMessage('🔄 Reloading Fchat...');
-  const currentUser = JSON.parse(localStorage.getItem('faccount'));
-  if (!currentUser?.id) {
-    showMessage('⚠️ No user logged in.', '#e74c3c');
-    return;
-  }
-
-  const { data, error } = await supabase
-    .from('fwebaccount')
-    .select('accepted')
-    .eq('id', currentUser.id)
-    .single();
-
-  if (error) {
-    showMessage('❌ Failed to reload data.', '#e74c3c');
-    return;
-  }
-
-  currentUser.accepted = data.accepted || '';
-  localStorage.setItem('faccount', JSON.stringify(currentUser));
-
-  setTimeout(() => {
-    location.reload();
-  }, 1000);
-});
-
-window.addEventListener('load', () => {
-  if (performance.getEntriesByType('navigation')[0]?.type === 'reload') {
-    showMessage('✅ Reload complete!', '#27ae60');
-  }
-});
-</script>
-</body>
-</html>
+</head>  
+<body>  <header>  
+  <button id="add-btn">➕</button>  
+  <div>FCHAT</div>  
+  <button id="menu-btn">☰</button>  
+  <div id="menu-items">  
+    <a href="friendrequest.html">Friend Requests</a>  
+    <a href="fwebsetting.html">Settings</a>  
+  </div>  
+</header>  <input type="text" id="search-bar" placeholder="Search users by username...">  <div id="fchat-container"></div>  <!-- Bottom Navigation -->  <nav>  
+  <button class="active" onclick="location.href='fchat.html'">FCHAT</button>  
+  <button onclick="location.href='fchatupdate.html'">Updates</button>  
+  <button onclick="location.href='fvids.html'">Fvids</button>  
+  <button onclick="location.href='fchatme.html'">Me</button>  
+</nav>  <!-- Profile Modal -->  <div id="profile-modal"><img id="profile-view" src=""></div>  <script type="module">  
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";  
+  
+const supabaseUrl = "https://pwsxezhugsxosbwhkdvf.supabase.co";  
+const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";  
+const supabase = createClient(supabaseUrl, supabaseAnonKey);  
+  
+const container = document.getElementById('fchat-container');  
+const menuBtn = document.getElementById('menu-btn');  
+const menuItems = document.getElementById('menu-items');  
+const modal = document.getElementById('profile-modal');  
+const modalImg = document.getElementById('profile-view');  
+const searchBar = document.getElementById('search-bar');  
+const addBtn = document.getElementById('add-btn');  
+  
+menuBtn.addEventListener('click', () => {  
+  menuItems.style.display = menuItems.style.display === 'flex' ? 'none' : 'flex';  
+});  
+  
+addBtn.addEventListener('click', () => {  
+  location.href = 'add.html';  
+});  
+  
+modal.addEventListener('click', () => {  
+  modal.style.display = 'none';  
+});  
+  
+let allUsers = [];  
+  
+async function renderFchatCards(filter = '') {  
+  container.innerHTML = '';  
+  
+  const user = JSON.parse(localStorage.getItem('faccount'));  
+  if (!user) {  
+    container.innerHTML = '<p style="text-align:center;">No user data found.</p>';  
+    return;  
+  }  
+  
+  const acceptedIds = user.accepted?.split(',').map(id => id.trim()).filter(Boolean) || [];  
+  if (acceptedIds.length === 0) {  
+    container.innerHTML = '<p style="text-align:center;">No accepted users yet.</p>';  
+    return;  
+  }  
+  
+  const filteredUsers = allUsers.filter(u =>  
+    u.username?.toLowerCase().includes(filter.toLowerCase())  
+  );  
+  
+  if (filteredUsers.length === 0) {  
+    container.innerHTML = '<p style="text-align:center;">No users match your search.</p>';  
+    return;  
+  }  
+  
+  filteredUsers.forEach(u => {  
+    const card = createCard(u);  
+    container.appendChild(card);  
+  });  
+}  
+  
+function createCard(userData) {  
+  const card = document.createElement('div');  
+  card.className = 'fchat-card';  
+  
+  const profile = document.createElement('div');  
+  profile.className = 'profile-pic';  
+  
+  if (userData.profile_pic) {  
+    const img = document.createElement('img');  
+    img.src = userData.profile_pic;  
+    img.onclick = (e) => {  
+      e.stopPropagation();  
+      modal.style.display = 'flex';  
+      modalImg.src = img.src;  
+    };  
+    profile.appendChild(img);  
+  } else {  
+    profile.textContent = userData.username?.charAt(0).toUpperCase() || 'U';  
+  }  
+  
+  const infoDiv = document.createElement('div');  
+  infoDiv.style.display = 'flex';  
+  infoDiv.style.flexDirection = 'column';  
+  infoDiv.style.justifyContent = 'center';  
+  
+  const username = document.createElement('div');  
+  username.className = 'username';  
+  username.textContent = userData.username || 'Unknown';  
+  
+  const log = document.createElement('div');  
+  log.className = 'fchat-log';  
+  log.textContent = userData.fchat_logs || 'offline';  
+  
+  infoDiv.appendChild(username);  
+  infoDiv.appendChild(log);  
+  
+  card.appendChild(profile);  
+  card.appendChild(infoDiv);  
+  
+  card.addEventListener('click', () => {  
+    localStorage.setItem('chatting', userData.id);  
+    location.href = 'chat.html';  
+  });  
+  
+  return card;  
+}  
+  
+async function loadUsers() {  
+  const user = JSON.parse(localStorage.getItem('faccount'));  
+  if (!user?.accepted) return;  
+  
+  const ids = user.accepted.split(',').map(i => i.trim()).filter(Boolean);  
+  allUsers = [];  
+  
+  for (let id of ids) {  
+    const { data, error } = await supabase.from('fwebaccount').select('id, username, profile_pic').eq('id', id).single();  
+    if (!error && data) allUsers.push(data);  
+  }  
+  
+  renderFchatCards();  
+}  
+  
+searchBar.addEventListener('input', (e) => {  
+  renderFchatCards(e.target.value);  
+});  
+  
+loadUsers();  
+  
+// --- Reload Button Setup ---  
+const header = document.querySelector('header');  
+const reloadBtn = document.createElement('button');  
+reloadBtn.innerHTML = `  
+  <svg xmlns="http://www.w3.org/2000/svg" height="24" width="24" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">  
+    <polyline points="23 4 23 10 17 10"></polyline>  
+    <path d="M20.49 15a9 9 0 1 1 2.13-9"></path>  
+  </svg>`;  
+reloadBtn.style.background = 'none';  
+reloadBtn.style.border = 'none';  
+reloadBtn.style.cursor = 'pointer';  
+reloadBtn.style.marginRight = '10px';  
+  
+header.insertBefore(reloadBtn, document.getElementById('menu-btn'));  
+  
+// Helper toast message  
+function showMessage(text, color = '#333') {  
+  const msg = document.createElement('div');  
+  msg.textContent = text;  
+  msg.style.position = 'fixed';  
+  msg.style.bottom = '20px';  
+  msg.style.left = '50%';  
+  msg.style.transform = 'translateX(-50%)';  
+  msg.style.background = color;  
+  msg.style.color = 'white';  
+  msg.style.padding = '10px 18px';  
+  msg.style.borderRadius = '12px';  
+  msg.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';  
+  msg.style.zIndex = '9999';  
+  msg.style.fontFamily = 'Poppins, sans-serif';  
+  document.body.appendChild(msg);  
+  setTimeout(() => msg.remove(), 2500);  
+}  
+  
+reloadBtn.addEventListener('click', async () => {  
+  showMessage('🔄 Reloading Fchat...');  
+  const currentUser = JSON.parse(localStorage.getItem('faccount'));  
+  if (!currentUser?.id) {  
+    showMessage('⚠️ No user logged in.', '#e74c3c');  
+    return;  
+  }  
+  
+  const { data, error } = await supabase  
+    .from('fwebaccount')  
+    .select('accepted')  
+    .eq('id', currentUser.id)  
+    .single();  
+  
+  if (error) {  
+    showMessage('❌ Failed to reload data.', '#e74c3c');  
+    return;  
+  }  
+  
+  currentUser.accepted = data.accepted || '';  
+  localStorage.setItem('faccount', JSON.stringify(currentUser));  
+  
+  setTimeout(() => {  
+    location.reload();  
+  }, 1000);  
+});  
+  
+window.addEventListener('load', () => {  
+  if (performance.getEntriesByType('navigation')[0]?.type === 'reload') {  
+    showMessage('✅ Reload complete!', '#27ae60');  
+  }  
+});  
+</script>  </body>  
+ </html>
