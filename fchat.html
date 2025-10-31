@@ -296,7 +296,12 @@ async function loadUsers() {
   allUsers = [];  
   
   for (let id of ids) {  
-    const { data, error } = await supabase.from('fwebaccount').select('id, username, profile_pic').eq('id', id).single();  
+    const { data, error } = await supabase
+  .from('fwebaccount')
+  .select('id, username, profile_pic, fchat_logs')
+  .eq('id', id)
+  .single();
+  
     if (!error && data) allUsers.push(data);  
   }  
   
