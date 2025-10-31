@@ -272,12 +272,24 @@ function createCard(userData) {
     profile.textContent = userData.username?.charAt(0).toUpperCase() || 'U';
   }
 
+  const infoDiv = document.createElement('div');
+  infoDiv.style.display = 'flex';
+  infoDiv.style.flexDirection = 'column';
+  infoDiv.style.justifyContent = 'center';
+
   const username = document.createElement('div');
   username.className = 'username';
   username.textContent = userData.username || 'Unknown';
 
+  const log = document.createElement('div');
+  log.className = 'fchat-log';
+  log.textContent = userData.fchat_logs || 'offline';
+
+  infoDiv.appendChild(username);
+  infoDiv.appendChild(log);
+
   card.appendChild(profile);
-  card.appendChild(username);
+  card.appendChild(infoDiv);
 
   card.addEventListener('click', () => {
     localStorage.setItem('chatting', userData.id);
