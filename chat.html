@@ -16,7 +16,7 @@
     flex-direction: column;
   }
 
-  /* Header (Top Bar) */
+  /* Header */
   header {
     background: #fff;
     display: flex;
@@ -50,22 +50,21 @@
     padding: 15px;
   }
 
-  /* Watermark background */
+  /* Watermark */
   #chat-board::before {
-    content: "FCOOPERATION\n— where dreams meet reality —";
+    content: "FCOOPERATION\n.....where dreams meet reality.......";
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     font-size: 22px;
     font-weight: 800;
-    color: rgba(0,0,0,0.07);
+    color: rgba(0,0,0,0.08);
     text-align: center;
     white-space: pre-line;
     z-index: 0;
   }
 
-  /* Message container */
   .message {
     background: #e0e0e0;
     color: #000;
@@ -75,6 +74,12 @@
     max-width: 80%;
     position: relative;
     z-index: 1;
+    word-wrap: break-word;
+  }
+
+  .me {
+    background: #c2ffc2;
+    margin-left: auto;
   }
 
   /* Input area */
@@ -116,7 +121,7 @@
 
 <!-- Input Area -->
 <div id="chat-input-area">
-  <input type="text" id="chat-input" placeholder="Type a message..." disabled>
+  <input type="text" id="chat-input" placeholder="Type a message...">
   <button id="send-btn">➤</button>
 </div>
 
@@ -131,10 +136,26 @@ const chatHeader = document.getElementById('chat-header');
 const chatName = document.getElementById('chat-name');
 const chatPic = document.getElementById('chat-pic');
 const chatBoard = document.getElementById('chat-board');
+const chatInput = document.getElementById('chat-input');
+const sendBtn = document.getElementById('send-btn');
 
-// Get chat user ID
 const chatUserId = localStorage.getItem('chatting');
+const storageKey = `chat_messages_${chatUserId}`;
 
+function renderMessages() {
+  chatBoard.innerHTML = "";
+  const messages = JSON.parse(localStorage.getItem(storageKey)) || [];
+  messages.forEach(msg => {
+    const div = document.createElement('div');
+    div.classList.add('message');
+    if (msg.sender === 'me') div.classList.add('me');
+    div.textContent = msg.text;
+    chatBoard.appendChild(div);
+  });
+  chatBoard.scrollTop = chatBoard.scrollHeight;
+}
+
+// Load user details
 if (!chatUserId) {
   chatName.textContent = "⚠️ No chat selected.";
 } else {
@@ -148,22 +169,35 @@ if (!chatUserId) {
     chatName.textContent = "❌ Failed to load user.";
   } else {
     chatName.textContent = data.username || "Unknown User";
-    if (data.profile_pic) chatPic.src = data.profile_pic;
-    else chatPic.src = "https://via.placeholder.com/50?text=U";
-
-    // Example demo messages to show overlay effect
-    chatBoard.innerHTML = `
-      <div class="message">Hey ${data.username} 👋</div>
-      <div class="message">Messages will appear here soon!</div>
-    `;
+    chatPic.src = data.profile_pic || "https://via.placeholder.com/50?text=U";
   }
 }
 
-// Tap header → go to chatdashboard.html
-chatHeader.addEventListener('click', () => {
+renderMessages();
+
+// Send message
+function sendMessage() {
+  const text = chatInput.value.trim();
+  if (!text) return;
+
+  const messages = JSON.parse(localStorage.getItem(storageKey)) || [];
+  messages.push({ text, sender: "me", time: Date.now() });
+  localStorage.setItem(storageKey, JSON.stringify(messages));
+
+  chatInput.value = "";
+  renderMessages();
+}
+
+sendBtn.addEventListener("click", sendMessage);
+chatInput.addEventListener("keypress", e => {
+  if (e.key === "Enter") sendMessage();
+});
+
+// Tap header → go to chatdashboard
+chatHeader.addEventListener("click", () => {
   if (chatUserId) {
-    localStorage.setItem('chatdashboard', chatUserId);
-    location.href = 'chatdashboard.html';
+    localStorage.setItem("chatdashboard", chatUserId);
+    location.href = "chatdashboard.html";
   }
 });
 </script>
