@@ -5,41 +5,120 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FCHAT - Chat</title>
 <style>
+  * { box-sizing: border-box; }
   body {
     font-family: 'Poppins','Segoe UI',sans-serif;
     background: #fff;
     color: #000;
     margin: 0;
-    padding: 20px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
   }
-  .user-details {
-    background: #f5f5f5;
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+
+  /* Header (Top Bar) */
+  header {
+    background: #fff;
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    border-bottom: 1px solid #ddd;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    cursor: pointer;
   }
-  .user-details img {
-    width: 100px;
-    height: 100px;
+
+  .chat-header-pic {
+    width: 45px;
+    height: 45px;
     border-radius: 50%;
     object-fit: cover;
-    display: block;
-    margin-bottom: 10px;
+    margin-right: 10px;
+    background: #ccc;
   }
-  .user-details h2 {
-    margin: 5px 0;
+
+  .chat-header-name {
+    font-weight: 600;
+    font-size: 17px;
+  }
+
+  /* Chat board */
+  #chat-board {
+    flex: 1;
+    background: #fafafa;
+    position: relative;
+    overflow-y: auto;
+    padding: 15px;
+  }
+
+  /* Watermark background */
+  #chat-board::before {
+    content: "FCOOPERATION\n— where dreams meet reality —";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     font-size: 22px;
+    font-weight: 800;
+    color: rgba(0,0,0,0.07);
+    text-align: center;
+    white-space: pre-line;
+    z-index: 0;
   }
-  .user-details p {
-    margin: 3px 0;
+
+  /* Message container */
+  .message {
+    background: #e0e0e0;
+    color: #000;
+    padding: 10px 15px;
+    border-radius: 12px;
+    margin-bottom: 8px;
+    max-width: 80%;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Input area */
+  #chat-input-area {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    border-top: 1px solid #ddd;
+    background: #fff;
+  }
+
+  #chat-input {
+    flex: 1;
+    border: 1px solid #ccc;
+    border-radius: 20px;
+    padding: 10px 15px;
     font-size: 15px;
+    outline: none;
+  }
+
+  #send-btn {
+    background: none;
+    border: none;
+    font-size: 22px;
+    margin-left: 10px;
+    cursor: pointer;
+    color: #000;
   }
 </style>
 </head>
 <body>
 
-<h1>Chat User Details</h1>
-<div id="user-details" class="user-details">Loading...</div>
+<header id="chat-header">
+  <img id="chat-pic" class="chat-header-pic" src="" alt="Profile">
+  <div class="chat-header-name" id="chat-name">Loading...</div>
+</header>
+
+<div id="chat-board"></div>
+
+<!-- Input Area -->
+<div id="chat-input-area">
+  <input type="text" id="chat-input" placeholder="Type a message..." disabled>
+  <button id="send-btn">➤</button>
+</div>
 
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
@@ -48,34 +127,45 @@ const supabaseUrl = "https://pwsxezhugsxosbwhkdvf.supabase.co";
 const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-const userDetailsDiv = document.getElementById('user-details');
+const chatHeader = document.getElementById('chat-header');
+const chatName = document.getElementById('chat-name');
+const chatPic = document.getElementById('chat-pic');
+const chatBoard = document.getElementById('chat-board');
 
-// Step 1: Get user ID from localStorage
+// Get chat user ID
 const chatUserId = localStorage.getItem('chatting');
 
 if (!chatUserId) {
-  userDetailsDiv.textContent = "⚠️ No chat user selected.";
+  chatName.textContent = "⚠️ No chat selected.";
 } else {
-  // Step 2: Fetch user details from Supabase
   const { data, error } = await supabase
     .from('fwebaccount')
     .select('*')
     .eq('id', chatUserId)
     .single();
 
-  // Step 3: Display user details
   if (error || !data) {
-    userDetailsDiv.textContent = "❌ Failed to load user details.";
+    chatName.textContent = "❌ Failed to load user.";
   } else {
-    userDetailsDiv.innerHTML = `
-      ${data.profile_pic ? `<img src="${data.profile_pic}" alt="Profile">` : ''}
-      <h2>${data.username || 'Unknown User'}</h2>
-      <p><strong>Email:</strong> ${data.email || 'N/A'}</p>
-      <p><strong>Bio:</strong> ${data.bio || 'No bio provided'}</p>
-      <p><strong>ID:</strong> ${data.id}</p>
+    chatName.textContent = data.username || "Unknown User";
+    if (data.profile_pic) chatPic.src = data.profile_pic;
+    else chatPic.src = "https://via.placeholder.com/50?text=U";
+
+    // Example demo messages to show overlay effect
+    chatBoard.innerHTML = `
+      <div class="message">Hey ${data.username} 👋</div>
+      <div class="message">Messages will appear here soon!</div>
     `;
   }
 }
+
+// Tap header → go to chatdashboard.html
+chatHeader.addEventListener('click', () => {
+  if (chatUserId) {
+    localStorage.setItem('chatdashboard', chatUserId);
+    location.href = 'chatdashboard.html';
+  }
+});
 </script>
 
 </body>
