@@ -140,8 +140,47 @@ const chatInput = document.getElementById('chat-input');
 const sendBtn = document.getElementById('send-btn');
 
 const chatUserId = localStorage.getItem('chatting');
+const currentUser = JSON.parse(localStorage.getItem('faccount'));
 const storageKey = `chat_messages_${chatUserId}`;
 
+// --- Function to update user's chat status ---
+async function updateFchatStatus(status) {
+  if (!currentUser?.email) return;
+  await supabase
+    .from('fwebaccount')
+    .update({
+      fchat_logs: status,
+      chatting_with: chatUserId
+    })
+    .eq('email', currentUser.email);
+}
+
+// --- On page load ---
+window.addEventListener('load', async () => {
+  await updateFchatStatus('active'); // Mark user as active
+
+  // Load chat user details
+  if (!chatUserId) {
+    chatName.textContent = "⚠️ No chat selected.";
+  } else {
+    const { data, error } = await supabase
+      .from('fwebaccount')
+      .select('*')
+      .eq('id', chatUserId)
+      .single();
+
+    if (error || !data) {
+      chatName.textContent = "❌ Failed to load user.";
+    } else {
+      chatName.textContent = data.username || "Unknown User";
+      chatPic.src = data.profile_pic || "https://via.placeholder.com/50?text=U";
+    }
+  }
+
+  renderMessages();
+});
+
+// --- Render messages from localStorage ---
 function renderMessages() {
   chatBoard.innerHTML = "";
   const messages = JSON.parse(localStorage.getItem(storageKey)) || [];
@@ -155,27 +194,7 @@ function renderMessages() {
   chatBoard.scrollTop = chatBoard.scrollHeight;
 }
 
-// Load user details
-if (!chatUserId) {
-  chatName.textContent = "⚠️ No chat selected.";
-} else {
-  const { data, error } = await supabase
-    .from('fwebaccount')
-    .select('*')
-    .eq('id', chatUserId)
-    .single();
-
-  if (error || !data) {
-    chatName.textContent = "❌ Failed to load user.";
-  } else {
-    chatName.textContent = data.username || "Unknown User";
-    chatPic.src = data.profile_pic || "https://via.placeholder.com/50?text=U";
-  }
-}
-
-renderMessages();
-
-// Send message
+// --- Send message ---
 function sendMessage() {
   const text = chatInput.value.trim();
   if (!text) return;
@@ -193,7 +212,17 @@ chatInput.addEventListener("keypress", e => {
   if (e.key === "Enter") sendMessage();
 });
 
-// Tap header → go to chatdashboard
+// --- Typing detection ---
+let typingTimeout;
+chatInput.addEventListener("input", async () => {
+  await updateFchatStatus('typing');
+  clearTimeout(typingTimeout);
+  typingTimeout = setTimeout(() => {
+    updateFchatStatus('active');
+  }, 2000);
+});
+
+// --- Tap header → go to chatdashboard ---
 chatHeader.addEventListener("click", () => {
   if (chatUserId) {
     localStorage.setItem("chatdashboard", chatUserId);
