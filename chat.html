@@ -24,6 +24,14 @@
     border-bottom: 1px solid #ddd;
     box-shadow: 0 2px 6px rgba(0,0,0,0.05);
     cursor: pointer;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .header-top {
+    display: flex;
+    align-items: center;
+    width: 100%;
   }
 
   .chat-header-pic {
@@ -38,6 +46,13 @@
   .chat-header-name {
     font-weight: 600;
     font-size: 17px;
+  }
+
+  .chat-status {
+    font-size: 13px;
+    color: gray;
+    margin-left: 55px;
+    margin-top: -2px;
   }
 
   #chat-board {
@@ -109,8 +124,11 @@
 <body>
 
 <header id="chat-header">
-  <img id="chat-pic" class="chat-header-pic" src="" alt="Profile">
-  <div class="chat-header-name" id="chat-name">Loading...</div>
+  <div class="header-top">
+    <img id="chat-pic" class="chat-header-pic" src="" alt="Profile">
+    <div class="chat-header-name" id="chat-name">Loading...</div>
+  </div>
+  <div class="chat-status" id="chat-status">Connecting...</div>
 </header>
 
 <div id="chat-board"></div>
@@ -130,6 +148,7 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 const chatHeader = document.getElementById('chat-header');
 const chatName = document.getElementById('chat-name');
 const chatPic = document.getElementById('chat-pic');
+const chatStatus = document.getElementById('chat-status');
 const chatBoard = document.getElementById('chat-board');
 const chatInput = document.getElementById('chat-input');
 const sendBtn = document.getElementById('send-btn');
@@ -148,6 +167,27 @@ async function updateFchatStatus(status) {
       chatting_with: chatUserId
     })
     .eq('email', currentUser.email);
+}
+
+// --- Function to display who’s chatting with you ---
+async function checkWhoIsChattingWithMe() {
+  if (!currentUser?.id) return;
+  const { data, error } = await supabase
+    .from('fwebaccount')
+    .select('username, fchat_logs')
+    .eq('chatting_with', currentUser.id);
+
+  if (error) {
+    console.log('Error fetching who is chatting:', error);
+    return;
+  }
+
+  if (data && data.length > 0) {
+    const user = data[0];
+    chatStatus.textContent = user.fchat_logs || "online";
+  } else {
+    chatStatus.textContent = "offline";
+  }
 }
 
 // --- On page load ---
@@ -172,6 +212,10 @@ window.addEventListener('load', async () => {
   }
 
   renderMessages();
+  await checkWhoIsChattingWithMe();
+
+  // Recheck every 3 seconds
+  setInterval(checkWhoIsChattingWithMe, 3000);
 });
 
 // --- Render messages ---
@@ -223,16 +267,12 @@ async function setLastSeen() {
   await supabase
     .from('fwebaccount')
     .update({
-      fchat_logs: `Last seen at ${utcNow}`,
-      chatting_with: null
+      fchat_logs: `Last seen at ${utcNow}`
     })
     .eq('email', currentUser.email);
 }
 
-// Detect network offline
 window.addEventListener('offline', setLastSeen);
-
-// Detect tab close / refresh
 window.addEventListener('beforeunload', setLastSeen);
 
 // --- Tap header → go to chatdashboard ---
