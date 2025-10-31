@@ -263,18 +263,28 @@ chatInput.addEventListener("input", async () => {
 // --- Mark "last seen" when offline or page closed ---
 async function setLastSeen() {
   if (!currentUser?.email) return;
-  const utcNow = new Date().toISOString();
+  const utcNow = new Date();
+  const formatted =
+    utcNow.getUTCFullYear() +
+    "-" +
+    String(utcNow.getUTCMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(utcNow.getUTCDate()).padStart(2, "0") +
+    " " +
+    String(utcNow.getUTCHours()).padStart(2, "0") +
+    ":" +
+    String(utcNow.getUTCMinutes()).padStart(2, "0");
+
   await supabase
     .from('fwebaccount')
     .update({
-      fchat_logs: `Last seen at ${utcNow}`
+      fchat_logs: `Last seen ${formatted}`
     })
     .eq('email', currentUser.email);
 }
 
 window.addEventListener('offline', setLastSeen);
 window.addEventListener('beforeunload', setLastSeen);
-
 // --- Tap header → go to chatdashboard ---
 chatHeader.addEventListener("click", () => {
   if (chatUserId) {
