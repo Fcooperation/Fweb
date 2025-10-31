@@ -1,194 +1,82 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FChat - Chat</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #121212;
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-    }
-
-    /* Top bar */
-    .chat-header {
-      display: flex;
-      align-items: center;
-      background-color: #1f1f1f;
-      padding: 10px;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 10;
-      border-bottom: 1px solid #333;
-    }
-
-    .chat-header img {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      cursor: pointer;
-      margin-right: 10px;
-    }
-
-    .chat-header h3 {
-      margin: 0;
-      font-size: 16px;
-    }
-
-    .chat-header .back-btn {
-      font-size: 20px;
-      color: #fff;
-      margin-right: 10px;
-      cursor: pointer;
-    }
-
-    /* Chat area */
-    .chat-messages {
-      flex: 1;
-      overflow-y: auto;
-      padding: 70px 10px 70px 10px;
-    }
-
-    .message {
-      max-width: 70%;
-      margin-bottom: 10px;
-      padding: 8px 12px;
-      border-radius: 15px;
-      word-wrap: break-word;
-    }
-
-    .sent {
-      background-color: #075e54;
-      align-self: flex-end;
-      margin-left: auto;
-    }
-
-    .received {
-      background-color: #2a2a2a;
-      align-self: flex-start;
-    }
-
-    /* Bottom input area */
-    .chat-input {
-      display: flex;
-      align-items: center;
-      background-color: #1f1f1f;
-      padding: 10px;
-      border-top: 1px solid #333;
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-    }
-
-    .chat-input input {
-      flex: 1;
-      background: #2b2b2b;
-      border: none;
-      color: white;
-      padding: 10px;
-      border-radius: 20px;
-      outline: none;
-    }
-
-    .chat-input button {
-      background: #075e54;
-      border: none;
-      color: white;
-      padding: 10px 15px;
-      border-radius: 50%;
-      margin-left: 10px;
-      cursor: pointer;
-      transition: 0.2s;
-    }
-
-    .chat-input button:hover {
-      background: #0a7c67;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FCHAT - Chat</title>
+<style>
+  body {
+    font-family: 'Poppins','Segoe UI',sans-serif;
+    background: #fff;
+    color: #000;
+    margin: 0;
+    padding: 20px;
+  }
+  .user-details {
+    background: #f5f5f5;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  .user-details img {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    margin-bottom: 10px;
+  }
+  .user-details h2 {
+    margin: 5px 0;
+    font-size: 22px;
+  }
+  .user-details p {
+    margin: 3px 0;
+    font-size: 15px;
+  }
+</style>
 </head>
 <body>
-  <div class="chat-header">
-    <span class="back-btn" onclick="window.location.href='fchat.html'">&#8592;</span>
-    <img id="profile-pic" src="default-avatar.png" alt="User" onclick="viewProfile()">
-    <h3 id="username">Loading...</h3>
-  </div>
 
-  <div class="chat-messages" id="chatMessages"></div>
+<h1>Chat User Details</h1>
+<div id="user-details" class="user-details">Loading...</div>
 
-  <div class="chat-input">
-    <input type="text" id="messageInput" placeholder="Type a message...">
-    <button onclick="sendMessage()">➤</button>
-  </div>
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-  <script>
-    const chatMessages = document.getElementById("chatMessages");
-    const usernameEl = document.getElementById("username");
-    const userId = new URLSearchParams(window.location.search).get("id");
+const supabaseUrl = "https://pwsxezhugsxosbwhkdvf.supabase.co";
+const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-    // Simulate getting target user details
-    async function loadUser() {
-      console.log("Fetching user info...");
-      const res = await fetch(`/api/getUser?id=${userId}`);
-      const user = await res.json();
-      usernameEl.textContent = user.username || "Unknown";
-      document.getElementById("profile-pic").src = user.profile_pic || "default-avatar.png";
-    }
+const userDetailsDiv = document.getElementById('user-details');
 
-    // Simulate messages fetching
-    async function loadMessages() {
-      const res = await fetch(`/api/getMessages?user=${userId}`);
-      const msgs = await res.json();
-      chatMessages.innerHTML = "";
-      msgs.forEach(m => {
-        const div = document.createElement("div");
-        div.classList.add("message", m.sent_by_me ? "sent" : "received");
-        div.textContent = m.text;
-        chatMessages.appendChild(div);
-      });
-      chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
+// Step 1: Get user ID from localStorage
+const chatUserId = localStorage.getItem('chatting');
 
-    async function sendMessage() {
-      const msgInput = document.getElementById("messageInput");
-      const text = msgInput.value.trim();
-      if (!text) return;
+if (!chatUserId) {
+  userDetailsDiv.textContent = "⚠️ No chat user selected.";
+} else {
+  // Step 2: Fetch user details from Supabase
+  const { data, error } = await supabase
+    .from('fwebaccount')
+    .select('*')
+    .eq('id', chatUserId)
+    .single();
 
-      // Add message instantly
-      const div = document.createElement("div");
-      div.classList.add("message", "sent");
-      div.textContent = text;
-      chatMessages.appendChild(div);
-      chatMessages.scrollTop = chatMessages.scrollHeight;
+  // Step 3: Display user details
+  if (error || !data) {
+    userDetailsDiv.textContent = "❌ Failed to load user details.";
+  } else {
+    userDetailsDiv.innerHTML = `
+      ${data.profile_pic ? `<img src="${data.profile_pic}" alt="Profile">` : ''}
+      <h2>${data.username || 'Unknown User'}</h2>
+      <p><strong>Email:</strong> ${data.email || 'N/A'}</p>
+      <p><strong>Bio:</strong> ${data.bio || 'No bio provided'}</p>
+      <p><strong>ID:</strong> ${data.id}</p>
+    `;
+  }
+}
+</script>
 
-      msgInput.value = "";
-
-      // Send to backend
-      await fetch("/api/sendMessage", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ to: userId, text })
-      });
-
-      loadMessages(); // Refresh
-    }
-
-    function viewProfile() {
-      window.location.href = `user.html?id=${userId}`;
-    }
-
-    // Auto-refresh messages
-    setInterval(loadMessages, 3000);
-
-    loadUser();
-    loadMessages();
-  </script>
 </body>
 </html>
