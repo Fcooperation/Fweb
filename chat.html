@@ -16,7 +16,6 @@
     flex-direction: column;
   }
 
-  /* Header */
   header {
     background: #fff;
     display: flex;
@@ -41,7 +40,6 @@
     font-size: 17px;
   }
 
-  /* Chat board */
   #chat-board {
     flex: 1;
     background: #fafafa;
@@ -50,7 +48,6 @@
     padding: 15px;
   }
 
-  /* Watermark */
   #chat-board::before {
     content: "FCOOPERATION\n.....where dreams meet reality.......";
     position: absolute;
@@ -82,7 +79,6 @@
     margin-left: auto;
   }
 
-  /* Input area */
   #chat-input-area {
     display: flex;
     align-items: center;
@@ -119,7 +115,6 @@
 
 <div id="chat-board"></div>
 
-<!-- Input Area -->
 <div id="chat-input-area">
   <input type="text" id="chat-input" placeholder="Type a message...">
   <button id="send-btn">➤</button>
@@ -157,9 +152,8 @@ async function updateFchatStatus(status) {
 
 // --- On page load ---
 window.addEventListener('load', async () => {
-  await updateFchatStatus('active'); // Mark user as active
+  await updateFchatStatus('active');
 
-  // Load chat user details
   if (!chatUserId) {
     chatName.textContent = "⚠️ No chat selected.";
   } else {
@@ -180,7 +174,7 @@ window.addEventListener('load', async () => {
   renderMessages();
 });
 
-// --- Render messages from localStorage ---
+// --- Render messages ---
 function renderMessages() {
   chatBoard.innerHTML = "";
   const messages = JSON.parse(localStorage.getItem(storageKey)) || [];
@@ -221,6 +215,25 @@ chatInput.addEventListener("input", async () => {
     updateFchatStatus('active');
   }, 2000);
 });
+
+// --- Mark "last seen" when offline or page closed ---
+async function setLastSeen() {
+  if (!currentUser?.email) return;
+  const utcNow = new Date().toISOString();
+  await supabase
+    .from('fwebaccount')
+    .update({
+      fchat_logs: `Last seen at ${utcNow}`,
+      chatting_with: null
+    })
+    .eq('email', currentUser.email);
+}
+
+// Detect network offline
+window.addEventListener('offline', setLastSeen);
+
+// Detect tab close / refresh
+window.addEventListener('beforeunload', setLastSeen);
 
 // --- Tap header → go to chatdashboard ---
 chatHeader.addEventListener("click", () => {
