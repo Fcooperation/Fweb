@@ -28,7 +28,10 @@
     max-width:420px;
     animation:fadeInCard 1.5s ease-in-out forwards;
   }
-  @keyframes fadeInCard {from{opacity:0;transform:translateY(30px);}to{opacity:1;transform:translateY(0);opacity:1;}}
+  @keyframes fadeInCard {
+    from {opacity:0;transform:translateY(30px);}
+    to {opacity:1;transform:translateY(0);opacity:1;}
+  }
   h1 {
     font-size:38px;font-weight:800;letter-spacing:1px;margin:0;
     background: none; color: #000;
@@ -44,12 +47,55 @@
     cursor:pointer;margin-top:25px;transition:all 0.3s ease;
   }
   .btn:hover{opacity:0.85;}
-  .input-box {display:none;flex-direction:column;align-items:center;gap:15px;animation:fadeIn 1.2s ease-in-out forwards;}
-  input,textarea {width:90%;max-width:350px;padding:12px;border:1px solid #ddd;border-radius:10px;background:#f5f5f5;color:#000;font-size:15px;outline:none;text-align:center;transition:all 0.3s ease;}
+  .input-box {
+    display:none;
+    flex-direction:column;
+    align-items:center;
+    gap:15px;
+    animation:fadeIn 1.2s ease-in-out forwards;
+  }
+  input,textarea {
+    width:90%;
+    max-width:350px;
+    padding:12px;
+    border:1px solid #ddd;
+    border-radius:10px;
+    background:#f5f5f5;
+    color:#000;
+    font-size:15px;
+    outline:none;
+    text-align:center;
+    transition:all 0.3s ease;
+  }
   input:focus,textarea:focus{background:#fff;}
   textarea{resize:none;height:100px;}
-  @keyframes fadeIn{from{opacity:0;transform:translateY(15px);}to{opacity:1;transform:translateY(0);opacity:1;}}
-  #logs{margin-top:20px;font-size:15px;color:#000;opacity:0;transition:opacity 0.6s ease-in-out;}
+  @keyframes fadeIn{
+    from{opacity:0;transform:translateY(15px);}
+    to{opacity:1;transform:translateY(0);opacity:1;}
+  }
+  #logs{
+    margin-top:20px;
+    font-size:15px;
+    color:#000;
+    opacity:0;
+    transition:opacity 0.6s ease-in-out;
+  }
+  .dot-loader span{
+    display:inline-block;
+    width:8px;
+    height:8px;
+    background:#000;
+    border-radius:50%;
+    margin:0 3px;
+    opacity:0.4;
+    animation:blink 1s infinite ease-in-out;
+  }
+  .dot-loader span:nth-child(2){animation-delay:0.2s;}
+  .dot-loader span:nth-child(3){animation-delay:0.4s;}
+  @keyframes blink {
+    0%,80%,100% {opacity:0.4;}
+    40% {opacity:1;}
+  }
 </style>
 </head>
 <body>
@@ -57,17 +103,20 @@
   <h1 id="brand">FCOOPERATION</h1>
   <h2 id="welcome-text" class="hidden">Welcome to FCHAT...</h2>
   <div id="hiUser" class="hidden"></div>
+
   <div id="dob-box" class="input-box">
     <h2>Enter your Date of Birth</h2>
     <input type="date" id="dob" />
     <button class="btn" id="save-dob">Next</button>
   </div>
+
   <div id="bio-box" class="input-box">
     <h2>Write about yourself (optional)</h2>
     <textarea id="bio" maxlength="250" placeholder="Briefly describe yourself..."></textarea>
     <button class="btn" id="save-bio">Next</button>
     <button class="btn" id="skip-bio" style="background:#ddd;color:#000;">Skip</button>
   </div>
+
   <div id="log-section" class="hidden">
     <h2>Setting up FCHAT...</h2>
     <div id="logs"></div>
@@ -76,76 +125,98 @@
 
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
 const supabaseUrl = "https://pwsxezhugsxosbwhkdvf.supabase.co";
 const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
-const supabase = createClient(supabaseUrl,supabaseAnonKey);
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-const brand=document.getElementById("brand");
-const welcomeText=document.getElementById("welcome-text");
-const hiUser=document.getElementById("hiUser");
-const dobBox=document.getElementById("dob-box");
-const bioBox=document.getElementById("bio-box");
-const logSection=document.getElementById("log-section");
-const logs=document.getElementById("logs");
-const user=JSON.parse(localStorage.getItem("faccount"));
+const brand = document.getElementById("brand");
+const welcomeText = document.getElementById("welcome-text");
+const hiUser = document.getElementById("hiUser");
+const dobBox = document.getElementById("dob-box");
+const bioBox = document.getElementById("bio-box");
+const logSection = document.getElementById("log-section");
+const logs = document.getElementById("logs");
+const user = JSON.parse(localStorage.getItem("faccount"));
 
 // Step 1 — Brand fade in
-setTimeout(()=>{
-  brand.style.opacity="1";
-  setTimeout(()=>{
+setTimeout(() => {
+  brand.style.opacity = "1";
+  setTimeout(() => {
     brand.classList.add("hidden");
     welcomeText.classList.remove("hidden");
-    welcomeText.style.opacity="1";
-  },2000);
-},200);
+    welcomeText.style.opacity = "1";
+  }, 2000);
+}, 200);
 
 // Step 2 — Hi User
-setTimeout(()=>{
+setTimeout(() => {
   welcomeText.classList.add("hidden");
   hiUser.classList.remove("hidden");
-  hiUser.innerHTML=`<h2 style="animation-delay:0s;">Hi ${user?.username || "User"}<br>Welcome to FCHAT</h2>
-                    <button class='btn hidden' id='next-btn'>Next</button>`;
-  setTimeout(()=>{document.getElementById("next-btn").classList.remove("hidden");},1500);
-  document.getElementById("next-btn").addEventListener("click",()=>{
+  hiUser.innerHTML = `
+    <h2 style="animation-delay:0s;">Hi ${user?.username || "User"}<br>Welcome to FCHAT</h2>
+    <button class='btn hidden' id='next-btn'>Next</button>`;
+  setTimeout(() => {
+    document.getElementById("next-btn").classList.remove("hidden");
+  }, 1500);
+
+  document.getElementById("next-btn").addEventListener("click", () => {
     hiUser.classList.add("hidden");
-    setTimeout(()=>dobBox.style.display="flex",200);
+    setTimeout(() => dobBox.style.display = "flex", 200);
   });
-},4500);
+}, 4500);
 
 // Step 3 — Save DOB
-document.getElementById("save-dob").addEventListener("click", async()=>{
-  const dob=document.getElementById("dob").value;
-  if(!dob) return alert("Please enter your date of birth.");
-  const {error}=await supabase.from("fwebaccount").update({dob}).eq("email",user.email);
-  if(error) return alert("Error saving DOB: "+error.message);
-  user.dob=dob;
-  localStorage.setItem("faccount",JSON.stringify(user));
-  dobBox.style.display="none";
-  setTimeout(()=>bioBox.style.display="flex",200);
+document.getElementById("save-dob").addEventListener("click", async () => {
+  const dob = document.getElementById("dob").value;
+  if (!dob) return alert("Please enter your date of birth.");
+  const { error } = await supabase
+    .from("fwebaccount")
+    .update({ dob })
+    .eq("email", user.email);
+  if (error) return alert("Error saving DOB: " + error.message);
+  user.dob = dob;
+  localStorage.setItem("faccount", JSON.stringify(user));
+  dobBox.style.display = "none";
+  setTimeout(() => bioBox.style.display = "flex", 200);
 });
 
 // Step 4 — Save BIO + mark fchat + local storage
-async function completeFchat(bioValue){
-  const updates={bio:bioValue,fchat:"yes"};
-  const {data,error}=await supabase.from("fwebaccount").select("*").eq("email",user.email).single();
-  if(error) return alert("Error retrieving account: "+error.message);
-  localStorage.setItem("faccount",JSON.stringify(data));
-
-  bioBox.style.display="none";
+async function completeFchat(bioValue) {
+  bioBox.style.display = "none";
   logSection.classList.remove("hidden");
+  logs.style.opacity = 1;
+  logs.innerHTML = `<p>Saving your profile...</p><div class='dot-loader'><span></span><span></span><span></span></div>`;
 
-  // One-line log
-  logs.style.opacity=1;
-  logs.textContent="✅ FCHAT setup complete! Redirecting...";
-  
-  setTimeout(()=>window.location.href="fchat.html",1500);
+  const updates = { bio: bioValue, fchat: "yes" };
+  const { data, error } = await supabase
+    .from("fwebaccount")
+    .update(updates)
+    .eq("email", user.email)
+    .select()
+    .single();
+
+  if (error) {
+    logs.textContent = "⚠️ Error updating account: " + error.message;
+    return;
+  }
+
+  // Save updated account locally
+  localStorage.setItem("faccount", JSON.stringify(data));
+
+  // Replace loader with success message
+  setTimeout(() => {
+    logs.innerHTML = "✅ FCHAT setup complete! Redirecting...";
+  }, 1000);
+
+  setTimeout(() => window.location.href = "fchat.html", 2000);
 }
 
-document.getElementById("save-bio").addEventListener("click",()=>{
-  const bio=document.getElementById("bio").value.trim();
+document.getElementById("save-bio").addEventListener("click", () => {
+  const bio = document.getElementById("bio").value.trim();
   completeFchat(bio);
 });
-document.getElementById("skip-bio").addEventListener("click",()=>completeFchat(""));
+document.getElementById("skip-bio").addEventListener("click", () => completeFchat(""));
 </script>
 </body>
 </html>
