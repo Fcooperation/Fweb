@@ -184,99 +184,118 @@ margin-top: 3px;
   <button onclick="location.href='fchatme.html'">Me</button>  
 </nav>  <!-- Profile Modal -->  <div id="profile-modal"><img id="profile-view" src=""></div>  
 
- <script type="module">
+<script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
 const supabaseUrl = "https://pwsxezhugsxosbwhkdvf.supabase.co";
-const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
+const supabaseAnonKey =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-const container = document.getElementById('fchat-container');
-const menuBtn = document.getElementById('menu-btn');
-const menuItems = document.getElementById('menu-items');
-const modal = document.getElementById('profile-modal');
-const modalImg = document.getElementById('profile-view');
-const searchBar = document.getElementById('search-bar');
-const addBtn = document.getElementById('add-btn');
+const container = document.getElementById("fchat-container");
+const menuBtn = document.getElementById("menu-btn");
+const menuItems = document.getElementById("menu-items");
+const modal = document.getElementById("profile-modal");
+const modalImg = document.getElementById("profile-view");
+const searchBar = document.getElementById("search-bar");
+const addBtn = document.getElementById("add-btn");
 
-menuBtn.addEventListener('click', () => {
-  menuItems.style.display = menuItems.style.display === 'flex' ? 'none' : 'flex';
+menuBtn.addEventListener("click", () => {
+  menuItems.style.display = menuItems.style.display === "flex" ? "none" : "flex";
 });
 
-addBtn.addEventListener('click', () => {
-  location.href = 'add.html';
+addBtn.addEventListener("click", () => {
+  location.href = "add.html";
 });
 
-modal.addEventListener('click', () => {
-  modal.style.display = 'none';
+modal.addEventListener("click", () => {
+  modal.style.display = "none";
 });
 
 let allUsers = [];
 
-// --- Render chat cards ---
-async function renderFchatCards(filter = '') {
-  container.innerHTML = '';
+// --- Helper toast ---
+function showMessage(text, color = "#333") {
+  const msg = document.createElement("div");
+  msg.textContent = text;
+  msg.style.position = "fixed";
+  msg.style.bottom = "20px";
+  msg.style.left = "50%";
+  msg.style.transform = "translateX(-50%)";
+  msg.style.background = color;
+  msg.style.color = "white";
+  msg.style.padding = "10px 18px";
+  msg.style.borderRadius = "12px";
+  msg.style.boxShadow = "0 2px 8px rgba(0,0,0,0.3)";
+  msg.style.zIndex = "9999";
+  msg.style.fontFamily = "Poppins, sans-serif";
+  document.body.appendChild(msg);
+  setTimeout(() => msg.remove(), 2000);
+}
 
-  const user = JSON.parse(localStorage.getItem('faccount'));
+// --- Render cards ---
+async function renderFchatCards(filter = "") {
+  container.innerHTML = "";
+
+  const user = JSON.parse(localStorage.getItem("faccount"));
   if (!user) {
-    container.innerHTML = '<p style="text-align:center;">No user data found.</p>';
+    container.innerHTML = `<p style="text-align:center;">No user data found.</p>`;
     return;
   }
 
-  const acceptedIds = user.accepted?.split(',').map(id => id.trim()).filter(Boolean) || [];
+  const acceptedIds =
+    user.accepted?.split(",").map((id) => id.trim()).filter(Boolean) || [];
+
   if (acceptedIds.length === 0) {
-    container.innerHTML = '<p style="text-align:center;">No accepted users yet.</p>';
+    container.innerHTML = `<p style="text-align:center;">No accepted users yet.</p>`;
     return;
   }
 
-  const filteredUsers = allUsers.filter(u =>
+  const filteredUsers = allUsers.filter((u) =>
     u.username?.toLowerCase().includes(filter.toLowerCase())
   );
 
   if (filteredUsers.length === 0) {
-    container.innerHTML = '<p style="text-align:center;">No users match your search.</p>';
+    container.innerHTML = `<p style="text-align:center;">No users match your search.</p>`;
     return;
   }
 
-  filteredUsers.forEach(u => {
-    const card = createCard(u);
-    container.appendChild(card);
-  });
+  filteredUsers.forEach((u) => container.appendChild(createCard(u)));
 }
 
-// --- Create card ---
+// --- Create a single user card ---
 function createCard(userData) {
-  const card = document.createElement('div');
-  card.className = 'fchat-card';
+  const card = document.createElement("div");
+  card.className = "fchat-card";
 
-  const profile = document.createElement('div');
-  profile.className = 'profile-pic';
+  const profile = document.createElement("div");
+  profile.className = "profile-pic";
 
   if (userData.profile_pic) {
-    const img = document.createElement('img');
+    const img = document.createElement("img");
     img.src = userData.profile_pic;
     img.onclick = (e) => {
       e.stopPropagation();
-      modal.style.display = 'flex';
+      modal.style.display = "flex";
       modalImg.src = img.src;
     };
     profile.appendChild(img);
   } else {
-    profile.textContent = userData.username?.charAt(0).toUpperCase() || 'U';
+    profile.textContent = userData.username?.charAt(0).toUpperCase() || "U";
   }
 
-  const infoDiv = document.createElement('div');
-  infoDiv.style.display = 'flex';
-  infoDiv.style.flexDirection = 'column';
-  infoDiv.style.justifyContent = 'center';
+  const infoDiv = document.createElement("div");
+  infoDiv.style.display = "flex";
+  infoDiv.style.flexDirection = "column";
+  infoDiv.style.justifyContent = "center";
 
-  const username = document.createElement('div');
-  username.className = 'username';
-  username.textContent = userData.username || 'Unknown';
+  const username = document.createElement("div");
+  username.className = "username";
+  username.textContent = userData.username || "Unknown";
 
-  const log = document.createElement('div');
-  log.className = 'fchat-log';
-  log.textContent = userData.fchat_logs || 'offline';
+  const log = document.createElement("div");
+  log.className = "fchat-log";
+  log.textContent = userData.fchat_logs || "offline";
 
   infoDiv.appendChild(username);
   infoDiv.appendChild(log);
@@ -284,27 +303,27 @@ function createCard(userData) {
   card.appendChild(profile);
   card.appendChild(infoDiv);
 
-  card.addEventListener('click', () => {
-    localStorage.setItem('chatting', userData.id);
-    location.href = 'chat.html';
+  card.addEventListener("click", () => {
+    localStorage.setItem("chatting", userData.id);
+    location.href = "chat.html";
   });
 
   return card;
 }
 
-// --- Load users initially ---
+// --- Load users from Supabase ---
 async function loadUsers() {
-  const user = JSON.parse(localStorage.getItem('faccount'));
+  const user = JSON.parse(localStorage.getItem("faccount"));
   if (!user?.accepted) return;
 
-  const ids = user.accepted.split(',').map(i => i.trim()).filter(Boolean);
+  const ids = user.accepted.split(",").map((i) => i.trim()).filter(Boolean);
   allUsers = [];
 
   for (let id of ids) {
     const { data, error } = await supabase
-      .from('fwebaccount')
-      .select('id, username, profile_pic, fchat_logs')
-      .eq('id', id)
+      .from("fwebaccount")
+      .select("id, username, profile_pic, fchat_logs")
+      .eq("id", id)
       .single();
 
     if (!error && data) allUsers.push(data);
@@ -313,128 +332,1124 @@ async function loadUsers() {
   renderFchatCards();
 }
 
-// --- Search filter ---
-searchBar.addEventListener('input', (e) => {
+// --- Live Supabase subscription ---
+async function subscribeToLiveUpdates() {
+  // 🔁 Listen to all account changes (fchat_logs, username, profile_pic, etc.)
+  supabase
+    .channel("fchat-realtime")
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "fwebaccount",
+      },
+      (payload) => {
+        const updatedUser = payload.new;
+        if (!updatedUser) return;
+
+        const index = allUsers.findIndex((u) => u.id === updatedUser.id);
+        if (index !== -1) {
+          allUsers[index] = updatedUser;
+          renderFchatCards(searchBar.value);
+          showMessage(`🔄 ${updatedUser.username} updated`, "#2980b9");
+        }
+      }
+    )
+    .subscribe();
+}
+
+// --- Periodic fallback (every 2 seconds) ---
+async function pollForUpdates() {
+  const user = JSON.parse(localStorage.getItem("faccount"));
+  if (!user?.accepted) return;
+
+  const ids = user.accepted.split(",").map((i) => i.trim()).filter(Boolean);
+
+  for (let id of ids) {
+    const { data, error } = await supabase
+      .from("fwebaccount")
+      .select("id, username, profile_pic, fchat_logs")
+      .eq("id", id)
+      .single();
+
+    if (!error && data) {
+      const index = allUsers.findIndex((u) => u.id === id);
+      if (index === -1) {
+        allUsers.push(data);
+      } else if (JSON.stringify(allUsers[index]) !== JSON.stringify(data)) {
+        allUsers[index] = data;
+        renderFchatCards(searchBar.value);
+      }
+    }
+  }
+}
+
+// --- Search filtering ---
+searchBar.addEventListener("input", (e) => {
   renderFchatCards(e.target.value);
 });
 
-  // --- Auto-reload logic (every 2 seconds, no page reload) ---
-setInterval(async () => {
-  const currentUser = JSON.parse(localStorage.getItem('faccount'));
-  if (!currentUser?.id) return;
+// --- Initialize ---
+await loadUsers();
+subscribeToLiveUpdates();
+setInterval(pollForUpdates, 2000);
+</script>
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-  // 1️⃣ Get the latest accepted list from Supabase
-  const { data: userData, error: userError } = await supabase
-    .from('fwebaccount')
-    .select('accepted')
-    .eq('id', currentUser.id)
-    .single();
+const supabaseUrl = "https://pwsxezhugsxosbwhkdvf.supabase.co";
+const supabaseAnonKey =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-  if (userError || !userData) return;
+const container = document.getElementById("fchat-container");
+const menuBtn = document.getElementById("menu-btn");
+const menuItems = document.getElementById("menu-items");
+const modal = document.getElementById("profile-modal");
+const modalImg = document.getElementById("profile-view");
+const searchBar = document.getElementById("search-bar");
+const addBtn = document.getElementById("add-btn");
 
-  // 2️⃣ If accepted list changed, update and re-fetch
-  if (userData.accepted !== currentUser.accepted) {
-    currentUser.accepted = userData.accepted;
-    localStorage.setItem('faccount', JSON.stringify(currentUser));
-    await loadUsers();
-    showMessage('🔄 New accepted users loaded!', '#3498db');
-  }
+menuBtn.addEventListener("click", () => {
+  menuItems.style.display = menuItems.style.display === "flex" ? "none" : "flex";
+});
 
-  // 3️⃣ Check all accepted users for updates
-  const ids = (currentUser.accepted || '')
-    .split(',')
-    .map(i => i.trim())
-    .filter(Boolean);
+addBtn.addEventListener("click", () => {
+  location.href = "add.html";
+});
 
-  if (ids.length === 0) return;
+modal.addEventListener("click", () => {
+  modal.style.display = "none";
+});
 
-  // Fetch their latest chat/logs
-  const { data: latestUsers, error } = await supabase
-    .from('fwebaccount')
-    .select('id, username, profile_pic, fchat_logs')
-    .in('id', ids);
+let allUsers = [];
 
-  if (!error && latestUsers) {
-    let updated = false;
-
-    // Compare and update live
-    latestUsers.forEach(latest => {
-      const existingIndex = allUsers.findIndex(u => u.id === latest.id);
-      if (existingIndex === -1) {
-        allUsers.push(latest);
-        updated = true;
-      } else if (
-        JSON.stringify(allUsers[existingIndex]) !== JSON.stringify(latest)
-      ) {
-        allUsers[existingIndex] = latest;
-        updated = true;
-      }
-    });
-
-    if (updated) {
-      renderFchatCards(searchBar.value);
-      showMessage('🔁 Live data updated!', '#2ecc71');
-    }
-  }
-}, 2000);
-
-// --- Show toast ---
-function showMessage(text, color = '#333') {
-  const msg = document.createElement('div');
+// --- Helper toast ---
+function showMessage(text, color = "#333") {
+  const msg = document.createElement("div");
   msg.textContent = text;
-  msg.style.position = 'fixed';
-  msg.style.bottom = '20px';
-  msg.style.left = '50%';
-  msg.style.transform = 'translateX(-50%)';
+  msg.style.position = "fixed";
+  msg.style.bottom = "20px";
+  msg.style.left = "50%";
+  msg.style.transform = "translateX(-50%)";
   msg.style.background = color;
-  msg.style.color = 'white';
-  msg.style.padding = '10px 18px';
-  msg.style.borderRadius = '12px';
-  msg.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
-  msg.style.zIndex = '9999';
-  msg.style.fontFamily = 'Poppins, sans-serif';
+  msg.style.color = "white";
+  msg.style.padding = "10px 18px";
+  msg.style.borderRadius = "12px";
+  msg.style.boxShadow = "0 2px 8px rgba(0,0,0,0.3)";
+  msg.style.zIndex = "9999";
+  msg.style.fontFamily = "Poppins, sans-serif";
   document.body.appendChild(msg);
-  setTimeout(() => msg.remove(), 2500);
+  setTimeout(() => msg.remove(), 2000);
 }
 
-// --- Live updates for accepted users ---
+// --- Render cards ---
+async function renderFchatCards(filter = "") {
+  container.innerHTML = "";
+
+  const user = JSON.parse(localStorage.getItem("faccount"));
+  if (!user) {
+    container.innerHTML = `<p style="text-align:center;">No user data found.</p>`;
+    return;
+  }
+
+  const acceptedIds =
+    user.accepted?.split(",").map((id) => id.trim()).filter(Boolean) || [];
+
+  if (acceptedIds.length === 0) {
+    container.innerHTML = `<p style="text-align:center;">No accepted users yet.</p>`;
+    return;
+  }
+
+  const filteredUsers = allUsers.filter((u) =>
+    u.username?.toLowerCase().includes(filter.toLowerCase())
+  );
+
+  if (filteredUsers.length === 0) {
+    container.innerHTML = `<p style="text-align:center;">No users match your search.</p>`;
+    return;
+  }
+
+  filteredUsers.forEach((u) => container.appendChild(createCard(u)));
+}
+
+// --- Create a single user card ---
+function createCard(userData) {
+  const card = document.createElement("div");
+  card.className = "fchat-card";
+
+  const profile = document.createElement("div");
+  profile.className = "profile-pic";
+
+  if (userData.profile_pic) {
+    const img = document.createElement("img");
+    img.src = userData.profile_pic;
+    img.onclick = (e) => {
+      e.stopPropagation();
+      modal.style.display = "flex";
+      modalImg.src = img.src;
+    };
+    profile.appendChild(img);
+  } else {
+    profile.textContent = userData.username?.charAt(0).toUpperCase() || "U";
+  }
+
+  const infoDiv = document.createElement("div");
+  infoDiv.style.display = "flex";
+  infoDiv.style.flexDirection = "column";
+  infoDiv.style.justifyContent = "center";
+
+  const username = document.createElement("div");
+  username.className = "username";
+  username.textContent = userData.username || "Unknown";
+
+  const log = document.createElement("div");
+  log.className = "fchat-log";
+  log.textContent = userData.fchat_logs || "offline";
+
+  infoDiv.appendChild(username);
+  infoDiv.appendChild(log);
+
+  card.appendChild(profile);
+  card.appendChild(infoDiv);
+
+  card.addEventListener("click", () => {
+    localStorage.setItem("chatting", userData.id);
+    location.href = "chat.html";
+  });
+
+  return card;
+}
+
+// --- Load users from Supabase ---
+async function loadUsers() {
+  const user = JSON.parse(localStorage.getItem("faccount"));
+  if (!user?.accepted) return;
+
+  const ids = user.accepted.split(",").map((i) => i.trim()).filter(Boolean);
+  allUsers = [];
+
+  for (let id of ids) {
+    const { data, error } = await supabase
+      .from("fwebaccount")
+      .select("id, username, profile_pic, fchat_logs")
+      .eq("id", id)
+      .single();
+
+    if (!error && data) allUsers.push(data);
+  }
+
+  renderFchatCards();
+}
+
+// --- Live Supabase subscription ---
 async function subscribeToLiveUpdates() {
-  const currentUser = JSON.parse(localStorage.getItem('faccount'));
-  if (!currentUser?.accepted) return;
-
-  const acceptedIds = currentUser.accepted.split(',').map(id => id.trim()).filter(Boolean);
-
-  acceptedIds.forEach(id => {
-    supabase
-      .from(`fwebaccount:id=eq.${id}`)
-      .on('UPDATE', payload => {
+  // 🔁 Listen to all account changes (fchat_logs, username, profile_pic, etc.)
+  supabase
+    .channel("fchat-realtime")
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "fwebaccount",
+      },
+      (payload) => {
         const updatedUser = payload.new;
+        if (!updatedUser) return;
 
-        // 1️⃣ Update UI first
-        const index = allUsers.findIndex(u => u.id === updatedUser.id);
+        const index = allUsers.findIndex((u) => u.id === updatedUser.id);
         if (index !== -1) {
           allUsers[index] = updatedUser;
-        } else {
-          allUsers.push(updatedUser);
+          renderFchatCards(searchBar.value);
+          showMessage(`🔄 ${updatedUser.username} updated`, "#2980b9");
         }
-        renderFchatCards(searchBar.value);
-
-        // 2️⃣ Update localStorage after UI
-        const localData = JSON.parse(localStorage.getItem('faccount'));
-        if (localData) {
-          localData.accepted = acceptedIds.join(',');
-          localStorage.setItem('faccount', JSON.stringify(localData));
-        }
-
-        showMessage(`🔔 ${updatedUser.username} updated their chat!`, '#2980b9');
-      })
-      .subscribe();
-  });
+      }
+    )
+    .subscribe();
 }
 
+// --- Periodic fallback (every 2 seconds) ---
+async function pollForUpdates() {
+  const user = JSON.parse(localStorage.getItem("faccount"));
+  if (!user?.accepted) return;
+
+  const ids = user.accepted.split(",").map((i) => i.trim()).filter(Boolean);
+
+  for (let id of ids) {
+    const { data, error } = await supabase
+      .from("fwebaccount")
+      .select("id, username, profile_pic, fchat_logs")
+      .eq("id", id)
+      .single();
+
+    if (!error && data) {
+      const index = allUsers.findIndex((u) => u.id === id);
+      if (index === -1) {
+        allUsers.push(data);
+      } else if (JSON.stringify(allUsers[index]) !== JSON.stringify(data)) {
+        allUsers[index] = data;
+        renderFchatCards(searchBar.value);
+      }
+    }
+  }
+}
+
+// --- Search filtering ---
+searchBar.addEventListener("input", (e) => {
+  renderFchatCards(e.target.value);
+});
+
 // --- Initialize ---
-loadUsers();
+await loadUsers();
 subscribeToLiveUpdates();
- </script>
+setInterval(pollForUpdates, 2000);
+</script>
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const supabaseUrl = "https://pwsxezhugsxosbwhkdvf.supabase.co";
+const supabaseAnonKey =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+const container = document.getElementById("fchat-container");
+const menuBtn = document.getElementById("menu-btn");
+const menuItems = document.getElementById("menu-items");
+const modal = document.getElementById("profile-modal");
+const modalImg = document.getElementById("profile-view");
+const searchBar = document.getElementById("search-bar");
+const addBtn = document.getElementById("add-btn");
+
+menuBtn.addEventListener("click", () => {
+  menuItems.style.display = menuItems.style.display === "flex" ? "none" : "flex";
+});
+
+addBtn.addEventListener("click", () => {
+  location.href = "add.html";
+});
+
+modal.addEventListener("click", () => {
+  modal.style.display = "none";
+});
+
+let allUsers = [];
+
+// --- Helper toast ---
+function showMessage(text, color = "#333") {
+  const msg = document.createElement("div");
+  msg.textContent = text;
+  msg.style.position = "fixed";
+  msg.style.bottom = "20px";
+  msg.style.left = "50%";
+  msg.style.transform = "translateX(-50%)";
+  msg.style.background = color;
+  msg.style.color = "white";
+  msg.style.padding = "10px 18px";
+  msg.style.borderRadius = "12px";
+  msg.style.boxShadow = "0 2px 8px rgba(0,0,0,0.3)";
+  msg.style.zIndex = "9999";
+  msg.style.fontFamily = "Poppins, sans-serif";
+  document.body.appendChild(msg);
+  setTimeout(() => msg.remove(), 2000);
+}
+
+// --- Render cards ---
+async function renderFchatCards(filter = "") {
+  container.innerHTML = "";
+
+  const user = JSON.parse(localStorage.getItem("faccount"));
+  if (!user) {
+    container.innerHTML = `<p style="text-align:center;">No user data found.</p>`;
+    return;
+  }
+
+  const acceptedIds =
+    user.accepted?.split(",").map((id) => id.trim()).filter(Boolean) || [];
+
+  if (acceptedIds.length === 0) {
+    container.innerHTML = `<p style="text-align:center;">No accepted users yet.</p>`;
+    return;
+  }
+
+  const filteredUsers = allUsers.filter((u) =>
+    u.username?.toLowerCase().includes(filter.toLowerCase())
+  );
+
+  if (filteredUsers.length === 0) {
+    container.innerHTML = `<p style="text-align:center;">No users match your search.</p>`;
+    return;
+  }
+
+  filteredUsers.forEach((u) => container.appendChild(createCard(u)));
+}
+
+// --- Create a single user card ---
+function createCard(userData) {
+  const card = document.createElement("div");
+  card.className = "fchat-card";
+
+  const profile = document.createElement("div");
+  profile.className = "profile-pic";
+
+  if (userData.profile_pic) {
+    const img = document.createElement("img");
+    img.src = userData.profile_pic;
+    img.onclick = (e) => {
+      e.stopPropagation();
+      modal.style.display = "flex";
+      modalImg.src = img.src;
+    };
+    profile.appendChild(img);
+  } else {
+    profile.textContent = userData.username?.charAt(0).toUpperCase() || "U";
+  }
+
+  const infoDiv = document.createElement("div");
+  infoDiv.style.display = "flex";
+  infoDiv.style.flexDirection = "column";
+  infoDiv.style.justifyContent = "center";
+
+  const username = document.createElement("div");
+  username.className = "username";
+  username.textContent = userData.username || "Unknown";
+
+  const log = document.createElement("div");
+  log.className = "fchat-log";
+  log.textContent = userData.fchat_logs || "offline";
+
+  infoDiv.appendChild(username);
+  infoDiv.appendChild(log);
+
+  card.appendChild(profile);
+  card.appendChild(infoDiv);
+
+  card.addEventListener("click", () => {
+    localStorage.setItem("chatting", userData.id);
+    location.href = "chat.html";
+  });
+
+  return card;
+}
+
+// --- Load users from Supabase ---
+async function loadUsers() {
+  const user = JSON.parse(localStorage.getItem("faccount"));
+  if (!user?.accepted) return;
+
+  const ids = user.accepted.split(",").map((i) => i.trim()).filter(Boolean);
+  allUsers = [];
+
+  for (let id of ids) {
+    const { data, error } = await supabase
+      .from("fwebaccount")
+      .select("id, username, profile_pic, fchat_logs")
+      .eq("id", id)
+      .single();
+
+    if (!error && data) allUsers.push(data);
+  }
+
+  renderFchatCards();
+}
+
+// --- Live Supabase subscription ---
+async function subscribeToLiveUpdates() {
+  // 🔁 Listen to all account changes (fchat_logs, username, profile_pic, etc.)
+  supabase
+    .channel("fchat-realtime")
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "fwebaccount",
+      },
+      (payload) => {
+        const updatedUser = payload.new;
+        if (!updatedUser) return;
+
+        const index = allUsers.findIndex((u) => u.id === updatedUser.id);
+        if (index !== -1) {
+          allUsers[index] = updatedUser;
+          renderFchatCards(searchBar.value);
+          showMessage(`🔄 ${updatedUser.username} updated`, "#2980b9");
+        }
+      }
+    )
+    .subscribe();
+}
+
+// --- Periodic fallback (every 2 seconds) ---
+async function pollForUpdates() {
+  const user = JSON.parse(localStorage.getItem("faccount"));
+  if (!user?.accepted) return;
+
+  const ids = user.accepted.split(",").map((i) => i.trim()).filter(Boolean);
+
+  for (let id of ids) {
+    const { data, error } = await supabase
+      .from("fwebaccount")
+      .select("id, username, profile_pic, fchat_logs")
+      .eq("id", id)
+      .single();
+
+    if (!error && data) {
+      const index = allUsers.findIndex((u) => u.id === id);
+      if (index === -1) {
+        allUsers.push(data);
+      } else if (JSON.stringify(allUsers[index]) !== JSON.stringify(data)) {
+        allUsers[index] = data;
+        renderFchatCards(searchBar.value);
+      }
+    }
+  }
+}
+
+// --- Search filtering ---
+searchBar.addEventListener("input", (e) => {
+  renderFchatCards(e.target.value);
+});
+
+// --- Initialize ---
+await loadUsers();
+subscribeToLiveUpdates();
+setInterval(pollForUpdates, 2000);
+</script>
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const supabaseUrl = "https://pwsxezhugsxosbwhkdvf.supabase.co";
+const supabaseAnonKey =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+const container = document.getElementById("fchat-container");
+const menuBtn = document.getElementById("menu-btn");
+const menuItems = document.getElementById("menu-items");
+const modal = document.getElementById("profile-modal");
+const modalImg = document.getElementById("profile-view");
+const searchBar = document.getElementById("search-bar");
+const addBtn = document.getElementById("add-btn");
+
+menuBtn.addEventListener("click", () => {
+  menuItems.style.display = menuItems.style.display === "flex" ? "none" : "flex";
+});
+
+addBtn.addEventListener("click", () => {
+  location.href = "add.html";
+});
+
+modal.addEventListener("click", () => {
+  modal.style.display = "none";
+});
+
+let allUsers = [];
+
+// --- Helper toast ---
+function showMessage(text, color = "#333") {
+  const msg = document.createElement("div");
+  msg.textContent = text;
+  msg.style.position = "fixed";
+  msg.style.bottom = "20px";
+  msg.style.left = "50%";
+  msg.style.transform = "translateX(-50%)";
+  msg.style.background = color;
+  msg.style.color = "white";
+  msg.style.padding = "10px 18px";
+  msg.style.borderRadius = "12px";
+  msg.style.boxShadow = "0 2px 8px rgba(0,0,0,0.3)";
+  msg.style.zIndex = "9999";
+  msg.style.fontFamily = "Poppins, sans-serif";
+  document.body.appendChild(msg);
+  setTimeout(() => msg.remove(), 2000);
+}
+
+// --- Render cards ---
+async function renderFchatCards(filter = "") {
+  container.innerHTML = "";
+
+  const user = JSON.parse(localStorage.getItem("faccount"));
+  if (!user) {
+    container.innerHTML = `<p style="text-align:center;">No user data found.</p>`;
+    return;
+  }
+
+  const acceptedIds =
+    user.accepted?.split(",").map((id) => id.trim()).filter(Boolean) || [];
+
+  if (acceptedIds.length === 0) {
+    container.innerHTML = `<p style="text-align:center;">No accepted users yet.</p>`;
+    return;
+  }
+
+  const filteredUsers = allUsers.filter((u) =>
+    u.username?.toLowerCase().includes(filter.toLowerCase())
+  );
+
+  if (filteredUsers.length === 0) {
+    container.innerHTML = `<p style="text-align:center;">No users match your search.</p>`;
+    return;
+  }
+
+  filteredUsers.forEach((u) => container.appendChild(createCard(u)));
+}
+
+// --- Create a single user card ---
+function createCard(userData) {
+  const card = document.createElement("div");
+  card.className = "fchat-card";
+
+  const profile = document.createElement("div");
+  profile.className = "profile-pic";
+
+  if (userData.profile_pic) {
+    const img = document.createElement("img");
+    img.src = userData.profile_pic;
+    img.onclick = (e) => {
+      e.stopPropagation();
+      modal.style.display = "flex";
+      modalImg.src = img.src;
+    };
+    profile.appendChild(img);
+  } else {
+    profile.textContent = userData.username?.charAt(0).toUpperCase() || "U";
+  }
+
+  const infoDiv = document.createElement("div");
+  infoDiv.style.display = "flex";
+  infoDiv.style.flexDirection = "column";
+  infoDiv.style.justifyContent = "center";
+
+  const username = document.createElement("div");
+  username.className = "username";
+  username.textContent = userData.username || "Unknown";
+
+  const log = document.createElement("div");
+  log.className = "fchat-log";
+  log.textContent = userData.fchat_logs || "offline";
+
+  infoDiv.appendChild(username);
+  infoDiv.appendChild(log);
+
+  card.appendChild(profile);
+  card.appendChild(infoDiv);
+
+  card.addEventListener("click", () => {
+    localStorage.setItem("chatting", userData.id);
+    location.href = "chat.html";
+  });
+
+  return card;
+}
+
+// --- Load users from Supabase ---
+async function loadUsers() {
+  const user = JSON.parse(localStorage.getItem("faccount"));
+  if (!user?.accepted) return;
+
+  const ids = user.accepted.split(",").map((i) => i.trim()).filter(Boolean);
+  allUsers = [];
+
+  for (let id of ids) {
+    const { data, error } = await supabase
+      .from("fwebaccount")
+      .select("id, username, profile_pic, fchat_logs")
+      .eq("id", id)
+      .single();
+
+    if (!error && data) allUsers.push(data);
+  }
+
+  renderFchatCards();
+}
+
+// --- Live Supabase subscription ---
+async function subscribeToLiveUpdates() {
+  // 🔁 Listen to all account changes (fchat_logs, username, profile_pic, etc.)
+  supabase
+    .channel("fchat-realtime")
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "fwebaccount",
+      },
+      (payload) => {
+        const updatedUser = payload.new;
+        if (!updatedUser) return;
+
+        const index = allUsers.findIndex((u) => u.id === updatedUser.id);
+        if (index !== -1) {
+          allUsers[index] = updatedUser;
+          renderFchatCards(searchBar.value);
+          showMessage(`🔄 ${updatedUser.username} updated`, "#2980b9");
+        }
+      }
+    )
+    .subscribe();
+}
+
+// --- Periodic fallback (every 2 seconds) ---
+async function pollForUpdates() {
+  const user = JSON.parse(localStorage.getItem("faccount"));
+  if (!user?.accepted) return;
+
+  const ids = user.accepted.split(",").map((i) => i.trim()).filter(Boolean);
+
+  for (let id of ids) {
+    const { data, error } = await supabase
+      .from("fwebaccount")
+      .select("id, username, profile_pic, fchat_logs")
+      .eq("id", id)
+      .single();
+
+    if (!error && data) {
+      const index = allUsers.findIndex((u) => u.id === id);
+      if (index === -1) {
+        allUsers.push(data);
+      } else if (JSON.stringify(allUsers[index]) !== JSON.stringify(data)) {
+        allUsers[index] = data;
+        renderFchatCards(searchBar.value);
+      }
+    }
+  }
+}
+
+// --- Search filtering ---
+searchBar.addEventListener("input", (e) => {
+  renderFchatCards(e.target.value);
+});
+
+// --- Initialize ---
+await loadUsers();
+subscribeToLiveUpdates();
+setInterval(pollForUpdates, 2000);
+</script>
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const supabaseUrl = "https://pwsxezhugsxosbwhkdvf.supabase.co";
+const supabaseAnonKey =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+const container = document.getElementById("fchat-container");
+const menuBtn = document.getElementById("menu-btn");
+const menuItems = document.getElementById("menu-items");
+const modal = document.getElementById("profile-modal");
+const modalImg = document.getElementById("profile-view");
+const searchBar = document.getElementById("search-bar");
+const addBtn = document.getElementById("add-btn");
+
+menuBtn.addEventListener("click", () => {
+  menuItems.style.display = menuItems.style.display === "flex" ? "none" : "flex";
+});
+
+addBtn.addEventListener("click", () => {
+  location.href = "add.html";
+});
+
+modal.addEventListener("click", () => {
+  modal.style.display = "none";
+});
+
+let allUsers = [];
+
+// --- Helper toast ---
+function showMessage(text, color = "#333") {
+  const msg = document.createElement("div");
+  msg.textContent = text;
+  msg.style.position = "fixed";
+  msg.style.bottom = "20px";
+  msg.style.left = "50%";
+  msg.style.transform = "translateX(-50%)";
+  msg.style.background = color;
+  msg.style.color = "white";
+  msg.style.padding = "10px 18px";
+  msg.style.borderRadius = "12px";
+  msg.style.boxShadow = "0 2px 8px rgba(0,0,0,0.3)";
+  msg.style.zIndex = "9999";
+  msg.style.fontFamily = "Poppins, sans-serif";
+  document.body.appendChild(msg);
+  setTimeout(() => msg.remove(), 2000);
+}
+
+// --- Render cards ---
+async function renderFchatCards(filter = "") {
+  container.innerHTML = "";
+
+  const user = JSON.parse(localStorage.getItem("faccount"));
+  if (!user) {
+    container.innerHTML = `<p style="text-align:center;">No user data found.</p>`;
+    return;
+  }
+
+  const acceptedIds =
+    user.accepted?.split(",").map((id) => id.trim()).filter(Boolean) || [];
+
+  if (acceptedIds.length === 0) {
+    container.innerHTML = `<p style="text-align:center;">No accepted users yet.</p>`;
+    return;
+  }
+
+  const filteredUsers = allUsers.filter((u) =>
+    u.username?.toLowerCase().includes(filter.toLowerCase())
+  );
+
+  if (filteredUsers.length === 0) {
+    container.innerHTML = `<p style="text-align:center;">No users match your search.</p>`;
+    return;
+  }
+
+  filteredUsers.forEach((u) => container.appendChild(createCard(u)));
+}
+
+// --- Create a single user card ---
+function createCard(userData) {
+  const card = document.createElement("div");
+  card.className = "fchat-card";
+
+  const profile = document.createElement("div");
+  profile.className = "profile-pic";
+
+  if (userData.profile_pic) {
+    const img = document.createElement("img");
+    img.src = userData.profile_pic;
+    img.onclick = (e) => {
+      e.stopPropagation();
+      modal.style.display = "flex";
+      modalImg.src = img.src;
+    };
+    profile.appendChild(img);
+  } else {
+    profile.textContent = userData.username?.charAt(0).toUpperCase() || "U";
+  }
+
+  const infoDiv = document.createElement("div");
+  infoDiv.style.display = "flex";
+  infoDiv.style.flexDirection = "column";
+  infoDiv.style.justifyContent = "center";
+
+  const username = document.createElement("div");
+  username.className = "username";
+  username.textContent = userData.username || "Unknown";
+
+  const log = document.createElement("div");
+  log.className = "fchat-log";
+  log.textContent = userData.fchat_logs || "offline";
+
+  infoDiv.appendChild(username);
+  infoDiv.appendChild(log);
+
+  card.appendChild(profile);
+  card.appendChild(infoDiv);
+
+  card.addEventListener("click", () => {
+    localStorage.setItem("chatting", userData.id);
+    location.href = "chat.html";
+  });
+
+  return card;
+}
+
+// --- Load users from Supabase ---
+async function loadUsers() {
+  const user = JSON.parse(localStorage.getItem("faccount"));
+  if (!user?.accepted) return;
+
+  const ids = user.accepted.split(",").map((i) => i.trim()).filter(Boolean);
+  allUsers = [];
+
+  for (let id of ids) {
+    const { data, error } = await supabase
+      .from("fwebaccount")
+      .select("id, username, profile_pic, fchat_logs")
+      .eq("id", id)
+      .single();
+
+    if (!error && data) allUsers.push(data);
+  }
+
+  renderFchatCards();
+}
+
+// --- Live Supabase subscription ---
+async function subscribeToLiveUpdates() {
+  // 🔁 Listen to all account changes (fchat_logs, username, profile_pic, etc.)
+  supabase
+    .channel("fchat-realtime")
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "fwebaccount",
+      },
+      (payload) => {
+        const updatedUser = payload.new;
+        if (!updatedUser) return;
+
+        const index = allUsers.findIndex((u) => u.id === updatedUser.id);
+        if (index !== -1) {
+          allUsers[index] = updatedUser;
+          renderFchatCards(searchBar.value);
+          showMessage(`🔄 ${updatedUser.username} updated`, "#2980b9");
+        }
+      }
+    )
+    .subscribe();
+}
+
+// --- Periodic fallback (every 2 seconds) ---
+async function pollForUpdates() {
+  const user = JSON.parse(localStorage.getItem("faccount"));
+  if (!user?.accepted) return;
+
+  const ids = user.accepted.split(",").map((i) => i.trim()).filter(Boolean);
+
+  for (let id of ids) {
+    const { data, error } = await supabase
+      .from("fwebaccount")
+      .select("id, username, profile_pic, fchat_logs")
+      .eq("id", id)
+      .single();
+
+    if (!error && data) {
+      const index = allUsers.findIndex((u) => u.id === id);
+      if (index === -1) {
+        allUsers.push(data);
+      } else if (JSON.stringify(allUsers[index]) !== JSON.stringify(data)) {
+        allUsers[index] = data;
+        renderFchatCards(searchBar.value);
+      }
+    }
+  }
+}
+
+// --- Search filtering ---
+searchBar.addEventListener("input", (e) => {
+  renderFchatCards(e.target.value);
+});
+
+// --- Initialize ---
+await loadUsers();
+subscribeToLiveUpdates();
+setInterval(pollForUpdates, 2000);
+</script>
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const supabaseUrl = "https://pwsxezhugsxosbwhkdvf.supabase.co";
+const supabaseAnonKey =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+const container = document.getElementById("fchat-container");
+const menuBtn = document.getElementById("menu-btn");
+const menuItems = document.getElementById("menu-items");
+const modal = document.getElementById("profile-modal");
+const modalImg = document.getElementById("profile-view");
+const searchBar = document.getElementById("search-bar");
+const addBtn = document.getElementById("add-btn");
+
+menuBtn.addEventListener("click", () => {
+  menuItems.style.display = menuItems.style.display === "flex" ? "none" : "flex";
+});
+
+addBtn.addEventListener("click", () => {
+  location.href = "add.html";
+});
+
+modal.addEventListener("click", () => {
+  modal.style.display = "none";
+});
+
+let allUsers = [];
+
+// --- Helper toast ---
+function showMessage(text, color = "#333") {
+  const msg = document.createElement("div");
+  msg.textContent = text;
+  msg.style.position = "fixed";
+  msg.style.bottom = "20px";
+  msg.style.left = "50%";
+  msg.style.transform = "translateX(-50%)";
+  msg.style.background = color;
+  msg.style.color = "white";
+  msg.style.padding = "10px 18px";
+  msg.style.borderRadius = "12px";
+  msg.style.boxShadow = "0 2px 8px rgba(0,0,0,0.3)";
+  msg.style.zIndex = "9999";
+  msg.style.fontFamily = "Poppins, sans-serif";
+  document.body.appendChild(msg);
+  setTimeout(() => msg.remove(), 2000);
+}
+
+// --- Render cards ---
+async function renderFchatCards(filter = "") {
+  container.innerHTML = "";
+
+  const user = JSON.parse(localStorage.getItem("faccount"));
+  if (!user) {
+    container.innerHTML = `<p style="text-align:center;">No user data found.</p>`;
+    return;
+  }
+
+  const acceptedIds =
+    user.accepted?.split(",").map((id) => id.trim()).filter(Boolean) || [];
+
+  if (acceptedIds.length === 0) {
+    container.innerHTML = `<p style="text-align:center;">No accepted users yet.</p>`;
+    return;
+  }
+
+  const filteredUsers = allUsers.filter((u) =>
+    u.username?.toLowerCase().includes(filter.toLowerCase())
+  );
+
+  if (filteredUsers.length === 0) {
+    container.innerHTML = `<p style="text-align:center;">No users match your search.</p>`;
+    return;
+  }
+
+  filteredUsers.forEach((u) => container.appendChild(createCard(u)));
+}
+
+// --- Create a single user card ---
+function createCard(userData) {
+  const card = document.createElement("div");
+  card.className = "fchat-card";
+
+  const profile = document.createElement("div");
+  profile.className = "profile-pic";
+
+  if (userData.profile_pic) {
+    const img = document.createElement("img");
+    img.src = userData.profile_pic;
+    img.onclick = (e) => {
+      e.stopPropagation();
+      modal.style.display = "flex";
+      modalImg.src = img.src;
+    };
+    profile.appendChild(img);
+  } else {
+    profile.textContent = userData.username?.charAt(0).toUpperCase() || "U";
+  }
+
+  const infoDiv = document.createElement("div");
+  infoDiv.style.display = "flex";
+  infoDiv.style.flexDirection = "column";
+  infoDiv.style.justifyContent = "center";
+
+  const username = document.createElement("div");
+  username.className = "username";
+  username.textContent = userData.username || "Unknown";
+
+  const log = document.createElement("div");
+  log.className = "fchat-log";
+  log.textContent = userData.fchat_logs || "offline";
+
+  infoDiv.appendChild(username);
+  infoDiv.appendChild(log);
+
+  card.appendChild(profile);
+  card.appendChild(infoDiv);
+
+  card.addEventListener("click", () => {
+    localStorage.setItem("chatting", userData.id);
+    location.href = "chat.html";
+  });
+
+  return card;
+}
+
+// --- Load users from Supabase ---
+async function loadUsers() {
+  const user = JSON.parse(localStorage.getItem("faccount"));
+  if (!user?.accepted) return;
+
+  const ids = user.accepted.split(",").map((i) => i.trim()).filter(Boolean);
+  allUsers = [];
+
+  for (let id of ids) {
+    const { data, error } = await supabase
+      .from("fwebaccount")
+      .select("id, username, profile_pic, fchat_logs")
+      .eq("id", id)
+      .single();
+
+    if (!error && data) allUsers.push(data);
+  }
+
+  renderFchatCards();
+}
+
+// --- Live Supabase subscription ---
+async function subscribeToLiveUpdates() {
+  // 🔁 Listen to all account changes (fchat_logs, username, profile_pic, etc.)
+  supabase
+    .channel("fchat-realtime")
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "fwebaccount",
+      },
+      (payload) => {
+        const updatedUser = payload.new;
+        if (!updatedUser) return;
+
+        const index = allUsers.findIndex((u) => u.id === updatedUser.id);
+        if (index !== -1) {
+          allUsers[index] = updatedUser;
+          renderFchatCards(searchBar.value);
+          showMessage(`🔄 ${updatedUser.username} updated`, "#2980b9");
+        }
+      }
+    )
+    .subscribe();
+}
+
+// --- Periodic fallback (every 2 seconds) ---
+async function pollForUpdates() {
+  const user = JSON.parse(localStorage.getItem("faccount"));
+  if (!user?.accepted) return;
+
+  const ids = user.accepted.split(",").map((i) => i.trim()).filter(Boolean);
+
+  for (let id of ids) {
+    const { data, error } = await supabase
+      .from("fwebaccount")
+      .select("id, username, profile_pic, fchat_logs")
+      .eq("id", id)
+      .single();
+
+    if (!error && data) {
+      const index = allUsers.findIndex((u) => u.id === id);
+      if (index === -1) {
+        allUsers.push(data);
+      } else if (JSON.stringify(allUsers[index]) !== JSON.stringify(data)) {
+        allUsers[index] = data;
+        renderFchatCards(searchBar.value);
+      }
+    }
+  }
+}
+
+// --- Search filtering ---
+searchBar.addEventListener("input", (e) => {
+  renderFchatCards(e.target.value);
+});
+
+// --- Initialize ---
+await loadUsers();
+subscribeToLiveUpdates();
+setInterval(pollForUpdates, 2000);
+</script>
+
   </body>  
  </html>
