@@ -318,6 +318,66 @@ searchBar.addEventListener('input', (e) => {
   renderFchatCards(e.target.value);
 });
 
+  // --- Auto-reload logic (every 2 seconds, no page reload) ---
+setInterval(async () => {
+  const currentUser = JSON.parse(localStorage.getItem('faccount'));
+  if (!currentUser?.id) return;
+
+  // 1️⃣ Get the latest accepted list from Supabase
+  const { data: userData, error: userError } = await supabase
+    .from('fwebaccount')
+    .select('accepted')
+    .eq('id', currentUser.id)
+    .single();
+
+  if (userError || !userData) return;
+
+  // 2️⃣ If accepted list changed, update and re-fetch
+  if (userData.accepted !== currentUser.accepted) {
+    currentUser.accepted = userData.accepted;
+    localStorage.setItem('faccount', JSON.stringify(currentUser));
+    await loadUsers();
+    showMessage('🔄 New accepted users loaded!', '#3498db');
+  }
+
+  // 3️⃣ Check all accepted users for updates
+  const ids = (currentUser.accepted || '')
+    .split(',')
+    .map(i => i.trim())
+    .filter(Boolean);
+
+  if (ids.length === 0) return;
+
+  // Fetch their latest chat/logs
+  const { data: latestUsers, error } = await supabase
+    .from('fwebaccount')
+    .select('id, username, profile_pic, fchat_logs')
+    .in('id', ids);
+
+  if (!error && latestUsers) {
+    let updated = false;
+
+    // Compare and update live
+    latestUsers.forEach(latest => {
+      const existingIndex = allUsers.findIndex(u => u.id === latest.id);
+      if (existingIndex === -1) {
+        allUsers.push(latest);
+        updated = true;
+      } else if (
+        JSON.stringify(allUsers[existingIndex]) !== JSON.stringify(latest)
+      ) {
+        allUsers[existingIndex] = latest;
+        updated = true;
+      }
+    });
+
+    if (updated) {
+      renderFchatCards(searchBar.value);
+      showMessage('🔁 Live data updated!', '#2ecc71');
+    }
+  }
+}, 2000);
+
 // --- Show toast ---
 function showMessage(text, color = '#333') {
   const msg = document.createElement('div');
