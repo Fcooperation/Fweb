@@ -377,6 +377,58 @@ if (performance.getEntriesByType('navigation')[0]?.type === 'reload') {
 showMessage('✅ Reload complete!', '#27ae60');
 }
 });
+ <script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const supabaseUrl = "https://pwsxezhugsxosbwhkdvf.supabase.co";
+const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+async function updateFchatLogs() {
+  const user = JSON.parse(localStorage.getItem('faccount'));
+  if (!user?.accepted) return;
+
+  const acceptedIds = user.accepted.split(',').map(id => id.trim()).filter(Boolean);
+  if (!acceptedIds.length) return;
+
+  // Fetch latest logs for all accepted users
+  const { data, error } = await supabase
+    .from('fwebaccount')
+    .select('id, fchat_logs')
+    .in('id', acceptedIds);
+
+  if (error || !data) return;
+
+  // Update allUsers array with new logs
+  data.forEach(updated => {
+    const userIndex = allUsers.findIndex(u => u.id === updated.id);
+    if (userIndex !== -1) {
+      allUsers[userIndex].fchat_logs = updated.fchat_logs;
+    }
+  });
+
+  // Update the DOM cards without re-rendering completely
+  document.querySelectorAll('.fchat-card').forEach(card => {
+    const userId = card.getAttribute('data-user-id');
+    const updatedUser = allUsers.find(u => u.id === userId);
+    if (updatedUser) {
+      const logDiv = card.querySelector('.fchat-log');
+      if (logDiv) logDiv.textContent = updatedUser.fchat_logs || 'offline';
+    }
+  });
+}
+
+// Add data-user-id attributes to each card when creating them
+const originalCreateCard = createCard;
+createCard = function(userData) {
+  const card = originalCreateCard(userData);
+  card.setAttribute('data-user-id', userData.id);
+  return card;
+}
+
+// Start interval
+setInterval(updateFchatLogs, 2000);
+</script>
 </script>  </body>
 
  </html>
