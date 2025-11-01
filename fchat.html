@@ -328,6 +328,47 @@ reloadBtn.style.cursor = 'pointer';
 reloadBtn.style.marginRight = '10px';  
   
 header.insertBefore(reloadBtn, document.getElementById('menu-btn'));  
+
+ // --- Live updates for accepted users ---
+async function subscribeToLiveUpdates() {
+  const currentUser = JSON.parse(localStorage.getItem('faccount'));
+  if (!currentUser?.accepted) return;
+
+  const acceptedIds = currentUser.accepted.split(',').map(id => id.trim()).filter(Boolean);
+
+  acceptedIds.forEach(id => {
+    supabase
+      .from(`fwebaccount:id=eq.${id}`)
+      .on('UPDATE', payload => {
+        // payload.new contains the updated row
+        const updatedUser = payload.new;
+        // Update local allUsers array
+        const index = allUsers.findIndex(u => u.id === updatedUser.id);
+        if (index !== -1) {
+          allUsers[index] = updatedUser;
+        } else {
+          allUsers.push(updatedUser);
+        }
+
+        // Update localStorage
+        const localData = JSON.parse(localStorage.getItem('faccount'));
+        if (localData) {
+          const acceptedUsers = acceptedIds.join(',');
+          localData.accepted = acceptedUsers;
+          localStorage.setItem('faccount', JSON.stringify(localData));
+        }
+
+        // Re-render filtered cards (preserving current search)
+        renderFchatCards(searchBar.value);
+
+        // Optional toast
+        showMessage(`🔔 ${updatedUser.username} updated their chat!`, '#2980b9');
+      })
+      .subscribe();
+  });
+}
+
+subscribeToLiveUpdates();
   
 // Helper toast message  
 function showMessage(text, color = '#333') {  
