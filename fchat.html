@@ -1,196 +1,444 @@
-<!DOCTYPE html>  
-<html lang="en">  
-<head>  
-  <meta charset="UTF-8">  
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">  
-  <title>FCHAT</title>  
-  <style>  
-    * { box-sizing: border-box; }  
-    body {  
-      font-family: 'Poppins','Segoe UI',sans-serif;  
-      background: #fff;  
-      color: #000;  
-      margin: 0;  
-      padding: 0;  
-      display: flex;  
-      flex-direction: column;  
-      height: 100vh;  
-      overflow: hidden;  
+<!DOCTYPE html>  <html lang="en">      <head>        <meta charset="UTF-8">        
+<meta name="viewport" content="width=device-width, initial-scale=1.0">        
+<title>FCHAT</title>        
+<style>        
+  * { box-sizing: border-box; }        
+  body {        
+    font-family: 'Poppins','Segoe UI',sans-serif;        
+    background: #fff;        
+    color: #000;        
+    margin: 0;        
+    padding: 0;        
+    display: flex;        
+    flex-direction: column;        
+    height: 100vh;        
+    overflow: hidden;        
+  }  /* Header */      
+header {      
+background: #fff;      
+color: #000;      
+text-align: center;      
+padding: 12px 15px;      
+font-weight: 600;      
+font-size: 18px;      
+border-bottom: 1px solid #ddd;      
+display: flex;      
+justify-content: space-between;      
+align-items: center;      
+position: relative;      
+z-index: 30;      
+}    header button {  
+background: none;  
+border: none;  
+color: #000;  
+font-size: 22px;  
+cursor: pointer;  
+}  /* Menu items */
+#menu-items {
+position: absolute;
+top: 50px;
+right: 15px;
+background: #fff;
+border-radius: 10px;
+box-shadow: 0 3px 15px rgba(0,0,0,0.15);
+display: none;
+flex-direction: column;
+z-index: 100;
+}
+
+#menu-items a {
+padding: 10px 15px;
+color: #000;
+text-decoration: none;
+font-weight: 500;
+}
+
+#menu-items a:hover {
+background: #f0f0f0;
+}
+
+/* Search bar */
+#search-bar {
+margin: 10px 15px;
+padding: 10px;
+border-radius: 10px;
+border: 1px solid #ccc;
+font-size: 15px;
+width: calc(100% - 30px);
+}
+
+/* Chat container */
+#fchat-container {
+flex: 1;
+overflow-y: auto;
+padding: 10px 15px;
+background: #fafafa;
+}
+
+.fchat-card {
+display: flex;
+align-items: center;
+gap: 15px;
+background: #f0f0f0;
+padding: 12px 15px;
+border-radius: 12px;
+margin-bottom: 10px;
+cursor: pointer;
+transition: background 0.2s ease;
+}
+.fchat-card:hover { background: #e0e0e0; }
+
+.profile-pic {
+width: 55px;
+height: 55px;
+border-radius: 50%;
+background: #000;
+color: #fff;
+display: flex;
+justify-content: center;
+align-items: center;
+font-weight: bold;
+font-size: 18px;
+overflow: hidden;
+flex-shrink: 0;
+}
+
+.profile-pic img {
+width: 100%;
+height: 100%;
+object-fit: cover;
+}
+
+.username { font-size: 16px; font-weight: bold; color: #000; }
+
+/* Bottom Navigation Bar */
+nav {
+background: #fff;
+border-top: 1px solid #ddd;
+display: flex;
+justify-content: space-around;
+align-items: center;
+padding: 8px 0;
+position: fixed;
+bottom: 0;
+left: 0;
+width: 100%;
+z-index: 20;
+}
+
+nav button {
+background: none;
+border: none;
+color: #555;
+font-size: 15px;
+cursor: pointer;
+font-weight: 500;
+}
+
+nav button.active { color: #000; font-weight: 600; }
+
+/* Profile Modal */
+#profile-modal {
+display: none;
+position: fixed;
+z-index: 200;
+left: 0; top: 0;
+width: 100%; height: 100%;
+background: rgba(0,0,0,0.85);
+justify-content: center;
+align-items: center;
+}
+
+#profile-modal img {
+width: 80%;
+max-width: 400px;
+border-radius: 15px;
+box-shadow: 0 0 15px rgba(255,255,255,0.3);
+}
+.fchat-log {
+font-size: 13px;
+color: gray;
+margin-top: 3px;
+}
+</style>
+
+</head>        
+<body>  <header>        
+  <button id="add-btn">➕</button>        
+  <div>FCHAT</div>        
+  <button id="menu-btn">☰</button>        
+  <div id="menu-items">        
+    <a href="friendrequest.html">Friend Requests</a>        
+    <a href="fwebsetting.html">Settings</a>        
+  </div>        
+</header>  <input type="text" id="search-bar" placeholder="Search users by username...">  <div id="fchat-container"></div>  <!-- Bottom Navigation -->  <nav>        
+  <button class="active" onclick="location.href='fchat.html'">FCHAT</button>        
+  <button onclick="location.href='fchatupdate.html'">Updates</button>        
+  <button onclick="location.href='fvids.html'">Fvids</button>        
+  <button onclick="location.href='fchatme.html'">Me</button>        
+</nav>  <!-- Profile Modal -->  <div id="profile-modal"><img id="profile-view" src=""></div>  <script type="module">  
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";  
+  
+const supabaseUrl = "https://pwsxezhugsxosbwhkdvf.supabase.co";  
+const supabaseAnonKey =  
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";  
+const supabase = createClient(supabaseUrl, supabaseAnonKey);  
+  
+const container = document.getElementById("fchat-container");  
+const searchBar = document.getElementById("search-bar");  
+const reloadBtn = document.querySelector("header button svg")  
+  ? document.querySelector("header button svg").parentElement  
+  : null;  
+  
+let allUsers = [];  
+  
+/* ========== Add Log Console ========== */  
+const logConsole = document.createElement("div");  
+logConsole.id = "fchat-log-console";  
+logConsole.style.position = "fixed";  
+logConsole.style.bottom = "55px";  
+logConsole.style.left = "0";  
+logConsole.style.width = "100%";  
+logConsole.style.background = "#f4f4f4";  
+logConsole.style.borderTop = "1px solid #ddd";  
+logConsole.style.color = "#333";  
+logConsole.style.fontSize = "13px";  
+logConsole.style.fontFamily = "Poppins, sans-serif";  
+logConsole.style.padding = "4px 12px";  
+logConsole.style.height = "20px";  
+logConsole.style.overflow = "hidden";  
+logConsole.style.whiteSpace = "nowrap";  
+logConsole.style.textOverflow = "ellipsis";  
+logConsole.style.transition = "background 0.3s";  
+document.body.appendChild(logConsole);  
+  
+function addLog(message, color = "#333") {  
+  logConsole.textContent = message;  
+  logConsole.style.color = color;  
+  logConsole.style.background = "#f8f8f8";  
+  setTimeout(() => {  
+    logConsole.style.background = "#f4f4f4";  
+  }, 500);  
+}  
+  
+/* ========== Render Cards ========== */  
+function createCard(userData) {  
+  const card = document.createElement("div");  
+  card.className = "fchat-card";  
+  card.setAttribute("data-user-id", userData.id);  
+  
+  const profile = document.createElement("div");  
+  profile.className = "profile-pic";  
+  
+  if (userData.profile_pic) {  
+    const img = document.createElement("img");  
+    img.src = userData.profile_pic;  
+    img.onclick = (e) => {  
+      e.stopPropagation();  
+      const modal = document.getElementById("profile-modal");  
+      const modalImg = document.getElementById("profile-view");  
+      modal.style.display = "flex";  
+      modalImg.src = img.src;  
+    };  
+    profile.appendChild(img);  
+  } else {  
+    profile.textContent = userData.username?.charAt(0).toUpperCase() || "U";  
+  }  
+  
+  const infoDiv = document.createElement("div");  
+  infoDiv.style.display = "flex";  
+  infoDiv.style.flexDirection = "column";  
+  infoDiv.style.justifyContent = "center";  
+  
+  const username = document.createElement("div");  
+  username.className = "username";  
+  username.textContent = userData.username || "Unknown";  
+  
+  const log = document.createElement("div");  
+  log.className = "fchat-log";  
+  log.textContent = userData.fchat_logs || "offline";  
+  
+  infoDiv.appendChild(username);  
+  infoDiv.appendChild(log);  
+  
+  card.appendChild(profile);  
+  card.appendChild(infoDiv);  
+  
+  card.addEventListener("click", () => {  
+    localStorage.setItem("chatting", userData.id);  
+    location.href = "chat.html";  
+  });  
+  
+  return card;  
+}  
+  
+function renderFchatCards(filter = "") {  
+  addLog("🌀 Rewriting page...");  
+  container.innerHTML = "";  
+  
+  const filteredUsers = allUsers.filter((u) =>  
+    u.username?.toLowerCase().includes(filter.toLowerCase())  
+  );  
+  
+  if (!filteredUsers.length) {  
+    container.innerHTML = `<p style="text-align:center;">No users found.</p>`;  
+    addLog("⚠️ No users match search.", "#d35400");  
+    return;  
+  }  
+  
+  filteredUsers.forEach((u) => container.appendChild(createCard(u)));  
+  addLog("✅ Page rewrote.");  
+}  
+  
+/* ========== Load from LocalStorage ========== */  
+function loadFromLocalStorage() {  
+  const storedUsers = JSON.parse(localStorage.getItem("fchat_users"));  
+  if (storedUsers && Array.isArray(storedUsers)) {  
+    allUsers = storedUsers;  
+    renderFchatCards();  
+  } else {  
+    addLog("ℹ️ No local users stored.");  
+  }  
+}  
+  
+/* ========== Fetch Fresh Data from Supabase ========== */  
+async function fetchFromSupabase(showLog = true) {  
+  const currentUser = JSON.parse(localStorage.getItem("faccount"));  
+  if (!currentUser?.accepted) return;  
+  
+  const acceptedIds = currentUser.accepted  
+    .split(",")  
+    .map((id) => id.trim())  
+    .filter(Boolean);  
+  
+  if (!acceptedIds.length) {  
+    container.innerHTML = `<p style="text-align:center;">No accepted users yet.</p>`;  
+    addLog("⚠️ No accepted users found.", "#d35400");  
+    return;  
+  }  
+  
+  if (showLog) addLog("🔄 Updating Fchat...");  
+  
+  const { data, error } = await supabase  
+    .from("fwebaccount")  
+    .select("id, username, profile_pic, fchat_logs")  
+    .in("id", acceptedIds);  
+  
+  if (error || !data) {  
+    addLog("❌ Failed to fetch data.", "#e74c3c");  
+    return;  
+  }  
+  
+  addLog("🪄 Updating local storage...");  
+  allUsers = data;  
+  localStorage.setItem("fchat_users", JSON.stringify(allUsers));  
+  
+  renderFchatCards();  
+  addLog("✅ Updated successfully!");  
+}  
+  
+/* ========== Update Logs Every 2s ========== */  
+async function updateLogsOnly() {  
+  const currentUser = JSON.parse(localStorage.getItem("faccount"));  
+  if (!currentUser?.accepted) return;  
+  
+  const acceptedIds = currentUser.accepted  
+    .split(",")  
+    .map((id) => id.trim())  
+    .filter(Boolean);  
+  if (!acceptedIds.length) return;  
+  
+  const { data, error } = await supabase  
+    .from("fwebaccount")  
+    .select("id, fchat_logs")  
+    .in("id", acceptedIds);  
+  
+  if (error || !data) return;  
+  
+  data.forEach((u) => {  
+    const index = allUsers.findIndex((x) => x.id === u.id);  
+    if (index !== -1) allUsers[index].fchat_logs = u.fchat_logs;  
+  });  
+  
+  document.querySelectorAll(".fchat-card").forEach((card) => {  
+    const id = card.getAttribute("data-user-id");  
+    const updated = allUsers.find((u) => u.id === id);  
+    if (updated) {  
+      const logDiv = card.querySelector(".fchat-log");  
+      if (logDiv) logDiv.textContent = updated.fchat_logs || "offline";  
     }  
+  });  
   
-    /* Header */  
-    header {  
-      background: #fff;  
-      color: #000;  
-      text-align: center;  
-      padding: 12px 15px;  
-      font-weight: 600;  
-      font-size: 18px;  
-      border-bottom: 1px solid #ddd;  
-      display: flex;  
-      justify-content: space-between;  
-      align-items: center;  
-      position: relative;  
-      z-index: 30;  
+  localStorage.setItem("fchat_users", JSON.stringify(allUsers));  
+  addLog("♻️ Logs updated.");  
+}  
+  
+/* ========== Events ========== */  
+searchBar.addEventListener("input", (e) => {  
+  renderFchatCards(e.target.value);  
+});  
+  
+if (reloadBtn) {  
+  reloadBtn.addEventListener("click", () => {  
+    fetchFromSupabase();  
+  });  
+}  
+  
+/* ========== Startup ========== */  
+loadFromLocalStorage(); // Show instantly  
+fetchFromSupabase(false); // Refresh quietly  
+setInterval(updateLogsOnly, 2000); // Update logs  
+</script>   <script type="module">  
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";  
+  
+const supabaseUrl = "https://pwsxezhugsxosbwhkdvf.supabase.co";  
+const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";  
+const supabase = createClient(supabaseUrl, supabaseAnonKey);  
+  
+async function updateFchatLogs() {  
+  const user = JSON.parse(localStorage.getItem('faccount'));  
+  if (!user?.accepted) return;  
+  
+  const acceptedIds = user.accepted.split(',').map(id => id.trim()).filter(Boolean);  
+  if (!acceptedIds.length) return;  
+  
+  // Fetch latest logs for all accepted users  
+  const { data, error } = await supabase  
+    .from('fwebaccount')  
+    .select('id, fchat_logs')  
+    .in('id', acceptedIds);  
+  
+  if (error || !data) return;  
+  
+  // Update allUsers array with new logs  
+  data.forEach(updated => {  
+    const userIndex = allUsers.findIndex(u => u.id === updated.id);  
+    if (userIndex !== -1) {  
+      allUsers[userIndex].fchat_logs = updated.fchat_logs;  
     }  
+  });  
   
-    header button {  
-      background: none;  
-      border: none;  
-      color: #000;  
-      font-size: 22px;  
-      cursor: pointer;  
+  // Update the DOM cards without re-rendering completely  
+  document.querySelectorAll('.fchat-card').forEach(card => {  
+    const userId = card.getAttribute('data-user-id');  
+    const updatedUser = allUsers.find(u => u.id === userId);  
+    if (updatedUser) {  
+      const logDiv = card.querySelector('.fchat-log');  
+      if (logDiv) logDiv.textContent = updatedUser.fchat_logs || 'offline';  
     }  
+  });  
+}  
   
-    /* Menu items */  
-    #menu-items {  
-      position: absolute;  
-      top: 50px;  
-      right: 15px;  
-      background: #fff;  
-      border-radius: 10px;  
-      box-shadow: 0 3px 15px rgba(0,0,0,0.15);  
-      display: none;  
-      flex-direction: column;  
-      z-index: 100;  
-    }  
+// Add data-user-id attributes to each card when creating them  
+const originalCreateCard = createCard;  
+createCard = function(userData) {  
+  const card = originalCreateCard(userData);  
+  card.setAttribute('data-user-id', userData.id);  
+  return card;  
+}  
   
-    #menu-items a {  
-      padding: 10px 15px;  
-      color: #000;  
-      text-decoration: none;  
-      font-weight: 500;  
-    }  
-  
-    #menu-items a:hover {  
-      background: #f0f0f0;  
-    }  
-  
-    /* Accepted list */  
-    #accepted-list {  
-      padding: 15px;  
-      background: #fafafa;  
-      color: #000;  
-      flex: 1;  
-      overflow-y: auto;  
-      font-size: 15px;  
-      line-height: 1.6;  
-    }  
-  
-    /* Bottom Navigation Bar */  
-    nav {  
-      background: #fff;  
-      border-top: 1px solid #ddd;  
-      display: flex;  
-      justify-content: space-around;  
-      align-items: center;  
-      padding: 8px 0;  
-      position: fixed;  
-      bottom: 0;  
-      left: 0;  
-      width: 100%;  
-      z-index: 20;  
-    }  
-  
-    nav button {  
-      background: none;  
-      border: none;  
-      color: #555;  
-      font-size: 15px;  
-      cursor: pointer;  
-      font-weight: 500;  
-    }  
-  
-    nav button.active {  
-      color: #000;  
-      font-weight: 600;  
-    }  
-  
-  </style>  
-</head>  
-<body>  
-  <!-- Header -->  
-  <header>  
-    <button id="add-btn">➕</button>  
-    <div>FCHAT</div>  
-    <button id="menu-btn">☰</button>  
-    <div id="menu-items">  
-      <a href="friendrequest.html">Friend Requests</a>  
-      <a href="fwebsetting.html">Settings</a>  
-    </div>  
-  </header>  
-  
-  <!-- Accepted users list -->  
-  <div id="accepted-list">  
-    <p>Loading accepted users...</p>  
-  </div>  
-  
-  <!-- Bottom Navigation -->  
-  <nav>  
-    <button class="active" id="fchat-btn">FCHAT</button>  
-    <button onclick="location.href='fchatupdate.html'">Updates</button>  
-    <button onclick="location.href='fvids.html'">Fvids</button>  
-    <button onclick="location.href='fchatme.html'">Me</button>  
-  </nav>  
-  
-  <script type="module">  
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";  
-  
-    const supabaseUrl = "https://pwsxezhugsxosbwhkdvf.supabase.co";  
-    const supabaseAnonKey =  
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";  
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);  
-  
-    const acceptedList = document.getElementById("accepted-list");  
-    const menuBtn = document.getElementById("menu-btn");  
-    const menuItems = document.getElementById("menu-items");  
-    const addBtn = document.getElementById("add-btn");  
-  
-    // Redirect to add.html  
-    addBtn.addEventListener("click", () => {  
-      location.href = "add.html";  
-    });  
-  
-    // Toggle dropdown menu  
-    menuBtn.addEventListener("click", () => {  
-      menuItems.style.display = (menuItems.style.display === "flex") ? "none" : "flex";  
-    });  
-  
-    // Close menu when clicking outside  
-    document.addEventListener("click", (e) => {  
-      if (!menuBtn.contains(e.target) && !menuItems.contains(e.target)) {  
-        menuItems.style.display = "none";  
-      }  
-    });  
-  
-    // FCHAT button shouldn't do anything  
-    const fchatBtn = document.getElementById("fchat-btn");  
-    fchatBtn.addEventListener("click", (e) => e.preventDefault());  
-  
-    // Fetch all users from Supabase  
-    async function loadAcceptedUsers() {  
-      const { data, error } = await supabase  
-        .from("fwebaccount")  
-        .select("*");  
-  
-      if (error || !data) {  
-        acceptedList.innerHTML = "<p style='color:red;'>Failed to fetch users.</p>";  
-        return;  
-      }  
-  
-      if (data.length === 0) {  
-        acceptedList.innerHTML = "<p>No users found.</p>";  
-        return;  
-      }  
-  
-      // Display all users  
-      acceptedList.innerHTML = `<h3>All Users:</h3>` +  
-        data.map(user => {  
-          return `<div>• ID: ${user.id}, Name: ${user.name || 'N/A'}, Accepted: ${user.accepted || 'None'}</div>`;  
-        }).join("");  
-    }  
-  
-    loadAcceptedUsers();  
-  </script>  
-</body>  
-</html>
+// Start interval  
+setInterval(updateFchatLogs, 2000);  
+</script>  </script>  </body>
+
+ </html>
