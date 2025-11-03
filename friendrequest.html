@@ -208,81 +208,102 @@ async function loadUserData() {
     card.appendChild(actions);        
     container.appendChild(card);        
         
-    // ✅ Accept        
-    acceptBtn.onclick = async () => {        
-      logLine.textContent = `Accepting ${requestUser.username}...`;        
-      acceptBtn.disabled = true;        
-      rejectBtn.disabled = true;        
-        
-      try {        
-        const acceptedList = (user.accepted || "")        
-          .split(",").map(a => a.trim()).filter(Boolean);        
-        if (!acceptedList.includes(requestUser.id.toString()))        
-          acceptedList.push(requestUser.id.toString());        
-        
-        const updatedRequests = requests.filter(id => id !== requestUser.id.toString());        
-        
-        // store accepted user’s info    
-        const acceptedInfo = {    
-          id: requestUser.id,    
-          username: requestUser.username,    
-          profile_pic: requestUser.profile_pic || "default.png"    
-        };    
-        
-        await supabase        
-          .from("fwebaccount")        
-          .update({        
-            accepted: acceptedList.join(","),        
-            friend_requests: updatedRequests.join(","),    
-            accepted_info: acceptedInfo    
-          })        
-          .eq("id", faccount.id);        
-        
-        const requesterAccepted = (requestUser.accepted || "")        
-          .split(",").map(a => a.trim()).filter(Boolean);        
-        if (!requesterAccepted.includes(faccount.id.toString()))        
-          requesterAccepted.push(faccount.id.toString());        
-        
-        await supabase        
-          .from("fwebaccount")        
-          .update({ accepted: requesterAccepted.join(",") })        
-          .eq("id", requestUser.id);        
-        
-        // ✅ update localstorage updated=yes    
-        let local = JSON.parse(localStorage.getItem("faccount"));    
-        if (!local.updated) {    
-          local.updated = "yes";    
-          localStorage.setItem("faccount", JSON.stringify(local));    
-        }    
-        
-        logLine.textContent = `✅ ${requestUser.username} added successfully!`;        
-        setTimeout(() => location.reload(), 800);        
-      } catch (err) {        
-        logLine.textContent = "Error accepting user.";        
-      }        
-    };        
-        
-    // ❌ Reject        
-    rejectBtn.onclick = async () => {        
-      logLine.textContent = `Rejecting ${requestUser.username}...`;        
-      acceptBtn.disabled = true;        
-      rejectBtn.disabled = true;        
-        
-      try {        
-        const updatedRequests = requests.filter(id => id !== requestUser.id.toString());        
-        await supabase        
-          .from("fwebaccount")        
-          .update({ friend_requests: updatedRequests.join(",") })        
-          .eq("id", faccount.id);        
-        
-        logLine.textContent = `✗ Rejected ${requestUser.username}`;        
-        setTimeout(() => location.reload(), 800);        
-      } catch (err) {        
-        logLine.textContent = "Error rejecting user.";        
-      }        
-    };        
-  }        
-        
+   // ✅ Accept
+acceptBtn.onclick = async () => {
+  logLine.textContent = `Accepting ${requestUser.username}...`;
+  acceptBtn.textContent = "Accepting...";
+  acceptBtn.disabled = true;
+  rejectBtn.disabled = true;
+  card.style.opacity = 0.6;
+
+  try {
+    // 1️⃣ Save to Supabase
+    const acceptedList = (user.accepted || "")
+      .split(",").map(a => a.trim()).filter(Boolean);
+    if (!acceptedList.includes(requestUser.id.toString()))
+      acceptedList.push(requestUser.id.toString());
+
+    const updatedRequests = requests.filter(id => id !== requestUser.id.toString());
+
+    const acceptedInfo = {
+      id: requestUser.id,
+      username: requestUser.username,
+      profile_pic: requestUser.profile_pic || "default.png"
+    };
+
+    logLine.textContent = `Saving ${requestUser.username} to database...`;
+
+    await supabase
+      .from("fwebaccount")
+      .update({
+        accepted: acceptedList.join(","),
+        friend_requests: updatedRequests.join(","),
+        accepted_info: acceptedInfo
+      })
+      .eq("id", faccount.id);
+
+    // Update requester's accepted list
+    const requesterAccepted = (requestUser.accepted || "")
+      .split(",").map(a => a.trim()).filter(Boolean);
+    if (!requesterAccepted.includes(faccount.id.toString()))
+      requesterAccepted.push(faccount.id.toString());
+
+    await supabase
+      .from("fwebaccount")
+      .update({ accepted: requesterAccepted.join(",") })
+      .eq("id", requestUser.id);
+
+    // 2️⃣ Update localStorage
+    let local = JSON.parse(localStorage.getItem("faccount"));
+    local.updated = "yes";
+    localStorage.setItem("faccount", JSON.stringify(local));
+
+    // 3️⃣ Update card visually
+    logLine.textContent = `✅ ${requestUser.username} accepted! Updating page...`;
+    card.style.transition = "all 0.7s ease";
+    card.style.background = "#c8f7c5";
+    acceptBtn.textContent = "Accepted";
+    rejectBtn.remove();
+    setTimeout(() => {
+      card.style.opacity = "0";
+      setTimeout(() => card.remove(), 700);
+    }, 800);
+  } catch (err) {
+    logLine.textContent = "Error accepting user.";
+    acceptBtn.textContent = "Error";
+  }
+};
+
+// ❌ Reject
+rejectBtn.onclick = async () => {
+  logLine.textContent = `Rejecting ${requestUser.username}...`;
+  rejectBtn.textContent = "Rejecting...";
+  acceptBtn.disabled = true;
+  rejectBtn.disabled = true;
+  card.style.opacity = 0.6;
+
+  try {
+    const updatedRequests = requests.filter(id => id !== requestUser.id.toString());
+    await supabase
+      .from("fwebaccount")
+      .update({ friend_requests: updatedRequests.join(",") })
+      .eq("id", faccount.id);
+
+    logLine.textContent = `✗ Rejected ${requestUser.username}`;
+    card.style.transition = "all 0.7s ease";
+    card.style.background = "#f5b7b1";
+    rejectBtn.textContent = "Rejected";
+    acceptBtn.remove();
+    setTimeout(() => {
+      card.style.opacity = "0";
+      setTimeout(() => card.remove(), 700);
+    }, 800);
+  } catch (err) {
+    logLine.textContent = "Error rejecting user.";
+    rejectBtn.textContent = "Error";
+  }
+};
+
   logLine.textContent = "All friend requests displayed successfully.";        
 }        
         
