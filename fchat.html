@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>FCHAT - Raw Data View</title>
+<title>FCHAT - Raw Data Logs</title>
 <style>
   body {
     font-family: 'Poppins','Segoe UI',sans-serif;
@@ -60,7 +60,7 @@
     text-align: center;
     font-size: 13px;
     padding: 4px 12px;
-    display:none;
+    display:block;
   }
 
   #reload-btn {
@@ -83,7 +83,7 @@
 
 <header>
   <button id="add-btn">➕</button>
-  <div>FCHAT RAW DATA</div>
+  <div>FCHAT RAW LOGS</div>
   <button id="menu-btn">☰</button>
   <div id="menu-items">
     <a href="friendrequest.html">Friend Requests</a>
@@ -118,58 +118,59 @@ const reloadBtn = document.getElementById('reload-btn');
 
 let allUsers = [];
 
-function showLog(text, duration = 1400) {
-  logConsole.style.display = 'block';
-  logConsole.textContent = text;
-  if(duration > 0) setTimeout(()=>logConsole.style.display='none',duration);
-}
+// Show one-line log
+function showLog(text) { logConsole.textContent = text; }
 
-function renderRawData() {
-  container.textContent = JSON.stringify(allUsers,null,2);
-  showLog('Page updated',900);
-}
+// Render raw JSON
+function renderRawData() { container.textContent = JSON.stringify(allUsers,null,2); }
 
+// Load local storage
 function loadFromLocalStorage() {
+  showLog('Accessing localStorage...');
   const stored = JSON.parse(localStorage.getItem('fchat_users'));
+  showLog('Accessed localStorage');
   if(stored && Array.isArray(stored) && stored.length) {
     allUsers = stored;
     renderRawData();
-    showLog('Loaded local cache',900);
+    showLog('Retrieved users from localStorage');
     return true;
   }
-  showLog('No local data found',900);
+  showLog('No users in localStorage');
   return false;
 }
 
+// Fetch from Supabase
 async function fetchFromSupabase() {
   const current = JSON.parse(localStorage.getItem('faccount'));
-  if(!current?.accepted) { showLog('No accepted users',1200); return; }
-
+  if(!current?.accepted) { showLog('No accepted users'); return; }
   const accepted = current.accepted.split(',').map(s=>s.trim()).filter(Boolean);
-  if(!accepted.length){ showLog('No accepted users',1200); return; }
+  if(!accepted.length){ showLog('No accepted users'); return; }
 
+  showLog('Accessing Supabase...');
   try {
-    showLog('Updating...',0);
     const { data, error } = await supabase
       .from('fwebaccount')
       .select('id, username, profile_pic, fchat_logs')
       .in('id', accepted);
-    if(error || !data){ showLog('Error fetching',1200); return; }
+    showLog('Accessed Supabase');
 
+    if(error || !data){ showLog('Error retrieving users'); return; }
+
+    showLog('Retrieving users...');
     allUsers = data;
     localStorage.setItem('fchat_users', JSON.stringify(allUsers));
     renderRawData();
+    showLog('Retrieved users successfully');
   } catch(e){
     console.error(e);
-    showLog('Unexpected error',1200);
+    showLog('Unexpected error');
   }
 }
 
-// Update only logs every 2s
+// Update logs only every 2s
 async function updateLogsOnly() {
   const current = JSON.parse(localStorage.getItem('faccount'));
   if(!current?.accepted) return;
-
   const accepted = current.accepted.split(',').map(s=>s.trim()).filter(Boolean);
   if(!accepted.length) return;
 
@@ -185,6 +186,7 @@ async function updateLogsOnly() {
       if(idx!==-1) allUsers[idx].fchat_logs = u.fchat_logs;
     });
     renderRawData();
+    showLog('Logs updated');
   } catch(e){ console.warn('updateLogsOnly error',e); }
 }
 
@@ -195,8 +197,7 @@ document.body.addEventListener('click',(e)=>{ if(!menuBtn.contains(e.target)&&!m
 reloadBtn.addEventListener('click',fetchFromSupabase);
 
 // Startup
-loadFromLocalStorage();
-fetchFromSupabase();
+if(!loadFromLocalStorage()) fetchFromSupabase();
 setInterval(updateLogsOnly,2000);
 </script>
 </body>
