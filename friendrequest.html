@@ -288,37 +288,7 @@ async function loadUserData() {
         
 loadUserData();        
 </script>  
-  <script>
-function saveAcceptedUser(id, username, profile_pic) {
-  try {
-    console.log("📥 Saving accepted user to localStorage...");
 
-    // get existing accepted users list
-    let accepted = JSON.parse(localStorage.getItem("accepted_users")) || [];
-
-    // check if user already exists
-    const exists = accepted.some(u => u.id === id);
-    if (!exists) {
-      accepted.push({ id, username, profile_pic: profile_pic || "default.png" });
-      localStorage.setItem("accepted_users", JSON.stringify(accepted));
-      console.log("✅ Accepted user saved:", username);
-    } else {
-      console.log("⚠️ User already exists:", username);
-    }
-
-    // check or create faccount.updated
-    let faccount = JSON.parse(localStorage.getItem("faccount")) || {};
-    if (!faccount.updated || faccount.updated.toLowerCase() !== "yes") {
-      faccount.updated = "yes";
-      localStorage.setItem("faccount", JSON.stringify(faccount));
-      console.log("🟢 Updated column set to 'yes'");
-    }
-
-  } catch (err) {
-    console.error("❌ Error saving accepted user:", err);
-  }
-}
-  </script>
 </body>        
 </html>
 
