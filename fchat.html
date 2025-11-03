@@ -1,204 +1,178 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>FCHAT - Raw Data Logs</title>
-<style>
-  body {
-    font-family: 'Poppins','Segoe UI',sans-serif;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    background: #fafafa;
-    color: #000;
-  }
-
-  header {
-    background: #fff;
-    padding: 12px 15px;
-    font-weight: 600;
-    font-size: 18px;
-    border-bottom: 1px solid #ddd;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  header button { background: none; border: none; font-size: 22px; cursor: pointer; }
-
-  #menu-items {
-    position: absolute;
-    top: 50px;
-    right: 15px;
-    background: #fff;
-    border-radius: 10px;
-    box-shadow: 0 3px 15px rgba(0,0,0,0.15);
-    display: none;
-    flex-direction: column;
-  }
-  #menu-items a { padding: 10px 15px; text-decoration: none; color:#000; }
-  #menu-items a:hover { background:#f0f0f0; }
-
-  #fchat-container {
-    flex: 1;
-    padding: 10px 15px;
-    overflow-y: auto;
-    white-space: pre-wrap;
-    font-family: monospace;
-    background:#fff;
-  }
-
-  #fchat-log-console {
-    position: fixed;
-    bottom: 55px;
-    left: 0;
-    width: 100%;
-    background: #f4f4f4;
-    border-top:1px solid #ddd;
-    text-align: center;
-    font-size: 13px;
-    padding: 4px 12px;
-    display:block;
-  }
-
-  #reload-btn {
-    position: fixed; right: 15px; bottom: 85px;
-    background: #000; color: #fff; border:none;
-    border-radius:50%; width:46px; height:46px; font-size:20px;
-    cursor:pointer; display:flex; justify-content:center; align-items:center;
-  }
-
-  nav {
-    background: #fff; border-top:1px solid #ddd; display:flex;
-    justify-content:space-around; align-items:center;
-    padding:8px 0; position:fixed; bottom:0; left:0; width:100%;
-  }
-  nav button { background:none; border:none; color:#555; font-weight:500; cursor:pointer; }
-  nav button.active { color:#000; font-weight:600; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FCHAT</title>
+  <style>
+    body {
+      margin: 0;
+      background: #fff;
+      color: #000;
+      font-family: 'Poppins','Segoe UI',sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    h1 {
+      color: #000;
+      margin-bottom: 10px;
+    }
+    #logline {
+      font-size: 13px;
+      color: #555;
+      margin-bottom: 15px;
+      transition: opacity 0.3s ease;
+      height: 18px;
+    }
+    #chat-container {
+      width: 100%;
+      max-width: 500px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .fchat-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #f2f2f2;
+      padding: 14px;
+      border-radius: 10px;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+      transition: 0.3s;
+    }
+    .fchat-card:hover {
+      transform: scale(1.02);
+      background: #eaeaea;
+    }
+    .fchat-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .profile-pic {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #000;
+    }
+    .username {
+      font-weight: bold;
+      color: #000;
+    }
+  </style>
 </head>
 <body>
+  <h1>FCHAT</h1>
+  <p id="logline">Initializing...</p>
+  <div id="chat-container"></div>
 
-<header>
-  <button id="add-btn">➕</button>
-  <div>FCHAT RAW LOGS</div>
-  <button id="menu-btn">☰</button>
-  <div id="menu-items">
-    <a href="friendrequest.html">Friend Requests</a>
-    <a href="fwebsetting.html">Settings</a>
-  </div>
-</header>
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-<div id="fchat-container">Loading...</div>
-<div id="fchat-log-console"></div>
-<button id="reload-btn" title="Reload">⟳</button>
+    const supabase = createClient(
+      "https://pwsxezhugsxosbwhkdvf.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
+    );
 
-<nav>
-  <button class="active" onclick="location.href='fchat.html'">FCHAT</button>
-  <button onclick="location.href='fchatupdate.html'">Updates</button>
-  <button onclick="location.href='fvids.html'">Fvids</button>
-  <button onclick="location.href='fchatme.html'">Me</button>
-</nav>
+    const logLine = document.getElementById("logline");
+    const container = document.getElementById("chat-container");
 
-<script type="module">
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+    function showLogSequence(messages, interval = 900) {
+      let i = 0;
+      const loop = setInterval(() => {
+        logLine.style.opacity = 0;
+        setTimeout(() => {
+          logLine.textContent = messages[i % messages.length];
+          logLine.style.opacity = 1;
+          i++;
+        }, 200);
+      }, interval);
+      return loop;
+    }
 
-const supabaseUrl = "https://pwsxezhugsxosbwhkdvf.supabase.co";
-const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    async function loadAcceptedFriends() {
+      const faccount = JSON.parse(localStorage.getItem("faccount"));
+      const updated = localStorage.getItem("updated");
 
-const container = document.getElementById('fchat-container');
-const logConsole = document.getElementById('fchat-log-console');
-const addBtn = document.getElementById('add-btn');
-const menuBtn = document.getElementById('menu-btn');
-const menuItems = document.getElementById('menu-items');
-const reloadBtn = document.getElementById('reload-btn');
+      if (!faccount || !faccount.id) {
+        logLine.textContent = "No account found.";
+        return;
+      }
 
-let allUsers = [];
+      if (updated !== "yes") {
+        logLine.textContent = "Waiting for update...";
+        return;
+      }
 
-// Show one-line log
-function showLog(text) { logConsole.textContent = text; }
+      const loop = showLogSequence(["Accessing Supabase...", "Retrieving accepted...", "Almost done..."]);
 
-// Render raw JSON
-function renderRawData() { container.textContent = JSON.stringify(allUsers,null,2); }
+      const { data: user, error } = await supabase
+        .from("fwebaccount")
+        .select("accepted")
+        .eq("id", faccount.id)
+        .maybeSingle();
 
-// Load local storage
-function loadFromLocalStorage() {
-  showLog('Accessing localStorage...');
-  const stored = JSON.parse(localStorage.getItem('fchat_users'));
-  showLog('Accessed localStorage');
-  if(stored && Array.isArray(stored) && stored.length) {
-    allUsers = stored;
-    renderRawData();
-    showLog('Retrieved users from localStorage');
-    return true;
-  }
-  showLog('No users in localStorage');
-  return false;
-}
+      if (error || !user) {
+        clearInterval(loop);
+        logLine.textContent = "Error retrieving user.";
+        return;
+      }
 
-// Fetch from Supabase
-async function fetchFromSupabase() {
-  const current = JSON.parse(localStorage.getItem('faccount'));
-  if(!current?.accepted) { showLog('No accepted users'); return; }
-  const accepted = current.accepted.split(',').map(s=>s.trim()).filter(Boolean);
-  if(!accepted.length){ showLog('No accepted users'); return; }
+      const acceptedList = Array.isArray(user.accepted)
+        ? user.accepted
+        : (user.accepted ? user.accepted.split(",").map(x => x.trim()).filter(Boolean) : []);
 
-  showLog('Accessing Supabase...');
-  try {
-    const { data, error } = await supabase
-      .from('fwebaccount')
-      .select('id, username, profile_pic, fchat_logs')
-      .in('id', accepted);
-    showLog('Accessed Supabase');
+      if (acceptedList.length === 0) {
+        clearInterval(loop);
+        logLine.textContent = "No accepted users yet.";
+        return;
+      }
 
-    if(error || !data){ showLog('Error retrieving users'); return; }
+      const { data: acceptedUsers, error: accErr } = await supabase
+        .from("fwebaccount")
+        .select("id, username, profile_pic")
+        .in("id", acceptedList);
 
-    showLog('Retrieving users...');
-    allUsers = data;
-    localStorage.setItem('fchat_users', JSON.stringify(allUsers));
-    renderRawData();
-    showLog('Retrieved users successfully');
-  } catch(e){
-    console.error(e);
-    showLog('Unexpected error');
-  }
-}
+      clearInterval(loop);
+      if (accErr || !acceptedUsers) {
+        logLine.textContent = "Error fetching accepted users.";
+        return;
+      }
 
-// Update logs only every 2s
-async function updateLogsOnly() {
-  const current = JSON.parse(localStorage.getItem('faccount'));
-  if(!current?.accepted) return;
-  const accepted = current.accepted.split(',').map(s=>s.trim()).filter(Boolean);
-  if(!accepted.length) return;
+      container.innerHTML = "";
+      for (const user of acceptedUsers) {
+        const card = document.createElement("div");
+        card.className = "fchat-card";
 
-  try {
-    const { data, error } = await supabase
-      .from('fwebaccount')
-      .select('id,fchat_logs')
-      .in('id', accepted);
-    if(error || !data) return;
+        const left = document.createElement("div");
+        left.className = "fchat-left";
 
-    data.forEach(u=>{
-      const idx = allUsers.findIndex(x=>x.id===u.id);
-      if(idx!==-1) allUsers[idx].fchat_logs = u.fchat_logs;
-    });
-    renderRawData();
-    showLog('Logs updated');
-  } catch(e){ console.warn('updateLogsOnly error',e); }
-}
+        const img = document.createElement("img");
+        img.src = user.profile_pic || "default.png";
+        img.className = "profile-pic";
 
-// Events
-addBtn.addEventListener('click',()=>location.href='add.html');
-menuBtn.addEventListener('click',(e)=>{ e.stopPropagation(); menuItems.style.display = menuItems.style.display==='flex'?'none':'flex'; });
-document.body.addEventListener('click',(e)=>{ if(!menuBtn.contains(e.target)&&!menuItems.contains(e.target)) menuItems.style.display='none'; });
-reloadBtn.addEventListener('click',fetchFromSupabase);
+        const name = document.createElement("div");
+        name.className = "username";
+        name.innerText = user.username;
 
-// Startup
-if(!loadFromLocalStorage()) fetchFromSupabase();
-setInterval(updateLogsOnly,2000);
-</script>
+        left.appendChild(img);
+        left.appendChild(name);
+        card.appendChild(left);
+        container.appendChild(card);
+      }
+
+      logLine.textContent = `Loaded ${acceptedUsers.length} friend(s).`;
+    }
+
+    // 🔄 Check every 2 seconds if updated is "yes"
+    setInterval(loadAcceptedFriends, 2000);
+
+    loadAcceptedFriends();
+  </script>
 </body>
 </html>
