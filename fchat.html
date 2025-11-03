@@ -1,204 +1,196 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FCHAT</title>
-  <style>
-    * { box-sizing: border-box; }
-    body {
-      font-family: 'Poppins','Segoe UI',sans-serif;
-      background: #fff;
-      color: #000;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      overflow: hidden;
-    }
-
-    /* Header */
-    header {
-      background: #fff;
-      color: #000;
-      text-align: center;
-      padding: 12px 15px;
-      font-weight: 600;
-      font-size: 18px;
-      border-bottom: 1px solid #ddd;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      position: relative;
-      z-index: 30;
-    }
-
-    header button {
-      background: none;
-      border: none;
-      color: #000;
-      font-size: 22px;
-      cursor: pointer;
-    }
-
-    /* Menu items */
-    #menu-items {
-      position: absolute;
-      top: 50px;
-      right: 15px;
-      background: #fff;
-      border-radius: 10px;
-      box-shadow: 0 3px 15px rgba(0,0,0,0.15);
-      display: none;
-      flex-direction: column;
-      z-index: 100;
-    }
-
-    #menu-items a {
-      padding: 10px 15px;
-      color: #000;
-      text-decoration: none;
-      font-weight: 500;
-    }
-
-    #menu-items a:hover {
-      background: #f0f0f0;
-    }
-
-    /* Accepted list */
-    #accepted-list {
-      padding: 15px;
-      background: #fafafa;
-      color: #000;
-      flex: 1;
-      overflow-y: auto;
-      font-size: 15px;
-      line-height: 1.6;
-    }
-
-    /* Bottom Navigation Bar */
-    nav {
-      background: #fff;
-      border-top: 1px solid #ddd;
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      padding: 8px 0;
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      z-index: 20;
-    }
-
-    nav button {
-      background: none;
-      border: none;
-      color: #555;
-      font-size: 15px;
-      cursor: pointer;
-      font-weight: 500;
-    }
-
-    nav button.active {
-      color: #000;
-      font-weight: 600;
-    }
-
-  </style>
-</head>
-<body>
-  <!-- Header -->
-  <header>
-    <button id="add-btn">➕</button>
-    <div>FCHAT</div>
-    <button id="menu-btn">☰</button>
-    <div id="menu-items">
-      <a href="friendrequest.html">Friend Requests</a>
-      <a href="fwebsetting.html">Settings</a>
-    </div>
-  </header>
-
-  <!-- Accepted users list -->
-  <div id="accepted-list">
-    <p>Loading accepted users...</p>
-  </div>
-
-  <!-- Bottom Navigation -->
-  <nav>
-    <button class="active" id="fchat-btn">FCHAT</button>
-    <button onclick="location.href='fchatupdate.html'">Updates</button>
-    <button onclick="location.href='fvids.html'">Fvids</button>
-    <button onclick="location.href='fchatme.html'">Me</button>
-  </nav>
-
-  <script type="module">
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-
-    const supabaseUrl = "https://pwsxezhugsxosbwhkdvf.supabase.co";
-    const supabaseAnonKey =
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-    const acceptedList = document.getElementById("accepted-list");
-    const menuBtn = document.getElementById("menu-btn");
-    const menuItems = document.getElementById("menu-items");
-    const addBtn = document.getElementById("add-btn");
-
-    // Redirect to add.html
-    addBtn.addEventListener("click", () => {
-      location.href = "add.html";
-    });
-
-    // Toggle dropdown menu
-    menuBtn.addEventListener("click", () => {
-      menuItems.style.display = (menuItems.style.display === "flex") ? "none" : "flex";
-    });
-
-    // Close menu when clicking outside
-    document.addEventListener("click", (e) => {
-      if (!menuBtn.contains(e.target) && !menuItems.contains(e.target)) {
-        menuItems.style.display = "none";
-      }
-    });
-
-    // FCHAT button shouldn't do anything
-    const fchatBtn = document.getElementById("fchat-btn");
-    fchatBtn.addEventListener("click", (e) => e.preventDefault());
-
-    // Fetch accepted users from Supabase
-    async function loadAcceptedUsers() {
-      const user = JSON.parse(localStorage.getItem("faccount"));
-      if (!user || !user.id) {
-        acceptedList.innerHTML = "<p style='color:red;'>No user found in local storage.</p>";
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from("fwebaccount")
-        .select("accepted")
-        .eq("id", user.id)
-        .single();
-
-      if (error || !data) {
-        acceptedList.innerHTML = "<p style='color:red;'>Failed to fetch accepted users.</p>";
-        return;
-      }
-
-      const accepted = data.accepted ? data.accepted.split(",").map(id => id.trim()).filter(Boolean) : [];
-
-      if (accepted.length === 0) {
-        acceptedList.innerHTML = "<p>No accepted users yet.</p>";
-        return;
-      }
-
-      // Display accepted user IDs
-      acceptedList.innerHTML = `<h3>Accepted Users:</h3>` +
-        accepted.map(id => `<div>• ${id}</div>`).join("");
-    }
-
-    loadAcceptedUsers();
-  </script>
-</body>
+<!DOCTYPE html>  
+<html lang="en">  
+<head>  
+  <meta charset="UTF-8">  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+  <title>FCHAT</title>  
+  <style>  
+    * { box-sizing: border-box; }  
+    body {  
+      font-family: 'Poppins','Segoe UI',sans-serif;  
+      background: #fff;  
+      color: #000;  
+      margin: 0;  
+      padding: 0;  
+      display: flex;  
+      flex-direction: column;  
+      height: 100vh;  
+      overflow: hidden;  
+    }  
+  
+    /* Header */  
+    header {  
+      background: #fff;  
+      color: #000;  
+      text-align: center;  
+      padding: 12px 15px;  
+      font-weight: 600;  
+      font-size: 18px;  
+      border-bottom: 1px solid #ddd;  
+      display: flex;  
+      justify-content: space-between;  
+      align-items: center;  
+      position: relative;  
+      z-index: 30;  
+    }  
+  
+    header button {  
+      background: none;  
+      border: none;  
+      color: #000;  
+      font-size: 22px;  
+      cursor: pointer;  
+    }  
+  
+    /* Menu items */  
+    #menu-items {  
+      position: absolute;  
+      top: 50px;  
+      right: 15px;  
+      background: #fff;  
+      border-radius: 10px;  
+      box-shadow: 0 3px 15px rgba(0,0,0,0.15);  
+      display: none;  
+      flex-direction: column;  
+      z-index: 100;  
+    }  
+  
+    #menu-items a {  
+      padding: 10px 15px;  
+      color: #000;  
+      text-decoration: none;  
+      font-weight: 500;  
+    }  
+  
+    #menu-items a:hover {  
+      background: #f0f0f0;  
+    }  
+  
+    /* Accepted list */  
+    #accepted-list {  
+      padding: 15px;  
+      background: #fafafa;  
+      color: #000;  
+      flex: 1;  
+      overflow-y: auto;  
+      font-size: 15px;  
+      line-height: 1.6;  
+    }  
+  
+    /* Bottom Navigation Bar */  
+    nav {  
+      background: #fff;  
+      border-top: 1px solid #ddd;  
+      display: flex;  
+      justify-content: space-around;  
+      align-items: center;  
+      padding: 8px 0;  
+      position: fixed;  
+      bottom: 0;  
+      left: 0;  
+      width: 100%;  
+      z-index: 20;  
+    }  
+  
+    nav button {  
+      background: none;  
+      border: none;  
+      color: #555;  
+      font-size: 15px;  
+      cursor: pointer;  
+      font-weight: 500;  
+    }  
+  
+    nav button.active {  
+      color: #000;  
+      font-weight: 600;  
+    }  
+  
+  </style>  
+</head>  
+<body>  
+  <!-- Header -->  
+  <header>  
+    <button id="add-btn">➕</button>  
+    <div>FCHAT</div>  
+    <button id="menu-btn">☰</button>  
+    <div id="menu-items">  
+      <a href="friendrequest.html">Friend Requests</a>  
+      <a href="fwebsetting.html">Settings</a>  
+    </div>  
+  </header>  
+  
+  <!-- Accepted users list -->  
+  <div id="accepted-list">  
+    <p>Loading accepted users...</p>  
+  </div>  
+  
+  <!-- Bottom Navigation -->  
+  <nav>  
+    <button class="active" id="fchat-btn">FCHAT</button>  
+    <button onclick="location.href='fchatupdate.html'">Updates</button>  
+    <button onclick="location.href='fvids.html'">Fvids</button>  
+    <button onclick="location.href='fchatme.html'">Me</button>  
+  </nav>  
+  
+  <script type="module">  
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";  
+  
+    const supabaseUrl = "https://pwsxezhugsxosbwhkdvf.supabase.co";  
+    const supabaseAnonKey =  
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";  
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);  
+  
+    const acceptedList = document.getElementById("accepted-list");  
+    const menuBtn = document.getElementById("menu-btn");  
+    const menuItems = document.getElementById("menu-items");  
+    const addBtn = document.getElementById("add-btn");  
+  
+    // Redirect to add.html  
+    addBtn.addEventListener("click", () => {  
+      location.href = "add.html";  
+    });  
+  
+    // Toggle dropdown menu  
+    menuBtn.addEventListener("click", () => {  
+      menuItems.style.display = (menuItems.style.display === "flex") ? "none" : "flex";  
+    });  
+  
+    // Close menu when clicking outside  
+    document.addEventListener("click", (e) => {  
+      if (!menuBtn.contains(e.target) && !menuItems.contains(e.target)) {  
+        menuItems.style.display = "none";  
+      }  
+    });  
+  
+    // FCHAT button shouldn't do anything  
+    const fchatBtn = document.getElementById("fchat-btn");  
+    fchatBtn.addEventListener("click", (e) => e.preventDefault());  
+  
+    // Fetch all users from Supabase  
+    async function loadAcceptedUsers() {  
+      const { data, error } = await supabase  
+        .from("fwebaccount")  
+        .select("*");  
+  
+      if (error || !data) {  
+        acceptedList.innerHTML = "<p style='color:red;'>Failed to fetch users.</p>";  
+        return;  
+      }  
+  
+      if (data.length === 0) {  
+        acceptedList.innerHTML = "<p>No users found.</p>";  
+        return;  
+      }  
+  
+      // Display all users  
+      acceptedList.innerHTML = `<h3>All Users:</h3>` +  
+        data.map(user => {  
+          return `<div>• ID: ${user.id}, Name: ${user.name || 'N/A'}, Accepted: ${user.accepted || 'None'}</div>`;  
+        }).join("");  
+    }  
+  
+    loadAcceptedUsers();  
+  </script>  
+</body>  
 </html>
