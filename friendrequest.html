@@ -1,282 +1,293 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Friend Requests</title>
-  <style>
-    body {
-      margin: 0;
-      background: #fff;
-      color: #000;
-      font-family: 'Poppins','Segoe UI',sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
-      padding: 20px;
-    }
-    h1 {
-      color: #000;
-      margin-bottom: 10px;
-    }
-    #logline {
-      font-size: 13px;
-      color: #555;
-      margin-bottom: 15px;
-      transition: opacity 0.3s ease;
-      height: 18px;
-    }
-    #requests-container {
-      width: 100%;
-      max-width: 500px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .fchat-card {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: #f2f2f2;
-      padding: 14px;
-      border-radius: 10px;
-      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
-      transition: 0.3s;
-    }
-    .fchat-card:hover {
-      transform: scale(1.02);
-      background: #eaeaea;
-    }
-    .fchat-left {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .profile-pic {
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 2px solid #000;
-    }
-    .username {
-      font-weight: bold;
-      color: #000;
-    }
-    .actions {
-      display: flex;
-      gap: 10px;
-    }
-    button {
-      background: #000;
-      border: none;
-      color: #fff;
-      padding: 6px 10px;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: 0.2s;
-      font-size: 13px;
-    }
-    button:hover {
-      background: #333;
-    }
-    .reject {
-      background: #c0392b;
-    }
-    .reject:hover {
-      background: #e74c3c;
-    }
-  </style>
-</head>
-<body>
-  <h1>Friend Requests</h1>
-  <p id="logline">Loading...</p>
-
-  <div id="requests-container">
-    <p id="status">Loading...</p>
-  </div>
-
-<script type="module">
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-
-const supabase = createClient(
-  "https://pwsxezhugsxosbwhkdvf.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
-);
-
-const container = document.getElementById("requests-container");
-const statusText = document.getElementById("status");
-const logLine = document.getElementById("logline");
-
-function showLogSequence(messages, interval = 900) {
-  let i = 0;
-  const loop = setInterval(() => {
-    logLine.style.opacity = 0;
-    setTimeout(() => {
-      logLine.textContent = messages[i % messages.length];
-      logLine.style.opacity = 1;
-      i++;
-    }, 200);
-  }, interval);
-  return loop;
-}
-
-async function loadUserData() {
-  const faccount = JSON.parse(localStorage.getItem("faccount"));
-  if (!faccount || !faccount.id) {
-    logLine.textContent = "No account found in localStorage.";
-    statusText.textContent = "No account found.";
-    return;
-  }
-
-  const loop = showLogSequence([
-    "Retrieving account...",
-    "Fetching data...",
-    "Checking requests...",
-    "Almost done..."
-  ]);
-
-  const { data: user, error } = await supabase
-    .from("fwebaccount")
-    .select("*")
-    .eq("id", faccount.id)
-    .maybeSingle();
-
-  if (error || !user) {
-    clearInterval(loop);
-    logLine.textContent = "Error fetching user data.";
-    statusText.textContent = "Error loading data.";
-    return;
-  }
-
-  const requests = Array.isArray(user.friend_requests)
-    ? user.friend_requests
-    : (user.friend_requests
-        ? user.friend_requests.split(",").map(r => r.trim()).filter(Boolean)
-        : []);
-
-  if (requests.length === 0) {
-    clearInterval(loop);
-    logLine.textContent = "No friend requests found.";
-    statusText.textContent = "No friend requests.";
-    return;
-  }
-
-  statusText.remove();
-
-  const { data: requesters, error: reqErr } = await supabase
-    .from("fwebaccount")
-    .select("id, username, profile_pic, accepted")
-    .in("id", requests);
-
-  clearInterval(loop);
-  logLine.textContent = reqErr
-    ? "Error fetching requesters."
-    : `Loaded ${requesters.length} requester(s).`;
-
-  if (reqErr || !requesters.length) {
-    statusText.textContent = "Error fetching requesters.";
-    return;
-  }
-
-  for (const requestUser of requesters) {
-    const card = document.createElement("div");
-    card.className = "fchat-card";
-
-    const left = document.createElement("div");
-    left.className = "fchat-left";
-
-    const img = document.createElement("img");
-    img.src = requestUser.profile_pic || "default.png";
-    img.className = "profile-pic";
-
-    const name = document.createElement("div");
-    name.className = "username";
-    name.innerText = requestUser.username;
-
-    left.appendChild(img);
-    left.appendChild(name);
-
-    const actions = document.createElement("div");
-    actions.className = "actions";
-
-    const acceptBtn = document.createElement("button");
-    acceptBtn.innerText = "Accept";
-    const rejectBtn = document.createElement("button");
-    rejectBtn.innerText = "Reject";
-    rejectBtn.className = "reject";
-
-    actions.appendChild(acceptBtn);
-    actions.appendChild(rejectBtn);
-    card.appendChild(left);
-    card.appendChild(actions);
-    container.appendChild(card);
-
-    // ✅ Accept
-    acceptBtn.onclick = async () => {
-      logLine.textContent = `Accepting ${requestUser.username}...`;
-      acceptBtn.disabled = true;
-      rejectBtn.disabled = true;
-
-      try {
-        const acceptedList = (user.accepted || "")
-          .split(",").map(a => a.trim()).filter(Boolean);
-        if (!acceptedList.includes(requestUser.id.toString()))
-          acceptedList.push(requestUser.id.toString());
-
-        const updatedRequests = requests.filter(id => id !== requestUser.id.toString());
-
-        await supabase
-          .from("fwebaccount")
-          .update({
-            accepted: acceptedList.join(","),
-            friend_requests: updatedRequests.join(","),
-          })
-          .eq("id", faccount.id);
-
-        const requesterAccepted = (requestUser.accepted || "")
-          .split(",").map(a => a.trim()).filter(Boolean);
-        if (!requesterAccepted.includes(faccount.id.toString()))
-          requesterAccepted.push(faccount.id.toString());
-
-        await supabase
-          .from("fwebaccount")
-          .update({ accepted: requesterAccepted.join(",") })
-          .eq("id", requestUser.id);
-
-        logLine.textContent = `✅ ${requestUser.username} added successfully!`;
-        setTimeout(() => location.reload(), 800);
-      } catch (err) {
-        logLine.textContent = "Error accepting user.";
-      }
-    };
-
-    // ❌ Reject
-    rejectBtn.onclick = async () => {
-      logLine.textContent = `Rejecting ${requestUser.username}...`;
-      acceptBtn.disabled = true;
-      rejectBtn.disabled = true;
-
-      try {
-        const updatedRequests = requests.filter(id => id !== requestUser.id.toString());
-        await supabase
-          .from("fwebaccount")
-          .update({ friend_requests: updatedRequests.join(",") })
-          .eq("id", faccount.id);
-
-        logLine.textContent = `✗ Rejected ${requestUser.username}`;
-        setTimeout(() => location.reload(), 800);
-      } catch (err) {
-        logLine.textContent = "Error rejecting user.";
-      }
-    };
-  }
-
-  logLine.textContent = "All friend requests displayed successfully.";
-}
-
-loadUserData();
-</script>
-</body>
+<!DOCTYPE html>    
+<html lang="en">    
+<head>    
+  <meta charset="UTF-8" />    
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />    
+  <title>Friend Requests</title>    
+  <style>    
+    body {    
+      margin: 0;    
+      background: #fff;    
+      color: #000;    
+      font-family: 'Poppins','Segoe UI',sans-serif;    
+      display: flex;    
+      flex-direction: column;    
+      align-items: center;    
+      min-height: 100vh;    
+      padding: 20px;    
+    }    
+    h1 {    
+      color: #000;    
+      margin-bottom: 10px;    
+    }    
+    #logline {    
+      font-size: 13px;    
+      color: #555;    
+      margin-bottom: 15px;    
+      transition: opacity 0.3s ease;    
+      height: 18px;    
+    }    
+    #requests-container {    
+      width: 100%;    
+      max-width: 500px;    
+      display: flex;    
+      flex-direction: column;    
+      gap: 12px;    
+    }    
+    .fchat-card {    
+      display: flex;    
+      align-items: center;    
+      justify-content: space-between;    
+      background: #f2f2f2;    
+      padding: 14px;    
+      border-radius: 10px;    
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);    
+      transition: 0.3s;    
+    }    
+    .fchat-card:hover {    
+      transform: scale(1.02);    
+      background: #eaeaea;    
+    }    
+    .fchat-left {    
+      display: flex;    
+      align-items: center;    
+      gap: 10px;    
+    }    
+    .profile-pic {    
+      width: 50px;    
+      height: 50px;    
+      border-radius: 50%;    
+      object-fit: cover;    
+      border: 2px solid #000;    
+    }    
+    .username {    
+      font-weight: bold;    
+      color: #000;    
+    }    
+    .actions {    
+      display: flex;    
+      gap: 10px;    
+    }    
+    button {    
+      background: #000;    
+      border: none;    
+      color: #fff;    
+      padding: 6px 10px;    
+      border-radius: 6px;    
+      cursor: pointer;    
+      transition: 0.2s;    
+      font-size: 13px;    
+    }    
+    button:hover {    
+      background: #333;    
+    }    
+    .reject {    
+      background: #c0392b;    
+    }    
+    .reject:hover {    
+      background: #e74c3c;    
+    }    
+  </style>    
+</head>    
+<body>    
+  <h1>Friend Requests</h1>    
+  <p id="logline">Loading...</p>    
+    
+  <div id="requests-container">    
+    <p id="status">Loading...</p>    
+  </div>    
+    
+<script type="module">    
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";    
+    
+const supabase = createClient(    
+  "https://pwsxezhugsxosbwhkdvf.supabase.co",    
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"    
+);    
+    
+const container = document.getElementById("requests-container");    
+const statusText = document.getElementById("status");    
+const logLine = document.getElementById("logline");    
+    
+function showLogSequence(messages, interval = 900) {    
+  let i = 0;    
+  const loop = setInterval(() => {    
+    logLine.style.opacity = 0;    
+    setTimeout(() => {    
+      logLine.textContent = messages[i % messages.length];    
+      logLine.style.opacity = 1;    
+      i++;    
+    }, 200);    
+  }, interval);    
+  return loop;    
+}    
+    
+async function loadUserData() {    
+  const faccount = JSON.parse(localStorage.getItem("faccount"));    
+  if (!faccount || !faccount.id) {    
+    logLine.textContent = "No account found in localStorage.";    
+    statusText.textContent = "No account found.";    
+    return;    
+  }    
+    
+  const loop = showLogSequence([    
+    "Retrieving account...",    
+    "Fetching data...",    
+    "Checking requests...",    
+    "Almost done..."    
+  ]);    
+    
+  const { data: user, error } = await supabase    
+    .from("fwebaccount")    
+    .select("*")    
+    .eq("id", faccount.id)    
+    .maybeSingle();    
+    
+  if (error || !user) {    
+    clearInterval(loop);    
+    logLine.textContent = "Error fetching user data.";    
+    statusText.textContent = "Error loading data.";    
+    return;    
+  }    
+    
+  const requests = Array.isArray(user.friend_requests)    
+    ? user.friend_requests    
+    : (user.friend_requests    
+        ? user.friend_requests.split(",").map(r => r.trim()).filter(Boolean)    
+        : []);    
+    
+  if (requests.length === 0) {    
+    clearInterval(loop);    
+    logLine.textContent = "No friend requests found.";    
+    statusText.textContent = "No friend requests.";    
+    return;    
+  }    
+    
+  statusText.remove();    
+    
+  const { data: requesters, error: reqErr } = await supabase    
+    .from("fwebaccount")    
+    .select("id, username, profile_pic, accepted")    
+    .in("id", requests);    
+    
+  clearInterval(loop);    
+  logLine.textContent = reqErr    
+    ? "Error fetching requesters."    
+    : `Loaded ${requesters.length} requester(s).`;    
+    
+  if (reqErr || !requesters.length) {    
+    statusText.textContent = "Error fetching requesters.";    
+    return;    
+  }    
+    
+  for (const requestUser of requesters) {    
+    const card = document.createElement("div");    
+    card.className = "fchat-card";    
+    
+    const left = document.createElement("div");    
+    left.className = "fchat-left";    
+    
+    const img = document.createElement("img");    
+    img.src = requestUser.profile_pic || "default.png";    
+    img.className = "profile-pic";    
+    
+    const name = document.createElement("div");    
+    name.className = "username";    
+    name.innerText = requestUser.username;    
+    
+    left.appendChild(img);    
+    left.appendChild(name);    
+    
+    const actions = document.createElement("div");    
+    actions.className = "actions";    
+    
+    const acceptBtn = document.createElement("button");    
+    acceptBtn.innerText = "Accept";    
+    const rejectBtn = document.createElement("button");    
+    rejectBtn.innerText = "Reject";    
+    rejectBtn.className = "reject";    
+    
+    actions.appendChild(acceptBtn);    
+    actions.appendChild(rejectBtn);    
+    card.appendChild(left);    
+    card.appendChild(actions);    
+    container.appendChild(card);    
+    
+    // ✅ Accept    
+    acceptBtn.onclick = async () => {    
+      logLine.textContent = `Accepting ${requestUser.username}...`;    
+      acceptBtn.disabled = true;    
+      rejectBtn.disabled = true;    
+    
+      try {    
+        const acceptedList = (user.accepted || "")    
+          .split(",").map(a => a.trim()).filter(Boolean);    
+        if (!acceptedList.includes(requestUser.id.toString()))    
+          acceptedList.push(requestUser.id.toString());    
+    
+        const updatedRequests = requests.filter(id => id !== requestUser.id.toString());    
+    
+        // ✅ Save username and pic of accepted friend  
+        const acceptedNames = Array.isArray(user.accepted_names) ? user.accepted_names : [];  
+        const acceptedPics = Array.isArray(user.accepted_pics) ? user.accepted_pics : [];  
+        if (!acceptedNames.includes(requestUser.username)) acceptedNames.push(requestUser.username);  
+        if (!acceptedPics.includes(requestUser.profile_pic)) acceptedPics.push(requestUser.profile_pic);  
+    
+        await supabase    
+          .from("fwebaccount")    
+          .update({    
+            accepted: acceptedList.join(","),    
+            accepted_names: acceptedNames,    
+            accepted_pics: acceptedPics,    
+            friend_requests: updatedRequests.join(","),    
+          })    
+          .eq("id", faccount.id);    
+    
+        const requesterAccepted = (requestUser.accepted || "")    
+          .split(",").map(a => a.trim()).filter(Boolean);    
+        if (!requesterAccepted.includes(faccount.id.toString()))    
+          requesterAccepted.push(faccount.id.toString());    
+    
+        await supabase    
+          .from("fwebaccount")    
+          .update({ accepted: requesterAccepted.join(",") })    
+          .eq("id", requestUser.id);    
+    
+        // ✅ Mark update in localStorage  
+        localStorage.setItem("updated", "yes");  
+    
+        logLine.textContent = `✅ ${requestUser.username} added successfully!`;    
+        setTimeout(() => location.reload(), 800);    
+      } catch (err) {    
+        logLine.textContent = "Error accepting user.";    
+      }    
+    };    
+    
+    // ❌ Reject    
+    rejectBtn.onclick = async () => {    
+      logLine.textContent = `Rejecting ${requestUser.username}...`;    
+      acceptBtn.disabled = true;    
+      rejectBtn.disabled = true;    
+    
+      try {    
+        const updatedRequests = requests.filter(id => id !== requestUser.id.toString());    
+        await supabase    
+          .from("fwebaccount")    
+          .update({ friend_requests: updatedRequests.join(",") })    
+          .eq("id", faccount.id);    
+    
+        logLine.textContent = `✗ Rejected ${requestUser.username}`;    
+        setTimeout(() => location.reload(), 800);    
+      } catch (err) {    
+        logLine.textContent = "Error rejecting user.";    
+      }    
+    };    
+  }    
+    
+  logLine.textContent = "All friend requests displayed successfully.";    
+}    
+    
+loadUserData();    
+</script>    
+</body>    
 </html>
