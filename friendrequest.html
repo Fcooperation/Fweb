@@ -227,7 +227,6 @@ async function loadUserData() {
       
         const updatedRequests = requests.filter(id => id !== requestUser.id.toString());      
       
-        // store accepted user’s info  
         const acceptedInfo = {  
           id: requestUser.id,  
           username: requestUser.username,  
@@ -253,15 +252,15 @@ async function loadUserData() {
           .update({ accepted: requesterAccepted.join(",") })      
           .eq("id", requestUser.id);      
       
-        // ✅ update localstorage updated=yes  
-        let local = JSON.parse(localStorage.getItem("faccount"));  
-        if (!local.updated) {  
-          local.updated = "yes";  
-          localStorage.setItem("faccount", JSON.stringify(local));  
-        }  
-      
         logLine.textContent = `✅ ${requestUser.username} added successfully!`;      
-        setTimeout(() => location.reload(), 800);      
+        card.remove(); // Instantly remove the accepted card      
+      
+        setTimeout(() => {      
+          let local = JSON.parse(localStorage.getItem("faccount"));      
+          local.updated = "yes";      
+          localStorage.setItem("faccount", JSON.stringify(local));      
+          location.reload();      
+        }, 1500);      
       } catch (err) {      
         logLine.textContent = "Error accepting user.";      
       }      
