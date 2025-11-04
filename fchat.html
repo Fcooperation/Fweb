@@ -29,30 +29,45 @@
     #fchat-container {
       width: 100%;
       max-width: 500px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .fchat-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       background: #f2f2f2;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 3px 8px rgba(0,0,0,0.1);
-      text-align: center;
+      padding: 14px;
+      border-radius: 10px;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+      transition: 0.3s;
+    }
+    .fchat-card:hover {
+      transform: scale(1.02);
+      background: #eaeaea;
+    }
+    .fchat-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
     .profile-pic {
-      width: 90px;
-      height: 90px;
+      width: 50px;
+      height: 50px;
       border-radius: 50%;
-      border: 2px solid #000;
       object-fit: cover;
-      margin-bottom: 10px;
+      border: 2px solid #000;
     }
     .username {
       font-weight: bold;
-      font-size: 18px;
+      color: #000;
     }
   </style>
 </head>
 <body>
   <h1>FCHAT</h1>
   <p id="logline">Loading...</p>
-
   <div id="fchat-container">
     <p id="status">Fetching data...</p>
   </div>
@@ -68,10 +83,9 @@
     const logLine = document.getElementById("logline");
     const container = document.getElementById("fchat-container");
     const status = document.getElementById("status");
+    const log = msg => (logLine.textContent = msg);
 
-    const log = msg => logLine.textContent = msg;
-
-    async function loadFchat() {
+    async function loadAcceptedChats(showLog = true) {
       const faccount = JSON.parse(localStorage.getItem("faccount"));
       if (!faccount || !faccount.id) {
         log("No account found ❌");
@@ -79,7 +93,7 @@
         return;
       }
 
-      log("Accessing Supabase...");
+      if (showLog) log("Accessing Supabase...");
       const { data: user, error } = await supabase
         .from("fwebaccount")
         .select("*")
@@ -92,26 +106,72 @@
         return;
       }
 
-      if (faccount.updated === "yes") {
-        log("Update found ✅");
-        await new Promise(r => setTimeout(r, 800));
-        log("Updating page...");
-        localStorage.setItem("faccount", JSON.stringify({ ...faccount, updated: "no" }));
-      } else {
-        log("No update found.");
+      const acceptedIds = (user.accepted || "")
+        .split(",")
+        .map(a => a.trim())
+        .filter(Boolean);
+
+      if (acceptedIds.length === 0) {
+        log("No accepted users.");
+        container.innerHTML = "<p>No friends yet 😢</p>";
+        return;
       }
 
-      await new Promise(r => setTimeout(r, 1000));
+      if (showLog) log(`Fetching ${acceptedIds.length} friends...`);
+      const { data: friends, error: err } = await supabase
+        .from("fwebaccount")
+        .select("id, username, profile_pic")
+        .in("id", acceptedIds);
 
-      container.innerHTML = `
-        <img src="${user.profile_pic || 'default.png'}" class="profile-pic">
-        <div class="username">${user.username}</div>
-        <p>Welcome back to FCHAT 👋</p>
-      `;
-      log(`Loaded ${user.username}`);
+      if (err || !friends?.length) {
+        log("Error loading friends ❌");
+        return;
+      }
+
+      container.innerHTML = "";
+      for (const friend of friends) {
+        const card = document.createElement("div");
+        card.className = "fchat-card";
+
+        const left = document.createElement("div");
+        left.className = "fchat-left";
+
+        const img = document.createElement("img");
+        img.src = friend.profile_pic || "default.png";
+        img.className = "profile-pic";
+
+        const name = document.createElement("div");
+        name.className = "username";
+        name.textContent = friend.username;
+
+        left.appendChild(img);
+        left.appendChild(name);
+        card.appendChild(left);
+        container.appendChild(card);
+      }
+
+      if (showLog) log(`Loaded ${friends.length} friend(s)`);
     }
 
-    loadFchat();
+    // Initial load
+    loadAcceptedChats();
+
+    // Every 2 seconds, check if localStorage updated
+    setInterval(() => {
+      const local = JSON.parse(localStorage.getItem("faccount"));
+      log("Updating from local storage...");
+      if (local?.updated === "yes") {
+        log("Update found ✅");
+        setTimeout(() => {
+          log("Updating page...");
+          loadAcceptedChats(false).then(() => {
+            local.updated = "no";
+            localStorage.setItem("faccount", JSON.stringify(local));
+            log("Page updated successfully ✅");
+          });
+        }, 1000);
+      }
+    }, 2000);
   </script>
 </body>
 </html>
