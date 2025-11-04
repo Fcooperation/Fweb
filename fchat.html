@@ -8,16 +8,18 @@
     :root {
       --bg: #ffffff;
       --text: #000000;
-      --card-bg: #f2f2f2;
+      --card-bg: #f5f5f5;
       --shadow: rgba(0, 0, 0, 0.1);
       --accent: #007aff;
+      --subtext: #666;
     }
     @media (prefers-color-scheme: dark) {
       :root {
         --bg: #121212;
         --text: #f1f1f1;
-        --card-bg: #1e1e1e;
+        --card-bg: #1f1f1f;
         --shadow: rgba(255, 255, 255, 0.05);
+        --subtext: #aaa;
       }
     }
 
@@ -37,31 +39,34 @@
       overflow: hidden;
     }
 
+    /* ====== TOP BAR ====== */
     .topbar {
-      width: 100%;
-      height: 60px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      height: 60px;
       padding: 0 16px;
-      font-weight: 600;
       font-size: 20px;
+      font-weight: 600;
       box-shadow: 0 2px 5px var(--shadow);
       z-index: 10;
+      background: var(--bg);
+      position: relative;
     }
-
     .menu-btn, .reload-btn {
       background: none;
       border: none;
-      font-size: 22px;
       color: var(--text);
+      font-size: 22px;
       cursor: pointer;
+      margin-left: 6px;
     }
 
+    /* ===== MENU ===== */
     .menu-dropdown {
       position: absolute;
       top: 60px;
-      right: 10px;
+      right: 12px;
       background: var(--card-bg);
       border-radius: 10px;
       box-shadow: 0 4px 10px var(--shadow);
@@ -69,26 +74,25 @@
       flex-direction: column;
       z-index: 20;
     }
-
     .menu-dropdown button {
       border: none;
       background: none;
       color: var(--text);
-      text-align: left;
       padding: 12px 16px;
-      width: 160px;
-      cursor: pointer;
       font-size: 14px;
+      text-align: left;
+      cursor: pointer;
+      width: 180px;
     }
-
     .menu-dropdown button:hover {
       background: rgba(0,0,0,0.08);
     }
 
+    /* ===== SEARCH ===== */
     .search-bar {
       margin: 10px 16px;
-      padding: 8px 14px;
-      border-radius: 30px;
+      padding: 10px 16px;
+      border-radius: 25px;
       background: var(--card-bg);
       border: none;
       outline: none;
@@ -97,22 +101,34 @@
       width: calc(100% - 32px);
     }
 
+    #logline {
+      text-align: center;
+      font-size: 13px;
+      color: var(--subtext);
+      margin-top: 4px;
+      height: 18px;
+    }
+
+    /* ===== CHAT LIST ===== */
     .chat-list {
       flex: 1;
       overflow-y: auto;
-      padding: 10px 0 70px;
+      padding: 10px 0 80px;
     }
 
     .fchat-card {
       display: flex;
       align-items: center;
-      justify-content: space-between;
       padding: 12px 16px;
       background: var(--card-bg);
       margin: 6px 12px;
       border-radius: 12px;
       box-shadow: 0 2px 6px var(--shadow);
       cursor: pointer;
+      transition: transform 0.15s;
+    }
+    .fchat-card:hover {
+      transform: scale(1.01);
     }
 
     .fchat-left {
@@ -121,11 +137,26 @@
       gap: 12px;
     }
 
-    .profile-pic {
+    .profile-pic, .initials {
       width: 50px;
       height: 50px;
       border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .profile-pic {
       object-fit: cover;
+    }
+
+    .initials {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--accent);
+      color: #fff;
+      font-weight: bold;
+      font-size: 18px;
+      text-transform: uppercase;
     }
 
     .username {
@@ -135,10 +166,11 @@
 
     .status {
       font-size: 12px;
-      color: #777;
+      color: var(--subtext);
       margin-top: 2px;
     }
 
+    /* ===== ADD BUTTON ===== */
     .add-btn {
       position: fixed;
       bottom: 80px;
@@ -157,7 +189,11 @@
       box-shadow: 0 4px 10px var(--shadow);
       z-index: 15;
     }
+    .add-btn:hover {
+      transform: scale(1.05);
+    }
 
+    /* ===== BOTTOM NAV ===== */
     .bottom-nav {
       position: fixed;
       bottom: 0;
@@ -170,7 +206,6 @@
       box-shadow: 0 -2px 8px var(--shadow);
       z-index: 10;
     }
-
     .bottom-nav button {
       background: none;
       border: none;
@@ -179,17 +214,10 @@
       font-weight: 500;
       cursor: pointer;
     }
-
     .bottom-nav .active {
       font-weight: 700;
       text-decoration: underline;
-    }
-
-    #logline {
-      font-size: 13px;
-      color: #888;
-      text-align: center;
-      margin-top: 5px;
+      color: var(--accent);
     }
   </style>
 </head>
@@ -206,12 +234,12 @@
     </div>
   </div>
 
-  <input type="text" placeholder="Search or start new chat" class="search-bar" id="search">
+  <input type="text" id="search" placeholder="Search chats" class="search-bar" />
   <p id="logline">Loading chats...</p>
 
   <div class="chat-list" id="fchat-container"></div>
 
-  <button class="add-btn" onclick="location.href='add.html'">+</button>
+  <button class="add-btn" onclick="location.href='add.html'">＋</button>
 
   <div class="bottom-nav">
     <button class="active">Fchat</button>
@@ -222,23 +250,21 @@
 
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-
     const supabase = createClient(
       "https://pwsxezhugsxosbwhkdvf.supabase.co",
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
     );
 
-    const log = msg => document.getElementById("logline").textContent = msg;
+    const log = (msg) => (document.getElementById("logline").textContent = msg);
     const container = document.getElementById("fchat-container");
     const menu = document.getElementById("menu");
     const menuBtn = document.querySelector(".menu-btn");
     const reloadBtn = document.getElementById("reloadBtn");
     const search = document.getElementById("search");
-
     let friendsCache = [];
 
-    menuBtn.onclick = () => menu.style.display = menu.style.display === "flex" ? "none" : "flex";
-    document.addEventListener("click", e => {
+    menuBtn.onclick = () => (menu.style.display = menu.style.display === "flex" ? "none" : "flex");
+    document.addEventListener("click", (e) => {
       if (!menu.contains(e.target) && !menuBtn.contains(e.target)) menu.style.display = "none";
     });
 
@@ -253,8 +279,8 @@
     async function loadChats(showLog = true) {
       const faccount = JSON.parse(localStorage.getItem("faccount"));
       if (!faccount?.id) {
-        log("Please log in ❌");
-        container.innerHTML = "<p style='text-align:center;'>No account found.</p>";
+        container.innerHTML = "<p style='text-align:center;'>Please log in first.</p>";
+        log("No account found ❌");
         return;
       }
 
@@ -274,10 +300,9 @@
         .in("id", acceptedIds);
 
       friendsCache = friends;
+      localStorage.setItem("friendsCache", JSON.stringify(friends));
       renderChats(friends);
-      log(`Loaded ${friends.length} chats ✅`);
-
-      subscribeToFriends(acceptedIds);
+      log(`Loaded ${friends.length} chat(s) ✅`);
     }
 
     function renderChats(friends) {
@@ -293,9 +318,17 @@
         const left = document.createElement("div");
         left.className = "fchat-left";
 
-        const img = document.createElement("img");
-        img.src = f.profile_pic || "default.png";
-        img.className = "profile-pic";
+        // Profile or initials
+        let avatar;
+        if (f.profile_pic) {
+          avatar = document.createElement("img");
+          avatar.src = f.profile_pic;
+          avatar.className = "profile-pic";
+        } else {
+          avatar = document.createElement("div");
+          avatar.className = "initials";
+          avatar.textContent = f.username?.substring(0, 2) || "?";
+        }
 
         const info = document.createElement("div");
         const name = document.createElement("div");
@@ -316,7 +349,7 @@
 
         info.appendChild(name);
         info.appendChild(status);
-        left.appendChild(img);
+        left.appendChild(avatar);
         left.appendChild(info);
         card.appendChild(left);
         container.appendChild(card);
@@ -329,25 +362,13 @@
       renderChats(filtered);
     });
 
-    function subscribeToFriends(ids) {
-      ids.forEach(id => {
-        supabase
-          .channel(`fchat-${id}`)
-          .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'fwebaccount', filter: `id=eq.${id}` },
-            payload => {
-              const updated = payload.new;
-              const index = friendsCache.findIndex(f => f.id === id);
-              if (index >= 0) {
-                friendsCache[index] = updated;
-                renderChats(friendsCache);
-                log("Live update received 🔄");
-              }
-            }
-          )
-          .subscribe();
-      });
-    }
+    // auto-refresh every 2s
+    setInterval(async () => {
+      log("Refreshing chats...");
+      await loadChats(false);
+    }, 2000);
 
+    // load initial chats
     loadChats(true);
     updateStatus("online");
 
