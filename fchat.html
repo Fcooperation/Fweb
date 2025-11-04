@@ -7,172 +7,43 @@
   <style>
     body {
       margin: 0;
+      font-family: 'Poppins','Segoe UI',sans-serif;
       background: #fff;
       color: #000;
-      font-family: 'Poppins','Segoe UI',sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
-      min-height: 100vh;
-      padding: 20px;
+      justify-content: center;
+      height: 100vh;
     }
-    h1 {
-      color: #000;
-      margin-bottom: 10px;
-    }
-    #logline {
-      font-size: 13px;
-      color: #555;
-      margin-bottom: 15px;
-      transition: opacity 0.3s ease;
-      height: 18px;
-    }
-    #chat-container {
-      width: 100%;
-      max-width: 500px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .fchat-card {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: #f2f2f2;
-      padding: 14px;
-      border-radius: 10px;
-      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
-      transition: 0.3s;
-    }
-    .fchat-card:hover {
-      transform: scale(1.02);
-      background: #eaeaea;
-    }
-    .fchat-left {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .profile-pic {
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 2px solid #000;
-    }
-    .username {
-      font-weight: bold;
+    #log {
+      font-size: 16px;
+      font-weight: 500;
       color: #000;
     }
   </style>
 </head>
 <body>
   <h1>FCHAT</h1>
-  <p id="logline">Initializing...</p>
-  <div id="chat-container"></div>
+  <p id="log">Checking localStorage...</p>
 
-  <script type="module">
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+  <script>
+    const log = document.getElementById("log");
 
-    const supabase = createClient(
-      "https://pwsxezhugsxosbwhkdvf.supabase.co",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
-    );
-
-    const logLine = document.getElementById("logline");
-    const container = document.getElementById("chat-container");
-
-    function showLogSequence(messages, interval = 900) {
-      let i = 0;
-      const loop = setInterval(() => {
-        logLine.style.opacity = 0;
-        setTimeout(() => {
-          logLine.textContent = messages[i % messages.length];
-          logLine.style.opacity = 1;
-          i++;
-        }, 200);
-      }, interval);
-      return loop;
+    function checkUpdated() {
+      const faccount = JSON.parse(localStorage.getItem("faccount")) || {};
+      if (faccount.updated === "yes") {
+        log.textContent = "Updated changed to yes ✅";
+      } else {
+        log.textContent = "Waiting for update...";
+      }
     }
 
-    async function loadAcceptedFriends() {
-      const faccount = JSON.parse(localStorage.getItem("faccount"));
-      const updated = localStorage.getItem("updated");
+    // Check every 2 seconds
+    setInterval(checkUpdated, 2000);
 
-      if (!faccount || !faccount.id) {
-        logLine.textContent = "No account found.";
-        return;
-      }
-
-      if (updated !== "yes") {
-        logLine.textContent = "Waiting for update...";
-        return;
-      }
-
-      const loop = showLogSequence(["Accessing Supabase...", "Retrieving accepted...", "Almost done..."]);
-
-      const { data: user, error } = await supabase
-        .from("fwebaccount")
-        .select("accepted")
-        .eq("id", faccount.id)
-        .maybeSingle();
-
-      if (error || !user) {
-        clearInterval(loop);
-        logLine.textContent = "Error retrieving user.";
-        return;
-      }
-
-      const acceptedList = Array.isArray(user.accepted)
-        ? user.accepted
-        : (user.accepted ? user.accepted.split(",").map(x => x.trim()).filter(Boolean) : []);
-
-      if (acceptedList.length === 0) {
-        clearInterval(loop);
-        logLine.textContent = "No accepted users yet.";
-        return;
-      }
-
-      const { data: acceptedUsers, error: accErr } = await supabase
-        .from("fwebaccount")
-        .select("id, username, profile_pic")
-        .in("id", acceptedList);
-
-      clearInterval(loop);
-      if (accErr || !acceptedUsers) {
-        logLine.textContent = "Error fetching accepted users.";
-        return;
-      }
-
-      container.innerHTML = "";
-      for (const user of acceptedUsers) {
-        const card = document.createElement("div");
-        card.className = "fchat-card";
-
-        const left = document.createElement("div");
-        left.className = "fchat-left";
-
-        const img = document.createElement("img");
-        img.src = user.profile_pic || "default.png";
-        img.className = "profile-pic";
-
-        const name = document.createElement("div");
-        name.className = "username";
-        name.innerText = user.username;
-
-        left.appendChild(img);
-        left.appendChild(name);
-        card.appendChild(left);
-        container.appendChild(card);
-      }
-
-      logLine.textContent = `Loaded ${acceptedUsers.length} friend(s).`;
-    }
-
-    // 🔄 Check every 2 seconds if updated is "yes"
-    setInterval(loadAcceptedFriends, 2000);
-
-    loadAcceptedFriends();
+    // Also check immediately on load
+    checkUpdated();
   </script>
 </body>
 </html>
