@@ -10,6 +10,7 @@
       --text: #000000;
       --card-bg: #f2f2f2;
       --shadow: rgba(0, 0, 0, 0.1);
+      --accent: #007aff;
     }
     @media (prefers-color-scheme: dark) {
       :root {
@@ -51,8 +52,14 @@
       z-index: 10;
     }
 
-    /* Menu */
-    .menu-btn {
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    /* Menu & Reload buttons */
+    .menu-btn, .reload-btn {
       background: none;
       border: none;
       font-size: 22px;
@@ -117,12 +124,13 @@
       margin: 6px 12px;
       border-radius: 12px;
       box-shadow: 0 2px 6px var(--shadow);
-      transition: 0.3s;
+      transition: 0.2s ease;
+      cursor: pointer;
     }
 
     .fchat-card:hover {
-      transform: scale(1.01);
       background: rgba(0,0,0,0.05);
+      transform: scale(1.01);
     }
 
     .fchat-left {
@@ -157,21 +165,22 @@
       width: 55px;
       height: 55px;
       border-radius: 50%;
-      background: var(--text);
-      color: var(--bg);
+      background: var(--accent);
+      color: #fff;
       border: none;
-      font-size: 30px;
+      font-size: 32px;
+      font-weight: 400;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       box-shadow: 0 4px 10px var(--shadow);
       z-index: 15;
-      transition: 0.3s;
+      transition: transform 0.25s ease, opacity 0.3s ease;
     }
 
     .add-btn:hover {
-      transform: scale(1.08);
+      transform: scale(1.1);
       opacity: 0.9;
     }
 
@@ -209,26 +218,25 @@
       text-align: center;
       margin-top: 5px;
     }
-
   </style>
 </head>
 <body>
   <div class="topbar">
     <div>FCHAT</div>
-    <button class="menu-btn">⋮</button>
-    <div class="menu-dropdown" id="menu">
-      <button onclick="location.href='friendrequest.html'">Friend Requests</button>
-      <button onclick="location.href='fchatsettings.html'">Settings</button>
+    <div class="topbar-right">
+      <button class="reload-btn" id="reloadBtn">↻</button>
+      <button class="menu-btn">⋮</button>
+      <div class="menu-dropdown" id="menu">
+        <button onclick="location.href='friendrequest.html'">Friend Requests</button>
+        <button onclick="location.href='fchatsettings.html'">Settings</button>
+      </div>
     </div>
   </div>
 
   <input type="text" placeholder="Search or start new chat" class="search-bar" id="search">
-
   <p id="logline">Loading chats...</p>
 
-  <div class="chat-list" id="fchat-container">
-    <!-- Fchat cards injected here -->
-  </div>
+  <div class="chat-list" id="fchat-container"></div>
 
   <button class="add-btn" onclick="location.href='add.html'">+</button>
 
@@ -248,26 +256,33 @@
     );
 
     const log = msg => document.getElementById("logline").textContent = msg;
+    const container = document.getElementById("fchat-container");
     const menu = document.getElementById("menu");
     const menuBtn = document.querySelector(".menu-btn");
+    const reloadBtn = document.getElementById("reloadBtn");
+    const search = document.getElementById("search");
+
+    // Menu toggle
     menuBtn.onclick = () => menu.style.display = menu.style.display === "flex" ? "none" : "flex";
     document.addEventListener("click", e => {
       if (!menu.contains(e.target) && !menuBtn.contains(e.target)) menu.style.display = "none";
     });
 
+    // Reload button
+    reloadBtn.onclick = async () => {
+      log("Reloading from Supabase...");
+      await loadChats(true, true);
+      location.reload();
+    };
+
     async function updateStatus(status) {
       const faccount = JSON.parse(localStorage.getItem("faccount"));
       if (!faccount?.id) return;
-
-      await supabase
-        .from("fwebaccount")
-        .update({ fchat_logs: status })
-        .eq("id", faccount.id);
+      await supabase.from("fwebaccount").update({ fchat_logs: status }).eq("id", faccount.id);
     }
 
-    async function loadChats(showLog = true) {
+    async function loadChats(showLog = true, refreshLocal = false) {
       const faccount = JSON.parse(localStorage.getItem("faccount"));
-      const container = document.getElementById("fchat-container");
       if (!faccount?.id) {
         log("Please log in ❌");
         container.innerHTML = "<p style='text-align:center;'>No account found.</p>";
@@ -284,11 +299,26 @@
         return log("No accepted users");
       }
 
-      const { data: friends } = await supabase.from("fwebaccount").select("id, username, profile_pic, fchat_logs").in("id", acceptedIds);
+      const { data: friends } = await supabase
+        .from("fwebaccount")
+        .select("id, username, profile_pic, fchat_logs")
+        .in("id", acceptedIds);
+
+      if (refreshLocal) localStorage.setItem("friends_cache", JSON.stringify(friends));
+
+      renderChats(friends);
+      log(`Loaded ${friends.length} chats ✅`);
+    }
+
+    function renderChats(friends) {
       container.innerHTML = "";
       for (const f of friends) {
         const card = document.createElement("div");
         card.className = "fchat-card";
+        card.onclick = () => {
+          localStorage.setItem("chatting", f.id);
+          location.href = "chat.html";
+        };
 
         const left = document.createElement("div");
         left.className = "fchat-left";
@@ -304,7 +334,6 @@
 
         const status = document.createElement("div");
         status.className = "status";
-
         if (f.fchat_logs?.toLowerCase() === "online") {
           status.textContent = "Online";
         } else if (f.fchat_logs?.toLowerCase().includes("last seen")) {
@@ -323,29 +352,33 @@
         card.appendChild(left);
         container.appendChild(card);
       }
-
-      log(`Loaded ${friends.length} chats ✅`);
     }
 
-    loadChats();
+    // Filter chats
+    search.addEventListener("input", e => {
+      const val = e.target.value.toLowerCase();
+      const cache = JSON.parse(localStorage.getItem("friends_cache") || "[]");
+      const filtered = cache.filter(f => f.username.toLowerCase().includes(val));
+      renderChats(filtered);
+    });
 
-    // When page opens: set status to "online"
+    // Initial load
+    loadChats(true, true);
     updateStatus("online");
 
-    // When page closes: set last seen with UTC time
     window.addEventListener("beforeunload", () => {
       const now = new Date().toISOString().replace("T", " ").split(".")[0];
       updateStatus(`last seen ${now} UTC`);
     });
 
-    // Every 2 seconds check updates
+    // Auto-refresh every 2s
     setInterval(() => {
       const local = JSON.parse(localStorage.getItem("faccount"));
-      log("Checking for updates...");
+      log("Checking updates...");
       if (local?.updated === "yes") {
         log("Update found ✅");
         setTimeout(() => {
-          log("Updating chats...");
+          log("Refreshing chats...");
           loadChats(false).then(() => {
             local.updated = "no";
             localStorage.setItem("faccount", JSON.stringify(local));
