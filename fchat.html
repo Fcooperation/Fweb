@@ -6,30 +6,31 @@
   <title>FCHAT</title>
   <style>
     body {
-      font-family: "Poppins", sans-serif;
-      background: #f1f1f1;
       margin: 0;
-      padding: 20px;
+      font-family: 'Poppins','Segoe UI',sans-serif;
+      background: #fff;
+      color: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
     }
-    h1 {
-      text-align: center;
-    }
-    #logs {
-      font-size: 13px;
-      text-align: center;
-      color: #555;
-      margin-bottom: 10px;
+    #log {
+      font-size: 16px;
+      font-weight: 500;
+      color: #000;
+      margin-bottom: 15px;
     }
     .fchat-card {
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      padding: 10px;
-      margin-bottom: 10px;
       display: flex;
       align-items: center;
+      background: #f2f2f2;
+      padding: 10px 15px;
+      border-radius: 12px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
       gap: 10px;
-      transition: 0.3s ease;
+      transition: all 0.3s ease;
     }
     .fchat-card img {
       width: 50px;
@@ -38,57 +39,51 @@
       object-fit: cover;
     }
     .fchat-card span {
-      font-weight: 500;
-      color: #333;
+      font-weight: 600;
+      font-size: 15px;
     }
   </style>
 </head>
 <body>
   <h1>FCHAT</h1>
-  <div id="logs"></div>
+  <p id="log">Checking localStorage...</p>
   <div id="fchat-container"></div>
 
   <script>
-    const logs = document.getElementById("logs");
+    const log = document.getElementById("log");
     const container = document.getElementById("fchat-container");
 
-    function log(message) {
-      logs.textContent = message;
-    }
-
-    // Function to render all accepted users as cards
-    function renderFchat() {
-      log("Refreshing Fchat...");
-      container.innerHTML = "";
-      const data = JSON.parse(localStorage.getItem("accepted")) || [];
-      if (data.length === 0) {
-        log("No accepted users found.");
-        return;
-      }
-      data.forEach(user => {
-        const card = document.createElement("div");
-        card.className = "fchat-card";
-        card.innerHTML = `
+    function showCard(user) {
+      container.innerHTML = `
+        <div class="fchat-card">
           <img src="${user.profile_pic || 'default.png'}" alt="Profile">
-          <span>${user.username}</span>
-        `;
-        container.appendChild(card);
-      });
-      log("Fchat updated.");
+          <span>${user.username || 'Unknown User'}</span>
+        </div>
+      `;
     }
 
-    // Initial render
-    renderFchat();
+    function checkUpdated() {
+      const faccount = JSON.parse(localStorage.getItem("faccount")) || {};
 
-    // Check for updates every 2 seconds
-    setInterval(() => {
-      const updated = localStorage.getItem("updated");
-      if (updated === "yes") {
-        log("Detected update → Refreshing...");
-        renderFchat();
-        localStorage.setItem("updated", "no");
+      if (faccount.updated === "yes") {
+        log.textContent = "Updated changed to yes ✅";
+
+        if (faccount.username && faccount.profile_pic) {
+          showCard(faccount);
+          log.textContent = `Loaded ${faccount.username} 🔁`;
+        }
+
+        // Reset updated flag to no
+        faccount.updated = "no";
+        localStorage.setItem("faccount", JSON.stringify(faccount));
+      } else {
+        log.textContent = "Waiting for update...";
       }
-    }, 2000);
+    }
+
+    // Check immediately and every 2 seconds
+    checkUpdated();
+    setInterval(checkUpdated, 2000);
   </script>
 </body>
 </html>
