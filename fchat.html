@@ -250,12 +250,20 @@
     const log = msg => document.getElementById("logline").textContent = msg;
     const menu = document.getElementById("menu");
     const menuBtn = document.querySelector(".menu-btn");
-    menuBtn.onclick = () => {
-      menu.style.display = menu.style.display === "flex" ? "none" : "flex";
-    };
+    menuBtn.onclick = () => menu.style.display = menu.style.display === "flex" ? "none" : "flex";
     document.addEventListener("click", e => {
       if (!menu.contains(e.target) && !menuBtn.contains(e.target)) menu.style.display = "none";
     });
+
+    async function updateStatus(status) {
+      const faccount = JSON.parse(localStorage.getItem("faccount"));
+      if (!faccount?.id) return;
+
+      await supabase
+        .from("fwebaccount")
+        .update({ fchat_logs: status })
+        .eq("id", faccount.id);
+    }
 
     async function loadChats(showLog = true) {
       const faccount = JSON.parse(localStorage.getItem("faccount"));
@@ -296,19 +304,20 @@
 
         const status = document.createElement("div");
         status.className = "status";
+
         if (f.fchat_logs?.toLowerCase() === "online") {
           status.textContent = "Online";
         } else if (f.fchat_logs?.toLowerCase().includes("last seen")) {
-          const utc = new Date(f.fchat_logs.replace("last seen ", ""));
-          if (!isNaN(utc)) {
-            const formatted = utc.toISOString().replace("T", " ").split(".")[0];
+          const timeStr = f.fchat_logs.replace("last seen ", "").trim();
+          const date = new Date(timeStr);
+          if (!isNaN(date)) {
+            const formatted = date.toISOString().replace("T", " ").split(".")[0];
             status.textContent = `Last seen ${formatted}`;
           } else status.textContent = f.fchat_logs;
         } else status.textContent = f.fchat_logs || "";
 
         info.appendChild(name);
         info.appendChild(status);
-
         left.appendChild(img);
         left.appendChild(info);
         card.appendChild(left);
@@ -320,6 +329,16 @@
 
     loadChats();
 
+    // When page opens: set status to "online"
+    updateStatus("online");
+
+    // When page closes: set last seen with UTC time
+    window.addEventListener("beforeunload", () => {
+      const now = new Date().toISOString().replace("T", " ").split(".")[0];
+      updateStatus(`last seen ${now} UTC`);
+    });
+
+    // Every 2 seconds check updates
     setInterval(() => {
       const local = JSON.parse(localStorage.getItem("faccount"));
       log("Checking for updates...");
@@ -337,4 +356,4 @@
     }, 2000);
   </script>
 </body>
-  </html>
+</html>
