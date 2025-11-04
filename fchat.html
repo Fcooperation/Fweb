@@ -6,89 +6,89 @@
   <title>FCHAT</title>
   <style>
     body {
+      font-family: "Poppins", sans-serif;
+      background: #f1f1f1;
       margin: 0;
-      font-family: 'Poppins','Segoe UI',sans-serif;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+    }
+    #logs {
+      font-size: 13px;
+      text-align: center;
+      color: #555;
+      margin-bottom: 10px;
+    }
+    .fchat-card {
       background: #fff;
-      color: #000;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      height: 100vh;
-      padding-top: 40px;
-    }
-    #log {
-      font-size: 16px;
-      font-weight: 500;
-      color: #000;
-      margin-bottom: 20px;
-    }
-    .user-card {
+      border-radius: 12px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      padding: 10px;
+      margin-bottom: 10px;
       display: flex;
       align-items: center;
       gap: 10px;
-      background: #f2f2f2;
-      padding: 12px 15px;
-      border-radius: 10px;
-      box-shadow: 0 3px 8px rgba(0,0,0,0.1);
-      transition: 0.3s;
+      transition: 0.3s ease;
     }
-    .user-card img {
-      width: 60px;
-      height: 60px;
+    .fchat-card img {
+      width: 50px;
+      height: 50px;
       border-radius: 50%;
       object-fit: cover;
-      border: 2px solid #000;
     }
-    .user-card .username {
-      font-weight: bold;
-      color: #000;
-      font-size: 16px;
+    .fchat-card span {
+      font-weight: 500;
+      color: #333;
     }
   </style>
 </head>
 <body>
   <h1>FCHAT</h1>
-  <p id="log">Checking localStorage...</p>
-  <div id="userDisplay"></div>
+  <div id="logs"></div>
+  <div id="fchat-container"></div>
 
   <script>
-    const log = document.getElementById("log");
-    const userDisplay = document.getElementById("userDisplay");
+    const logs = document.getElementById("logs");
+    const container = document.getElementById("fchat-container");
 
-    function checkUpdated() {
-      const faccount = JSON.parse(localStorage.getItem("faccount")) || {};
-
-      if (faccount.updated === "yes") {
-        log.textContent = "Updated changed to yes ✅";
-
-        // Create user card
-        userDisplay.innerHTML = ""; // Clear any existing
-        const card = document.createElement("div");
-        card.className = "user-card";
-
-        const img = document.createElement("img");
-        img.src = faccount.profile_pic || "default.png";
-
-        const name = document.createElement("div");
-        name.className = "username";
-        name.textContent = faccount.username || "Unknown User";
-
-        card.appendChild(img);
-        card.appendChild(name);
-        userDisplay.appendChild(card);
-
-        // Reset updated to no
-        faccount.updated = "no";
-        localStorage.setItem("faccount", JSON.stringify(faccount));
-      } else {
-        log.textContent = "Waiting for update...";
-      }
+    function log(message) {
+      logs.textContent = message;
     }
 
-    // Check every 2 seconds
-    setInterval(checkUpdated, 2000);
-    checkUpdated();
+    // Function to render all accepted users as cards
+    function renderFchat() {
+      log("Refreshing Fchat...");
+      container.innerHTML = "";
+      const data = JSON.parse(localStorage.getItem("accepted")) || [];
+      if (data.length === 0) {
+        log("No accepted users found.");
+        return;
+      }
+      data.forEach(user => {
+        const card = document.createElement("div");
+        card.className = "fchat-card";
+        card.innerHTML = `
+          <img src="${user.profile_pic || 'default.png'}" alt="Profile">
+          <span>${user.username}</span>
+        `;
+        container.appendChild(card);
+      });
+      log("Fchat updated.");
+    }
+
+    // Initial render
+    renderFchat();
+
+    // Check for updates every 2 seconds
+    setInterval(() => {
+      const updated = localStorage.getItem("updated");
+      if (updated === "yes") {
+        log("Detected update → Refreshing...");
+        renderFchat();
+        localStorage.setItem("updated", "no");
+      }
+    }, 2000);
   </script>
 </body>
 </html>
