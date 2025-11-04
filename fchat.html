@@ -37,7 +37,6 @@
       overflow: hidden;
     }
 
-    /* --- Top Bar --- */
     .topbar {
       width: 100%;
       height: 60px;
@@ -48,17 +47,9 @@
       font-weight: 600;
       font-size: 20px;
       box-shadow: 0 2px 5px var(--shadow);
-      position: relative;
       z-index: 10;
     }
 
-    .topbar-right {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
-
-    /* Menu & Reload buttons */
     .menu-btn, .reload-btn {
       background: none;
       border: none;
@@ -74,7 +65,6 @@
       background: var(--card-bg);
       border-radius: 10px;
       box-shadow: 0 4px 10px var(--shadow);
-      overflow: hidden;
       display: none;
       flex-direction: column;
       z-index: 20;
@@ -95,7 +85,6 @@
       background: rgba(0,0,0,0.08);
     }
 
-    /* --- Search Bar --- */
     .search-bar {
       margin: 10px 16px;
       padding: 8px 14px;
@@ -108,7 +97,6 @@
       width: calc(100% - 32px);
     }
 
-    /* --- Chat List --- */
     .chat-list {
       flex: 1;
       overflow-y: auto;
@@ -124,13 +112,7 @@
       margin: 6px 12px;
       border-radius: 12px;
       box-shadow: 0 2px 6px var(--shadow);
-      transition: 0.2s ease;
       cursor: pointer;
-    }
-
-    .fchat-card:hover {
-      background: rgba(0,0,0,0.05);
-      transform: scale(1.01);
     }
 
     .fchat-left {
@@ -157,7 +139,6 @@
       margin-top: 2px;
     }
 
-    /* --- Floating Add Button --- */
     .add-btn {
       position: fixed;
       bottom: 80px;
@@ -169,22 +150,14 @@
       color: #fff;
       border: none;
       font-size: 32px;
-      font-weight: 400;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       box-shadow: 0 4px 10px var(--shadow);
       z-index: 15;
-      transition: transform 0.25s ease, opacity 0.3s ease;
     }
 
-    .add-btn:hover {
-      transform: scale(1.1);
-      opacity: 0.9;
-    }
-
-    /* --- Bottom Navigation --- */
     .bottom-nav {
       position: fixed;
       bottom: 0;
@@ -223,7 +196,7 @@
 <body>
   <div class="topbar">
     <div>FCHAT</div>
-    <div class="topbar-right">
+    <div>
       <button class="reload-btn" id="reloadBtn">↻</button>
       <button class="menu-btn">⋮</button>
       <div class="menu-dropdown" id="menu">
@@ -262,18 +235,14 @@
     const reloadBtn = document.getElementById("reloadBtn");
     const search = document.getElementById("search");
 
-    // Menu toggle
+    let friendsCache = [];
+
     menuBtn.onclick = () => menu.style.display = menu.style.display === "flex" ? "none" : "flex";
     document.addEventListener("click", e => {
       if (!menu.contains(e.target) && !menuBtn.contains(e.target)) menu.style.display = "none";
     });
 
-    // Reload button
-    reloadBtn.onclick = async () => {
-      log("Reloading from Supabase...");
-      await loadChats(true, true);
-      location.reload();
-    };
+    reloadBtn.onclick = () => loadChats(true);
 
     async function updateStatus(status) {
       const faccount = JSON.parse(localStorage.getItem("faccount"));
@@ -281,7 +250,7 @@
       await supabase.from("fwebaccount").update({ fchat_logs: status }).eq("id", faccount.id);
     }
 
-    async function loadChats(showLog = true, refreshLocal = false) {
+    async function loadChats(showLog = true) {
       const faccount = JSON.parse(localStorage.getItem("faccount"));
       if (!faccount?.id) {
         log("Please log in ❌");
@@ -304,10 +273,11 @@
         .select("id, username, profile_pic, fchat_logs")
         .in("id", acceptedIds);
 
-      if (refreshLocal) localStorage.setItem("friends_cache", JSON.stringify(friends));
-
+      friendsCache = friends;
       renderChats(friends);
       log(`Loaded ${friends.length} chats ✅`);
+
+      subscribeToFriends(acceptedIds);
     }
 
     function renderChats(friends) {
@@ -337,11 +307,10 @@
         if (f.fchat_logs?.toLowerCase() === "online") {
           status.textContent = "Online";
         } else if (f.fchat_logs?.toLowerCase().includes("last seen")) {
-          const timeStr = f.fchat_logs.replace("last seen ", "").trim();
-          const date = new Date(timeStr);
+          const date = new Date(f.fchat_logs.replace("last seen ", "").replace(" UTC", ""));
           if (!isNaN(date)) {
             const formatted = date.toISOString().replace("T", " ").split(".")[0];
-            status.textContent = `Last seen ${formatted}`;
+            status.textContent = `Last seen ${formatted} UTC`;
           } else status.textContent = f.fchat_logs;
         } else status.textContent = f.fchat_logs || "";
 
@@ -354,39 +323,38 @@
       }
     }
 
-    // Filter chats
     search.addEventListener("input", e => {
       const val = e.target.value.toLowerCase();
-      const cache = JSON.parse(localStorage.getItem("friends_cache") || "[]");
-      const filtered = cache.filter(f => f.username.toLowerCase().includes(val));
+      const filtered = friendsCache.filter(f => f.username.toLowerCase().includes(val));
       renderChats(filtered);
     });
 
-    // Initial load
-    loadChats(true, true);
+    function subscribeToFriends(ids) {
+      ids.forEach(id => {
+        supabase
+          .channel(`fchat-${id}`)
+          .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'fwebaccount', filter: `id=eq.${id}` },
+            payload => {
+              const updated = payload.new;
+              const index = friendsCache.findIndex(f => f.id === id);
+              if (index >= 0) {
+                friendsCache[index] = updated;
+                renderChats(friendsCache);
+                log("Live update received 🔄");
+              }
+            }
+          )
+          .subscribe();
+      });
+    }
+
+    loadChats(true);
     updateStatus("online");
 
     window.addEventListener("beforeunload", () => {
       const now = new Date().toISOString().replace("T", " ").split(".")[0];
       updateStatus(`last seen ${now} UTC`);
     });
-
-    // Auto-refresh every 2s
-    setInterval(() => {
-      const local = JSON.parse(localStorage.getItem("faccount"));
-      log("Checking updates...");
-      if (local?.updated === "yes") {
-        log("Update found ✅");
-        setTimeout(() => {
-          log("Refreshing chats...");
-          loadChats(false).then(() => {
-            local.updated = "no";
-            localStorage.setItem("faccount", JSON.stringify(local));
-            log("Chats refreshed ✅");
-          });
-        }, 800);
-      }
-    }, 2000);
   </script>
 </body>
 </html>
