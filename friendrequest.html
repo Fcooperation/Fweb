@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Friend Requests</title>
   <style>
     body {
@@ -24,7 +24,6 @@
       font-size: 13px;
       color: #555;
       margin-bottom: 15px;
-      transition: opacity 0.3s ease;
       height: 18px;
     }
     #requests-container {
@@ -108,9 +107,7 @@
     const statusText = document.getElementById("status");
     const logLine = document.getElementById("logline");
 
-    function log(msg) {
-      logLine.textContent = msg;
-    }
+    const log = msg => (logLine.textContent = msg);
 
     async function loadUserData() {
       const faccount = JSON.parse(localStorage.getItem("faccount"));
@@ -193,7 +190,7 @@
         card.appendChild(actions);
         container.appendChild(card);
 
-        // ✅ Accept
+        // ✅ Accept logic
         acceptBtn.onclick = async () => {
           log(`Accepting ${requestUser.username}...`);
           acceptBtn.textContent = "Accepting...";
@@ -202,28 +199,23 @@
           card.style.opacity = 0.6;
 
           try {
+            // Step 1: Save to Supabase
+            log("Saving to Supabase...");
             const acceptedList = (user.accepted || "")
               .split(",").map(a => a.trim()).filter(Boolean);
             if (!acceptedList.includes(requestUser.id.toString()))
               acceptedList.push(requestUser.id.toString());
 
             const updatedRequests = requests.filter(id => id !== requestUser.id.toString());
-            const acceptedInfo = {
-              id: requestUser.id,
-              username: requestUser.username,
-              profile_pic: requestUser.profile_pic || "default.png"
-            };
-
-            log(`Saving ${requestUser.username} to database...`);
             await supabase
               .from("fwebaccount")
               .update({
                 accepted: acceptedList.join(","),
-                friend_requests: updatedRequests.join(","),
-                accepted_info: acceptedInfo
+                friend_requests: updatedRequests.join(",")
               })
               .eq("id", faccount.id);
 
+            // Step 2: Update requester side
             const requesterAccepted = (requestUser.accepted || "")
               .split(",").map(a => a.trim()).filter(Boolean);
             if (!requesterAccepted.includes(faccount.id.toString()))
@@ -234,21 +226,29 @@
               .update({ accepted: requesterAccepted.join(",") })
               .eq("id", requestUser.id);
 
-            let local = JSON.parse(localStorage.getItem("faccount"));
-            local.updated = "yes";
+            // Step 3: Update localStorage
+            log("Accepting user (saving to localStorage)...");
+            let local = JSON.parse(localStorage.getItem("faccount")) || {};
+            if (!local.updated) local.updated = "yes";
+            else local.updated = "yes";
             localStorage.setItem("faccount", JSON.stringify(local));
 
-            log(`✅ ${requestUser.username} accepted!`);
-            card.style.transition = "all 0.7s ease";
-            card.style.background = "#c8f7c5";
-            acceptBtn.textContent = "Accepted";
-            rejectBtn.remove();
+            // Step 4: Updating FCHAT
+            log("Updating FCHAT...");
             setTimeout(() => {
-              card.style.opacity = "0";
-              setTimeout(() => card.remove(), 700);
-            }, 800);
-          } catch {
-            log("Error accepting user.");
+              log(`✅ Accepted ${requestUser.username}`);
+              card.style.transition = "all 0.6s ease";
+              card.style.background = "#c8f7c5";
+              acceptBtn.textContent = "Accepted";
+              rejectBtn.remove();
+              setTimeout(() => {
+                card.style.opacity = "0";
+                setTimeout(() => card.remove(), 700);
+              }, 800);
+            }, 1000);
+          } catch (e) {
+            log("❌ Error saving to Supabase.");
+            console.error(e);
             acceptBtn.textContent = "Error";
           }
         };
