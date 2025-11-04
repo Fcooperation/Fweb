@@ -63,25 +63,32 @@
     }
 
     function checkUpdated() {
+      log.textContent = "Updating from localStorage...";
       const faccount = JSON.parse(localStorage.getItem("faccount")) || {};
 
       if (faccount.updated === "yes") {
-        log.textContent = "Updated changed to yes ✅";
+        log.textContent = "Update found ✅";
 
-        if (faccount.username && faccount.profile_pic) {
-          showCard(faccount);
-          log.textContent = `Loaded ${faccount.username} 🔁`;
-        }
+        // Show updating log
+        setTimeout(() => {
+          log.textContent = "Updating page...";
+          if (faccount.username && faccount.profile_pic) {
+            showCard(faccount);
+          }
 
-        // Reset updated flag to no
-        faccount.updated = "no";
-        localStorage.setItem("faccount", JSON.stringify(faccount));
-      } else {
-        log.textContent = "Waiting for update...";
+          // Reset updated flag
+          faccount.updated = "no";
+          localStorage.setItem("faccount", JSON.stringify(faccount));
+
+          // Confirm done
+          setTimeout(() => {
+            log.textContent = "Page updated and reset 🔁";
+          }, 500);
+        }, 500);
       }
     }
 
-    // Check immediately and every 2 seconds
+    // Initial check and run every 2 seconds
     checkUpdated();
     setInterval(checkUpdated, 2000);
   </script>
