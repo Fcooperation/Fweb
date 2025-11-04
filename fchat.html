@@ -1,75 +1,242 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FCHAT</title>
   <style>
+    :root {
+      --bg: #ffffff;
+      --text: #000000;
+      --card-bg: #f2f2f2;
+      --shadow: rgba(0, 0, 0, 0.1);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #121212;
+        --text: #f1f1f1;
+        --card-bg: #1e1e1e;
+        --shadow: rgba(255, 255, 255, 0.05);
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      transition: background 0.3s, color 0.3s;
+    }
+
     body {
       margin: 0;
-      background: #fff;
-      font-family: 'Poppins', 'Segoe UI', sans-serif;
-      color: #000;
+      font-family: 'Poppins','Segoe UI',sans-serif;
+      background: var(--bg);
+      color: var(--text);
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: start;
-      min-height: 100vh;
-      padding: 20px;
+      height: 100vh;
+      overflow: hidden;
     }
-    h1 {
-      margin-bottom: 8px;
-    }
-    #logline {
-      font-size: 13px;
-      color: #555;
-      margin-bottom: 15px;
-      height: 18px;
-    }
-    #fchat-container {
+
+    /* --- Top Bar --- */
+    .topbar {
       width: 100%;
-      max-width: 500px;
+      height: 60px;
       display: flex;
-      flex-direction: column;
-      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      font-weight: 600;
+      font-size: 20px;
+      box-shadow: 0 2px 5px var(--shadow);
+      position: relative;
+      z-index: 10;
     }
+
+    /* Menu */
+    .menu-btn {
+      background: none;
+      border: none;
+      font-size: 22px;
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .menu-dropdown {
+      position: absolute;
+      top: 60px;
+      right: 10px;
+      background: var(--card-bg);
+      border-radius: 10px;
+      box-shadow: 0 4px 10px var(--shadow);
+      overflow: hidden;
+      display: none;
+      flex-direction: column;
+      z-index: 20;
+    }
+
+    .menu-dropdown button {
+      border: none;
+      background: none;
+      color: var(--text);
+      text-align: left;
+      padding: 12px 16px;
+      width: 160px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .menu-dropdown button:hover {
+      background: rgba(0,0,0,0.08);
+    }
+
+    /* --- Search Bar --- */
+    .search-bar {
+      margin: 10px 16px;
+      padding: 8px 14px;
+      border-radius: 30px;
+      background: var(--card-bg);
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-size: 14px;
+      width: calc(100% - 32px);
+    }
+
+    /* --- Chat List --- */
+    .chat-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px 0 70px;
+    }
+
     .fchat-card {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: #f2f2f2;
-      padding: 14px;
-      border-radius: 10px;
-      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+      padding: 12px 16px;
+      background: var(--card-bg);
+      margin: 6px 12px;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px var(--shadow);
       transition: 0.3s;
     }
+
     .fchat-card:hover {
-      transform: scale(1.02);
-      background: #eaeaea;
+      transform: scale(1.01);
+      background: rgba(0,0,0,0.05);
     }
+
     .fchat-left {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
     }
+
     .profile-pic {
       width: 50px;
       height: 50px;
       border-radius: 50%;
       object-fit: cover;
-      border: 2px solid #000;
     }
+
     .username {
-      font-weight: bold;
-      color: #000;
+      font-weight: 600;
+      font-size: 15px;
     }
+
+    .status {
+      font-size: 12px;
+      color: #777;
+      margin-top: 2px;
+    }
+
+    /* --- Floating Add Button --- */
+    .add-btn {
+      position: fixed;
+      bottom: 80px;
+      right: 20px;
+      width: 55px;
+      height: 55px;
+      border-radius: 50%;
+      background: var(--text);
+      color: var(--bg);
+      border: none;
+      font-size: 30px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 10px var(--shadow);
+      z-index: 15;
+      transition: 0.3s;
+    }
+
+    .add-btn:hover {
+      transform: scale(1.08);
+      opacity: 0.9;
+    }
+
+    /* --- Bottom Navigation --- */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      height: 60px;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      background: var(--card-bg);
+      box-shadow: 0 -2px 8px var(--shadow);
+      z-index: 10;
+    }
+
+    .bottom-nav button {
+      background: none;
+      border: none;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .bottom-nav .active {
+      font-weight: 700;
+      text-decoration: underline;
+    }
+
+    #logline {
+      font-size: 13px;
+      color: #888;
+      text-align: center;
+      margin-top: 5px;
+    }
+
   </style>
 </head>
 <body>
-  <h1>FCHAT</h1>
-  <p id="logline">Loading...</p>
-  <div id="fchat-container">
-    <p id="status">Fetching data...</p>
+  <div class="topbar">
+    <div>FCHAT</div>
+    <button class="menu-btn">⋮</button>
+    <div class="menu-dropdown" id="menu">
+      <button onclick="location.href='friendrequest.html'">Friend Requests</button>
+      <button onclick="location.href='fchatsettings.html'">Settings</button>
+    </div>
+  </div>
+
+  <input type="text" placeholder="Search or start new chat" class="search-bar" id="search">
+
+  <p id="logline">Loading chats...</p>
+
+  <div class="chat-list" id="fchat-container">
+    <!-- Fchat cards injected here -->
+  </div>
+
+  <button class="add-btn" onclick="location.href='add.html'">+</button>
+
+  <div class="bottom-nav">
+    <button class="active">Fchat</button>
+    <button onclick="location.href='fchatupdate.html'">Updates</button>
+    <button onclick="location.href='fvids.html'">Fvids</button>
+    <button onclick="location.href='fchatme.html'">Me</button>
   </div>
 
   <script type="module">
@@ -80,56 +247,38 @@
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
     );
 
-    const logLine = document.getElementById("logline");
-    const container = document.getElementById("fchat-container");
-    const status = document.getElementById("status");
-    const log = msg => (logLine.textContent = msg);
+    const log = msg => document.getElementById("logline").textContent = msg;
+    const menu = document.getElementById("menu");
+    const menuBtn = document.querySelector(".menu-btn");
+    menuBtn.onclick = () => {
+      menu.style.display = menu.style.display === "flex" ? "none" : "flex";
+    };
+    document.addEventListener("click", e => {
+      if (!menu.contains(e.target) && !menuBtn.contains(e.target)) menu.style.display = "none";
+    });
 
-    async function loadAcceptedChats(showLog = true) {
+    async function loadChats(showLog = true) {
       const faccount = JSON.parse(localStorage.getItem("faccount"));
-      if (!faccount || !faccount.id) {
-        log("No account found ❌");
-        status.textContent = "Please log in first.";
+      const container = document.getElementById("fchat-container");
+      if (!faccount?.id) {
+        log("Please log in ❌");
+        container.innerHTML = "<p style='text-align:center;'>No account found.</p>";
         return;
       }
 
       if (showLog) log("Accessing Supabase...");
-      const { data: user, error } = await supabase
-        .from("fwebaccount")
-        .select("*")
-        .eq("id", faccount.id)
-        .maybeSingle();
+      const { data: user } = await supabase.from("fwebaccount").select("*").eq("id", faccount.id).maybeSingle();
+      if (!user) return log("Error loading user ❌");
 
-      if (error || !user) {
-        log("Error retrieving user ❌");
-        status.textContent = "Error fetching user data.";
-        return;
+      const acceptedIds = (user.accepted || "").split(",").map(a => a.trim()).filter(Boolean);
+      if (!acceptedIds.length) {
+        container.innerHTML = "<p style='text-align:center;'>No chats yet 😢</p>";
+        return log("No accepted users");
       }
 
-      const acceptedIds = (user.accepted || "")
-        .split(",")
-        .map(a => a.trim())
-        .filter(Boolean);
-
-      if (acceptedIds.length === 0) {
-        log("No accepted users.");
-        container.innerHTML = "<p>No friends yet 😢</p>";
-        return;
-      }
-
-      if (showLog) log(`Fetching ${acceptedIds.length} friends...`);
-      const { data: friends, error: err } = await supabase
-        .from("fwebaccount")
-        .select("id, username, profile_pic")
-        .in("id", acceptedIds);
-
-      if (err || !friends?.length) {
-        log("Error loading friends ❌");
-        return;
-      }
-
+      const { data: friends } = await supabase.from("fwebaccount").select("id, username, profile_pic, fchat_logs").in("id", acceptedIds);
       container.innerHTML = "";
-      for (const friend of friends) {
+      for (const f of friends) {
         const card = document.createElement("div");
         card.className = "fchat-card";
 
@@ -137,41 +286,55 @@
         left.className = "fchat-left";
 
         const img = document.createElement("img");
-        img.src = friend.profile_pic || "default.png";
+        img.src = f.profile_pic || "default.png";
         img.className = "profile-pic";
 
+        const info = document.createElement("div");
         const name = document.createElement("div");
         name.className = "username";
-        name.textContent = friend.username;
+        name.textContent = f.username;
+
+        const status = document.createElement("div");
+        status.className = "status";
+        if (f.fchat_logs?.toLowerCase() === "online") {
+          status.textContent = "Online";
+        } else if (f.fchat_logs?.toLowerCase().includes("last seen")) {
+          const utc = new Date(f.fchat_logs.replace("last seen ", ""));
+          if (!isNaN(utc)) {
+            const formatted = utc.toISOString().replace("T", " ").split(".")[0];
+            status.textContent = `Last seen ${formatted}`;
+          } else status.textContent = f.fchat_logs;
+        } else status.textContent = f.fchat_logs || "";
+
+        info.appendChild(name);
+        info.appendChild(status);
 
         left.appendChild(img);
-        left.appendChild(name);
+        left.appendChild(info);
         card.appendChild(left);
         container.appendChild(card);
       }
 
-      if (showLog) log(`Loaded ${friends.length} friend(s)`);
+      log(`Loaded ${friends.length} chats ✅`);
     }
 
-    // Initial load
-    loadAcceptedChats();
+    loadChats();
 
-    // Every 2 seconds, check if localStorage updated
     setInterval(() => {
       const local = JSON.parse(localStorage.getItem("faccount"));
-      log("Updating from local storage...");
+      log("Checking for updates...");
       if (local?.updated === "yes") {
         log("Update found ✅");
         setTimeout(() => {
-          log("Updating page...");
-          loadAcceptedChats(false).then(() => {
+          log("Updating chats...");
+          loadChats(false).then(() => {
             local.updated = "no";
             localStorage.setItem("faccount", JSON.stringify(local));
-            log("Page updated successfully ✅");
+            log("Chats refreshed ✅");
           });
-        }, 1000);
+        }, 800);
       }
     }, 2000);
   </script>
 </body>
-</html>
+  </html>
