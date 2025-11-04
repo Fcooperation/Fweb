@@ -228,11 +228,11 @@
 
             // Step 3: Update localStorage
             log("Accepting user (saving to localStorage)...");
-            let local = JSON.parse(localStorage.getItem("faccount")) || {};
-            if (!local.updated) local.updated = "yes";
-            else local.updated = "yes";
-            localStorage.setItem("faccount", JSON.stringify(local));
-
+let local = JSON.parse(localStorage.getItem("faccount")) || {};
+local.updated = "yes";
+local.username = requestUser.username;
+local.profile_pic = requestUser.profile_pic;
+localStorage.setItem("faccount", JSON.stringify(local));
             // Step 4: Updating FCHAT
             log("Updating FCHAT...");
             setTimeout(() => {
