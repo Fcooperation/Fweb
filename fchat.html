@@ -1,45 +1,117 @@
-<!DOCTYPE html>  <html lang="en">  
-<head>  
-  <meta charset="UTF-8" />  
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />  
-  <title>FCHAT</title>  
-  <style>  
-    body {  
-      margin: 0;  
-      font-family: 'Poppins','Segoe UI',sans-serif;  
-      background: #fff;  
-      color: #000;  
-      display: flex;  
-      flex-direction: column;  
-      align-items: center;  
-      justify-content: center;  
-      height: 100vh;  
-    }  
-    #log {  
-      font-size: 16px;  
-      font-weight: 500;  
-      color: #000;  
-    }  
-  </style>  
-</head>  
-<body>  
-  <h1>FCHAT</h1>  
-  <p id="log">Checking localStorage...</p>    <script>  
-    const log = document.getElementById("log");  
-  
-    function checkUpdated() {  
-      const faccount = JSON.parse(localStorage.getItem("faccount")) || {};  
-      if (faccount.updated === "yes") {  
-        log.textContent = "Updated changed to yes ✅";  
-      } else {  
-        log.textContent = "Waiting for update...";  
-      }  
-    }  
-  
-    // Check every 2 seconds  
-    setInterval(checkUpdated, 2000);  
-  
-    // Also check immediately on load  
-    checkUpdated();  
-  </script>  </body>  
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FCHAT</title>
+  <style>
+    body {
+      margin: 0;
+      background: #fff;
+      font-family: 'Poppins', 'Segoe UI', sans-serif;
+      color: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: start;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    h1 {
+      margin-bottom: 8px;
+    }
+    #logline {
+      font-size: 13px;
+      color: #555;
+      margin-bottom: 15px;
+      height: 18px;
+    }
+    #fchat-container {
+      width: 100%;
+      max-width: 500px;
+      background: #f2f2f2;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    .profile-pic {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      border: 2px solid #000;
+      object-fit: cover;
+      margin-bottom: 10px;
+    }
+    .username {
+      font-weight: bold;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+  <h1>FCHAT</h1>
+  <p id="logline">Loading...</p>
+
+  <div id="fchat-container">
+    <p id="status">Fetching data...</p>
+  </div>
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+    const supabase = createClient(
+      "https://pwsxezhugsxosbwhkdvf.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
+    );
+
+    const logLine = document.getElementById("logline");
+    const container = document.getElementById("fchat-container");
+    const status = document.getElementById("status");
+
+    const log = msg => logLine.textContent = msg;
+
+    async function loadFchat() {
+      const faccount = JSON.parse(localStorage.getItem("faccount"));
+      if (!faccount || !faccount.id) {
+        log("No account found ❌");
+        status.textContent = "Please log in first.";
+        return;
+      }
+
+      log("Accessing Supabase...");
+      const { data: user, error } = await supabase
+        .from("fwebaccount")
+        .select("*")
+        .eq("id", faccount.id)
+        .maybeSingle();
+
+      if (error || !user) {
+        log("Error retrieving user ❌");
+        status.textContent = "Error fetching user data.";
+        return;
+      }
+
+      if (faccount.updated === "yes") {
+        log("Update found ✅");
+        await new Promise(r => setTimeout(r, 800));
+        log("Updating page...");
+        localStorage.setItem("faccount", JSON.stringify({ ...faccount, updated: "no" }));
+      } else {
+        log("No update found.");
+      }
+
+      await new Promise(r => setTimeout(r, 1000));
+
+      container.innerHTML = `
+        <img src="${user.profile_pic || 'default.png'}" class="profile-pic">
+        <div class="username">${user.username}</div>
+        <p>Welcome back to FCHAT 👋</p>
+      `;
+      log(`Loaded ${user.username}`);
+    }
+
+    loadFchat();
+  </script>
+</body>
 </html>
