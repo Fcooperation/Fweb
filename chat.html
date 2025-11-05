@@ -19,13 +19,12 @@
   header {
     background: #fff;
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    align-items: flex-start;
     padding: 10px 15px;
     border-bottom: 1px solid #ddd;
     box-shadow: 0 2px 6px rgba(0,0,0,0.05);
     cursor: pointer;
-    flex-direction: column;
-    align-items: flex-start;
   }
 
   .header-top {
@@ -111,13 +110,34 @@
     outline: none;
   }
 
-  #send-btn {
+  #send-btn, #emoji-btn {
     background: none;
     border: none;
     font-size: 22px;
     margin-left: 10px;
     cursor: pointer;
     color: #000;
+  }
+
+  #emoji-picker {
+    position: absolute;
+    bottom: 60px;
+    right: 15px;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+    padding: 8px;
+    display: none;
+    flex-wrap: wrap;
+    max-width: 250px;
+    z-index: 10;
+  }
+
+  #emoji-picker span {
+    font-size: 22px;
+    cursor: pointer;
+    margin: 4px;
   }
 </style>
 </head>
@@ -133,7 +153,10 @@
 
 <div id="chat-board"></div>
 
+<div id="emoji-picker"></div>
+
 <div id="chat-input-area">
+  <button id="emoji-btn">😊</button>
   <input type="text" id="chat-input" placeholder="Type a message...">
   <button id="send-btn">➤</button>
 </div>
@@ -141,9 +164,10 @@
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-const supabaseUrl = "https://pwsxezhugsxosbwhkdvf.supabase.co";
-const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+const supabase = createClient(
+  "https://pwsxezhugsxosbwhkdvf.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
+);
 
 const chatHeader = document.getElementById('chat-header');
 const chatName = document.getElementById('chat-name');
@@ -152,24 +176,39 @@ const chatStatus = document.getElementById('chat-status');
 const chatBoard = document.getElementById('chat-board');
 const chatInput = document.getElementById('chat-input');
 const sendBtn = document.getElementById('send-btn');
+const emojiBtn = document.getElementById('emoji-btn');
+const emojiPicker = document.getElementById('emoji-picker');
 
 const chatUserId = localStorage.getItem('chatting');
 const currentUser = JSON.parse(localStorage.getItem('faccount'));
 const storageKey = `chat_messages_${chatUserId}`;
 
-// --- Function to update user's chat status ---
+// Emoji set
+const emojis = ["😀","😃","😄","😁","😆","🥹","😂","🤣","😊","😍","😋","😘","😜","🤩","😎","🤔","😢","😭","😡","👍","👎","❤️","🔥","💀"];
+emojis.forEach(e => {
+  const span = document.createElement("span");
+  span.textContent = e;
+  span.onclick = () => {
+    chatInput.value += e;
+    emojiPicker.style.display = "none";
+  };
+  emojiPicker.appendChild(span);
+});
+
+emojiBtn.addEventListener("click", () => {
+  emojiPicker.style.display = emojiPicker.style.display === "flex" ? "none" : "flex";
+});
+
+// Update chat status
 async function updateFchatStatus(status) {
   if (!currentUser?.email) return;
   await supabase
     .from('fwebaccount')
-    .update({
-      fchat_logs: status,
-      chatting_with: chatUserId
-    })
+    .update({ fchat_logs: status, chatting_with: chatUserId })
     .eq('email', currentUser.email);
 }
 
-// --- Function to display who’s chatting with you ---
+// Check who’s chatting
 async function checkWhoIsChattingWithMe() {
   if (!currentUser?.id) return;
   const { data, error } = await supabase
@@ -177,62 +216,51 @@ async function checkWhoIsChattingWithMe() {
     .select('username, fchat_logs')
     .eq('chatting_with', currentUser.id);
 
-  if (error) {
-    console.log('Error fetching who is chatting:', error);
-    return;
-  }
-
-  if (data && data.length > 0) {
-    const user = data[0];
-    chatStatus.textContent = user.fchat_logs || "online";
-  } else {
-    chatStatus.textContent = "offline";
-  }
+  if (!error && data?.length > 0) {
+    chatStatus.textContent = data[0].fchat_logs || "online";
+  } else chatStatus.textContent = "offline";
 }
 
-// --- On page load ---
-window.addEventListener('load', async () => {
-  await updateFchatStatus('active');
+// Load chat user (prefer local)
+async function loadChatUser() {
+  let chatUser = null;
 
-  if (!chatUserId) {
-    chatName.textContent = "⚠️ No chat selected.";
-  } else {
+  const allUsers = JSON.parse(localStorage.getItem("all_fwebaccounts")) || [];
+  if (allUsers.length > 0)
+    chatUser = allUsers.find(u => u.id == chatUserId);
+
+  if (!chatUser) {
     const { data, error } = await supabase
       .from('fwebaccount')
       .select('*')
       .eq('id', chatUserId)
-      .single();
-
+      .maybeSingle();
     if (error || !data) {
       chatName.textContent = "❌ Failed to load user.";
-    } else {
-      chatName.textContent = data.username || "Unknown User";
-      chatPic.src = data.profile_pic || "https://via.placeholder.com/50?text=U";
+      return;
     }
+    chatUser = data;
   }
 
-  renderMessages();
-  await checkWhoIsChattingWithMe();
+  chatName.textContent = chatUser.username || "Unknown User";
+  chatPic.src = chatUser.profile_pic || "https://via.placeholder.com/50?text=U";
+}
 
-  // Recheck every 3 seconds
-  setInterval(checkWhoIsChattingWithMe, 3000);
-});
-
-// --- Render messages ---
+// Render messages
 function renderMessages() {
   chatBoard.innerHTML = "";
   const messages = JSON.parse(localStorage.getItem(storageKey)) || [];
   messages.forEach(msg => {
-    const div = document.createElement('div');
-    div.classList.add('message');
-    if (msg.sender === 'me') div.classList.add('me');
+    const div = document.createElement("div");
+    div.classList.add("message");
+    if (msg.sender === "me") div.classList.add("me");
     div.textContent = msg.text;
     chatBoard.appendChild(div);
   });
   chatBoard.scrollTop = chatBoard.scrollHeight;
 }
 
-// --- Send message ---
+// Send message
 function sendMessage() {
   const text = chatInput.value.trim();
   if (!text) return;
@@ -250,47 +278,42 @@ chatInput.addEventListener("keypress", e => {
   if (e.key === "Enter") sendMessage();
 });
 
-// --- Typing detection ---
+// Typing status
 let typingTimeout;
 chatInput.addEventListener("input", async () => {
-  await updateFchatStatus('typing');
+  await updateFchatStatus("typing...");
   clearTimeout(typingTimeout);
-  typingTimeout = setTimeout(() => {
-    updateFchatStatus('active');
-  }, 2000);
+  typingTimeout = setTimeout(() => updateFchatStatus("active"), 2000);
 });
 
-// --- Mark "last seen" when offline or page closed ---
+// Set last seen
 async function setLastSeen() {
   if (!currentUser?.email) return;
-  const utcNow = new Date();
-  const formatted =
-    utcNow.getUTCFullYear() +
-    "-" +
-    String(utcNow.getUTCMonth() + 1).padStart(2, "0") +
-    "-" +
-    String(utcNow.getUTCDate()).padStart(2, "0") +
-    " " +
-    String(utcNow.getUTCHours()).padStart(2, "0") +
-    ":" +
-    String(utcNow.getUTCMinutes()).padStart(2, "0");
-
+  const now = new Date();
+  const formatted = now.getUTCFullYear()+"-"+String(now.getUTCMonth()+1).padStart(2,"0")+"-"+String(now.getUTCDate()).padStart(2,"0")+" "+String(now.getUTCHours()).padStart(2,"0")+":"+String(now.getUTCMinutes()).padStart(2,"0");
   await supabase
     .from('fwebaccount')
-    .update({
-      fchat_logs: `Last seen ${formatted}`
-    })
+    .update({ fchat_logs: `Last seen ${formatted}` })
     .eq('email', currentUser.email);
 }
 
 window.addEventListener('offline', setLastSeen);
 window.addEventListener('beforeunload', setLastSeen);
-// --- Tap header → go to chatdashboard ---
+
 chatHeader.addEventListener("click", () => {
   if (chatUserId) {
     localStorage.setItem("chatdashboard", chatUserId);
     location.href = "chatdashboard.html";
   }
+});
+
+// On load
+window.addEventListener("load", async () => {
+  await updateFchatStatus("active");
+  await loadChatUser();
+  renderMessages();
+  await checkWhoIsChattingWithMe();
+  setInterval(checkWhoIsChattingWithMe, 3000);
 });
 </script>
 
