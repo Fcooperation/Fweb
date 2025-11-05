@@ -293,76 +293,7 @@ async function loadChatUser() {
   };  
 }  
   
-// --- Render messages ---  
-function renderMessages() {  
-  chatBoard.innerHTML = "";  
-  const messages = JSON.parse(localStorage.getItem(storageKey)) || [];  
-  messages.forEach(msg => {  
-    const div = document.createElement("div");  
-    div.classList.add("message");  
-    if (msg.sender === "me") div.classList.add("me");  
-  
-    if (msg.type === "text") div.textContent = msg.text;  
-    else if (msg.type === "image") div.innerHTML = `<div class="file-preview"><img src="${msg.url}"></div>`;  
-    else if (msg.type === "video") div.innerHTML = `<div class="file-preview"><video src="${msg.url}" controls></video></div>`;  
-    else if (msg.type === "doc") div.innerHTML = `<div class="file-preview"><a href="${msg.url}" download>📄 Document</a></div>`;  
-    else if (msg.type === "poll") {  
-      const pollDiv = document.createElement("div");  
-      pollDiv.innerHTML = `<b>📊 ${msg.question}</b>`;  
-      msg.options.forEach((o, i) => {  
-        const optDiv = document.createElement("div");  
-        const votes = msg.votes ? msg.votes[o]?.length || 0 : 0;  
-        const hasVoted = msg.votes && msg.votes[o]?.includes(currentUser.id);  
-        const inputType = msg.allowMultiple ? "checkbox" : "radio";  
-        optDiv.innerHTML = `<label><input type="${inputType}" name="poll_${msg.time}" value="${o}" ${hasVoted ? "checked" : ""}> ${o} (${votes})</label>`;  
-        optDiv.querySelector("input").addEventListener("change", () => handleVote(msg.time, o, msg.allowMultiple));  
-        pollDiv.appendChild(optDiv);  
-      });  
-      div.appendChild(pollDiv);  
-    }  
-    chatBoard.appendChild(div);  
-  });  
-  chatBoard.scrollTop = chatBoard.scrollHeight;  
-}  
-  
-function handleVote(pollId, option, allowMultiple) {  
-  const messages = JSON.parse(localStorage.getItem(storageKey)) || [];  
-  const msg = messages.find(m => m.time === pollId);  
-  if (!msg) return;  
-  
-  if (!msg.votes) msg.votes = {};  
-  if (!msg.votes[option]) msg.votes[option] = [];  
-  
-  // remove previous votes if single choice  
-  if (!allowMultiple) {  
-    Object.keys(msg.votes).forEach(opt => {  
-      msg.votes[opt] = msg.votes[opt].filter(u => u !== currentUser.id);  
-    });  
-  }  
-  
-  // toggle vote  
-  if (msg.votes[option].includes(currentUser.id))  
-    msg.votes[option] = msg.votes[option].filter(u => u !== currentUser.id);  
-  else  
-    msg.votes[option].push(currentUser.id);  
-  
-  localStorage.setItem(storageKey, JSON.stringify(messages));  
-  renderMessages();  
-}  
-  
-function saveMessage(msg) {  
-  const messages = JSON.parse(localStorage.getItem(storageKey)) || [];  
-  messages.push(msg);  
-  localStorage.setItem(storageKey, JSON.stringify(messages));  
-  renderMessages();  
-}  
-  
-function sendMessage() {  
-  const text = chatInput.value.trim();  
-  if (!text) return;  
-  saveMessage({ text, sender: "me", time: Date.now(), type: "text" });  
-  chatInput.value = "";  
-}  
+
   
 // --- Popup Button Logic ---  
 plusBtn.addEventListener("click", () => popupMenu.classList.toggle("show"));  
