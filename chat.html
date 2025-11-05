@@ -8,8 +8,8 @@
   * { box-sizing: border-box; }
   body {
     font-family: 'Poppins','Segoe UI',sans-serif;
-    background: #fff;
-    color: #000;
+    background: #fdfdfd;
+    color: #111;
     margin: 0;
     height: 100vh;
     display: flex;
@@ -19,18 +19,16 @@
   header {
     background: #fff;
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 10px 15px;
-    border-bottom: 1px solid #ddd;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-    cursor: pointer;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 18px;
+    border-bottom: 1px solid #eee;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
   }
 
-  .header-top {
+  .header-left {
     display: flex;
     align-items: center;
-    width: 100%;
   }
 
   .chat-header-pic {
@@ -44,14 +42,22 @@
 
   .chat-header-name {
     font-weight: 600;
-    font-size: 17px;
+    font-size: 18px;
   }
 
-  .chat-status {
-    font-size: 13px;
-    color: gray;
-    margin-left: 55px;
-    margin-top: -2px;
+  .menu-btn {
+    background: #f4f4f4;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 15px;
+    transition: 0.2s;
+  }
+
+  .menu-btn:hover {
+    background: #e8e8e8;
   }
 
   #chat-board {
@@ -63,7 +69,7 @@
   }
 
   #chat-board::before {
-    content: "FCOOPERATION\n.....where dreams meet reality.......";
+    content: "FCOOPERATION\n.....where dreams meet reality.....";
     position: absolute;
     top: 50%;
     left: 50%;
@@ -74,14 +80,15 @@
     text-align: center;
     white-space: pre-line;
     z-index: 0;
+    user-select: none;
   }
 
   .message {
-    background: #e0e0e0;
+    background: #ececec;
     color: #000;
     padding: 10px 15px;
-    border-radius: 12px;
-    margin-bottom: 8px;
+    border-radius: 14px;
+    margin-bottom: 10px;
     max-width: 80%;
     position: relative;
     z-index: 1;
@@ -96,7 +103,7 @@
   #chat-input-area {
     display: flex;
     align-items: center;
-    padding: 10px 12px;
+    padding: 10px 14px;
     border-top: 1px solid #ddd;
     background: #fff;
   }
@@ -104,55 +111,81 @@
   #chat-input {
     flex: 1;
     border: 1px solid #ccc;
-    border-radius: 20px;
+    border-radius: 25px;
     padding: 10px 15px;
     font-size: 15px;
     outline: none;
+    background: #f7f7f7;
+    transition: 0.2s;
+  }
+
+  #chat-input:focus {
+    background: #fff;
+    border-color: #999;
   }
 
   #send-btn, #emoji-btn {
-    background: none;
+    background: #007bff;
     border: none;
-    font-size: 22px;
-    margin-left: 10px;
+    color: #fff;
+    font-size: 20px;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    margin-left: 8px;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
+  }
+
+  #emoji-btn {
+    background: #ffcc00;
     color: #000;
   }
 
+  #send-btn:hover { background: #0066d6; }
+  #emoji-btn:hover { background: #ffd633; }
+
   #emoji-picker {
     position: absolute;
-    bottom: 60px;
+    bottom: 70px;
     right: 15px;
     background: #fff;
-    border: 1px solid #ccc;
+    border: 1px solid #ddd;
     border-radius: 12px;
     box-shadow: 0 3px 10px rgba(0,0,0,0.2);
-    padding: 8px;
+    padding: 10px;
     display: none;
     flex-wrap: wrap;
-    max-width: 250px;
+    max-width: 260px;
     z-index: 10;
   }
 
   #emoji-picker span {
     font-size: 22px;
     cursor: pointer;
-    margin: 4px;
+    margin: 5px;
+    transition: 0.1s;
+  }
+
+  #emoji-picker span:hover {
+    transform: scale(1.2);
   }
 </style>
 </head>
 <body>
 
-<header id="chat-header">
-  <div class="header-top">
+<header>
+  <div class="header-left">
     <img id="chat-pic" class="chat-header-pic" src="" alt="Profile">
     <div class="chat-header-name" id="chat-name">Loading...</div>
   </div>
-  <div class="chat-status" id="chat-status">Connecting...</div>
+  <button class="menu-btn">☰</button>
 </header>
 
 <div id="chat-board"></div>
-
 <div id="emoji-picker"></div>
 
 <div id="chat-input-area">
@@ -169,28 +202,25 @@ const supabase = createClient(
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
 );
 
-const chatHeader = document.getElementById('chat-header');
-const chatName = document.getElementById('chat-name');
-const chatPic = document.getElementById('chat-pic');
-const chatStatus = document.getElementById('chat-status');
 const chatBoard = document.getElementById('chat-board');
 const chatInput = document.getElementById('chat-input');
 const sendBtn = document.getElementById('send-btn');
 const emojiBtn = document.getElementById('emoji-btn');
 const emojiPicker = document.getElementById('emoji-picker');
+const chatName = document.getElementById('chat-name');
+const chatPic = document.getElementById('chat-pic');
 
 const chatUserId = localStorage.getItem('chatting');
 const currentUser = JSON.parse(localStorage.getItem('faccount'));
 const storageKey = `chat_messages_${chatUserId}`;
 
-// Emoji set
-const emojis = ["😀","😃","😄","😁","😆","🥹","😂","🤣","😊","😍","😋","😘","😜","🤩","😎","🤔","😢","😭","😡","👍","👎","❤️","🔥","💀"];
+// ✅ Emoji list
+const emojis = ["😀","😃","😄","😁","🥹","😂","🤣","😊","😍","😋","😘","😜","🤩","😎","🤔","😢","😭","😡","👍","👎","❤️","🔥","💀"];
 emojis.forEach(e => {
   const span = document.createElement("span");
   span.textContent = e;
   span.onclick = () => {
-    chatInput.value += e;
-    emojiPicker.style.display = "none";
+    chatInput.value += e; // ✅ Now multiple emojis allowed
   };
   emojiPicker.appendChild(span);
 });
@@ -199,46 +229,20 @@ emojiBtn.addEventListener("click", () => {
   emojiPicker.style.display = emojiPicker.style.display === "flex" ? "none" : "flex";
 });
 
-// Update chat status
-async function updateFchatStatus(status) {
-  if (!currentUser?.email) return;
-  await supabase
-    .from('fwebaccount')
-    .update({ fchat_logs: status, chatting_with: chatUserId })
-    .eq('email', currentUser.email);
-}
-
-// Check who’s chatting
-async function checkWhoIsChattingWithMe() {
-  if (!currentUser?.id) return;
-  const { data, error } = await supabase
-    .from('fwebaccount')
-    .select('username, fchat_logs')
-    .eq('chatting_with', currentUser.id);
-
-  if (!error && data?.length > 0) {
-    chatStatus.textContent = data[0].fchat_logs || "online";
-  } else chatStatus.textContent = "offline";
-}
-
-// Load chat user (prefer local)
+// Load chat user
 async function loadChatUser() {
   let chatUser = null;
-
   const allUsers = JSON.parse(localStorage.getItem("all_fwebaccounts")) || [];
   if (allUsers.length > 0)
     chatUser = allUsers.find(u => u.id == chatUserId);
 
   if (!chatUser) {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('fwebaccount')
       .select('*')
       .eq('id', chatUserId)
       .maybeSingle();
-    if (error || !data) {
-      chatName.textContent = "❌ Failed to load user.";
-      return;
-    }
+    if (!data) return chatName.textContent = "User not found";
     chatUser = data;
   }
 
@@ -278,44 +282,10 @@ chatInput.addEventListener("keypress", e => {
   if (e.key === "Enter") sendMessage();
 });
 
-// Typing status
-let typingTimeout;
-chatInput.addEventListener("input", async () => {
-  await updateFchatStatus("typing...");
-  clearTimeout(typingTimeout);
-  typingTimeout = setTimeout(() => updateFchatStatus("active"), 2000);
-});
-
-// Set last seen
-async function setLastSeen() {
-  if (!currentUser?.email) return;
-  const now = new Date();
-  const formatted = now.getUTCFullYear()+"-"+String(now.getUTCMonth()+1).padStart(2,"0")+"-"+String(now.getUTCDate()).padStart(2,"0")+" "+String(now.getUTCHours()).padStart(2,"0")+":"+String(now.getUTCMinutes()).padStart(2,"0");
-  await supabase
-    .from('fwebaccount')
-    .update({ fchat_logs: `Last seen ${formatted}` })
-    .eq('email', currentUser.email);
-}
-
-window.addEventListener('offline', setLastSeen);
-window.addEventListener('beforeunload', setLastSeen);
-
-chatHeader.addEventListener("click", () => {
-  if (chatUserId) {
-    localStorage.setItem("chatdashboard", chatUserId);
-    location.href = "chatdashboard.html";
-  }
-});
-
-// On load
 window.addEventListener("load", async () => {
-  await updateFchatStatus("active");
   await loadChatUser();
   renderMessages();
-  await checkWhoIsChattingWithMe();
-  setInterval(checkWhoIsChattingWithMe, 3000);
 });
 </script>
-
 </body>
 </html>
