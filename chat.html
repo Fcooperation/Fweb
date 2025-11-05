@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>  <html lang="en">  
 <head>  
 <meta charset="UTF-8">  
@@ -330,41 +329,47 @@ window.addEventListener("load", async () => {
   await loadChatUser();  
   renderMessages();  
 });  
-
- // --- Save message to localStorage ---
-asy// --- Save message to localStorage ---
+// --- Save message to localStorage & Supabase ---
 async function saveMessage(msg) {
-  // Save to localStorage (as before)
+  // Save locally first
   const messages = JSON.parse(localStorage.getItem(storageKey)) || [];
   messages.push(msg);
   localStorage.setItem(storageKey, JSON.stringify(messages));
   renderMessages();
 
-  // Also send to Supabase for the chat user
+  // Only send text or poll messages to Supabase
   if (!chatUserId || !currentUser.id) return;
+  if (msg.type !== "text" && msg.type !== "poll") return;
 
   try {
-    // Insert message as JSON in receiver's fchat_messages column
+    const payload = {
+      sender: currentUser.id,
+      type: msg.type,
+      time: msg.time
+    };
+
+    if (msg.type === "text") payload.text = msg.text || "";
+    if (msg.type === "poll") {
+      payload.question = msg.question;
+      payload.options = msg.options;
+      payload.allowMultiple = msg.allowMultiple;
+      payload.votes = msg.votes || {};
+    }
+
+    // Insert JSON into receiver's fchat_messages
     await supabase
       .from('fwebaccount')
       .update({
         fchat_messages: supabase.raw(
           `array_append(fchat_messages, ?)`,
-          [JSON.stringify({
-            sender: currentUser.id,
-            type: msg.type,
-            text: msg.text || "",
-            url: msg.url || "",
-            time: msg.time
-          })]
+          [JSON.stringify(payload)]
         )
       })
       .eq('id', chatUserId);
   } catch (err) {
     console.error("Supabase send error:", err.message);
   }
-}
-
+ }
 // --- Send text message ---
 function sendMessage() {
   const text = chatInput.value.trim();
