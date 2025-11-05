@@ -1,537 +1,242 @@
-<!DOCTYPE html>  <html lang="en">  
-<head>  
-<meta charset="UTF-8">  
-<meta name="viewport" content="width=device-width, initial-scale=1.0">  
-<title>FCHAT - Chat</title>  
-<style>  
-  * { box-sizing: border-box; }  
-  body {  
-    font-family: 'Poppins','Segoe UI',sans-serif;  
-    background: #fdfdfd;  
-    color: #111;  
-    margin: 0;  
-    height: 100vh;  
-    display: flex;  
-    flex-direction: column;  
-    position: relative;  
-  }  header {
-background: #fff;
-display: flex;
-justify-content: space-between;
-align-items: center;
-padding: 12px 18px;
-border-bottom: 1px solid #eee;
-box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-}
-
-.header-left {
-display: flex;
-align-items: center;
-cursor: pointer;
-}
-
-.chat-header-pic {
-width: 45px;
-height: 45px;
-border-radius: 50%;
-object-fit: cover;
-margin-right: 10px;
-background: #ccc;
-}
-
-.chat-header-name {
-font-weight: 600;
-font-size: 18px;
-}
-
-#chat-board {
-flex: 1;
-background: #fafafa;
-overflow-y: auto;
-padding: 15px;
-}
-
-.message {
-background: #ececec;
-color: #000;
-padding: 10px 15px;
-border-radius: 14px;
-margin-bottom: 10px;
-max-width: 80%;
-position: relative;
-word-wrap: break-word;
-}
-
-.me { background: #c2ffc2; margin-left: auto; }
-
-#chat-input-area {
-display: flex;
-align-items: center;
-padding: 10px 8px;
-border-top: 1px solid #ddd;
-background: #fff;
-position: sticky;
-bottom: 0;
-z-index: 20;
-}
-
-#chat-input {
-flex: 1;
-border: 1px solid #ccc;
-border-radius: 25px;
-padding: 10px 15px;
-font-size: 15px;
-outline: none;
-background: #f7f7f7;
-transition: 0.2s;
-}
-
-#chat-input:focus { background: #fff; border-color: #999; }
-
-.icon-btn {
-border: none;
-border-radius: 50%;
-width: 40px;
-height: 40px;
-margin-left: 5px;
-cursor: pointer;
-display: flex;
-align-items: center;
-justify-content: center;
-font-size: 20px;
-transition: 0.2s;
-}
-
-
-#plus-btn { background: #00c851; color: #fff; }
-#send-btn { background: #007bff; color: #fff; }
-
-
-.file-preview img, .file-preview video {
-max-width: 200px;
-border-radius: 10px;
-margin-top: 5px;
-}
-.file-preview a { color: #0066d6; text-decoration: none; }
-
-/* Popup Menu */
-#popup-menu {
-position: fixed;
-bottom: -200px;
-right: 15px;
-background: #fff;
-border-radius: 16px;
-box-shadow: 0 5px 15px rgba(0,0,0,0.25);
-width: 180px;
-padding: 10px 0;
-transition: bottom 0.3s ease;
-z-index: 29;
-}
-
-#popup-menu.show { bottom: 90px; }
-
-.popup-item {
-padding: 12px 16px;
-cursor: pointer;
-font-size: 15px;
-color: #222;
-display: flex;
-align-items: center;
-transition: 0.2s;
-}
-
-.popup-item:hover { background: #f5f5f5; }
-
-.popup-item span {
-margin-right: 10px;
-font-size: 20px;
-}
-
-/* Poll Modal */
-#poll-modal {
-position: fixed;
-bottom: -100%;
-left: 0;
-right: 0;
-background: #fff;
-box-shadow: 0 -3px 10px rgba(0,0,0,0.2);
-border-top-left-radius: 20px;
-border-top-right-radius: 20px;
-padding: 20px;
-transition: bottom 0.3s ease;
-z-index: 50;
-}
-#poll-modal.show { bottom: 0; }
-#poll-modal input, #poll-modal textarea {
-width: 100%;
-margin-bottom: 10px;
-padding: 10px;
-font-size: 15px;
-border-radius: 10px;
-border: 1px solid #ccc;
-}
-#poll-modal button {
-width: 100%;
-padding: 10px;
-background: #007bff;
-color: white;
-border: none;
-border-radius: 10px;
-font-weight: bold;
-cursor: pointer;
-}
-#poll-modal label { display: flex; align-items: center; gap: 8px; }
-</style>
-
-</head>  
-<body>  <header>  
-  <div class="header-left" id="user-header">  
-    <img id="chat-pic" class="chat-header-pic" src="" alt="Profile">  
-    <div class="chat-header-name" id="chat-name">Loading...</div>  
-  </div>  
-</header>  <div id="chat-board"></div>  
-</div>  <!-- Popup menu -->  <div id="popup-menu">  
-  <div class="popup-item" id="media-option"><span>🎥</span>Media</div>  
-  <div class="popup-item" id="doc-option"><span>📄</span>Documents</div>  
-  <div class="popup-item" id="poll-option"><span>📊</span>Polls</div>  
-</div>  <!-- Poll Modal -->  <div id="poll-modal">  
-  <h3>Create Poll</h3>  
-  <input type="text" id="poll-question" placeholder="Enter question">  
-  <textarea id="poll-options" rows="3" placeholder="Enter options, separated by commas"></textarea>  
-  <label><input type="checkbox" id="poll-multi"> Allow multiple choices</label>  
-  <button id="create-poll-btn">Send Poll</button>  
-</div>  <div id="chat-input-area">  
-  <button id="emoji-btn" class="icon-btn">😊</button>  
-  <button id="plus-btn" class="icon-btn">＋</button>  
-  <input type="text" id="chat-input" placeholder="Type a message...">  
-  <button id="send-btn" class="icon-btn">➤</button>  
-</div>  <script type="module">  
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";  
-  
-const supabase = createClient(  
-  "https://pwsxezhugsxosbwhkdvf.supabase.co",  
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"  
-);  
-  
-const chatBoard = document.getElementById('chat-board');  
-const chatInput = document.getElementById('chat-input');  
-const sendBtn = document.getElementById('send-btn');  
-const emojiBtn = document.getElementById('emoji-btn');  
-const emojiPicker = document.getElementById('emoji-picker');  
-const chatName = document.getElementById('chat-name');  
-const chatPic = document.getElementById('chat-pic');  
-const plusBtn = document.getElementById('plus-btn');  
-const popupMenu = document.getElementById('popup-menu');  
-const pollModal = document.getElementById('poll-modal');  
-const pollQuestion = document.getElementById('poll-question');  
-const pollOptions = document.getElementById('poll-options');  
-const pollMulti = document.getElementById('poll-multi');  
-const createPollBtn = document.getElementById('create-poll-btn');  
-  
-const chatUserId = localStorage.getItem('chatting');  
-const currentUser = JSON.parse(localStorage.getItem('faccount')) || { id: 'me' };  
-const storageKey = `chat_messages_${chatUserId}`;  
-  
-// --- Load chat user ---  
-async function loadChatUser() {  
-  let chatUser = null;  
-  const allUsers = JSON.parse(localStorage.getItem("all_fwebaccounts")) || [];  
-  if (allUsers.length > 0)  
-    chatUser = allUsers.find(u => u.id == chatUserId);  
-  
-  if (!chatUser) {  
-    const { data } = await supabase  
-      .from('fwebaccount')  
-      .select('*')  
-      .eq('id', chatUserId)  
-      .maybeSingle();  
-    if (!data) return chatName.textContent = "User not found";  
-    chatUser = data;  
-  }  
-  
-  chatName.textContent = chatUser.username || "Unknown User";  
-  chatPic.src = chatUser.profile_pic || "https://via.placeholder.com/50?text=U";  
-  
-  document.getElementById("user-header").onclick = () => {  
-    localStorage.setItem("dashboardviewing", chatUser.id);  
-    location.href = "fchatdashboard.html";  
-  };  
-}  
-  
-
-  
-// --- Popup Button Logic ---  
-plusBtn.addEventListener("click", () => popupMenu.classList.toggle("show"));  
-  
-document.getElementById("media-option").onclick = () => {  
-  popupMenu.classList.remove("show");  
-  const input = document.createElement("input");  
-  input.type = "file";  
-  input.accept = "image/*,video/*";  
-  input.onchange = e => {  
-    const file = e.target.files[0];  
-    if (file.type.startsWith("image")) handleFileSelect("image", file);  
-    else handleFileSelect("video", file);  
-  };  
-  input.click();  
-};  
-  
-document.getElementById("doc-option").onclick = () => {  
-  popupMenu.classList.remove("show");  
-  const input = document.createElement("input");  
-  input.type = "file";  
-  input.accept = ".pdf,.doc,.docx,.zip,.txt";  
-  input.onchange = e => handleFileSelect("doc", e.target.files[0]);  
-  input.click();  
-};  
-  
-document.getElementById("poll-option").onclick = () => {  
-  popupMenu.classList.remove("show");  
-  pollModal.classList.add("show");  
-};  
-  
-createPollBtn.onclick = () => {  
-  const question = pollQuestion.value.trim();  
-  const options = pollOptions.value.split(",").map(o => o.trim()).filter(Boolean);  
-  const allowMultiple = pollMulti.checked;  
-  if (!question || options.length < 2) return alert("Please enter valid poll details.");  
-  
-  saveMessage({  
-    sender: "me",  
-    time: Date.now(),  
-    type: "poll",  
-    question,  
-    options,  
-    allowMultiple,  
-    votes: {}  
-  });  
-  
-  pollQuestion.value = "";  
-  pollOptions.value = "";  
-  pollMulti.checked = false;  
-  pollModal.classList.remove("show");  
-};  
-  
-function handleFileSelect(type, file) {  
-  const reader = new FileReader();  
-  reader.onload = e => {  
-    saveMessage({ sender: "me", time: Date.now(), type, url: e.target.result });  
-  };  
-  reader.readAsDataURL(file);  
-}  
-  
-sendBtn.addEventListener("click", sendMessage);  
-chatInput.addEventListener("keypress", e => {  
-  if (e.key === "Enter") sendMessage();  
-});  
-  
-window.addEventListener("load", async () => {  
-  await loadChatUser();  
-  renderMessages();  
-});  
-// --- Save message to localStorage & Supabase ---
-async function saveMessage(msg) {
-  // Save locally first
-  const messages = JSON.parse(localStorage.getItem(storageKey)) || [];
-  messages.push(msg);
-  localStorage.setItem(storageKey, JSON.stringify(messages));
-  renderMessages();
-
-  // Only send text or poll messages to Supabase
-  if (!chatUserId || !currentUser.id) return;
-  if (msg.type !== "text" && msg.type !== "poll") return;
-
-  try {
-    const payload = {
-      sender: currentUser.id,
-      type: msg.type,
-      time: msg.time
-    };
-
-    if (msg.type === "text") payload.text = msg.text || "";
-    if (msg.type === "poll") {
-      payload.question = msg.question;
-      payload.options = msg.options;
-      payload.allowMultiple = msg.allowMultiple;
-      payload.votes = msg.votes || {};
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FCHAT - Chat</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Poppins','Segoe UI',sans-serif;
+      background: #fdfdfd;
+      color: #111;
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
     }
 
-    // Insert JSON into receiver's fchat_messages
-    await supabase
-      .from('fwebaccount')
-      .update({
-        fchat_messages: supabase.raw(
-          `array_append(fchat_messages, ?)`,
-          [JSON.stringify(payload)]
-        )
-      })
-      .eq('id', chatUserId);
-  } catch (err) {
-    console.error("Supabase send error:", err.message);
-  }
- }
-// --- Send text message ---
-function sendMessage() {
-  const text = chatInput.value.trim();
-  if (!text) return;
-
-  const msg = {
-    sender: "me",
-    type: "text",
-    text,
-    time: Date.now(),
-    status: "sent" // initial status
-  };
-
-  saveMessage(msg);
-  chatInput.value = "";
-
-  // check receiver status periodically
-  monitorReceiverStatus(msg.time);
-}
-
-// --- Update message status based on receiver activity ---
-function updateMessageStatus(msgTime, newStatus) {
-  const messages = JSON.parse(localStorage.getItem(storageKey)) || [];
-  const msg = messages.find(m => m.time === msgTime);
-  if (!msg) return;
-
-  msg.status = newStatus;
-  localStorage.setItem(storageKey, JSON.stringify(messages));
-  renderMessages();
-}
-
-// --- Monitor receiver logs to update status ---
-function monitorReceiverStatus(msgTime) {
-  const checkInterval = setInterval(() => {
-    const allUsers = JSON.parse(localStorage.getItem("all_fwebaccounts")) || [];
-    const receiver = allUsers.find(u => u.id == chatUserId);
-    if (!receiver || !receiver.fweb_logs) return;
-
-    const lastLog = receiver.fweb_logs; // e.g., {online: true/false, active: true/false}
-
-    if (lastLog.active) {
-      updateMessageStatus(msgTime, "read"); // show "read"
-      clearInterval(checkInterval);
-    } else if (lastLog.online) {
-      updateMessageStatus(msgTime, "seen"); // two ticks, blue
+    header {
+      background: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 18px;
+      border-bottom: 1px solid #eee;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
-  }, 1000); // check every 1s
-}
 
-// --- Render messages with status ---
-function renderMessages() {
-  chatBoard.innerHTML = "";
-  const messages = JSON.parse(localStorage.getItem(storageKey)) || [];
+    .header-left {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+    }
 
-  messages.forEach(msg => {
-    const div = document.createElement("div");
-    div.classList.add("message");
-    if (msg.sender === "me") div.classList.add("me");
+    .chat-header-pic {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-right: 10px;
+      background: #ccc;
+    }
 
-    if (msg.type === "text") div.textContent = msg.text;
-    else if (msg.type === "image") div.innerHTML = `<div class="file-preview"><img src="${msg.url}"></div>`;
-    else if (msg.type === "video") div.innerHTML = `<div class="file-preview"><video src="${msg.url}" controls></video></div>`;
-    else if (msg.type === "doc") div.innerHTML = `<div class="file-preview"><a href="${msg.url}" download>📄 Document</a></div>`;
+    .chat-header-name {
+      font-weight: 600;
+      font-size: 18px;
+    }
 
-    // --- status label ---
-    if (msg.sender === "me") {
-      const statusSpan = document.createElement("span");
-      statusSpan.style.fontSize = "12px";
-      statusSpan.style.marginLeft = "8px";
+    #chat-board {
+      flex: 1;
+      background: #fafafa;
+      overflow-y: auto;
+      padding: 15px;
+    }
 
-      if (msg.status === "seen") {
-        statusSpan.textContent = "✓✓";
-        statusSpan.style.color = "blue";
-      } else if (msg.status === "read") {
-        statusSpan.textContent = "Read";
-        statusSpan.style.color = "green";
-        statusSpan.style.fontWeight = "600";
-      } else {
-        statusSpan.textContent = "✓";
-        statusSpan.style.color = "#555";
+    .message {
+      background: #ececec;
+      color: #000;
+      padding: 10px 15px;
+      border-radius: 14px;
+      margin-bottom: 10px;
+      max-width: 80%;
+      position: relative;
+      word-wrap: break-word;
+    }
+
+    .me { background: #c2ffc2; margin-left: auto; }
+
+    #chat-input-area {
+      display: flex;
+      align-items: center;
+      padding: 10px 8px;
+      border-top: 1px solid #ddd;
+      background: #fff;
+      position: sticky;
+      bottom: 0;
+      z-index: 20;
+    }
+
+    #chat-input {
+      flex: 1;
+      border: 1px solid #ccc;
+      border-radius: 25px;
+      padding: 10px 15px;
+      font-size: 15px;
+      outline: none;
+      background: #f7f7f7;
+      transition: 0.2s;
+    }
+
+    #chat-input:focus { background: #fff; border-color: #999; }
+
+    .icon-btn {
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      margin-left: 5px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      transition: 0.2s;
+    }
+
+    #plus-btn { background: #00c851; color: #fff; }
+    #send-btn { background: #007bff; color: #fff; }
+
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-left" id="user-header">
+      <img id="chat-pic" class="chat-header-pic" src="" alt="Profile">
+      <div class="chat-header-name" id="chat-name">Loading...</div>
+    </div>
+  </header>
+
+  <div id="chat-board"></div>
+
+  <div id="chat-input-area">
+    <input type="text" id="chat-input" placeholder="Type a message...">
+    <button id="send-btn" class="icon-btn">➤</button>
+  </div>
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+    const supabase = createClient(
+      "https://pwsxezhugsxosbwhkdvf.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
+    );
+
+    const chatName = document.getElementById("chat-name");
+    const chatPic = document.getElementById("chat-pic");
+    const chatBoard = document.getElementById("chat-board");
+    const chatInput = document.getElementById("chat-input");
+    const sendBtn = document.getElementById("send-btn");
+
+    // Load IDs
+    const chatUserId = localStorage.getItem("chatting");
+    const currentUser = JSON.parse(localStorage.getItem("faccount")) || { id: "me" };
+    const storageKey = `chat_messages_${chatUserId}`;
+
+    // --- Load Chat User ---
+    async function loadChatUser() {
+      if (!chatUserId) {
+        chatName.textContent = "No user selected";
+        return;
       }
 
-      div.appendChild(statusSpan);
+      let chatUser = null;
+
+      // Try local first
+      const allUsers = JSON.parse(localStorage.getItem("all_fwebaccounts")) || [];
+      if (allUsers.length > 0)
+        chatUser = allUsers.find(u => u.id == chatUserId);
+
+      // If not found locally → fetch from Supabase
+      if (!chatUser) {
+        const { data, error } = await supabase
+          .from("fwebaccount")
+          .select("*")
+          .eq("id", chatUserId)
+          .maybeSingle();
+
+        if (error) console.error("Supabase fetch error:", error.message);
+        if (data) chatUser = data;
+      }
+
+      if (!chatUser) {
+        chatName.textContent = "User not found";
+        return;
+      }
+
+      // Display user info
+      chatName.textContent = chatUser.username || "Unknown";
+      chatPic.src = chatUser.profile_pic || "https://via.placeholder.com/50?text=U";
+
+      // Optional: click header to go to dashboard
+      document.getElementById("user-header").onclick = () => {
+        localStorage.setItem("dashboardviewing", chatUser.id);
+        location.href = "fchatdashboard.html";
+      };
+
+      console.log("Loaded chat user:", chatUser.username);
     }
 
-    chatBoard.appendChild(div);
-  });
+    // --- Load & Render Messages ---
+    function renderMessages() {
+      chatBoard.innerHTML = "";
+      const messages = JSON.parse(localStorage.getItem(storageKey)) || [];
 
-  chatBoard.scrollTop = chatBoard.scrollHeight;
- }
- // --- Load and render all messages ---
-async function loadAndRenderMessages() {
-  await loadChatUser();
+      messages.sort((a, b) => a.time - b.time);
 
-  if (!chatUserId) return;
+      messages.forEach(msg => {
+        const div = document.createElement("div");
+        div.classList.add("message");
+        if (msg.sender === "me") div.classList.add("me");
+        div.textContent = msg.text;
+        chatBoard.appendChild(div);
+      });
 
-  try {
-    const { data, error } = await supabase
-      .from('fwebaccount')
-      .select('fchat_messages')
-      .eq('id', chatUserId)
-      .maybeSingle();
+      chatBoard.scrollTop = chatBoard.scrollHeight;
+    }
 
-    if (error) return console.error("Supabase fetch error:", error.message);
+    // --- Send Message ---
+    function sendMessage() {
+      const text = chatInput.value.trim();
+      if (!text) return;
 
-    const sbMessages = (data?.fchat_messages || []).map(msg => ({
-      ...msg,
-      time: new Date(msg.time).getTime() // UTC
-    }));
+      const msg = {
+        sender: "me",
+        text,
+        time: new Date().getTime()
+      };
 
-    const localMessages = JSON.parse(localStorage.getItem(storageKey)) || [];
+      const messages = JSON.parse(localStorage.getItem(storageKey)) || [];
+      messages.push(msg);
+      localStorage.setItem(storageKey, JSON.stringify(messages));
 
-    const allMessages = [...localMessages, ...sbMessages].sort((a, b) => a.time - b.time);
+      chatInput.value = "";
+      renderMessages();
+    }
 
-    localStorage.setItem(storageKey, JSON.stringify(allMessages));
-    renderMessages();
-  } catch (err) {
-    console.error("Error loading messages:", err.message);
-  }
-}
-
-// Call once on page load
-window.addEventListener("load", loadAndRenderMessages);
-
- // --- Fetch all messages from Supabase + merge with localStorage ---
-async function loadAllMessages() {
-  if (!chatUserId) return;
-
-  try {
-    // 1. Fetch user from Supabase
-    const { data, error } = await supabase
-      .from('fwebaccount')
-      .select('fchat_messages')
-      .eq('id', chatUserId)
-      .maybeSingle();
-
-    if (error) return console.error("Supabase fetch error:", error.message);
-
-    const sbMessages = (data?.fchat_messages || []).map(msg => {
-      // Ensure timestamp is a number and convert to UTC
-      return { ...msg, time: new Date(msg.time).getTime() };
+    sendBtn.onclick = sendMessage;
+    chatInput.addEventListener("keypress", e => {
+      if (e.key === "Enter") sendMessage();
     });
 
-    const localMessages = JSON.parse(localStorage.getItem(storageKey)) || [];
+    // Load on startup
+    window.addEventListener("load", async () => {
+      await loadChatUser();
+      renderMessages();
+    });
+  </script>
 
-    // Merge and sort all messages by UTC time
-    const allMessages = [...localMessages, ...sbMessages].sort((a, b) => a.time - b.time);
-
-    // Save back to localStorage so renderMessages can use it
-    localStorage.setItem(storageKey, JSON.stringify(allMessages));
-
-    renderMessages();
-  } catch (err) {
-    console.error("Error loading messages:", err.message);
-  }
-}
-
-// Call this on page load
-window.addEventListener("load", async () => {
-  await loadChatUser();
-  await loadAllMessages(); // <-- new
-});
-
-</script>  </body>  
-</html>  
+</body>
+</html>
