@@ -12,6 +12,8 @@
       --shadow: rgba(0, 0, 0, 0.1);
       --accent: #007aff;
       --subtext: #666;
+      --online: #2ecc71;
+      --offline: #999;
     }
     @media (prefers-color-scheme: dark) {
       :root {
@@ -142,6 +144,8 @@
       height: 50px;
       border-radius: 50%;
       flex-shrink: 0;
+      cursor: pointer;
+      position: relative;
     }
 
     .profile-pic {
@@ -168,6 +172,14 @@
       font-size: 12px;
       color: var(--subtext);
       margin-top: 2px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
     }
 
     /* ===== ADD BUTTON ===== */
@@ -219,6 +231,26 @@
       text-decoration: underline;
       color: var(--accent);
     }
+
+    /* ===== IMAGE PREVIEW ===== */
+    .img-preview {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.85);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+    }
+    .img-preview img {
+      max-width: 90%;
+      max-height: 90%;
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.6);
+    }
   </style>
 </head>
 <body>
@@ -248,6 +280,11 @@
     <button onclick="location.href='fchatme.html'">Me</button>
   </div>
 
+  <!-- Fullscreen Image Preview -->
+  <div class="img-preview" id="imgPreview">
+    <img id="previewImg" src="" alt="Profile picture" />
+  </div>
+
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
     const supabase = createClient(
@@ -261,12 +298,15 @@
     const menuBtn = document.querySelector(".menu-btn");
     const reloadBtn = document.getElementById("reloadBtn");
     const search = document.getElementById("search");
+    const preview = document.getElementById("imgPreview");
+    const previewImg = document.getElementById("previewImg");
     let friendsCache = [];
 
     menuBtn.onclick = () => (menu.style.display = menu.style.display === "flex" ? "none" : "flex");
     document.addEventListener("click", (e) => {
       if (!menu.contains(e.target) && !menuBtn.contains(e.target)) menu.style.display = "none";
     });
+    preview.onclick = () => (preview.style.display = "none");
 
     reloadBtn.onclick = () => loadChats(true);
 
@@ -310,7 +350,8 @@
       for (const f of friends) {
         const card = document.createElement("div");
         card.className = "fchat-card";
-        card.onclick = () => {
+        card.onclick = (e) => {
+          if (e.target.classList.contains("profile-pic")) return; // prevent when clicking image
           localStorage.setItem("chatting", f.id);
           location.href = "chat.html";
         };
@@ -324,6 +365,11 @@
           avatar = document.createElement("img");
           avatar.src = f.profile_pic;
           avatar.className = "profile-pic";
+          avatar.onclick = (e) => {
+            e.stopPropagation();
+            previewImg.src = f.profile_pic;
+            preview.style.display = "flex";
+          };
         } else {
           avatar = document.createElement("div");
           avatar.className = "initials";
@@ -337,22 +383,27 @@
 
         const status = document.createElement("div");
         status.className = "status";
+        const dot = document.createElement("span");
+        dot.className = "status-dot";
         if (f.fchat_logs?.toLowerCase() === "online") {
-          status.textContent = "Online";
+          dot.style.background = "var(--online)";
+          status.append(dot, "Online");
         } else if (f.fchat_logs?.toLowerCase().includes("last seen")) {
+          dot.style.background = "var(--offline)";
           const date = new Date(f.fchat_logs.replace("last seen ", "").replace(" UTC", ""));
           if (!isNaN(date)) {
             const formatted = date.toISOString().replace("T", " ").split(".")[0];
-            status.textContent = `Last seen ${formatted} UTC`;
-          } else status.textContent = f.fchat_logs;
-        } else status.textContent = f.fchat_logs || "";
+            status.append(dot, `Last seen ${formatted} UTC`);
+          } else status.append(dot, f.fchat_logs);
+        } else {
+          dot.style.background = "var(--offline)";
+          status.append(dot, f.fchat_logs || "");
+        }
 
-        info.appendChild(name);
-        info.appendChild(status);
-        left.appendChild(avatar);
-        left.appendChild(info);
-        card.appendChild(left);
-        container.appendChild(card);
+        info.append(name, status);
+        left.append(avatar, info);
+        card.append(left);
+        container.append(card);
       }
     }
 
@@ -368,14 +419,30 @@
       await loadChats(false);
     }, 2000);
 
-    // load initial chats
+    // ---- Presence fix ----
+    let lastActive = Date.now();
+    setInterval(async () => {
+      const now = Date.now();
+      const inactiveFor = now - lastActive;
+      if (inactiveFor > 20000) {
+        const lastSeen = new Date().toISOString().replace("T", " ").split(".")[0];
+        await updateStatus(`last seen ${lastSeen} UTC`);
+      } else {
+        await updateStatus("online");
+      }
+    }, 5000);
+    ["click", "mousemove", "keydown", "scroll", "touchstart", "visibilitychange"].forEach(evt =>
+      document.addEventListener(evt, () => (lastActive = Date.now()))
+    );
+
+    window.addEventListener("beforeunload", async () => {
+      const lastSeen = new Date().toISOString().replace("T", " ").split(".")[0];
+      await updateStatus(`last seen ${lastSeen} UTC`);
+    });
+
+    // Initial load
     loadChats(true);
     updateStatus("online");
-
-    window.addEventListener("beforeunload", () => {
-      const now = new Date().toISOString().replace("T", " ").split(".")[0];
-      updateStatus(`last seen ${now} UTC`);
-    });
   </script>
 </body>
 </html>
