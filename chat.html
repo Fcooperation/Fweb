@@ -433,5 +433,104 @@ window.addEventListener("load", async () => {
   await loadChatUser();  
   renderMessages();  
 });  
+
+ // --- Save message to localStorage ---
+function saveMessage(msg) {
+  const messages = JSON.parse(localStorage.getItem(storageKey)) || [];
+  messages.push(msg);
+  localStorage.setItem(storageKey, JSON.stringify(messages));
+  renderMessages();
+}
+
+// --- Send text message ---
+function sendMessage() {
+  const text = chatInput.value.trim();
+  if (!text) return;
+
+  const msg = {
+    sender: "me",
+    type: "text",
+    text,
+    time: Date.now(),
+    status: "sent" // initial status
+  };
+
+  saveMessage(msg);
+  chatInput.value = "";
+
+  // check receiver status periodically
+  monitorReceiverStatus(msg.time);
+}
+
+// --- Update message status based on receiver activity ---
+function updateMessageStatus(msgTime, newStatus) {
+  const messages = JSON.parse(localStorage.getItem(storageKey)) || [];
+  const msg = messages.find(m => m.time === msgTime);
+  if (!msg) return;
+
+  msg.status = newStatus;
+  localStorage.setItem(storageKey, JSON.stringify(messages));
+  renderMessages();
+}
+
+// --- Monitor receiver logs to update status ---
+function monitorReceiverStatus(msgTime) {
+  const checkInterval = setInterval(() => {
+    const allUsers = JSON.parse(localStorage.getItem("all_fwebaccounts")) || [];
+    const receiver = allUsers.find(u => u.id == chatUserId);
+    if (!receiver || !receiver.fweb_logs) return;
+
+    const lastLog = receiver.fweb_logs; // e.g., {online: true/false, active: true/false}
+
+    if (lastLog.active) {
+      updateMessageStatus(msgTime, "read"); // show "read"
+      clearInterval(checkInterval);
+    } else if (lastLog.online) {
+      updateMessageStatus(msgTime, "seen"); // two ticks, blue
+    }
+  }, 1000); // check every 1s
+}
+
+// --- Render messages with status ---
+function renderMessages() {
+  chatBoard.innerHTML = "";
+  const messages = JSON.parse(localStorage.getItem(storageKey)) || [];
+
+  messages.forEach(msg => {
+    const div = document.createElement("div");
+    div.classList.add("message");
+    if (msg.sender === "me") div.classList.add("me");
+
+    if (msg.type === "text") div.textContent = msg.text;
+    else if (msg.type === "image") div.innerHTML = `<div class="file-preview"><img src="${msg.url}"></div>`;
+    else if (msg.type === "video") div.innerHTML = `<div class="file-preview"><video src="${msg.url}" controls></video></div>`;
+    else if (msg.type === "doc") div.innerHTML = `<div class="file-preview"><a href="${msg.url}" download>📄 Document</a></div>`;
+
+    // --- status label ---
+    if (msg.sender === "me") {
+      const statusSpan = document.createElement("span");
+      statusSpan.style.fontSize = "12px";
+      statusSpan.style.marginLeft = "8px";
+
+      if (msg.status === "seen") {
+        statusSpan.textContent = "✓✓";
+        statusSpan.style.color = "blue";
+      } else if (msg.status === "read") {
+        statusSpan.textContent = "Read";
+        statusSpan.style.color = "green";
+        statusSpan.style.fontWeight = "600";
+      } else {
+        statusSpan.textContent = "✓";
+        statusSpan.style.color = "#555";
+      }
+
+      div.appendChild(statusSpan);
+    }
+
+    chatBoard.appendChild(div);
+  });
+
+  chatBoard.scrollTop = chatBoard.scrollHeight;
+}
 </script>  </body>  
 </html>  
