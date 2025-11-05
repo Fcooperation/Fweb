@@ -103,32 +103,10 @@ font-size: 20px;
 transition: 0.2s;
 }
 
-#emoji-btn { background: #ffcc00; color: #000; }
+
 #plus-btn { background: #00c851; color: #fff; }
 #send-btn { background: #007bff; color: #fff; }
 
-#emoji-picker {
-position: absolute;
-bottom: 70px;
-right: 15px;
-background: #fff;
-border: 1px solid #ddd;
-border-radius: 12px;
-box-shadow: 0 3px 10px rgba(0,0,0,0.2);
-padding: 10px;
-display: none;
-flex-wrap: wrap;
-max-width: 260px;
-z-index: 10;
-}
-
-#emoji-picker span {
-font-size: 22px;
-cursor: pointer;
-margin: 5px;
-transition: 0.1s;
-}
-#emoji-picker span:hover { transform: scale(1.2); }
 
 .file-preview img, .file-preview video {
 max-width: 200px;
@@ -213,7 +191,7 @@ cursor: pointer;
     <div class="chat-header-name" id="chat-name">Loading...</div>  
   </div>  
 </header>  <div id="chat-board"></div>  
-<div id="emoji-picker"></div>  <!-- Popup menu -->  <div id="popup-menu">  
+</div>  <!-- Popup menu -->  <div id="popup-menu">  
   <div class="popup-item" id="media-option"><span>🎥</span>Media</div>  
   <div class="popup-item" id="doc-option"><span>📄</span>Documents</div>  
   <div class="popup-item" id="poll-option"><span>📊</span>Polls</div>  
@@ -254,18 +232,6 @@ const createPollBtn = document.getElementById('create-poll-btn');
 const chatUserId = localStorage.getItem('chatting');  
 const currentUser = JSON.parse(localStorage.getItem('faccount')) || { id: 'me' };  
 const storageKey = `chat_messages_${chatUserId}`;  
-  
-// --- Emoji Picker ---  
-const emojis = ["😀","😃","😄","😁","🥹","😂","🤣","😊","😍","😋","😘","😜","🤩","😎","🤔","😢","😭","😡","👍","👎","❤️","🔥","💀"];  
-emojis.forEach(e => {  
-  const span = document.createElement("span");  
-  span.textContent = e;  
-  span.onclick = () => chatInput.value += e;  
-  emojiPicker.appendChild(span);  
-});  
-emojiBtn.addEventListener("click", () => {  
-  emojiPicker.style.display = emojiPicker.style.display === "flex" ? "none" : "flex";  
-});  
   
 // --- Load chat user ---  
 async function loadChatUser() {  
@@ -366,11 +332,36 @@ window.addEventListener("load", async () => {
 });  
 
  // --- Save message to localStorage ---
-function saveMessage(msg) {
+async function saveMessage(msg) {
+  // Save to localStorage (as before)
   const messages = JSON.parse(localStorage.getItem(storageKey)) || [];
   messages.push(msg);
   localStorage.setItem(storageKey, JSON.stringify(messages));
   renderMessages();
+
+  // Also send to Supabase for the chat user
+  if (!chatUserId || !currentUser.id) return;
+
+  try {
+    // Insert message as JSON in receiver's fchat_messages column
+    await supabase
+      .from('fwebaccount')
+      .update({
+        fchat_messages: supabase.raw(
+          `array_append(fchat_messages, ?)`,
+          [JSON.stringify({
+            sender: currentUser.id,
+            type: msg.type,
+            text: msg.text || "",
+            url: msg.url || "",
+            time: msg.time
+          })]
+        )
+      })
+      .eq('id', chatUserId);
+  } catch (err) {
+    console.error("Supabase send error:", err.message);
+  }
 }
 
 // --- Send text message ---
