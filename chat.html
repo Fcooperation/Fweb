@@ -459,6 +459,48 @@ function renderMessages() {
   });
 
   chatBoard.scrollTop = chatBoard.scrollHeight;
+ }
+ 
+// --- Load all messages from Supabase for this chat ---
+async function loadChatHistory() {
+  if (!chatUserId) return;
+
+  try {
+    // Fetch chat partner messages
+    const { data, error } = await supabase
+      .from('fwebaccount')
+      .select('fchat_messages')
+      .eq('id', chatUserId)
+      .maybeSingle();
+
+    if (error) return console.error("Supabase fetch error:", error.message);
+
+    const sbMessages = (data?.fchat_messages || []).map(msg => {
+      // Ensure timestamp is a number and UTC aligned
+      return { ...msg, time: new Date(msg.time).getTime() };
+    });
+
+    // Get local messages (messages sent by me)
+    const localMessages = JSON.parse(localStorage.getItem(storageKey)) || [];
+
+    // Merge messages and sort by UTC time
+    const allMessages = [...localMessages, ...sbMessages].sort((a, b) => a.time - b.time);
+
+    // Save back to localStorage
+    localStorage.setItem(storageKey, JSON.stringify(allMessages));
+
+    // Render all messages
+    renderMessages();
+  } catch (err) {
+    console.error("Error loading chat history:", err.message);
+  }
 }
+
+// Call it on page load
+window.addEventListener('load', async () => {
+  await loadChatUser();
+  await loadChatHistory(); // <-- fetch & render messages
+});
+
 </script>  </body>  
 </html>  
