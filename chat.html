@@ -501,6 +501,44 @@ window.addEventListener('load', async () => {
   await loadChatUser();
   await loadChatHistory(); // <-- fetch & render messages
 });
+ // --- Fetch all messages from Supabase + merge with localStorage ---
+async function loadAllMessages() {
+  if (!chatUserId) return;
+
+  try {
+    // 1. Fetch user from Supabase
+    const { data, error } = await supabase
+      .from('fwebaccount')
+      .select('fchat_messages')
+      .eq('id', chatUserId)
+      .maybeSingle();
+
+    if (error) return console.error("Supabase fetch error:", error.message);
+
+    const sbMessages = (data?.fchat_messages || []).map(msg => {
+      // Ensure timestamp is a number and convert to UTC
+      return { ...msg, time: new Date(msg.time).getTime() };
+    });
+
+    const localMessages = JSON.parse(localStorage.getItem(storageKey)) || [];
+
+    // Merge and sort all messages by UTC time
+    const allMessages = [...localMessages, ...sbMessages].sort((a, b) => a.time - b.time);
+
+    // Save back to localStorage so renderMessages can use it
+    localStorage.setItem(storageKey, JSON.stringify(allMessages));
+
+    renderMessages();
+  } catch (err) {
+    console.error("Error loading messages:", err.message);
+  }
+}
+
+// Call this on page load
+window.addEventListener("load", async () => {
+  await loadChatUser();
+  await loadAllMessages(); // <-- new
+});
 
 </script>  </body>  
 </html>  
