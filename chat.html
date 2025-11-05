@@ -171,6 +171,41 @@
     margin-right: 10px;
     font-size: 20px;
   }
+
+  /* Poll Modal */
+  #poll-modal {
+    position: fixed;
+    bottom: -100%;
+    left: 0;
+    right: 0;
+    background: #fff;
+    box-shadow: 0 -3px 10px rgba(0,0,0,0.2);
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    padding: 20px;
+    transition: bottom 0.3s ease;
+    z-index: 50;
+  }
+  #poll-modal.show { bottom: 0; }
+  #poll-modal input, #poll-modal textarea {
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 10px;
+    font-size: 15px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+  }
+  #poll-modal button {
+    width: 100%;
+    padding: 10px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  #poll-modal label { display: flex; align-items: center; gap: 8px; }
 </style>
 </head>
 <body>
@@ -190,6 +225,15 @@
   <div class="popup-item" id="media-option"><span>🎥</span>Media</div>
   <div class="popup-item" id="doc-option"><span>📄</span>Documents</div>
   <div class="popup-item" id="poll-option"><span>📊</span>Polls</div>
+</div>
+
+<!-- Poll Modal -->
+<div id="poll-modal">
+  <h3>Create Poll</h3>
+  <input type="text" id="poll-question" placeholder="Enter question">
+  <textarea id="poll-options" rows="3" placeholder="Enter options, separated by commas"></textarea>
+  <label><input type="checkbox" id="poll-multi"> Allow multiple choices</label>
+  <button id="create-poll-btn">Send Poll</button>
 </div>
 
 <div id="chat-input-area">
@@ -216,9 +260,14 @@ const chatName = document.getElementById('chat-name');
 const chatPic = document.getElementById('chat-pic');
 const plusBtn = document.getElementById('plus-btn');
 const popupMenu = document.getElementById('popup-menu');
+const pollModal = document.getElementById('poll-modal');
+const pollQuestion = document.getElementById('poll-question');
+const pollOptions = document.getElementById('poll-options');
+const pollMulti = document.getElementById('poll-multi');
+const createPollBtn = document.getElementById('create-poll-btn');
 
 const chatUserId = localStorage.getItem('chatting');
-const currentUser = JSON.parse(localStorage.getItem('faccount'));
+const currentUser = JSON.parse(localStorage.getItem('faccount')) || { id: 'me' };
 const storageKey = `chat_messages_${chatUserId}`;
 
 // --- Emoji Picker ---
@@ -272,11 +321,48 @@ function renderMessages() {
     else if (msg.type === "image") div.innerHTML = `<div class="file-preview"><img src="${msg.url}"></div>`;
     else if (msg.type === "video") div.innerHTML = `<div class="file-preview"><video src="${msg.url}" controls></video></div>`;
     else if (msg.type === "doc") div.innerHTML = `<div class="file-preview"><a href="${msg.url}" download>📄 Document</a></div>`;
-    else if (msg.type === "poll") div.innerHTML = `<div class="file-preview"><b>📊 ${msg.question}</b><br>${msg.options.map(o => `<div>• ${o}</div>`).join("")}</div>`;
-
+    else if (msg.type === "poll") {
+      const pollDiv = document.createElement("div");
+      pollDiv.innerHTML = `<b>📊 ${msg.question}</b>`;
+      msg.options.forEach((o, i) => {
+        const optDiv = document.createElement("div");
+        const votes = msg.votes ? msg.votes[o]?.length || 0 : 0;
+        const hasVoted = msg.votes && msg.votes[o]?.includes(currentUser.id);
+        const inputType = msg.allowMultiple ? "checkbox" : "radio";
+        optDiv.innerHTML = `<label><input type="${inputType}" name="poll_${msg.time}" value="${o}" ${hasVoted ? "checked" : ""}> ${o} (${votes})</label>`;
+        optDiv.querySelector("input").addEventListener("change", () => handleVote(msg.time, o, msg.allowMultiple));
+        pollDiv.appendChild(optDiv);
+      });
+      div.appendChild(pollDiv);
+    }
     chatBoard.appendChild(div);
   });
   chatBoard.scrollTop = chatBoard.scrollHeight;
+}
+
+function handleVote(pollId, option, allowMultiple) {
+  const messages = JSON.parse(localStorage.getItem(storageKey)) || [];
+  const msg = messages.find(m => m.time === pollId);
+  if (!msg) return;
+
+  if (!msg.votes) msg.votes = {};
+  if (!msg.votes[option]) msg.votes[option] = [];
+
+  // remove previous votes if single choice
+  if (!allowMultiple) {
+    Object.keys(msg.votes).forEach(opt => {
+      msg.votes[opt] = msg.votes[opt].filter(u => u !== currentUser.id);
+    });
+  }
+
+  // toggle vote
+  if (msg.votes[option].includes(currentUser.id))
+    msg.votes[option] = msg.votes[option].filter(u => u !== currentUser.id);
+  else
+    msg.votes[option].push(currentUser.id);
+
+  localStorage.setItem(storageKey, JSON.stringify(messages));
+  renderMessages();
 }
 
 function saveMessage(msg) {
@@ -320,12 +406,29 @@ document.getElementById("doc-option").onclick = () => {
 
 document.getElementById("poll-option").onclick = () => {
   popupMenu.classList.remove("show");
-  const q = prompt("Enter poll question:");
-  if (!q) return;
-  const opts = prompt("Enter options separated by commas (,):");
-  if (!opts) return;
-  const options = opts.split(",").map(o => o.trim());
-  saveMessage({ sender: "me", time: Date.now(), type: "poll", question: q, options });
+  pollModal.classList.add("show");
+};
+
+createPollBtn.onclick = () => {
+  const question = pollQuestion.value.trim();
+  const options = pollOptions.value.split(",").map(o => o.trim()).filter(Boolean);
+  const allowMultiple = pollMulti.checked;
+  if (!question || options.length < 2) return alert("Please enter valid poll details.");
+
+  saveMessage({
+    sender: "me",
+    time: Date.now(),
+    type: "poll",
+    question,
+    options,
+    allowMultiple,
+    votes: {}
+  });
+
+  pollQuestion.value = "";
+  pollOptions.value = "";
+  pollMulti.checked = false;
+  pollModal.classList.remove("show");
 };
 
 function handleFileSelect(type, file) {
