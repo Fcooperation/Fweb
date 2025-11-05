@@ -15,6 +15,7 @@
     display: flex;
     flex-direction: column;
   }
+
   header {
     background: #fff;
     display: flex;
@@ -24,11 +25,12 @@
     border-bottom: 1px solid #eee;
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
   }
+
   .header-left {
     display: flex;
     align-items: center;
-    cursor: pointer;
   }
+
   .chat-header-pic {
     width: 45px;
     height: 45px;
@@ -37,20 +39,50 @@
     margin-right: 10px;
     background: #ccc;
   }
+
   .chat-header-name {
     font-weight: 600;
     font-size: 18px;
   }
-  .chat-user-status {
-    font-size: 12px;
-    color: #555;
+
+  .menu-btn {
+    background: #f4f4f4;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 15px;
+    transition: 0.2s;
   }
+
+  .menu-btn:hover {
+    background: #e8e8e8;
+  }
+
   #chat-board {
     flex: 1;
     background: #fafafa;
+    position: relative;
     overflow-y: auto;
     padding: 15px;
   }
+
+  #chat-board::before {
+    content: "FCOOPERATION\n.....where dreams meet reality.....";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 22px;
+    font-weight: 800;
+    color: rgba(0,0,0,0.08);
+    text-align: center;
+    white-space: pre-line;
+    z-index: 0;
+    user-select: none;
+  }
+
   .message {
     background: #ececec;
     color: #000;
@@ -58,19 +90,24 @@
     border-radius: 14px;
     margin-bottom: 10px;
     max-width: 80%;
+    position: relative;
+    z-index: 1;
     word-wrap: break-word;
   }
-  .me { background: #c2ffc2; margin-left: auto; }
+
+  .me {
+    background: #c2ffc2;
+    margin-left: auto;
+  }
+
   #chat-input-area {
     display: flex;
     align-items: center;
-    padding: 10px 8px;
+    padding: 10px 14px;
     border-top: 1px solid #ddd;
     background: #fff;
-    position: sticky;
-    bottom: 0;
-    z-index: 20;
   }
+
   #chat-input {
     flex: 1;
     border: 1px solid #ccc;
@@ -81,40 +118,80 @@
     background: #f7f7f7;
     transition: 0.2s;
   }
-  #chat-input:focus { background: #fff; border-color: #999; }
-  .icon-btn {
+
+  #chat-input:focus {
+    background: #fff;
+    border-color: #999;
+  }
+
+  #send-btn, #emoji-btn {
+    background: #007bff;
     border: none;
+    color: #fff;
+    font-size: 20px;
     border-radius: 50%;
     width: 40px;
     height: 40px;
-    margin-left: 5px;
+    margin-left: 8px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 20px;
     transition: 0.2s;
   }
-  #send-btn { background: #007bff; color: #fff; }
+
+  #emoji-btn {
+    background: #ffcc00;
+    color: #000;
+  }
+
+  #send-btn:hover { background: #0066d6; }
+  #emoji-btn:hover { background: #ffd633; }
+
+  #emoji-picker {
+    position: absolute;
+    bottom: 70px;
+    right: 15px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+    padding: 10px;
+    display: none;
+    flex-wrap: wrap;
+    max-width: 260px;
+    z-index: 10;
+  }
+
+  #emoji-picker span {
+    font-size: 22px;
+    cursor: pointer;
+    margin: 5px;
+    transition: 0.1s;
+  }
+
+  #emoji-picker span:hover {
+    transform: scale(1.2);
+  }
 </style>
 </head>
 <body>
 
 <header>
-  <div class="header-left" id="user-header">
+  <div class="header-left">
     <img id="chat-pic" class="chat-header-pic" src="" alt="Profile">
-    <div>
-      <div class="chat-header-name" id="chat-name">Loading...</div>
-      <div class="chat-user-status" id="chat-status">...</div>
-    </div>
+    <div class="chat-header-name" id="chat-name">Loading...</div>
   </div>
+  <button class="menu-btn">☰</button>
 </header>
 
 <div id="chat-board"></div>
+<div id="emoji-picker"></div>
 
 <div id="chat-input-area">
+  <button id="emoji-btn">😊</button>
   <input type="text" id="chat-input" placeholder="Type a message...">
-  <button id="send-btn" class="icon-btn">➤</button>
+  <button id="send-btn">➤</button>
 </div>
 
 <script type="module">
@@ -125,146 +202,90 @@ const supabase = createClient(
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
 );
 
-const chatNameEl = document.getElementById("chat-name");
-const chatPicEl = document.getElementById("chat-pic");
-const chatStatusEl = document.getElementById("chat-status");
-const chatBoard = document.getElementById("chat-board");
-const chatInput = document.getElementById("chat-input");
-const sendBtn = document.getElementById("send-btn");
+const chatBoard = document.getElementById('chat-board');
+const chatInput = document.getElementById('chat-input');
+const sendBtn = document.getElementById('send-btn');
+const emojiBtn = document.getElementById('emoji-btn');
+const emojiPicker = document.getElementById('emoji-picker');
+const chatName = document.getElementById('chat-name');
+const chatPic = document.getElementById('chat-pic');
 
-const chatUserId = localStorage.getItem("chatting");
-const currentUser = JSON.parse(localStorage.getItem("faccount")) || { id: "me" };
+const chatUserId = localStorage.getItem('chatting');
+const currentUser = JSON.parse(localStorage.getItem('faccount'));
 const storageKey = `chat_messages_${chatUserId}`;
 
-let chatUser = null;
+// ✅ Emoji list
+const emojis = ["😀","😃","😄","😁","🥹","😂","🤣","😊","😍","😋","😘","😜","🤩","😎","🤔","😢","😭","😡","👍","👎","❤️","🔥","💀"];
+emojis.forEach(e => {
+  const span = document.createElement("span");
+  span.textContent = e;
+  span.onclick = () => {
+    chatInput.value += e; // ✅ Now multiple emojis allowed
+  };
+  emojiPicker.appendChild(span);
+});
 
-// --- Load chat user ---
+emojiBtn.addEventListener("click", () => {
+  emojiPicker.style.display = emojiPicker.style.display === "flex" ? "none" : "flex";
+});
+
+// Load chat user
 async function loadChatUser() {
-  if (!chatUserId) return chatNameEl.textContent = "No user selected";
-
+  let chatUser = null;
   const allUsers = JSON.parse(localStorage.getItem("all_fwebaccounts")) || [];
-  chatUser = allUsers.find(u => u.id == chatUserId);
+  if (allUsers.length > 0)
+    chatUser = allUsers.find(u => u.id == chatUserId);
 
   if (!chatUser) {
-    const { data, error } = await supabase
-      .from("fwebaccount")
-      .select("id, username, profile_pic, fweb_logs")
-      .eq("id", chatUserId)
+    const { data } = await supabase
+      .from('fwebaccount')
+      .select('*')
+      .eq('id', chatUserId)
       .maybeSingle();
-    if (error) console.error(error);
-    chatUser = data || null;
-    if (chatUser) {
-      allUsers.push(chatUser);
-      localStorage.setItem("all_fwebaccounts", JSON.stringify(allUsers));
-    }
+    if (!data) return chatName.textContent = "User not found";
+    chatUser = data;
   }
 
-  if (!chatUser) return chatNameEl.textContent = "User not found";
-
-  chatNameEl.textContent = chatUser.username || "Unknown";
-  chatPicEl.src = chatUser.profile_pic || "https://via.placeholder.com/50?text=U";
-
-  document.getElementById("user-header").onclick = () => {
-    localStorage.setItem("dashboardviewing", chatUser.id);
-    location.href = "fchatdashboard.html";
-  };
+  chatName.textContent = chatUser.username || "Unknown User";
+  chatPic.src = chatUser.profile_pic || "https://via.placeholder.com/50?text=U";
 }
 
-// --- Render messages ---
+// Render messages
 function renderMessages() {
   chatBoard.innerHTML = "";
   const messages = JSON.parse(localStorage.getItem(storageKey)) || [];
-  messages.sort((a,b) => a.time - b.time);
-
   messages.forEach(msg => {
     const div = document.createElement("div");
     div.classList.add("message");
-    if(msg.sender==="me") div.classList.add("me");
+    if (msg.sender === "me") div.classList.add("me");
     div.textContent = msg.text;
     chatBoard.appendChild(div);
   });
-
   chatBoard.scrollTop = chatBoard.scrollHeight;
 }
 
-// --- Send message ---
+// Send message
 function sendMessage() {
   const text = chatInput.value.trim();
-  if(!text) return;
+  if (!text) return;
 
-  const msg = { sender: "me", text, time: Date.now() };
   const messages = JSON.parse(localStorage.getItem(storageKey)) || [];
-  messages.push(msg);
+  messages.push({ text, sender: "me", time: Date.now() });
   localStorage.setItem(storageKey, JSON.stringify(messages));
+
   chatInput.value = "";
   renderMessages();
-
-  // update own status as typing -> active after send
-  updateOwnStatus("active");
 }
 
-sendBtn.onclick = sendMessage;
+sendBtn.addEventListener("click", sendMessage);
 chatInput.addEventListener("keypress", e => {
-  if(e.key==="Enter") sendMessage();
-  else updateOwnStatus("typing");
+  if (e.key === "Enter") sendMessage();
 });
 
-// --- Update own fweb_logs ---
-let statusTimeout;
-async function updateOwnStatus(status) {
-  if(!currentUser.id) return;
-
-  clearTimeout(statusTimeout);
-
-  await supabase.from("fwebaccount")
-    .update({ fweb_logs: { status } })
-    .eq("id", currentUser.id);
-
-  if(status==="typing") {
-    statusTimeout = setTimeout(()=>updateOwnStatus("active"), 2000);
-  }
-}
-
-// --- Periodic update of chat user info ---
-async function refreshChatUser() {
-  if(!chatUserId) return;
-
-  // Check local storage first
-  const allUsers = JSON.parse(localStorage.getItem("all_fwebaccounts")) || [];
-  let user = allUsers.find(u=>u.id==chatUserId);
-
-  // If not found locally fetch
-  if(!user) {
-    const { data } = await supabase.from("fwebaccount")
-      .select("id, username, profile_pic, fweb_logs")
-      .eq("id", chatUserId)
-      .maybeSingle();
-    if(data) {
-      user = data;
-      allUsers.push(user);
-      localStorage.setItem("all_fwebaccounts", JSON.stringify(allUsers));
-    }
-  }
-
-  if(user) {
-    chatNameEl.textContent = user.username || "Unknown";
-    chatPicEl.src = user.profile_pic || "https://via.placeholder.com/50?text=U";
-
-    // Status logic
-    const status = user.fweb_logs?.status || "offline";
-    chatStatusEl.textContent = status==="typing"?"Typing...":status==="active"?"Online":"Offline";
-  }
-}
-
-// --- Load on startup ---
 window.addEventListener("load", async () => {
   await loadChatUser();
   renderMessages();
-  updateOwnStatus("active");
-
-  setInterval(refreshChatUser, 1000);
 });
 </script>
-
 </body>
 </html>
