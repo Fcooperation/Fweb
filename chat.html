@@ -242,22 +242,13 @@
   <input type="text" id="chat-input" placeholder="Type a message...">
   <button id="send-btn" class="icon-btn">➤</button>
 </div>
-
+<!-- Only showing <script> part; rest of your HTML & CSS remain unchanged -->
 <script type="module">
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-
-const supabase = createClient(
-  "https://pwsxezhugsxosbwhkdvf.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
-);
-
 const chatBoard = document.getElementById('chat-board');
 const chatInput = document.getElementById('chat-input');
 const sendBtn = document.getElementById('send-btn');
 const emojiBtn = document.getElementById('emoji-btn');
 const emojiPicker = document.getElementById('emoji-picker');
-const chatName = document.getElementById('chat-name');
-const chatPic = document.getElementById('chat-pic');
 const plusBtn = document.getElementById('plus-btn');
 const popupMenu = document.getElementById('popup-menu');
 const pollModal = document.getElementById('poll-modal');
@@ -270,7 +261,7 @@ const chatUserId = localStorage.getItem('chatting');
 const currentUser = JSON.parse(localStorage.getItem('faccount')) || { id: 'me' };
 const storageKey = `chat_messages_${chatUserId}`;
 
-// --- Emoji Picker ---
+// Emoji picker
 const emojis = ["😀","😃","😄","😁","🥹","😂","🤣","😊","😍","😋","😘","😜","🤩","😎","🤔","😢","😭","😡","👍","👎","❤️","🔥","💀"];
 emojis.forEach(e => {
   const span = document.createElement("span");
@@ -282,89 +273,46 @@ emojiBtn.addEventListener("click", () => {
   emojiPicker.style.display = emojiPicker.style.display === "flex" ? "none" : "flex";
 });
 
-// --- Load chat user ---
-async function loadChatUser() {
-  let chatUser = null;
-  const allUsers = JSON.parse(localStorage.getItem("all_fwebaccounts")) || [];
-  if (allUsers.length > 0)
-    chatUser = allUsers.find(u => u.id == chatUserId);
-
-  if (!chatUser) {
-    const { data } = await supabase
-      .from('fwebaccount')
-      .select('*')
-      .eq('id', chatUserId)
-      .maybeSingle();
-    if (!data) return chatName.textContent = "User not found";
-    chatUser = data;
-  }
-
-  chatName.textContent = chatUser.username || "Unknown User";
-  chatPic.src = chatUser.profile_pic || "https://via.placeholder.com/50?text=U";
-
-  document.getElementById("user-header").onclick = () => {
-    localStorage.setItem("dashboardviewing", chatUser.id);
-    location.href = "fchatdashboard.html";
-  };
-}
-
-// --- Render messages ---
+// Render messages
 function renderMessages() {
   chatBoard.innerHTML = "";
   const messages = JSON.parse(localStorage.getItem(storageKey)) || [];
   messages.forEach(msg => {
     const div = document.createElement("div");
     div.classList.add("message");
-    if (msg.sender === "me") div.classList.add("me");
 
-    if (msg.type === "text") div.textContent = msg.text;
-    else if (msg.type === "image") div.innerHTML = `<div class="file-preview"><img src="${msg.url}"></div>`;
-    else if (msg.type === "video") div.innerHTML = `<div class="file-preview"><video src="${msg.url}" controls></video></div>`;
-    else if (msg.type === "doc") div.innerHTML = `<div class="file-preview"><a href="${msg.url}" download>📄 Document</a></div>`;
-    else if (msg.type === "poll") {
+    if(msg.sender === currentUser.id) div.classList.add("me"); // green bubble
+    else div.style.background = "#d2b48c"; // brown received
+
+    // message type rendering
+    if(msg.type === "text") div.textContent = msg.text;
+    else if(msg.type === "image") div.innerHTML = `<div class="file-preview"><img src="${msg.url}"></div>`;
+    else if(msg.type === "video") div.innerHTML = `<div class="file-preview"><video src="${msg.url}" controls></video></div>`;
+    else if(msg.type === "doc") div.innerHTML = `<div class="file-preview"><a href="${msg.url}" download>📄 Document</a></div>`;
+    else if(msg.type === "poll") {
       const pollDiv = document.createElement("div");
       pollDiv.innerHTML = `<b>📊 ${msg.question}</b>`;
-      msg.options.forEach((o, i) => {
-        const optDiv = document.createElement("div");
-        const votes = msg.votes ? msg.votes[o]?.length || 0 : 0;
-        const hasVoted = msg.votes && msg.votes[o]?.includes(currentUser.id);
-        const inputType = msg.allowMultiple ? "checkbox" : "radio";
-        optDiv.innerHTML = `<label><input type="${inputType}" name="poll_${msg.time}" value="${o}" ${hasVoted ? "checked" : ""}> ${o} (${votes})</label>`;
-        optDiv.querySelector("input").addEventListener("change", () => handleVote(msg.time, o, msg.allowMultiple));
-        pollDiv.appendChild(optDiv);
+      msg.options.forEach((o) => {
+        const votes = msg.votes?.[o]?.length || 0;
+        pollDiv.innerHTML += `<div>• ${o} (${votes})</div>`;
       });
       div.appendChild(pollDiv);
     }
+
+    // append logs
+    const logSpan = document.createElement("div");
+    logSpan.style.fontSize = "10px";
+    logSpan.style.marginTop = "2px";
+    logSpan.style.opacity = "0.7";
+    logSpan.textContent = `Sent: ${msg.logs.sent}, Seen: ${msg.logs.seen}, Read: ${msg.logs.read}`;
+    div.appendChild(logSpan);
+
     chatBoard.appendChild(div);
   });
   chatBoard.scrollTop = chatBoard.scrollHeight;
 }
 
-function handleVote(pollId, option, allowMultiple) {
-  const messages = JSON.parse(localStorage.getItem(storageKey)) || [];
-  const msg = messages.find(m => m.time === pollId);
-  if (!msg) return;
-
-  if (!msg.votes) msg.votes = {};
-  if (!msg.votes[option]) msg.votes[option] = [];
-
-  // remove previous votes if single choice
-  if (!allowMultiple) {
-    Object.keys(msg.votes).forEach(opt => {
-      msg.votes[opt] = msg.votes[opt].filter(u => u !== currentUser.id);
-    });
-  }
-
-  // toggle vote
-  if (msg.votes[option].includes(currentUser.id))
-    msg.votes[option] = msg.votes[option].filter(u => u !== currentUser.id);
-  else
-    msg.votes[option].push(currentUser.id);
-
-  localStorage.setItem(storageKey, JSON.stringify(messages));
-  renderMessages();
-}
-
+// Save message locally
 function saveMessage(msg) {
   const messages = JSON.parse(localStorage.getItem(storageKey)) || [];
   messages.push(msg);
@@ -372,82 +320,88 @@ function saveMessage(msg) {
   renderMessages();
 }
 
+// Send message
 function sendMessage() {
   const text = chatInput.value.trim();
-  if (!text) return;
-  saveMessage({ text, sender: "me", time: Date.now(), type: "text" });
+  if(!text) return;
+  const msg = {
+    sender: currentUser.id,
+    text,
+    type: "text",
+    time: new Date().toISOString(),
+    logs: { sent: true, seen: false, read: false }
+  };
+  saveMessage(msg);
   chatInput.value = "";
 }
 
-// --- Popup Button Logic ---
-plusBtn.addEventListener("click", () => popupMenu.classList.toggle("show"));
-
-document.getElementById("media-option").onclick = () => {
-  popupMenu.classList.remove("show");
-  const input = document.createElement("input");
-  input.type = "file";
-  input.accept = "image/*,video/*";
-  input.onchange = e => {
-    const file = e.target.files[0];
-    if (file.type.startsWith("image")) handleFileSelect("image", file);
-    else handleFileSelect("video", file);
-  };
-  input.click();
-};
-
-document.getElementById("doc-option").onclick = () => {
-  popupMenu.classList.remove("show");
-  const input = document.createElement("input");
-  input.type = "file";
-  input.accept = ".pdf,.doc,.docx,.zip,.txt";
-  input.onchange = e => handleFileSelect("doc", e.target.files[0]);
-  input.click();
-};
-
-document.getElementById("poll-option").onclick = () => {
-  popupMenu.classList.remove("show");
-  pollModal.classList.add("show");
-};
-
+// Poll
 createPollBtn.onclick = () => {
   const question = pollQuestion.value.trim();
   const options = pollOptions.value.split(",").map(o => o.trim()).filter(Boolean);
   const allowMultiple = pollMulti.checked;
-  if (!question || options.length < 2) return alert("Please enter valid poll details.");
-
-  saveMessage({
-    sender: "me",
-    time: Date.now(),
+  if(!question || options.length<2) return alert("Enter valid poll details.");
+  const msg = {
+    sender: currentUser.id,
     type: "poll",
     question,
     options,
     allowMultiple,
-    votes: {}
-  });
-
+    votes: {},
+    time: new Date().toISOString(),
+    logs: { sent:true, seen:false, read:false }
+  };
+  saveMessage(msg);
   pollQuestion.value = "";
   pollOptions.value = "";
   pollMulti.checked = false;
   pollModal.classList.remove("show");
 };
 
+// File handling
 function handleFileSelect(type, file) {
   const reader = new FileReader();
   reader.onload = e => {
-    saveMessage({ sender: "me", time: Date.now(), type, url: e.target.result });
+    const msg = { sender: currentUser.id, type, url: e.target.result, time: new Date().toISOString(), logs: {sent:true,seen:false,read:false} };
+    saveMessage(msg);
   };
   reader.readAsDataURL(file);
 }
 
-sendBtn.addEventListener("click", sendMessage);
-chatInput.addEventListener("keypress", e => {
-  if (e.key === "Enter") sendMessage();
-});
+// Popup buttons
+plusBtn.addEventListener("click", () => popupMenu.classList.toggle("show"));
+document.getElementById("media-option").onclick = () => {
+  popupMenu.classList.remove("show");
+  const input = document.createElement("input");
+  input.type = "file"; input.accept="image/*,video/*";
+  input.onchange = e => {
+    const f = e.target.files[0];
+    if(f.type.startsWith("image")) handleFileSelect("image", f);
+    else handleFileSelect("video", f);
+  };
+  input.click();
+};
+document.getElementById("doc-option").onclick = () => {
+  popupMenu.classList.remove("show");
+  const input = document.createElement("input");
+  input.type="file"; input.accept=".pdf,.doc,.docx,.zip,.txt";
+  input.onchange = e => handleFileSelect("doc", e.target.files[0]);
+  input.click();
+};
+document.getElementById("poll-option").onclick = () => {
+  popupMenu.classList.remove("show");
+  pollModal.classList.add("show");
+};
 
-window.addEventListener("load", async () => {
-  await loadChatUser();
-  renderMessages();
-});
+// Send message
+sendBtn.addEventListener("click", sendMessage);
+chatInput.addEventListener("keypress", e => { if(e.key==="Enter") sendMessage(); });
+
+// Auto-refresh every 5 sec
+setInterval(renderMessages, 5000);
+
+// Load chat on visit
+window.addEventListener("load", renderMessages);
 </script>
 </body>
 </html>
