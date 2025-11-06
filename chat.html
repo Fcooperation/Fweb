@@ -26,44 +26,26 @@
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
   }
 
-  .header-left {
-    display: flex;
-    align-items: center;
-  }
-
+  .header-left { display: flex; align-items: center; }
   .chat-header-pic {
-    width: 45px;
-    height: 45px;
-    border-radius: 50%;
-    object-fit: cover;
-    margin-right: 10px;
-    background: #ccc;
+    width: 45px; height: 45px;
+    border-radius: 50%; object-fit: cover;
+    margin-right: 10px; background: #ccc;
   }
-
-  .chat-header-name {
-    font-weight: 600;
-    font-size: 18px;
-  }
+  .chat-header-name { font-weight: 600; font-size: 18px; }
 
   #chat-board {
-    flex: 1;
-    background: #fafafa;
-    overflow-y: auto;
-    padding: 15px;
-    display: flex;
-    flex-direction: column;
+    flex: 1; background: #fafafa;
+    overflow-y: auto; padding: 15px;
+    display: flex; flex-direction: column;
   }
 
   .message {
-    background: #ececec;
-    color: #000;
-    padding: 10px 15px;
-    border-radius: 14px;
-    margin-bottom: 10px;
-    max-width: 75%;
-    word-wrap: break-word;
-    position: relative;
-    align-self: flex-start;
+    background: #ececec; color: #000;
+    padding: 10px 15px; border-radius: 14px;
+    margin-bottom: 10px; max-width: 75%;
+    word-wrap: break-word; position: relative;
+    align-self: flex-start; cursor: pointer;
   }
 
   .message.me {
@@ -79,14 +61,46 @@
     margin-top: 3px;
   }
 
+  .linked-box {
+    background: rgba(0,0,0,0.05);
+    border-left: 3px solid #007bff;
+    padding: 5px 8px;
+    border-radius: 5px;
+    font-size: 13px;
+    margin-bottom: 5px;
+  }
+
+  #reply-box {
+    background: #f1f1f1;
+    padding: 6px 12px;
+    font-size: 13px;
+    border-left: 3px solid #007bff;
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  #reply-box span { flex: 1; }
+  #reply-box button {
+    background: transparent;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+  }
+
   #chat-input-area {
     display: flex;
-    align-items: center;
-    padding: 10px 14px;
+    flex-direction: column;
     border-top: 1px solid #ddd;
     background: #fff;
     position: sticky;
     bottom: 0;
+  }
+
+  #chat-input-row {
+    display: flex;
+    align-items: center;
+    padding: 10px 14px;
   }
 
   #chat-input {
@@ -100,33 +114,20 @@
     transition: 0.2s;
   }
 
-  #chat-input:focus {
-    background: #fff;
-    border-color: #999;
-  }
+  #chat-input:focus { background: #fff; border-color: #999; }
 
   #send-btn {
     background: #007bff;
-    border: none;
-    color: #fff;
+    border: none; color: #fff;
     font-size: 20px;
-    border-radius: 50%;
-    width: 42px;
-    height: 42px;
-    margin-left: 8px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    border-radius: 50%; width: 42px; height: 42px;
+    margin-left: 8px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
   }
 
   #send-btn:hover { background: #0066d6; }
 
-  #loading {
-    text-align: center;
-    padding: 20px;
-    color: #777;
-  }
+  #loading { text-align: center; padding: 20px; color: #777; }
 </style>
 </head>
 <body>
@@ -138,13 +139,14 @@
   </div>
 </header>
 
-<div id="chat-board">
-  <div id="loading">Loading chat...</div>
-</div>
+<div id="chat-board"><div id="loading">Loading chat...</div></div>
 
 <div id="chat-input-area">
-  <input type="text" id="chat-input" placeholder="Type a message...">
-  <button id="send-btn">➤</button>
+  <div id="reply-box"><span></span><button id="close-reply">×</button></div>
+  <div id="chat-input-row">
+    <input type="text" id="chat-input" placeholder="Type a message...">
+    <button id="send-btn">➤</button>
+  </div>
 </div>
 
 <script type="module">
@@ -160,20 +162,23 @@ const chatInput = document.getElementById('chat-input');
 const sendBtn = document.getElementById('send-btn');
 const chatName = document.getElementById('chat-name');
 const chatPic = document.getElementById('chat-pic');
+const replyBox = document.getElementById('reply-box');
+const replyText = replyBox.querySelector('span');
+const closeReply = document.getElementById('close-reply');
 
 const chatUserId = localStorage.getItem('chatting');
 const currentUser = JSON.parse(localStorage.getItem('faccount'));
 const storageKey = `chat_messages_${chatUserId}`;
+
+let linkedMsg = null;
 
 if (!currentUser || !chatUserId) {
   document.getElementById('loading').textContent = "Error: Missing chat info!";
   throw new Error("Missing localStorage data");
 }
 
-// Load chat user info
 async function loadChatUser() {
   try {
-    let chatUser = null;
     const { data, error } = await supabase
       .from('fwebaccount')
       .select('*')
@@ -181,27 +186,24 @@ async function loadChatUser() {
       .maybeSingle();
 
     if (error) throw error;
-    chatUser = data;
-    if (!chatUser) throw new Error("User not found");
+    if (!data) throw new Error("User not found");
 
-    chatName.textContent = chatUser.username || "Unknown User";
-    chatPic.src = chatUser.profile_pic || "https://via.placeholder.com/50?text=U";
+    chatName.textContent = data.username || "Unknown User";
+    chatPic.src = data.profile_pic || "https://via.placeholder.com/50?text=U";
   } catch (err) {
     chatName.textContent = "User not found";
     console.error(err);
   }
 }
 
-// Render messages
 function formatTime(msgTime) {
   const msgDate = new Date(msgTime);
   const now = new Date();
-  const offsetTime = new Date(msgDate.getTime() + 60 * 60 * 1000); // +1 hour fix
   const sameDay = msgDate.toDateString() === now.toDateString();
 
   return sameDay
-    ? offsetTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) + " UTC"
-    : offsetTime.toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) + " UTC";
+    ? msgDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) + " UTC"
+    : msgDate.toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) + " UTC";
 }
 
 function renderMessages() {
@@ -212,21 +214,33 @@ function renderMessages() {
     return;
   }
 
-  messages.forEach(msg => {
+  messages.forEach((msg, i) => {
     const div = document.createElement("div");
     div.classList.add("message");
     if (msg.sender === "me") div.classList.add("me");
 
     div.innerHTML = `
+      ${msg.linked ? `<div class="linked-box">${msg.linked_message}</div>` : ""}
       <div>${msg.message}</div>
       <span class="msg-time">${formatTime(msg.time_utc)}</span>
     `;
+    div.addEventListener("click", () => selectReply(msg));
     chatBoard.appendChild(div);
   });
   chatBoard.scrollTop = chatBoard.scrollHeight;
 }
 
-// Send message
+function selectReply(msg) {
+  linkedMsg = msg;
+  replyText.textContent = msg.message;
+  replyBox.style.display = "flex";
+}
+
+closeReply.addEventListener("click", () => {
+  linkedMsg = null;
+  replyBox.style.display = "none";
+});
+
 async function sendMessage() {
   const text = chatInput.value.trim();
   if (!text) return;
@@ -235,9 +249,9 @@ async function sendMessage() {
     sender_id: currentUser.id,
     message: text,
     time_utc: new Date().toISOString(),
-    linked: false,
-    linked_message: null,
-    linked_message_time: null
+    linked: linkedMsg ? true : false,
+    linked_message: linkedMsg ? linkedMsg.message : null,
+    linked_message_time: linkedMsg ? linkedMsg.time_utc : null
   };
 
   const messages = JSON.parse(localStorage.getItem(storageKey)) || [];
@@ -245,6 +259,8 @@ async function sendMessage() {
   localStorage.setItem(storageKey, JSON.stringify(messages));
   renderMessages();
   chatInput.value = "";
+  linkedMsg = null;
+  replyBox.style.display = "none";
 
   try {
     const { data: receiverData, error: fetchError } = await supabase
@@ -257,11 +273,8 @@ async function sendMessage() {
 
     let receiverMessages = [];
     if (receiverData?.fweb_messages) {
-      try {
-        receiverMessages = JSON.parse(receiverData.fweb_messages);
-      } catch (e) {
-        receiverMessages = [];
-      }
+      try { receiverMessages = JSON.parse(receiverData.fweb_messages); } 
+      catch { receiverMessages = []; }
     }
 
     receiverMessages.push(messageData);
@@ -279,9 +292,7 @@ async function sendMessage() {
 }
 
 sendBtn.addEventListener("click", sendMessage);
-chatInput.addEventListener("keypress", e => {
-  if (e.key === "Enter") sendMessage();
-});
+chatInput.addEventListener("keypress", e => { if (e.key === "Enter") sendMessage(); });
 
 window.addEventListener("load", async () => {
   await loadChatUser();
