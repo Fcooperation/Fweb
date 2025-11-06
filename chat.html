@@ -1,244 +1,240 @@
-<!DOCTYPE html>  <html lang="en">  
-<head>  
-<meta charset="UTF-8">  
-<meta name="viewport" content="width=device-width, initial-scale=1.0">  
-<title>FCHAT - Chat</title>  
-<style>  
-  * { box-sizing: border-box; }  
-  body {  
-    font-family: 'Poppins','Segoe UI',sans-serif;  
-    background: #fdfdfd;  
-    color: #111;  
-    margin: 0;  
-    height: 100vh;  
-    display: flex;  
-    flex-direction: column;  
-  }  header {
-background: #fff;
-display: flex;
-justify-content: space-between;
-align-items: center;
-padding: 12px 18px;
-border-bottom: 1px solid #eee;
-box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FCHAT - Chat</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Poppins','Segoe UI',sans-serif;
+    background: #fdfdfd;
+    color: #111;
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
 
-.header-left {
-display: flex;
-align-items: center;
-}
+  header {
+    background: #fff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 18px;
+    border-bottom: 1px solid #eee;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
 
-.chat-header-pic {
-width: 45px;
-height: 45px;
-border-radius: 50%;
-object-fit: cover;
-margin-right: 10px;
-background: #ccc;
-}
+  .header-left {
+    display: flex;
+    align-items: center;
+  }
 
-.chat-header-name {
-font-weight: 600;
-font-size: 18px;
-}
+  .chat-header-pic {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 10px;
+    background: #ccc;
+  }
 
-#chat-board {
-flex: 1;
-background: #fafafa;
-position: relative;
-overflow-y: auto;
-padding: 15px;
-}
+  .chat-header-name {
+    font-weight: 600;
+    font-size: 18px;
+  }
 
-#chat-board::before {
-content: "FCOOPERATION.....where dreams meet reality.....";
-position: absolute;
-top: 50%;
-left: 50%;
-transform: translate(-50%, -50%);
-font-size: 22px;
-font-weight: 800;
-color: rgba(0,0,0,0.08);
-text-align: center;
-white-space: pre-line;
-z-index: 0;
-user-select: none;
-}
-
-.message {
-background: #ececec;
-color: #000;
-padding: 10px 15px;
-border-radius: 14px;
-margin-bottom: 10px;
-max-width: 80%;
-position: relative;
-z-index: 1;
-word-wrap: break-word;
-}
-
-.me {
-background: #c2ffc2;
-margin-left: auto;
-}
-
-#chat-input-area {
-display: flex;
-align-items: center;
-padding: 10px 14px;
-border-top: 1px solid #ddd;
-background: #fff;
-}
-
-#chat-input {
-flex: 1;
-border: 1px solid #ccc;
-border-radius: 25px;
-padding: 10px 15px;
-font-size: 15px;
-outline: none;
-background: #f7f7f7;
-transition: 0.2s;
-}
-
-#chat-input:focus {
-background: #fff;
-border-color: #999;
-}
-
-#send-btn {
-background: #007bff;
-border: none;
-color: #fff;
-font-size: 20px;
-border-radius: 50%;
-width: 40px;
-height: 40px;
-margin-left: 8px;
-cursor: pointer;
-display: flex;
-align-items: center;
-justify-content: center;
-transition: 0.2s;
-}
-
-#send-btn:hover { background: #0066d6; }
-/* Chat user status below username */
+  /* Status styling */
   .chat-user-status {
     font-size: 13px;
     font-weight: 500;
     margin-top: 3px;
   }
 
-  .status-active {
-    color: green;
+  .status-active { color: green; }
+  .status-online { color: gray; }
+  .status-typing { color: #007bff; }
+  .status-lastseen { color: #555; }
+
+  #chat-board {
+    flex: 1;
+    background: #fafafa;
+    position: relative;
+    overflow-y: auto;
+    padding: 15px;
   }
 
-  .status-online {
-    color: gray;
+  #chat-board::before {
+    content: "FCOOPERATION.....where dreams meet reality.....";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 22px;
+    font-weight: 800;
+    color: rgba(0,0,0,0.08);
+    text-align: center;
+    white-space: pre-line;
+    z-index: 0;
+    user-select: none;
   }
 
-  .status-typing {
-    color: #007bff;
+  .message {
+    background: #ececec;
+    color: #000;
+    padding: 10px 15px;
+    border-radius: 14px;
+    margin-bottom: 10px;
+    max-width: 80%;
+    position: relative;
+    z-index: 1;
+    word-wrap: break-word;
   }
 
-  .status-lastseen {
-    color: #555;
+  .me {
+    background: #c2ffc2;
+    margin-left: auto;
   }
-</style>  
-</head>  
-<body>  <header>  
-  <div class="header-left">  
-    <img id="chat-pic" class="chat-header-pic" src="" alt="Profile">  
-    <div class="chat-header-name" id="chat-name">Loading...</div> 
-    <div class="chat-user-status" id="chat-status">Checking...</div>
-  </div>  </header>  <div id="chat-board"></div>  <div id="chat-input-area">    <input type="text" id="chat-input" placeholder="Type a message...">  
-  <button id="send-btn">➤</button>  
-</div>  <script type="module">  
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";  
-  
-const supabase = createClient(  
-  "https://pwsxezhugsxosbwhkdvf.supabase.co",  
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"  
-);  
-  
-const chatBoard = document.getElementById('chat-board');  
-const chatInput = document.getElementById('chat-input');  
-const sendBtn = document.getElementById('send-btn');  
-  
-const chatName = document.getElementById('chat-name');  
-const chatPic = document.getElementById('chat-pic');  
-  
-const chatUserId = localStorage.getItem('chatting');  
-const currentUser = JSON.parse(localStorage.getItem('faccount'));  
-const storageKey = `chat_messages_${chatUserId}`;  
-  
-  
-  
-// Load chat user  
-async function loadChatUser() {  
-  let chatUser = null;  
-  const allUsers = JSON.parse(localStorage.getItem("all_fwebaccounts")) || [];  
-  if (allUsers.length > 0)  
-    chatUser = allUsers.find(u => u.id == chatUserId);  
-  
-  if (!chatUser) {  
-    const { data } = await supabase  
-      .from('fwebaccount')  
-      .select('*')  
-      .eq('id', chatUserId)  
-      .maybeSingle();  
-    if (!data) return chatName.textContent = "User not found";  
-    chatUser = data;  
-  }  
-  
-  chatName.textContent = chatUser.username || "Unknown User";  
-  chatPic.src = chatUser.profile_pic || "https://via.placeholder.com/50?text=U";  
-}  
-  
-// Render messages  
-function renderMessages() {  
-  chatBoard.innerHTML = "";  
-  const messages = JSON.parse(localStorage.getItem(storageKey)) || [];  
-  messages.forEach(msg => {  
-    const div = document.createElement("div");  
-    div.classList.add("message");  
-    if (msg.sender === "me") div.classList.add("me");  
-    div.textContent = msg.text;  
-    chatBoard.appendChild(div);  
-  });  
-  chatBoard.scrollTop = chatBoard.scrollHeight;  
-}  
-  
-// Send message  
-function sendMessage() {  
-  const text = chatInput.value.trim();  
-  if (!text) return;  
-  
-  const messages = JSON.parse(localStorage.getItem(storageKey)) || [];  
-  messages.push({ text, sender: "me", time: Date.now() });  
-  localStorage.setItem(storageKey, JSON.stringify(messages));  
-  
-  chatInput.value = "";  
-  renderMessages();  
-}  
-  
-sendBtn.addEventListener("click", sendMessage);  
-chatInput.addEventListener("keypress", e => {  
-  if (e.key === "Enter") sendMessage();  
-});  
-  
-window.addEventListener("load", async () => {  
-  await loadChatUser();  
-  renderMessages();  
-});  
 
-// --- Monitor user fweb_logs every second ---
+  #chat-input-area {
+    display: flex;
+    align-items: center;
+    padding: 10px 14px;
+    border-top: 1px solid #ddd;
+    background: #fff;
+  }
+
+  #chat-input {
+    flex: 1;
+    border: 1px solid #ccc;
+    border-radius: 25px;
+    padding: 10px 15px;
+    font-size: 15px;
+    outline: none;
+    background: #f7f7f7;
+    transition: 0.2s;
+  }
+
+  #chat-input:focus {
+    background: #fff;
+    border-color: #999;
+  }
+
+  #send-btn {
+    background: #007bff;
+    border: none;
+    color: #fff;
+    font-size: 20px;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    margin-left: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
+  }
+
+  #send-btn:hover { background: #0066d6; }
+</style>
+</head>
+<body>
+<header>
+  <div class="header-left">
+    <img id="chat-pic" class="chat-header-pic" src="" alt="Profile">
+    <div>
+      <div class="chat-header-name" id="chat-name">Loading...</div>
+      <div class="chat-user-status" id="chat-status">Checking...</div>
+    </div>
+  </div>
+</header>
+
+<div id="chat-board"></div>
+
+<div id="chat-input-area">
+  <input type="text" id="chat-input" placeholder="Type a message...">
+  <button id="send-btn">➤</button>
+</div>
+
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const supabase = createClient(
+  "https://pwsxezhugsxosbwhkdvf.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
+);
+
+const chatBoard = document.getElementById('chat-board');
+const chatInput = document.getElementById('chat-input');
+const sendBtn = document.getElementById('send-btn');
+const chatName = document.getElementById('chat-name');
+const chatPic = document.getElementById('chat-pic');
+const chatStatus = document.getElementById('chat-status');
+
+const chatUserId = localStorage.getItem('chatting');
+const currentUser = JSON.parse(localStorage.getItem('faccount'));
+const storageKey = `chat_messages_${chatUserId}`;
+
+// Load chat user
+async function loadChatUser() {
+  let chatUser = null;
+  const allUsers = JSON.parse(localStorage.getItem("all_fwebaccounts")) || [];
+  if (allUsers.length > 0)
+    chatUser = allUsers.find(u => u.id == chatUserId);
+
+  if (!chatUser) {
+    const { data } = await supabase
+      .from('fwebaccount')
+      .select('*')
+      .eq('id', chatUserId)
+      .maybeSingle();
+    if (!data) {
+      chatName.textContent = "User not found";
+      return null;
+    }
+    chatUser = data;
+  }
+
+  chatName.textContent = chatUser.username || "Unknown User";
+  chatPic.src = chatUser.profile_pic || "https://via.placeholder.com/50?text=U";
+  return chatUser;
+}
+
+// Render messages
+function renderMessages() {
+  chatBoard.innerHTML = "";
+  const messages = JSON.parse(localStorage.getItem(storageKey)) || [];
+  messages.forEach(msg => {
+    const div = document.createElement("div");
+    div.classList.add("message");
+    if (msg.sender === "me") div.classList.add("me");
+    div.textContent = msg.text;
+    chatBoard.appendChild(div);
+  });
+  chatBoard.scrollTop = chatBoard.scrollHeight;
+}
+
+// Send message
+function sendMessage() {
+  const text = chatInput.value.trim();
+  if (!text) return;
+  const messages = JSON.parse(localStorage.getItem(storageKey)) || [];
+  messages.push({ text, sender: "me", time: Date.now() });
+  localStorage.setItem(storageKey, JSON.stringify(messages));
+  chatInput.value = "";
+  renderMessages();
+}
+
+sendBtn.addEventListener("click", sendMessage);
+chatInput.addEventListener("keypress", e => {
+  if (e.key === "Enter") sendMessage();
+});
+
+// Monitor fweb_logs for the selected user
 async function monitorUserStatus() {
   if (!chatUserId) return;
-
-  const chatStatus = document.getElementById("chat-status");
-
   setInterval(async () => {
     const { data, error } = await supabase
       .from("fwebaccount")
@@ -246,7 +242,11 @@ async function monitorUserStatus() {
       .eq("id", chatUserId)
       .maybeSingle();
 
-    if (error || !data) return;
+    if (error || !data) {
+      chatStatus.textContent = "Offline";
+      chatStatus.className = "chat-user-status status-lastseen";
+      return;
+    }
 
     const logs = data.fweb_logs || {};
     const status = logs.status || "offline";
@@ -262,7 +262,6 @@ async function monitorUserStatus() {
       chatStatus.textContent = "Typing...";
       chatStatus.className = "chat-user-status status-typing";
     } else {
-      // Format last seen time in UTC readable form
       const utcTime = lastSeen
         ? lastSeen.toUTCString().replace("GMT", "UTC")
         : "unknown";
@@ -272,6 +271,11 @@ async function monitorUserStatus() {
   }, 1000);
 }
 
-window.addEventListener("load", monitorUserStatus);
-</script>  </body>  
+window.addEventListener("load", async () => {
+  await loadChatUser();
+  renderMessages();
+  monitorUserStatus();
+});
+</script>
+</body>
 </html>
