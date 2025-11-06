@@ -276,6 +276,20 @@ window.addEventListener("load", async () => {
   renderMessages();
   monitorUserStatus();
 });
+ // Check for new messages every second
+setInterval(async () => {
+  const { data } = await supabase
+    .from('fwebaccount')
+    .select('fchat_messages')
+    .eq('id', currentUser.id)
+    .maybeSingle();
+
+  if (data && data.fchat_messages) {
+    // Save the messages locally
+    localStorage.setItem(storageKey, JSON.stringify(data.fchat_messages));
+    renderMessages();
+  }
+}, 1000); // every 1 second
 </script>
 </body>
 </html>
