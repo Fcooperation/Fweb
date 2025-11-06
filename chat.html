@@ -232,13 +232,35 @@ chatInput.addEventListener("keypress", e => {
   if (e.key === "Enter") sendMessage();
 });
 
-// Monitor fweb_logs for the selected user
+// ✅ NEW: Save who I'm chatting with
+async function updateChattingWith() {
+  if (!chatUserId || !currentUser) return;
+  await supabase
+    .from("fwebaccount")
+    .update({ chatting_with: chatUserId })
+    .eq("id", currentUser.id);
+}
+
+// ✅ NEW: Set my status to active
+async function setActiveStatus() {
+  if (!currentUser) return;
+  const logs = {
+    status: "active",
+    last_seen: new Date().toISOString()
+  };
+  await supabase
+    .from("fwebaccount")
+    .update({ fweb_logs: logs })
+    .eq("id", currentUser.id);
+}
+
+// ✅ UPDATED monitor logic
 async function monitorUserStatus() {
-  if (!chatUserId) return;
+  if (!chatUserId || !currentUser) return;
   setInterval(async () => {
     const { data, error } = await supabase
       .from("fwebaccount")
-      .select("fweb_logs")
+      .select("fweb_logs, chatting_with")
       .eq("id", chatUserId)
       .maybeSingle();
 
@@ -250,33 +272,38 @@ async function monitorUserStatus() {
 
     const logs = data.fweb_logs || {};
     const status = logs.status || "offline";
-    const lastSeen = logs.last_seen ? new Date(logs.last_seen) : null;
+    const chattingWith = data.chatting_with || null;
 
-    if (status === "active") {
+    if (status === "active" && chattingWith === currentUser.id) {
+      await setActiveStatus();
       chatStatus.textContent = "Active";
       chatStatus.className = "chat-user-status status-active";
-    } else if (status === "online") {
+    } else if (status === "active") {
       chatStatus.textContent = "Online";
       chatStatus.className = "chat-user-status status-online";
     } else if (status === "typing") {
       chatStatus.textContent = "Typing...";
       chatStatus.className = "chat-user-status status-typing";
     } else {
-      const utcTime = lastSeen
-        ? lastSeen.toUTCString().replace("GMT", "UTC")
+      const lastSeen = logs.last_seen
+        ? new Date(logs.last_seen).toUTCString().replace("GMT", "UTC")
         : "unknown";
-      chatStatus.textContent = `Last seen: ${utcTime}`;
+      chatStatus.textContent = `Last seen: ${lastSeen}`;
       chatStatus.className = "chat-user-status status-lastseen";
     }
   }, 1000);
 }
 
+// ✅ Added calls for new features
 window.addEventListener("load", async () => {
   await loadChatUser();
   renderMessages();
   monitorUserStatus();
+  await updateChattingWith();
+  await setActiveStatus();
 });
- // Check for new messages every second
+
+// Check for new messages every second
 setInterval(async () => {
   const { data } = await supabase
     .from('fwebaccount')
@@ -285,7 +312,6 @@ setInterval(async () => {
     .maybeSingle();
 
   if (data && data.fchat_messages) {
-    // Save the messages locally
     localStorage.setItem(storageKey, JSON.stringify(data.fchat_messages));
     renderMessages();
   }
