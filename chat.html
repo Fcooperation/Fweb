@@ -207,16 +207,61 @@ function renderMessages() {
 }
 
 // Send message
-function sendMessage() {
+async function sendMessage() {
   const text = chatInput.value.trim();
   if (!text) return;
 
-  const messages = JSON.parse(localStorage.getItem(storageKey)) || [];
-  messages.push({ text, sender: "me", time: Date.now() });
-  localStorage.setItem(storageKey, JSON.stringify(messages));
+  // build full message object
+  const messageData = {
+    sender_id: currentUser.id,
+    message: text,
+    time_utc: new Date().toISOString().replace("T", " ").split(".")[0] + " UTC",
+    linked: false,
+    linked_message: null,
+    linked_message_time: null
+  };
 
-  chatInput.value = "";
+  // store locally (instant render)
+  const messages = JSON.parse(localStorage.getItem(storageKey)) || [];
+  messages.push({ ...messageData, sender: "me" });
+  localStorage.setItem(storageKey, JSON.stringify(messages));
   renderMessages();
+  chatInput.value = "";
+
+  try {
+    // fetch receiver's fweb_messages
+    const { data: receiverData, error: fetchError } = await supabase
+      .from("fwebaccount")
+      .select("fweb_messages")
+      .eq("id", chatUserId)
+      .maybeSingle();
+
+    if (fetchError) throw fetchError;
+
+    let receiverMessages = [];
+    if (receiverData?.fweb_messages) {
+      try {
+        receiverMessages = JSON.parse(receiverData.fweb_messages);
+      } catch (e) {
+        receiverMessages = [];
+      }
+    }
+
+    // append new message to receiver's messages
+    receiverMessages.push(messageData);
+
+    // update Supabase with new list
+    const { error: updateError } = await supabase
+      .from("fwebaccount")
+      .update({ fweb_messages: JSON.stringify(receiverMessages) })
+      .eq("id", chatUserId);
+
+    if (updateError) throw updateError;
+
+    console.log("Message sent successfully ✅");
+  } catch (err) {
+    console.error("❌ Error sending message:", err);
+  }
 }
 
 sendBtn.addEventListener("click", sendMessage);
