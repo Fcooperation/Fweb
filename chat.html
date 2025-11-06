@@ -1,278 +1,207 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FCHAT - Chat</title>
-<style>
-  * { box-sizing: border-box; }
-  body {
-    font-family: 'Poppins','Segoe UI',sans-serif;
-    background: #fdfdfd;
-    color: #111;
-    margin: 0;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FCHAT</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Poppins', 'Segoe UI', sans-serif;
+      background: #f1f3f6;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
 
-  header {
-    background: #fff;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 18px;
-    border-bottom: 1px solid #eee;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  }
+    header {
+      background: #075E54;
+      color: #fff;
+      padding: 15px;
+      font-weight: 600;
+      text-align: center;
+      font-size: 18px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
 
-  .header-left {
-    display: flex;
-    align-items: center;
-  }
+    #chat-box {
+      flex: 1;
+      overflow-y: auto;
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
 
-  .chat-header-pic {
-    width: 45px;
-    height: 45px;
-    border-radius: 50%;
-    object-fit: cover;
-    margin-right: 10px;
-    background: #ccc;
-  }
+    .message {
+      max-width: 75%;
+      padding: 10px 14px;
+      border-radius: 10px;
+      position: relative;
+      font-size: 15px;
+      line-height: 1.4;
+      word-wrap: break-word;
+    }
 
-  .chat-header-name {
-    font-weight: 600;
-    font-size: 18px;
-  }
+    .me {
+      align-self: flex-end;
+      background: #dcf8c6;
+      border-top-right-radius: 0;
+    }
 
+    .them {
+      align-self: flex-start;
+      background: #fff;
+      border-top-left-radius: 0;
+    }
 
-  #chat-board {
-    flex: 1;
-    background: #fafafa;
-    position: relative;
-    overflow-y: auto;
-    padding: 15px;
-  }
+    .time {
+      font-size: 11px;
+      color: #555;
+      position: absolute;
+      bottom: 2px;
+      right: 8px;
+    }
 
-  #chat-board::before {
-    content: "FCOOPERATION.....where dreams meet reality.....";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 22px;
-    font-weight: 800;
-    color: rgba(0,0,0,0.08);
-    text-align: center;
-    white-space: pre-line;
-    z-index: 0;
-    user-select: none;
-  }
+    footer {
+      display: flex;
+      padding: 10px;
+      background: #fff;
+      border-top: 1px solid #ccc;
+    }
 
-  .message {
-    background: #ececec;
-    color: #000;
-    padding: 10px 15px;
-    border-radius: 14px;
-    margin-bottom: 10px;
-    max-width: 80%;
-    position: relative;
-    z-index: 1;
-    word-wrap: break-word;
-  }
+    footer input {
+      flex: 1;
+      padding: 10px;
+      border-radius: 25px;
+      border: 1px solid #ccc;
+      outline: none;
+      font-size: 15px;
+    }
 
-  .me {
-    background: #c2ffc2;
-    margin-left: auto;
-  }
-
-  #chat-input-area {
-    display: flex;
-    align-items: center;
-    padding: 10px 14px;
-    border-top: 1px solid #ddd;
-    background: #fff;
-  }
-
-  #chat-input {
-    flex: 1;
-    border: 1px solid #ccc;
-    border-radius: 25px;
-    padding: 10px 15px;
-    font-size: 15px;
-    outline: none;
-    background: #f7f7f7;
-    transition: 0.2s;
-  }
-
-  #chat-input:focus {
-    background: #fff;
-    border-color: #999;
-  }
-
-  #send-btn {
-    background: #007bff;
-    border: none;
-    color: #fff;
-    font-size: 20px;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    margin-left: 8px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: 0.2s;
-  }
-
-
-  #send-btn:hover { background: #0066d6; }
-
-</style>
+    footer button {
+      background: #075E54;
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 45px;
+      height: 45px;
+      margin-left: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 16px;
+    }
+  </style>
 </head>
 <body>
+  <header id="chat-user">Loading...</header>
+  <div id="chat-box"></div>
 
-<header>
-  <div class="header-left">
-    <img id="chat-pic" class="chat-header-pic" src="" alt="Profile">
-    <div class="chat-header-name" id="chat-name">Loading...</div>
-  </div>
-  
-</header>
+  <footer>
+    <input type="text" id="chat-input" placeholder="Type a message" />
+    <button id="send-btn">➤</button>
+  </footer>
 
-<div id="chat-board"></div>
+  <script>
+    const supabaseUrl = "https://YOUR_PROJECT.supabase.co";
+    const supabaseKey = "YOUR_API_KEY";
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
+    const chatBox = document.getElementById("chat-box");
+    const chatInput = document.getElementById("chat-input");
+    const sendBtn = document.getElementById("send-btn");
+    const chatUser = document.getElementById("chat-user");
 
-<div id="chat-input-area">
+    const myId = localStorage.getItem("fweb_id");
+    const chattingWith = localStorage.getItem("chatting_with");
+    const storageKey = `fchat_${chattingWith}`;
 
-  <input type="text" id="chat-input" placeholder="Type a message...">
-  <button id="send-btn">➤</button>
-</div>
+    async function loadChatUser() {
+      const { data } = await supabase.from("fwebaccount").select("username").eq("id", chattingWith).single();
+      chatUser.textContent = data ? data.username : "Unknown User";
+    }
 
-<script type="module">
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+    function formatMessageTime(timestamp) {
+      const date = new Date(timestamp);
+      date.setHours(date.getHours() + 1); // Adjust UTC +1
 
-const supabase = createClient(
-  "https://pwsxezhugsxosbwhkdvf.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
-);
+      const now = new Date();
+      const sameDay =
+        date.getFullYear() === now.getFullYear() &&
+        date.getMonth() === now.getMonth() &&
+        date.getDate() === now.getDate();
 
-const chatBoard = document.getElementById('chat-board');
-const chatInput = document.getElementById('chat-input');
-const sendBtn = document.getElementById('send-btn');
+      const hours = String(date.getHours()).padStart(2, "0");
+      const minutes = String(date.getMinutes()).padStart(2, "0");
 
-const chatName = document.getElementById('chat-name');
-const chatPic = document.getElementById('chat-pic');
-
-const chatUserId = localStorage.getItem('chatting');
-const currentUser = JSON.parse(localStorage.getItem('faccount'));
-const storageKey = `chat_messages_${chatUserId}`;
-
-
-
-// Load chat user
-async function loadChatUser() {
-  let chatUser = null;
-  const allUsers = JSON.parse(localStorage.getItem("all_fwebaccounts")) || [];
-  if (allUsers.length > 0)
-    chatUser = allUsers.find(u => u.id == chatUserId);
-
-  if (!chatUser) {
-    const { data } = await supabase
-      .from('fwebaccount')
-      .select('*')
-      .eq('id', chatUserId)
-      .maybeSingle();
-    if (!data) return chatName.textContent = "User not found";
-    chatUser = data;
-  }
-
-  chatName.textContent = chatUser.username || "Unknown User";
-  chatPic.src = chatUser.profile_pic || "https://via.placeholder.com/50?text=U";
-}
-
-// Render messages
-function renderMessages() {
-  chatBoard.innerHTML = "";
-  const messages = JSON.parse(localStorage.getItem(storageKey)) || [];
-  messages.forEach(msg => {
-    const div = document.createElement("div");
-    div.classList.add("message");
-    if (msg.sender === "me") div.classList.add("me");
-    div.textContent = msg.text;
-    chatBoard.appendChild(div);
-  });
-  chatBoard.scrollTop = chatBoard.scrollHeight;
-}
-
-// Send message
-async function sendMessage() {
-  const text = chatInput.value.trim();
-  if (!text) return;
-
-  // build full message object
-  const messageData = {
-    sender_id: currentUser.id,
-    message: text,
-    time_utc: new Date().toISOString().replace("T", " ").split(".")[0] + " UTC",
-    linked: false,
-    linked_message: null,
-    linked_message_time: null
-  };
-
-  // store locally (instant render)
-  const messages = JSON.parse(localStorage.getItem(storageKey)) || [];
-  messages.push({ ...messageData, sender: "me" });
-  localStorage.setItem(storageKey, JSON.stringify(messages));
-  renderMessages();
-  chatInput.value = "";
-
-  try {
-    // fetch receiver's fweb_messages
-    const { data: receiverData, error: fetchError } = await supabase
-      .from("fwebaccount")
-      .select("fweb_messages")
-      .eq("id", chatUserId)
-      .maybeSingle();
-
-    if (fetchError) throw fetchError;
-
-    let receiverMessages = [];
-    if (receiverData?.fweb_messages) {
-      try {
-        receiverMessages = JSON.parse(receiverData.fweb_messages);
-      } catch (e) {
-        receiverMessages = [];
+      if (sameDay) {
+        return `${hours}:${minutes}`;
+      } else {
+        const month = date.toLocaleString("default", { month: "short" });
+        const day = date.getDate();
+        return `${month}-${day} ${hours}:${minutes}`;
       }
     }
 
-    // append new message to receiver's messages
-    receiverMessages.push(messageData);
+    function renderMessages() {
+      const messages = JSON.parse(localStorage.getItem(storageKey)) || [];
+      chatBox.innerHTML = "";
 
-    // update Supabase with new list
-    const { error: updateError } = await supabase
-      .from("fwebaccount")
-      .update({ fweb_messages: JSON.stringify(receiverMessages) })
-      .eq("id", chatUserId);
+      messages.forEach(msg => {
+        const div = document.createElement("div");
+        div.className = `message ${msg.sender === myId ? "me" : "them"}`;
+        div.innerHTML = `
+          ${msg.message}
+          <div class="time">${formatMessageTime(msg.time)}</div>
+        `;
+        chatBox.appendChild(div);
+      });
 
-    if (updateError) throw updateError;
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
 
-    console.log("Message sent successfully ✅");
-  } catch (err) {
-    console.error("❌ Error sending message:", err);
-  }
-}
+    async function sendMessage() {
+      const text = chatInput.value.trim();
+      if (!text) return;
 
-sendBtn.addEventListener("click", sendMessage);
-chatInput.addEventListener("keypress", e => {
-  if (e.key === "Enter") sendMessage();
-});
+      const messageObj = {
+        sender: myId,
+        message: text,
+        time: new Date().toISOString(),
+        linked: false,
+        linked_to: null,
+        linked_time: null,
+      };
 
-window.addEventListener("load", async () => {
-  await loadChatUser();
-  renderMessages();
-});
-</script>
+      // Save locally
+      const messages = JSON.parse(localStorage.getItem(storageKey)) || [];
+      messages.push(messageObj);
+      localStorage.setItem(storageKey, JSON.stringify(messages));
+      renderMessages();
+
+      chatInput.value = "";
+
+      // Save to receiver in Supabase
+      await supabase
+        .from("fwebaccount")
+        .update({ fweb_messages: messageObj })
+        .eq("id", chattingWith);
+    }
+
+    sendBtn.addEventListener("click", sendMessage);
+    chatInput.addEventListener("keypress", e => {
+      if (e.key === "Enter") sendMessage();
+    });
+
+    window.addEventListener("load", async () => {
+      await loadChatUser();
+      renderMessages();
+    });
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </body>
 </html>
