@@ -45,17 +45,6 @@
     font-size: 18px;
   }
 
-  /* Status styling */
-  .chat-user-status {
-    font-size: 13px;
-    font-weight: 500;
-    margin-top: 3px;
-  }
-
-  .status-active { color: green; }
-  .status-online { color: gray; }
-  .status-typing { color: #007bff; }
-  .status-lastseen { color: #555; }
 
   #chat-board {
     flex: 1;
@@ -137,23 +126,26 @@
     transition: 0.2s;
   }
 
+
   #send-btn:hover { background: #0066d6; }
+
 </style>
 </head>
 <body>
+
 <header>
   <div class="header-left">
     <img id="chat-pic" class="chat-header-pic" src="" alt="Profile">
-    <div>
-      <div class="chat-header-name" id="chat-name">Loading...</div>
-      <div class="chat-user-status" id="chat-status">Checking...</div>
-    </div>
+    <div class="chat-header-name" id="chat-name">Loading...</div>
   </div>
+  
 </header>
 
 <div id="chat-board"></div>
 
+
 <div id="chat-input-area">
+
   <input type="text" id="chat-input" placeholder="Type a message...">
   <button id="send-btn">➤</button>
 </div>
@@ -169,13 +161,15 @@ const supabase = createClient(
 const chatBoard = document.getElementById('chat-board');
 const chatInput = document.getElementById('chat-input');
 const sendBtn = document.getElementById('send-btn');
+
 const chatName = document.getElementById('chat-name');
 const chatPic = document.getElementById('chat-pic');
-const chatStatus = document.getElementById('chat-status');
 
 const chatUserId = localStorage.getItem('chatting');
 const currentUser = JSON.parse(localStorage.getItem('faccount'));
 const storageKey = `chat_messages_${chatUserId}`;
+
+
 
 // Load chat user
 async function loadChatUser() {
@@ -190,16 +184,12 @@ async function loadChatUser() {
       .select('*')
       .eq('id', chatUserId)
       .maybeSingle();
-    if (!data) {
-      chatName.textContent = "User not found";
-      return null;
-    }
+    if (!data) return chatName.textContent = "User not found";
     chatUser = data;
   }
 
   chatName.textContent = chatUser.username || "Unknown User";
   chatPic.src = chatUser.profile_pic || "https://via.placeholder.com/50?text=U";
-  return chatUser;
 }
 
 // Render messages
@@ -220,9 +210,11 @@ function renderMessages() {
 function sendMessage() {
   const text = chatInput.value.trim();
   if (!text) return;
+
   const messages = JSON.parse(localStorage.getItem(storageKey)) || [];
   messages.push({ text, sender: "me", time: Date.now() });
   localStorage.setItem(storageKey, JSON.stringify(messages));
+
   chatInput.value = "";
   renderMessages();
 }
@@ -232,90 +224,10 @@ chatInput.addEventListener("keypress", e => {
   if (e.key === "Enter") sendMessage();
 });
 
-// ✅ NEW: Save who I'm chatting with
-async function updateChattingWith() {
-  if (!chatUserId || !currentUser) return;
-  await supabase
-    .from("fwebaccount")
-    .update({ chatting_with: chatUserId })
-    .eq("id", currentUser.id);
-}
-
-// ✅ NEW: Set my status to active
-async function setActiveStatus() {
-  if (!currentUser) return;
-  const logs = {
-    status: "active",
-    last_seen: new Date().toISOString()
-  };
-  await supabase
-    .from("fwebaccount")
-    .update({ fweb_logs: logs })
-    .eq("id", currentUser.id);
-}
-
-// ✅ UPDATED monitor logic
-async function monitorUserStatus() {
-  if (!chatUserId || !currentUser) return;
-  setInterval(async () => {
-    const { data, error } = await supabase
-      .from("fwebaccount")
-      .select("fweb_logs, chatting_with")
-      .eq("id", chatUserId)
-      .maybeSingle();
-
-    if (error || !data) {
-      chatStatus.textContent = "Offline";
-      chatStatus.className = "chat-user-status status-lastseen";
-      return;
-    }
-
-    const logs = data.fweb_logs || {};
-    const status = logs.status || "offline";
-    const chattingWith = data.chatting_with || null;
-
-    if (status === "active" && chattingWith === currentUser.id) {
-      await setActiveStatus();
-      chatStatus.textContent = "Active";
-      chatStatus.className = "chat-user-status status-active";
-    } else if (status === "active") {
-      chatStatus.textContent = "Online";
-      chatStatus.className = "chat-user-status status-online";
-    } else if (status === "typing") {
-      chatStatus.textContent = "Typing...";
-      chatStatus.className = "chat-user-status status-typing";
-    } else {
-      const lastSeen = logs.last_seen
-        ? new Date(logs.last_seen).toUTCString().replace("GMT", "UTC")
-        : "unknown";
-      chatStatus.textContent = `Last seen: ${lastSeen}`;
-      chatStatus.className = "chat-user-status status-lastseen";
-    }
-  }, 1000);
-}
-
-// ✅ Added calls for new features
 window.addEventListener("load", async () => {
   await loadChatUser();
   renderMessages();
-  monitorUserStatus();
-  await updateChattingWith();
-  await setActiveStatus();
 });
-
-// Check for new messages every second
-setInterval(async () => {
-  const { data } = await supabase
-    .from('fwebaccount')
-    .select('fchat_messages')
-    .eq('id', currentUser.id)
-    .maybeSingle();
-
-  if (data && data.fchat_messages) {
-    localStorage.setItem(storageKey, JSON.stringify(data.fchat_messages));
-    renderMessages();
-  }
-}, 1000); // every 1 second
 </script>
 </body>
 </html>
