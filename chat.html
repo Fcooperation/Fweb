@@ -45,20 +45,6 @@
     font-size: 18px;
   }
 
-  .menu-btn {
-    background: #f4f4f4;
-    border: none;
-    border-radius: 8px;
-    padding: 8px 12px;
-    cursor: pointer;
-    font-weight: 500;
-    font-size: 15px;
-    transition: 0.2s;
-  }
-
-  .menu-btn:hover {
-    background: #e8e8e8;
-  }
 
   #chat-board {
     flex: 1;
@@ -69,7 +55,7 @@
   }
 
   #chat-board::before {
-    content: "FCOOPERATION\n.....where dreams meet reality.....";
+    content: "FCOOPERATION.....where dreams meet reality.....";
     position: absolute;
     top: 50%;
     left: 50%;
@@ -124,7 +110,7 @@
     border-color: #999;
   }
 
-  #send-btn, #emoji-btn {
+  #send-btn {
     background: #007bff;
     border: none;
     color: #fff;
@@ -140,39 +126,9 @@
     transition: 0.2s;
   }
 
-  #emoji-btn {
-    background: #ffcc00;
-    color: #000;
-  }
 
   #send-btn:hover { background: #0066d6; }
-  #emoji-btn:hover { background: #ffd633; }
 
-  #emoji-picker {
-    position: absolute;
-    bottom: 70px;
-    right: 15px;
-    background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 12px;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.2);
-    padding: 10px;
-    display: none;
-    flex-wrap: wrap;
-    max-width: 260px;
-    z-index: 10;
-  }
-
-  #emoji-picker span {
-    font-size: 22px;
-    cursor: pointer;
-    margin: 5px;
-    transition: 0.1s;
-  }
-
-  #emoji-picker span:hover {
-    transform: scale(1.2);
-  }
 </style>
 </head>
 <body>
@@ -182,14 +138,14 @@
     <img id="chat-pic" class="chat-header-pic" src="" alt="Profile">
     <div class="chat-header-name" id="chat-name">Loading...</div>
   </div>
-  <button class="menu-btn">☰</button>
+  
 </header>
 
 <div id="chat-board"></div>
-<div id="emoji-picker"></div>
+
 
 <div id="chat-input-area">
-  <button id="emoji-btn">😊</button>
+
   <input type="text" id="chat-input" placeholder="Type a message...">
   <button id="send-btn">➤</button>
 </div>
@@ -205,8 +161,7 @@ const supabase = createClient(
 const chatBoard = document.getElementById('chat-board');
 const chatInput = document.getElementById('chat-input');
 const sendBtn = document.getElementById('send-btn');
-const emojiBtn = document.getElementById('emoji-btn');
-const emojiPicker = document.getElementById('emoji-picker');
+
 const chatName = document.getElementById('chat-name');
 const chatPic = document.getElementById('chat-pic');
 
@@ -214,20 +169,7 @@ const chatUserId = localStorage.getItem('chatting');
 const currentUser = JSON.parse(localStorage.getItem('faccount'));
 const storageKey = `chat_messages_${chatUserId}`;
 
-// ✅ Emoji list
-const emojis = ["😀","😃","😄","😁","🥹","😂","🤣","😊","😍","😋","😘","😜","🤩","😎","🤔","😢","😭","😡","👍","👎","❤️","🔥","💀"];
-emojis.forEach(e => {
-  const span = document.createElement("span");
-  span.textContent = e;
-  span.onclick = () => {
-    chatInput.value += e; // ✅ Now multiple emojis allowed
-  };
-  emojiPicker.appendChild(span);
-});
 
-emojiBtn.addEventListener("click", () => {
-  emojiPicker.style.display = emojiPicker.style.display === "flex" ? "none" : "flex";
-});
 
 // Load chat user
 async function loadChatUser() {
