@@ -197,39 +197,21 @@ chatInput.addEventListener("keypress",e=>{if(e.key==="Enter") sendMessage();});
 async function receiveMessages(){  
   try{  
     chatStatus.textContent = "Checking for new messages...";  
-
-    const {data, error} = await supabase.from('fwebaccount')
-      .select('fchat_messages')
-      .eq('id', chatUserId)
-      .maybeSingle();  
-
+    const {data,error} = await supabase.from('fwebaccount').select('fchat_messages').eq('id',chatUserId).maybeSingle();  
     if(error) throw error;  
     if(!data?.fchat_messages) return;  
-
     let serverMsgs = [];  
     if(Array.isArray(data.fchat_messages)) serverMsgs = data.fchat_messages;  
-    else { try { serverMsgs = JSON.parse(data.fchat_messages); } catch { serverMsgs = []; } }  
-
-    // Get local copy
-    const localMsgs = JSON.parse(localStorage.getItem(storageKey)) || [];  
-
-    // Check if there are any new messages
-    const newMsgs = serverMsgs.filter(s => 
-      !localMsgs.some(l => l.time_utc === s.time_utc && l.sender_id === s.sender_id)
-    );  
-
-    if(newMsgs.length > 0){  
-      chatStatus.textContent = "New messages found";  
-      // Merge server messages with local messages
-      const merged = [...localMsgs, ...newMsgs].sort((a,b) => new Date(a.time_utc) - new Date(b.time_utc));  
-      localStorage.setItem(storageKey, JSON.stringify(merged));  
-      renderMessages();  
-    }  
-  } catch(err){   
+    else { try{ serverMsgs = JSON.parse(data.fchat_messages); } catch{ serverMsgs = []; } }  
+    if(serverMsgs.length>0) chatStatus.textContent = "New messages found";  
+  }catch(err){   
     console.error(err);  
     chatStatus.textContent = "Error fetching messages";  
   }  
-}
+}  
+  
+setInterval(receiveMessages,1000);  
+window.addEventListener("load",async()=>{ await loadChatUser(); renderMessages(); receiveMessages(); });  
 </script>  
 </body>  
 </html>
