@@ -12,12 +12,14 @@ body{
   display:flex;flex-direction:column;
 }
 header{
-  background:#fff;display:flex;justify-content:space-between;align-items:center;
+  background:#fff;display:flex;flex-direction:column;align-items:flex-start;
   padding:12px 18px;border-bottom:1px solid #eee;box-shadow:0 2px 8px rgba(0,0,0,0.05);
 }
+.header-top{display:flex;justify-content:space-between;align-items:center;width:100%;}
 .header-left{display:flex;align-items:center;}
 .chat-header-pic{width:45px;height:45px;border-radius:50%;object-fit:cover;margin-right:10px;background:#ccc;}
 .chat-header-name{font-weight:600;font-size:18px;cursor:pointer;}
+#chat-status{font-size:12px;color:#555;margin-top:3px;}
 #chat-board{flex:1;background:#fafafa;overflow-y:auto;padding:15px;display:flex;flex-direction:column;}
 .message{
   background:#ececec;color:#000;padding:10px 15px;border-radius:14px;
@@ -66,10 +68,13 @@ header{
 </head>
 <body>
 <header>
-  <div class="header-left" id="chat-header">
-    <img id="chat-pic" class="chat-header-pic" src="" alt="Profile">
-    <div class="chat-header-name" id="chat-name">Loading...</div>
+  <div class="header-top" id="chat-header">
+    <div class="header-left">
+      <img id="chat-pic" class="chat-header-pic" src="" alt="Profile">
+      <div class="chat-header-name" id="chat-name">Loading...</div>
+    </div>
   </div>
+  <div id="chat-status">Initializing...</div>
 </header>
 
 <div id="chat-board"><div id="loading">Loading chat...</div></div>
@@ -104,6 +109,7 @@ const replyText = replyBox.querySelector('span');
 const closeReply = document.getElementById('close-reply');
 const menu = document.getElementById('menu');
 const deleteBtn = document.getElementById('delete-msg');
+const chatStatus = document.getElementById('chat-status');
 
 const chatUserId = localStorage.getItem('chatting');
 const currentUser = JSON.parse(localStorage.getItem('faccount'));
@@ -112,7 +118,7 @@ let linkedMsg = null;
 let selectedMsg = null;
 
 if(!currentUser || !chatUserId){
-  document.getElementById('loading').textContent = "Error: Missing chat info!";
+  chatStatus.textContent = "Error: Missing chat info!";
   throw new Error("Missing localStorage data");
 }
 
@@ -122,13 +128,19 @@ document.getElementById('chat-header').addEventListener('click',()=>{
 });
 
 async function loadChatUser(){
+  chatStatus.textContent = "Accessing Supabase account...";
   try{
     const {data,error} = await supabase.from('fwebaccount').select('*').eq('id',chatUserId).maybeSingle();
     if(error) throw error;
     if(!data) throw new Error("User not found");
     chatName.textContent = data.username || "Unknown User";
     chatPic.src = data.profile_pic || "https://via.placeholder.com/50?text=U";
-  }catch(err){chatName.textContent="User not found";console.error(err);}
+    chatStatus.textContent = "Supabase account accessed.";
+  }catch(err){
+    chatName.textContent="User not found";
+    chatStatus.textContent = "Failed to access user.";
+    console.error(err);
+  }
 }
 
 function formatTime(t){
@@ -205,7 +217,7 @@ deleteBtn.addEventListener("click",async()=>{
       if(data?.fchat_messages){
         let arr = [];
         try{ arr = JSON.parse(data.fchat_messages); } catch{ arr=[]; }
-        const newArr = arr.filter(m => !(m.sender_id===msg.sender_id && m.time_utc===msg.time_utc));
+        const newArr = arr.filter(m => !(m.sender_id==msg.sender_id && m.time_utc===msg.time_utc));
         await supabase.from('fwebaccount').update({fchat_messages: JSON.stringify(newArr)}).eq('id',chatUserId);
       }
     }catch(err){console.error(err);}
@@ -250,11 +262,12 @@ chatInput.addEventListener("keypress",e=>{if(e.key==="Enter") sendMessage();});
 
 async function receiveMessages(){
   try{
+    chatStatus.textContent = "Checking for new messages...";
     const {data,error} = await supabase.from('fwebaccount').select('fchat_messages').eq('id',chatUserId).maybeSingle();
     if(error) throw error;
-    if(!data?.fchat_messages) return;
+    if(!data?.fchat_messages){ chatStatus.textContent = "No new messages"; return; }
 
-    // normalize server messages
+    chatStatus.textContent = "Retrieving messages...";
     let serverMsgs = [];
     if(Array.isArray(data.fchat_messages)) serverMsgs = data.fchat_messages;
     else {
@@ -263,9 +276,8 @@ async function receiveMessages(){
 
     const localMsgs = JSON.parse(localStorage.getItem(storageKey)) || [];
     let updated = false;
-
     serverMsgs.forEach(m=>{
-      if(m.sender_id!==currentUser.id && !localMsgs.find(lm=>lm.time_utc===m.time_utc)){
+      if(m.sender_id != currentUser.id && !localMsgs.find(lm=>lm.time_utc===m.time_utc)){
         localMsgs.push({...m,sender:"them"});
         updated = true;
       }
@@ -274,17 +286,23 @@ async function receiveMessages(){
     if(updated){
       localStorage.setItem(storageKey,JSON.stringify(localMsgs));
       renderMessages();
+      chatStatus.textContent = "New messages received";
+    } else {
+      chatStatus.textContent = "No new messages";
     }
 
     let needUpdate = false;
     serverMsgs.forEach(m=>{
-      if(m.sender_id!==currentUser.id && !m.seen){ m.seen = true; needUpdate = true; }
+      if(m.sender_id != currentUser.id && !m.seen){ m.seen = true; needUpdate = true; }
     });
     if(needUpdate){
       await supabase.from('fwebaccount').update({fchat_messages: JSON.stringify(serverMsgs)}).eq('id',chatUserId);
     }
 
-  }catch(err){ console.error(err); }
+  }catch(err){ 
+    console.error(err);
+    chatStatus.textContent = "Error fetching messages";
+  }
 }
 
 // poll every second
