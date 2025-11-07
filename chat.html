@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0" />      
 <title>FCHAT - Chat</title>      
 <style>      
-/* your existing CSS remains untouched */      
+/* CSS untouched */      
 *{box-sizing:border-box;}      
 body{font-family:'Poppins','Segoe UI',sans-serif;background:#fdfdfd;color:#111;margin:0;height:100vh;display:flex;flex-direction:column;}      
 header{background:#fff;display:flex;flex-direction:column;align-items:flex-start;padding:12px 18px;border-bottom:1px solid #eee;box-shadow:0 2px 8px rgba(0,0,0,0.05);}      
@@ -82,7 +82,7 @@ const chatStatus = document.getElementById('chat-status');
       
 const chatUserId = localStorage.getItem('chatting');      
 const currentUser = JSON.parse(localStorage.getItem('faccount'));      
-const storageKey = `chat_messages_${currentUser.id}`; // store by own id      
+const storageKey = `chat_messages_${currentUser.id}`; // store messages per current user      
 let linkedMsg = null;      
 let selectedMsg = null;      
       
@@ -207,13 +207,13 @@ async function receiveMessages(){
       catch { serverMsgs = []; }     
     }        
     
-    // Filter messages only from current chat partner
+    // Only messages from the current chat partner
     serverMsgs = serverMsgs.filter(m=>m.sender_id===chatUserId);
 
     // Load current localStorage messages    
     let localMsgs = JSON.parse(localStorage.getItem(storageKey)) || [];        
     
-    // Merge: only add messages that are not already in localStorage (compare time_utc & message)    
+    // Merge: only add messages that are not already in localStorage    
     serverMsgs.forEach(msg => {    
       const exists = localMsgs.some(m => m.time_utc === msg.time_utc && m.message === msg.message);    
       if(!exists){    
@@ -224,7 +224,7 @@ async function receiveMessages(){
     // Update localStorage    
     localStorage.setItem(storageKey, JSON.stringify(localMsgs));    
     
-    // Render all messages    
+    // Render messages    
     if(localMsgs.length > 0){    
       chatStatus.textContent = "New messages loaded";    
       renderMessages();    
