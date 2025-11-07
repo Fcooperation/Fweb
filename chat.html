@@ -194,33 +194,66 @@ async function sendMessage(){
 sendBtn.addEventListener("click",sendMessage);  
 chatInput.addEventListener("keypress",e=>{if(e.key==="Enter") sendMessage();});  
   
-async function receiveMessages(){  
-  try{  
-    chatStatus.textContent = "Checking for new messages...";  
-
-    // ✅ Check the current user's own fchat_messages, not the chat partner's
+async function receiveMessages() {
+  try {
+    chatStatus.textContent = "Checking for new messages...";
     const { data, error } = await supabase
       .from('fwebaccount')
       .select('fchat_messages')
-      .eq('id', currentUser.id)  // receiver's id
-      .maybeSingle();  
+      .eq('id', chatUserId)
+      .maybeSingle();
 
-    if (error) throw error;  
-    if (!data?.fchat_messages) return;  
+    if (error) throw error;
+    if (!data?.fchat_messages) {
+      chatStatus.textContent = "No new messages";
+      return;
+    }
 
-    let serverMsgs = [];  
-    if (Array.isArray(data.fchat_messages)) serverMsgs = data.fchat_messages;  
-    else {  
-      try { serverMsgs = JSON.parse(data.fchat_messages); }  
-      catch { serverMsgs = []; }  
-    }  
+    let serverMsgs = [];
+    if (Array.isArray(data.fchat_messages)) serverMsgs = data.fchat_messages;
+    else {
+      try { serverMsgs = JSON.parse(data.fchat_messages); }
+      catch { serverMsgs = []; }
+    }
 
-    if (serverMsgs.length > 0) chatStatus.textContent = "New messages found";  
-  } catch (err) {   
-    console.error(err);  
-    chatStatus.textContent = "Error fetching messages";  
-  }  
+    // ✅ Only messages sent by this chat partner
+    const filteredMsgs = serverMsgs.filter(msg => msg.sender_id === chatUserId);
+
+    if (filteredMsgs.length > 0) {
+      chatStatus.textContent = "New messages found";
+
+      // Get existing local messages
+      const storageKey = `chat_${chatUserId}`;
+      const localMsgs = JSON.parse(localStorage.getItem(storageKey)) || [];
+
+      // Avoid duplicates (based on message + time)
+      const combined = [
+        ...localMsgs,
+        ...filteredMsgs.filter(
+          sm => !localMsgs.some(lm => lm.message === sm.message && lm.time_utc === sm.time_utc)
+        )
+      ];
+
+      // Save updated list
+      localStorage.setItem(storageKey, JSON.stringify(combined));
+      renderMessages(); // show updated chat
+    } else {
+      chatStatus.textContent = "No new messages";
+    }
+
+  } catch (err) {
+    console.error(err);
+    chatStatus.textContent = "Error fetching messages";
   }
+}
+
+// Check every 2 seconds
+setInterval(receiveMessages, 2000);
+window.addEventListener("load", async () => {
+  await loadChatUser();
+  renderMessages();
+  receiveMessages();
+});
   
 setInterval(receiveMessages,1000);  
 window.addEventListener("load",async()=>{ await loadChatUser(); renderMessages(); receiveMessages(); });  
