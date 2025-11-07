@@ -196,97 +196,31 @@ chatInput.addEventListener("keypress",e=>{if(e.key==="Enter") sendMessage();});
   
 async function receiveMessages() {
   try {
-    console.log("🟡 Checking for new messages...");
     chatStatus.textContent = "Checking for new messages...";
 
-    // ✅ Check your own Supabase record (currentUser.id)
     const { data, error } = await supabase
       .from('fwebaccount')
       .select('fchat_messages')
-      .eq('id', currentUser.id)
+      .eq('id', chatUserId)
       .maybeSingle();
 
     if (error) throw error;
-    if (!data?.fchat_messages) {
-      console.log("⚪ No fchat_messages column data found.");
-      chatStatus.textContent = "No messages stored yet";
-      return;
-    }
 
-    // Parse messages from Supabase
-    let serverMsgs = [];
-    if (Array.isArray(data.fchat_messages)) serverMsgs = data.fchat_messages;
-    else {
-      try {
-        serverMsgs = JSON.parse(data.fchat_messages);
-      } catch {
-        console.warn("⚠️ Couldn't parse fchat_messages JSON, resetting.");
-        serverMsgs = [];
-      }
-    }
-
-    console.log("📥 All messages in your account:", serverMsgs);
-
-    // ✅ Filter messages only from this chat partner
-    const newMsgs = serverMsgs.filter(m => m.sender_id === chatUserId);
-
-    if (newMsgs.length === 0) {
-      console.log("🟢 No new messages from this user.");
-      chatStatus.textContent = "No new messages";
-      return;
-    }
-
-    console.log(`📩 ${newMsgs.length} message(s) found from chat partner (${chatUserId}).`);
-
-    // Load current localStorage messages
-    const localMsgs = JSON.parse(localStorage.getItem(storageKey)) || [];
-
-    // Merge new messages without duplicates
-    let added = 0;
-    for (const msg of newMsgs) {
-      const exists = localMsgs.some(m => m.time_utc === msg.time_utc && m.message === msg.message);
-      if (!exists) {
-        localMsgs.push({ ...msg, sender: "them" });
-        added++;
-      }
-    }
-
-    // Save updated localStorage
-    if (added > 0) {
-      localStorage.setItem(storageKey, JSON.stringify(localMsgs));
-      console.log(`✅ Added ${added} new message(s) from user ${chatUserId}.`);
-      chatStatus.textContent = `${added} new message(s) received`;
-      renderMessages();
+    if (data?.fchat_messages && data.fchat_messages.length > 0) {
+      console.log("✅ New messages found:", data.fchat_messages);
+      chatStatus.textContent = "New messages found";
     } else {
-      console.log("🟠 No unseen messages (already loaded).");
-      chatStatus.textContent = "No unseen messages";
+      console.log("ℹ️ No new messages found");
+      chatStatus.textContent = "No new messages found";
     }
 
   } catch (err) {
-    console.error("❌ Error receiving messages:", err);
+    console.error("❌ Error checking messages:", err);
     chatStatus.textContent = "Error fetching messages";
   }
 }
 
-// Check every 2 seconds
-setInterval(receiveMessages, 2000);
 
-window.addEventListener("load", async () => {
-  console.log("🚀 Page loading: initializing chat...");
-  await loadChatUser();
-  renderMessages();
-  receiveMessages();
-});
-      
-      
-
-// Check every 2 seconds
-setInterval(receiveMessages, 2000);
-window.addEventListener("load", async () => {
-  await loadChatUser();
-  renderMessages();
-  receiveMessages();
-});
   
 setInterval(receiveMessages,1000);  
 window.addEventListener("load",async()=>{ await loadChatUser(); renderMessages(); receiveMessages(); });  
