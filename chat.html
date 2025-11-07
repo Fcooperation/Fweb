@@ -6,62 +6,29 @@
 <title>FCHAT - Chat</title>
 <style>
 *{box-sizing:border-box;}
-body{
-  font-family:'Poppins','Segoe UI',sans-serif;
-  background:#fdfdfd;color:#111;margin:0;height:100vh;
-  display:flex;flex-direction:column;
-}
-header{
-  background:#fff;display:flex;justify-content:space-between;align-items:center;
-  padding:12px 18px;border-bottom:1px solid #eee;box-shadow:0 2px 8px rgba(0,0,0,0.05);
-}
+body{font-family:'Poppins','Segoe UI',sans-serif;background:#fdfdfd;color:#111;margin:0;height:100vh;display:flex;flex-direction:column;}
+header{background:#fff;display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-bottom:1px solid #eee;box-shadow:0 2px 8px rgba(0,0,0,0.05);}
 .header-left{display:flex;align-items:center;}
 .chat-header-pic{width:45px;height:45px;border-radius:50%;object-fit:cover;margin-right:10px;background:#ccc;}
 .chat-header-name{font-weight:600;font-size:18px;}
 #chat-board{flex:1;background:#fafafa;overflow-y:auto;padding:15px;display:flex;flex-direction:column;}
-.message{
-  background:#ececec;color:#000;padding:10px 15px;border-radius:14px;
-  margin-bottom:10px;max-width:75%;word-wrap:break-word;position:relative;
-  align-self:flex-start;cursor:pointer;transition:background 0.2s, transform 0.2s;
-}
+.message{background:#ececec;color:#000;padding:10px 15px;border-radius:14px;margin-bottom:10px;max-width:75%;word-wrap:break-word;position:relative;align-self:flex-start;cursor:pointer;transition:background 0.2s, transform 0.2s;}
 .message.me{background:#c2ffc2;align-self:flex-end;}
 .message:hover{background:#e4e4e4;}
 .msg-time{display:block;text-align:right;font-size:11px;color:#555;margin-top:3px;}
-.linked-box{background:rgba(0,0,0,0.05);border-left:3px solid #007bff;
-  padding:5px 8px;border-radius:5px;font-size:13px;margin-bottom:5px;cursor:pointer;}
-#reply-box{
-  background:#f1f1f1;padding:6px 12px;font-size:13px;border-left:3px solid #007bff;
-  display:none;align-items:center;justify-content:space-between;
-}
+.linked-box{background:rgba(0,0,0,0.05);border-left:3px solid #007bff;padding:5px 8px;border-radius:5px;font-size:13px;margin-bottom:5px;cursor:pointer;}
+#reply-box{background:#f1f1f1;padding:6px 12px;font-size:13px;border-left:3px solid #007bff;display:none;align-items:center;justify-content:space-between;}
 #reply-box span{flex:1;}
 #reply-box button{background:transparent;border:none;font-size:18px;cursor:pointer;}
-#chat-input-area{
-  display:flex;flex-direction:column;border-top:1px solid #ddd;
-  background:#fff;position:sticky;bottom:0;
-}
+#chat-input-area{display:flex;flex-direction:column;border-top:1px solid #ddd;background:#fff;position:sticky;bottom:0;}
 #chat-input-row{display:flex;align-items:center;padding:10px 14px;}
-#chat-input{
-  flex:1;border:1px solid #ccc;border-radius:25px;padding:10px 15px;
-  font-size:15px;outline:none;background:#f7f7f7;transition:0.2s;
-}
+#chat-input{flex:1;border:1px solid #ccc;border-radius:25px;padding:10px 15px;font-size:15px;outline:none;background:#f7f7f7;transition:0.2s;}
 #chat-input:focus{background:#fff;border-color:#999;}
-#send-btn{
-  background:#007bff;border:none;color:#fff;font-size:20px;border-radius:50%;
-  width:42px;height:42px;margin-left:8px;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-}
+#send-btn{background:#007bff;border:none;color:#fff;font-size:20px;border-radius:50%;width:42px;height:42px;margin-left:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
 #send-btn:hover{background:#0066d6;}
 #loading{text-align:center;padding:20px;color:#777;}
-/* context menu */
-.context-menu{
-  position:absolute;background:#fff;border:1px solid #ccc;
-  box-shadow:0 2px 8px rgba(0,0,0,0.15);border-radius:6px;
-  z-index:1000;display:none;flex-direction:column;min-width:100px;
-}
-.context-menu button{
-  background:none;border:none;text-align:left;padding:8px 12px;
-  width:100%;cursor:pointer;font-size:14px;
-}
+.context-menu{position:absolute;background:#fff;border:1px solid #ccc;box-shadow:0 2px 8px rgba(0,0,0,0.15);border-radius:6px;z-index:1000;display:none;flex-direction:column;min-width:100px;}
+.context-menu button{background:none;border:none;text-align:left;padding:8px 12px;width:100%;cursor:pointer;font-size:14px;}
 .context-menu button:hover{background:#eee;}
 </style>
 </head>
@@ -83,7 +50,6 @@ header{
   </div>
 </div>
 
-<!-- context menu -->
 <div id="menu" class="context-menu">
   <button id="delete-msg">Delete</button>
 </div>
@@ -91,9 +57,9 @@ header{
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-const supabase=createClient(
+const supabase = createClient(
   "https://pwsxezhugsxosbwhkdvf.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 );
 
 const chatBoard=document.getElementById('chat-board');
@@ -145,21 +111,17 @@ function renderMessages(){
     if(m.sender==="me")div.classList.add("me");
     div.dataset.index=i;
 
-    // Linked box clickable
     div.innerHTML=`${m.linked?`<div class="linked-box" data-linked-time="${m.linked_message_time}">${m.linked_message}</div>`:""}
                    <div>${m.message}</div>
                    <span class="msg-time">${formatTime(m.time_utc)}</span>`;
 
-    // Swipe-to-reply
     let startX=0;
     div.addEventListener("touchstart",e=>{startX=e.touches[0].clientX;});
     div.addEventListener("touchmove",e=>{
       const diff=e.touches[0].clientX-startX;
-      if(diff>70){ selectReply(m); div.style.transform="translateX(30px)";
-        setTimeout(()=>div.style.transform="translateX(0)",200); }  
+      if(diff>70){ selectReply(m); div.style.transform="translateX(30px)"; setTimeout(()=>div.style.transform="translateX(0)",200); }
     });
 
-    // Click linked-box scroll
     const linkedBox=div.querySelector(".linked-box");
     if(linkedBox){
       linkedBox.addEventListener("click",()=>{
@@ -177,7 +139,6 @@ function renderMessages(){
       });
     }
 
-    // Context menu
     div.addEventListener("contextmenu",e=>{e.preventDefault();showMenu(e.pageX,e.pageY,m,i);});
     chatBoard.appendChild(div);
   });
@@ -200,6 +161,7 @@ deleteBtn.addEventListener("click",async()=>{
   msgs.splice(index,1);
   localStorage.setItem(storageKey,JSON.stringify(msgs));
   renderMessages();
+
   if(!msg.seen){
     try{
       const {data}=await supabase.from('fwebaccount').select('fweb_messages').eq('id',chatUserId).maybeSingle();
@@ -231,6 +193,7 @@ async function sendMessage(){
   msgs.push({...msgData,sender:"me"});
   localStorage.setItem(storageKey,JSON.stringify(msgs));
   renderMessages(); chatInput.value="";linkedMsg=null;replyBox.style.display="none";
+
   try{
     const {data:recv}=await supabase.from('fwebaccount').select('fweb_messages').eq('id',chatUserId).maybeSingle();
     let arr=[];if(recv?.fweb_messages){try{arr=JSON.parse(recv.fweb_messages);}catch{arr=[];}}
@@ -247,20 +210,36 @@ async function receiveMessages(){
     const {data,error}=await supabase.from('fwebaccount').select('fweb_messages').eq('id',chatUserId).maybeSingle();
     if(error)throw error;
     if(!data?.fweb_messages)return;
+
     const serverMsgs=JSON.parse(data.fweb_messages)||[];
     const localMsgs=JSON.parse(localStorage.getItem(storageKey))||[];
     let updated=false;
+    let modifiedServer=false;
+
     serverMsgs.forEach(m=>{
       if(m.sender_id!==currentUser.id && !localMsgs.find(lm=>lm.time_utc===m.time_utc)){
         localMsgs.push({...m,sender:"them"});
         updated=true;
+        if(!m.seen){
+          m.seen=true;
+          modifiedServer=true;
+        }
+      }
+      // Mark self-sent messages as "me" if returning
+      if(m.sender_id===currentUser.id && !localMsgs.find(lm=>lm.time_utc===m.time_utc)){
+        localMsgs.push({...m,sender:"me"});
+        updated=true;
       }
     });
+
+    if(modifiedServer){
+      await supabase.from('fwebaccount').update({fweb_messages:JSON.stringify(serverMsgs)}).eq('id',chatUserId);
+    }
+
     if(updated){ localStorage.setItem(storageKey,JSON.stringify(localMsgs)); renderMessages(); }
   }catch(err){console.error(err);}
 }
 
-// poll for new messages every second
 setInterval(receiveMessages,1000);
 
 window.addEventListener("load",async()=>{await loadChatUser();renderMessages();receiveMessages();});
