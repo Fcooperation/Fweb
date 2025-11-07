@@ -118,7 +118,6 @@ if(!currentUser||!chatUserId){
   throw new Error("Missing localStorage data");
 }
 
-// Load chat user info
 async function loadChatUser(){
   try{
     const {data,error}=await supabase.from('fwebaccount').select('*').eq('id',chatUserId).maybeSingle();
@@ -136,7 +135,6 @@ function formatTime(t){
          d.toLocaleString("en-US",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})+" UTC";
 }
 
-// Render all messages (sent + received)
 function renderMessages(){
   const msgs=JSON.parse(localStorage.getItem(storageKey))||[];
   chatBoard.innerHTML="";
@@ -146,37 +144,41 @@ function renderMessages(){
     div.classList.add("message");
     if(m.sender==="me")div.classList.add("me");
     div.dataset.index=i;
-    div.id=`msg_${m.time_utc.replaceAll(/[:.]/g,"_")}`;
+
+    // Linked box clickable
     div.innerHTML=`${m.linked?`<div class="linked-box" data-linked-time="${m.linked_message_time}">${m.linked_message}</div>`:""}
                    <div>${m.message}</div>
                    <span class="msg-time">${formatTime(m.time_utc)}</span>`;
 
-    // Click linked message to scroll
-    if(m.linked){
-      div.querySelector(".linked-box").addEventListener("click",()=>{
-        const target=document.getElementById(`msg_${m.linked_message_time?.replaceAll(/[:.]/g,"_")}`);
-        if(target){
-          target.scrollIntoView({behavior:"smooth",block:"center"});
-          target.style.background="#ffffa0";
-          setTimeout(()=>target.style.background="",800);
-        }
-      });
-    }
-
-    // Swipe right to reply
+    // Swipe-to-reply
     let startX=0;
     div.addEventListener("touchstart",e=>{startX=e.touches[0].clientX;});
     div.addEventListener("touchmove",e=>{
       const diff=e.touches[0].clientX-startX;
-      if(diff>70){selectReply(m);div.style.transform="translateX(30px)";
-        setTimeout(()=>div.style.transform="translateX(0)",200);}
+      if(diff>70){ selectReply(m); div.style.transform="translateX(30px)";
+        setTimeout(()=>div.style.transform="translateX(0)",200); }  
     });
+
+    // Click linked-box scroll
+    const linkedBox=div.querySelector(".linked-box");
+    if(linkedBox){
+      linkedBox.addEventListener("click",()=>{
+        const targetTime=linkedBox.dataset.linkedTime;
+        const msgs=JSON.parse(localStorage.getItem(storageKey))||[];
+        const targetIndex=msgs.findIndex(msg=>msg.time_utc===targetTime);
+        if(targetIndex>=0){
+          const msgDiv=chatBoard.children[targetIndex];
+          if(msgDiv){
+            msgDiv.scrollIntoView({behavior:"smooth",block:"center"});
+            msgDiv.style.background="rgba(0,123,255,0.2)";
+            setTimeout(()=>msgDiv.style.background="",600);
+          }
+        }
+      });
+    }
 
     // Context menu
-    div.addEventListener("contextmenu",e=>{
-      e.preventDefault();showMenu(e.pageX,e.pageY,m,i);
-    });
-
+    div.addEventListener("contextmenu",e=>{e.preventDefault();showMenu(e.pageX,e.pageY,m,i);});
     chatBoard.appendChild(div);
   });
   chatBoard.scrollTop=chatBoard.scrollHeight;
@@ -198,7 +200,6 @@ deleteBtn.addEventListener("click",async()=>{
   msgs.splice(index,1);
   localStorage.setItem(storageKey,JSON.stringify(msgs));
   renderMessages();
-  // delete from server only if unseen
   if(!msg.seen){
     try{
       const {data}=await supabase.from('fwebaccount').select('fweb_messages').eq('id',chatUserId).maybeSingle();
@@ -216,27 +217,20 @@ function selectReply(m){
   replyText.textContent=m.message;
   replyBox.style.display="flex";
 }
-closeReply.addEventListener("click",()=>{
-  linkedMsg=null;replyBox.style.display="none";
-});
+closeReply.addEventListener("click",()=>{linkedMsg=null;replyBox.style.display="none";});
 
 async function sendMessage(){
   const text=chatInput.value.trim();
   if(!text)return;
-  const msgData={
-    sender_id:currentUser.id,
-    message:text,
-    time_utc:new Date().toISOString(),
-    linked:linkedMsg?true:false,
+  const msgData={sender_id:currentUser.id,message:text,
+    time_utc:new Date().toISOString(),linked:linkedMsg?true:false,
     linked_message:linkedMsg?linkedMsg.message:null,
     linked_message_time:linkedMsg?linkedMsg.time_utc:null,
-    seen:false
-  };
+    seen:false};
   const msgs=JSON.parse(localStorage.getItem(storageKey))||[];
   msgs.push({...msgData,sender:"me"});
   localStorage.setItem(storageKey,JSON.stringify(msgs));
-  renderMessages();
-  chatInput.value="";linkedMsg=null;replyBox.style.display="none";
+  renderMessages(); chatInput.value="";linkedMsg=null;replyBox.style.display="none";
   try{
     const {data:recv}=await supabase.from('fwebaccount').select('fweb_messages').eq('id',chatUserId).maybeSingle();
     let arr=[];if(recv?.fweb_messages){try{arr=JSON.parse(recv.fweb_messages);}catch{arr=[];}}
@@ -245,30 +239,31 @@ async function sendMessage(){
   }catch(e){console.error("Send failed:",e);}
 }
 
-// Fetch new messages every second
-async function checkReceived(){
-  try{
-    const {data}=await supabase.from('fwebaccount').select('fweb_messages').eq('id',currentUser.id).maybeSingle();
-    if(!data?.fweb_messages)return;
-    let arr=[];try{arr=JSON.parse(data.fweb_messages);}catch{arr=[];}
-    const msgs=JSON.parse(localStorage.getItem(storageKey))||[];
-    let updated=false;
-    for(const m of arr){
-      if(m.sender_id===chatUserId && !msgs.some(x=>x.time_utc===m.time_utc)){
-        msgs.push({...m,sender:"them"});
-        updated=true;
-      }
-    }
-    if(updated){
-      localStorage.setItem(storageKey,JSON.stringify(msgs));
-      renderMessages();
-    }
-  }catch(err){console.error("Receive check failed:",err);}
-}
-
 sendBtn.addEventListener("click",sendMessage);
 chatInput.addEventListener("keypress",e=>{if(e.key==="Enter")sendMessage();});
-window.addEventListener("load",async()=>{await loadChatUser();renderMessages();setInterval(checkReceived,1000);});
+
+async function receiveMessages(){
+  try{
+    const {data,error}=await supabase.from('fwebaccount').select('fweb_messages').eq('id',chatUserId).maybeSingle();
+    if(error)throw error;
+    if(!data?.fweb_messages)return;
+    const serverMsgs=JSON.parse(data.fweb_messages)||[];
+    const localMsgs=JSON.parse(localStorage.getItem(storageKey))||[];
+    let updated=false;
+    serverMsgs.forEach(m=>{
+      if(m.sender_id!==currentUser.id && !localMsgs.find(lm=>lm.time_utc===m.time_utc)){
+        localMsgs.push({...m,sender:"them"});
+        updated=true;
+      }
+    });
+    if(updated){ localStorage.setItem(storageKey,JSON.stringify(localMsgs)); renderMessages(); }
+  }catch(err){console.error(err);}
+}
+
+// poll for new messages every second
+setInterval(receiveMessages,1000);
+
+window.addEventListener("load",async()=>{await loadChatUser();renderMessages();receiveMessages();});
 </script>
 </body>
 </html>
