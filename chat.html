@@ -17,7 +17,7 @@ header{
 }
 .header-left{display:flex;align-items:center;}
 .chat-header-pic{width:45px;height:45px;border-radius:50%;object-fit:cover;margin-right:10px;background:#ccc;}
-.chat-header-name{font-weight:600;font-size:18px;}
+.chat-header-name{font-weight:600;font-size:18px;cursor:pointer;}
 #chat-board{flex:1;background:#fafafa;overflow-y:auto;padding:15px;display:flex;flex-direction:column;}
 .message{
   background:#ececec;color:#000;padding:10px 15px;border-radius:14px;
@@ -52,7 +52,6 @@ header{
 }
 #send-btn:hover{background:#0066d6;}
 #loading{text-align:center;padding:20px;color:#777;}
-/* context menu */
 .context-menu{
   position:absolute;background:#fff;border:1px solid #ccc;
   box-shadow:0 2px 8px rgba(0,0,0,0.15);border-radius:6px;
@@ -67,7 +66,7 @@ header{
 </head>
 <body>
 <header>
-  <div class="header-left">
+  <div class="header-left" id="chat-header">
     <img id="chat-pic" class="chat-header-pic" src="" alt="Profile">
     <div class="chat-header-name" id="chat-name">Loading...</div>
   </div>
@@ -83,7 +82,6 @@ header{
   </div>
 </div>
 
-<!-- context menu -->
 <div id="menu" class="context-menu">
   <button id="delete-msg">Delete</button>
 </div>
@@ -118,6 +116,12 @@ if(!currentUser||!chatUserId){
   throw new Error("Missing localStorage data");
 }
 
+// redirect to dashboard when header tapped
+document.getElementById('chat-header').addEventListener('click',()=>{
+  localStorage.setItem('chat_viewing', chatUserId);
+  window.location.href="chat_dashboard.html";
+});
+
 async function loadChatUser(){
   try{
     const {data,error}=await supabase.from('fwebaccount').select('*').eq('id',chatUserId).maybeSingle();
@@ -145,21 +149,18 @@ function renderMessages(){
     if(m.sender==="me")div.classList.add("me");
     div.dataset.index=i;
 
-    // Linked box clickable
     div.innerHTML=`${m.linked?`<div class="linked-box" data-linked-time="${m.linked_message_time}">${m.linked_message}</div>`:""}
                    <div>${m.message}</div>
                    <span class="msg-time">${formatTime(m.time_utc)}</span>`;
 
-    // Swipe-to-reply
     let startX=0;
     div.addEventListener("touchstart",e=>{startX=e.touches[0].clientX;});
     div.addEventListener("touchmove",e=>{
       const diff=e.touches[0].clientX-startX;
       if(diff>70){ selectReply(m); div.style.transform="translateX(30px)";
-        setTimeout(()=>div.style.transform="translateX(0)",200); }        
+        setTimeout(()=>div.style.transform="translateX(0)",200); }
     });
 
-    // Click linked-box scroll
     const linkedBox=div.querySelector(".linked-box");
     if(linkedBox){
       linkedBox.addEventListener("click",()=>{
@@ -177,7 +178,6 @@ function renderMessages(){
       });
     }
 
-    // Context menu
     div.addEventListener("contextmenu",e=>{e.preventDefault();showMenu(e.pageX,e.pageY,m,i);});
     chatBoard.appendChild(div);
   });
@@ -202,11 +202,11 @@ deleteBtn.addEventListener("click",async()=>{
   renderMessages();
   if(!msg.seen){
     try{
-      const {data}=await supabase.from('fwebaccount').select('fweb_messages').eq('id',chatUserId).maybeSingle();
-      if(data?.fweb_messages){
-        let arr=[];try{arr=JSON.parse(data.fweb_messages);}catch{arr=[];}
+      const {data}=await supabase.from('fwebaccount').select('fchat_messages').eq('id',chatUserId).maybeSingle();
+      if(data?.fchat_messages){
+        let arr=[];try{arr=JSON.parse(data.fchat_messages);}catch{arr=[];}
         const newArr=arr.filter(m=>!(m.sender_id===msg.sender_id && m.time_utc===msg.time_utc));
-        await supabase.from('fwebaccount').update({fweb_messages:JSON.stringify(newArr)}).eq('id',chatUserId);
+        await supabase.from('fwebaccount').update({fchat_messages:JSON.stringify(newArr)}).eq('id',chatUserId);
       }
     }catch(err){console.error(err);}
   }
@@ -233,10 +233,10 @@ async function sendMessage(){
   renderMessages(); chatInput.value="";linkedMsg=null;replyBox.style.display="none";
 
   try{
-    const {data:recv}=await supabase.from('fwebaccount').select('fweb_messages').eq('id',chatUserId).maybeSingle();
-    let arr=[];if(recv?.fweb_messages){try{arr=JSON.parse(recv.fweb_messages);}catch{arr=[];}}
+    const {data:recv}=await supabase.from('fwebaccount').select('fchat_messages').eq('id',chatUserId).maybeSingle();
+    let arr=[];if(recv?.fchat_messages){try{arr=JSON.parse(recv.fchat_messages);}catch{arr=[];}}
     arr.push(msgData);
-    await supabase.from('fwebaccount').update({fweb_messages:JSON.stringify(arr)}).eq('id',chatUserId);
+    await supabase.from('fwebaccount').update({fchat_messages:JSON.stringify(arr)}).eq('id',chatUserId);
   }catch(e){console.error("Send failed:",e);}
 }
 
@@ -245,15 +245,14 @@ chatInput.addEventListener("keypress",e=>{if(e.key==="Enter")sendMessage();});
 
 async function receiveMessages(){
   try{
-    const {data,error}=await supabase.from('fwebaccount').select('fweb_messages').eq('id',chatUserId).maybeSingle();
+    const {data,error}=await supabase.from('fwebaccount').select('fchat_messages').eq('id',chatUserId).maybeSingle();
     if(error)throw error;
-    if(!data?.fweb_messages)return;
-    const serverMsgs=JSON.parse(data.fweb_messages)||[];
+    if(!data?.fchat_messages)return;
+    const serverMsgs=JSON.parse(data.fchat_messages)||[];
     const localMsgs=JSON.parse(localStorage.getItem(storageKey))||[];
     let updated=false;
 
     serverMsgs.forEach(m=>{
-      // add only unseen messages from others
       if(m.sender_id!==currentUser.id && !localMsgs.find(lm=>lm.time_utc===m.time_utc)){
         localMsgs.push({...m,sender:"them"});
         updated=true;
@@ -265,13 +264,12 @@ async function receiveMessages(){
       renderMessages();
     }
 
-    // mark received messages as seen
     let needUpdate=false;
     serverMsgs.forEach(m=>{
       if(m.sender_id!==currentUser.id && !m.seen){ m.seen=true; needUpdate=true; }
     });
     if(needUpdate){
-      await supabase.from('fwebaccount').update({fweb_messages:JSON.stringify(serverMsgs)}).eq('id',chatUserId);
+      await supabase.from('fwebaccount').update({fchat_messages:JSON.stringify(serverMsgs)}).eq('id',chatUserId);
     }
   }catch(err){console.error(err);}
 }
