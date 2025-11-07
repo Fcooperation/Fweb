@@ -198,16 +198,17 @@ async function receiveMessages() {
   try {
     chatStatus.textContent = "Checking for new messages...";
 
+    // 👇 Fetch messages for the currently logged-in user
     const { data, error } = await supabase
       .from('fwebaccount')
       .select('fchat_messages')
-      .eq('id', chatUserId)
+      .eq('id', currentUser.id)
       .maybeSingle();
 
     if (error) throw error;
 
     if (data?.fchat_messages && data.fchat_messages.length > 0) {
-      console.log("✅ New messages found:", data.fchat_messages);
+      console.log("✅ New messages found for you:", data.fchat_messages);
       chatStatus.textContent = "New messages found";
     } else {
       console.log("ℹ️ No new messages found");
@@ -220,7 +221,8 @@ async function receiveMessages() {
   }
 }
 
-
+// Run every 2 seconds
+setInterval(receiveMessages, 2000);
   
 setInterval(receiveMessages,1000);  
 window.addEventListener("load",async()=>{ await loadChatUser(); renderMessages(); receiveMessages(); });  
