@@ -27,8 +27,6 @@ header{
   align-self:flex-start;cursor:pointer;transition:background 0.2s, transform 0.2s;
 }
 .message.me{background:#c2ffc2;align-self:flex-end;}
-.message.new-msg{animation:fadeIn 0.5s ease;}
-@keyframes fadeIn{0%{background:#ffff99;}100%{background:#ececec;}}
 .message:hover{background:#e4e4e4;}
 .msg-time{display:block;text-align:right;font-size:11px;color:#555;margin-top:3px;}
 .linked-box{background:rgba(0,0,0,0.05);border-left:3px solid #007bff;
@@ -98,7 +96,7 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 const supabase = createClient(
   "https://pwsxezhugsxosbwhkdvf.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 );
 
 const chatBoard = document.getElementById('chat-board');
@@ -109,15 +107,11 @@ const chatPic = document.getElementById('chat-pic');
 const replyBox = document.getElementById('reply-box');
 const replyText = replyBox.querySelector('span');
 const closeReply = document.getElementById('close-reply');
-const menu = document.getElementById('menu');
-const deleteBtn = document.getElementById('delete-msg');
 const chatStatus = document.getElementById('chat-status');
 
 const chatUserId = localStorage.getItem('chatting');
 const currentUser = JSON.parse(localStorage.getItem('faccount'));
-const storageKey = `chat_messages_${chatUserId}`;
-let linkedMsg = null;
-let selectedMsg = null;
+let lastMessages = [];
 
 if(!currentUser || !chatUserId){
   chatStatus.textContent = "Error: Missing chat info!";
@@ -152,85 +146,67 @@ function formatTime(t){
                 d.toLocaleString("en-US",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})+" UTC";
 }
 
-function renderMessages(){
-  const msgs = JSON.parse(localStorage.getItem(storageKey)) || [];
+function renderMessages(msgs){
   chatBoard.innerHTML = "";
-  if(msgs.length===0){ chatBoard.innerHTML="<div id='loading'>No messages yet.</div>"; return; }
-  msgs.forEach((m,i)=>{
+  if(!msgs || msgs.length===0){ 
+    chatBoard.innerHTML="<div id='loading'>No messages yet.</div>"; 
+    return; 
+  }
+  msgs.forEach((m)=>{
     const div = document.createElement("div");
     div.classList.add("message");
-    if(m.sender==="me") div.classList.add("me");
-    if(m.new) div.classList.add("new-msg");
-    div.dataset.index = i;
-    div.innerHTML=`${m.linked?`<div class="linked-box" data-linked-time="${m.linked_message_time}">${m.linked_message}</div>`:""}
-                   <div>${m.message}</div>
-                   <span class="msg-time">${formatTime(m.time_utc)}</span>`;
+    if(m.sender_id===currentUser.id) div.classList.add("me");
+    if(m.linked) div.innerHTML = `<div class="linked-box" data-linked-time="${m.linked_message_time}">${m.linked_message}</div>`;
+    div.innerHTML += `<div>${m.message}</div><span class="msg-time">${formatTime(m.time_utc)}</span>`;
     chatBoard.appendChild(div);
-    if(m.new) delete m.new; // remove flag after showing highlight
   });
   chatBoard.scrollTop = chatBoard.scrollHeight;
-  localStorage.setItem(storageKey, JSON.stringify(JSON.parse(localStorage.getItem(storageKey))));
 }
 
 async function sendMessage(){
   const text = chatInput.value.trim();
   if(!text) return;
-  const msgData = { sender_id:currentUser.id, message:text,
-    time_utc:new Date().toISOString(), linked:linkedMsg?true:false,
-    linked_message:linkedMsg?linkedMsg.message:null,
-    linked_message_time:linkedMsg?linkedMsg.time_utc:null,
-    seen:false };
-  const msgs = JSON.parse(localStorage.getItem(storageKey)) || [];
-  msgs.push({...msgData,sender:"me"});
-  localStorage.setItem(storageKey,JSON.stringify(msgs));
-  renderMessages();
-  chatInput.value=""; linkedMsg=null; replyBox.style.display="none";
+  const msgData = {
+    sender_id: currentUser.id,
+    message: text,
+    time_utc: new Date().toISOString(),
+    linked: replyText.textContent ? true : false,
+    linked_message: replyText.textContent || null,
+    linked_message_time: replyBox.dataset.linkedTime || null,
+    seen:false
+  };
+
+  chatInput.value="";
+  replyText.textContent=""; replyBox.style.display="none";
 
   try{
-    const {data:recv} = await supabase.from('fwebaccount').select('fchat_messages').eq('id',chatUserId).maybeSingle();
-    let arr = [];
-    if(recv?.fchat_messages){
-      if(Array.isArray(recv.fchat_messages)) arr = recv.fchat_messages;
-      else { try{ arr = JSON.parse(recv.fchat_messages); } catch{ arr=[]; } }
+    const {data,error} = await supabase.from('fwebaccount').select('fchat_messages').eq('id',chatUserId).maybeSingle();
+    if(error) throw error;
+    let msgs = [];
+    if(data?.fchat_messages){
+      msgs = Array.isArray(data.fchat_messages) ? data.fchat_messages : JSON.parse(data.fchat_messages);
     }
-    arr.push(msgData);
-    await supabase.from('fwebaccount').update({fchat_messages: JSON.stringify(arr)}).eq('id',chatUserId);
+    msgs.push(msgData);
+    await supabase.from('fwebaccount').update({fchat_messages: JSON.stringify(msgs)}).eq('id',chatUserId);
+    lastMessages = msgs;
+    renderMessages(msgs);
   }catch(e){console.error("Send failed:",e);}
 }
 
-sendBtn.addEventListener("click",sendMessage);
-chatInput.addEventListener("keypress",e=>{if(e.key==="Enter") sendMessage();});
-
 async function receiveMessages(){
   try{
-    chatStatus.textContent = "Checking for new messages...";
     const {data,error} = await supabase.from('fwebaccount').select('fchat_messages').eq('id',chatUserId).maybeSingle();
     if(error) throw error;
-    if(!data) { chatStatus.textContent = "No data found"; return; }
-
-    let serverMsgs = [];
-    if(data.fchat_messages){
-      if(Array.isArray(data.fchat_messages)) serverMsgs = data.fchat_messages;
-      else { try{ serverMsgs = JSON.parse(data.fchat_messages); } catch{ serverMsgs = []; } }
+    let msgs = [];
+    if(data?.fchat_messages){
+      msgs = Array.isArray(data.fchat_messages) ? data.fchat_messages : JSON.parse(data.fchat_messages);
     }
-
-    const localMsgs = JSON.parse(localStorage.getItem(storageKey)) || [];
-    let updated = false;
-
-    serverMsgs.forEach(m=>{
-      if(!localMsgs.find(lm=>lm.time_utc===m.time_utc && lm.message===m.message)){
-        localMsgs.push({...m, sender: m.sender_id===currentUser.id?"me":"them", new:true});
-        updated = true;
-      }
-    });
-
-    localMsgs.sort((a,b)=>new Date(a.time_utc)-new Date(b.time_utc));
-    localStorage.setItem(storageKey, JSON.stringify(localMsgs));
-    if(updated){
-      renderMessages();
-      chatStatus.textContent = `New messages loaded (${localMsgs.length})`;
+    if(JSON.stringify(msgs) !== JSON.stringify(lastMessages)){
+      lastMessages = msgs;
+      renderMessages(msgs);
+      chatStatus.textContent = "New messages found";
     } else {
-      chatStatus.textContent = `Messages loaded (${localMsgs.length})`;
+      chatStatus.textContent = "No new messages";
     }
   }catch(err){
     console.error(err);
@@ -238,8 +214,14 @@ async function receiveMessages(){
   }
 }
 
-setInterval(receiveMessages,1000);
-window.addEventListener("load",async()=>{ await loadChatUser(); await receiveMessages(); renderMessages(); });
+sendBtn.addEventListener("click",sendMessage);
+chatInput.addEventListener("keypress",e=>{if(e.key==="Enter") sendMessage();});
+
+window.addEventListener("load",async()=>{
+  await loadChatUser();
+  await receiveMessages();
+  setInterval(receiveMessages,1000);
+});
 </script>
 </body>
 </html>
