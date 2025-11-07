@@ -1,204 +1,243 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>FCHAT - Chat</title>
-<style>
-*{box-sizing:border-box;}
-body{font-family:'Poppins','Segoe UI',sans-serif';background:#fdfdfd;color:#111;margin:0;height:100vh;display:flex;flex-direction:column;}
-header{background:#fff;display:flex;flex-direction:column;align-items:flex-start;padding:12px 18px;border-bottom:1px solid #eee;box-shadow:0 2px 8px rgba(0,0,0,0.05);}
-.header-top{display:flex;justify-content:space-between;align-items:center;width:100%;}
-.header-left{display:flex;align-items:center;}
-.chat-header-pic{width:45px;height:45px;border-radius:50%;object-fit:cover;margin-right:10px;background:#ccc;}
-.chat-header-name{font-weight:600;font-size:18px;cursor:pointer;}
-#chat-status{font-size:12px;color:#555;margin-top:3px;}
-#chat-board{flex:1;background:#fafafa;overflow-y:auto;padding:15px;display:flex;flex-direction:column;}
-.message{background:#ececec;color:#000;padding:10px 15px;border-radius:14px;margin-bottom:10px;max-width:75%;word-wrap:break-word;position:relative;align-self:flex-start;cursor:pointer;transition:background 0.2s, transform 0.2s;}
-.message.me{background:#c2ffc2;align-self:flex-end;}
-.message:hover{background:#e4e4e4;}
-.msg-time{display:block;text-align:right;font-size:11px;color:#555;margin-top:3px;}
-.linked-box{background:rgba(0,0,0,0.05);border-left:3px solid #007bff;padding:5px 8px;border-radius:5px;font-size:13px;margin-bottom:5px;cursor:pointer;}
-#reply-box{background:#f1f1f1;padding:6px 12px;font-size:13px;border-left:3px solid #007bff;display:none;align-items:center;justify-content:space-between;}
-#reply-box span{flex:1;}
-#reply-box button{background:transparent;border:none;font-size:18px;cursor:pointer;}
-#chat-input-area{display:flex;flex-direction:column;border-top:1px solid #ddd;background:#fff;position:sticky;bottom:0;}
-#chat-input-row{display:flex;align-items:center;padding:10px 14px;}
-#chat-input{flex:1;border:1px solid #ccc;border-radius:25px;padding:10px 15px;font-size:15px;outline:none;background:#f7f7f7;transition:0.2s;}
-#chat-input:focus{background:#fff;border-color:#999;}
-#send-btn{background:#007bff;border:none;color:#fff;font-size:20px;border-radius:50%;width:42px;height:42px;margin-left:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
-#send-btn:hover{background:#0066d6;}
-#loading{text-align:center;padding:20px;color:#777;}
-</style>
-</head>
-<body>
-<header>
-  <div class="header-top" id="chat-header">
-    <div class="header-left">
-      <img id="chat-pic" class="chat-header-pic" src="" alt="Profile">
-      <div class="chat-header-name" id="chat-name">Loading...</div>
-    </div>
-  </div>
-  <div id="chat-status">Initializing...</div>
-</header>
+<!DOCTYPE html>      
+<html lang="en">      
+<head>      
+<meta charset="UTF-8" />      
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />      
+<title>FCHAT - Chat</title>      
+<style>      
+/* your existing CSS remains untouched */      
+*{box-sizing:border-box;}      
+body{font-family:'Poppins','Segoe UI',sans-serif;background:#fdfdfd;color:#111;margin:0;height:100vh;display:flex;flex-direction:column;}      
+header{background:#fff;display:flex;flex-direction:column;align-items:flex-start;padding:12px 18px;border-bottom:1px solid #eee;box-shadow:0 2px 8px rgba(0,0,0,0.05);}      
+.header-top{display:flex;justify-content:space-between;align-items:center;width:100%;}      
+.header-left{display:flex;align-items:center;}      
+.chat-header-pic{width:45px;height:45px;border-radius:50%;object-fit:cover;margin-right:10px;background:#ccc;}      
+.chat-header-name{font-weight:600;font-size:18px;cursor:pointer;}      
+#chat-status{font-size:12px;color:#555;margin-top:3px;}      
+#chat-board{flex:1;background:#fafafa;overflow-y:auto;padding:15px;display:flex;flex-direction:column;}      
+.message{background:#ececec;color:#000;padding:10px 15px;border-radius:14px;margin-bottom:10px;max-width:75%;word-wrap:break-word;position:relative;align-self:flex-start;cursor:pointer;transition:background 0.2s, transform 0.2s;}      
+.message.me{background:#c2ffc2;align-self:flex-end;}      
+.message:hover{background:#e4e4e4;}      
+.msg-time{display:block;text-align:right;font-size:11px;color:#555;margin-top:3px;}      
+.linked-box{background:rgba(0,0,0,0.05);border-left:3px solid #007bff;padding:5px 8px;border-radius:5px;font-size:13px;margin-bottom:5px;cursor:pointer;}      
+#reply-box{background:#f1f1f1;padding:6px 12px;font-size:13px;border-left:3px solid #007bff;display:none;align-items:center;justify-content:space-between;}      
+#reply-box span{flex:1;}      
+#reply-box button{background:transparent;border:none;font-size:18px;cursor:pointer;}      
+#chat-input-area{display:flex;flex-direction:column;border-top:1px solid #ddd;background:#fff;position:sticky;bottom:0;}      
+#chat-input-row{display:flex;align-items:center;padding:10px 14px;}      
+#chat-input{flex:1;border:1px solid #ccc;border-radius:25px;padding:10px 15px;font-size:15px;outline:none;background:#f7f7f7;transition:0.2s;}      
+#chat-input:focus{background:#fff;border-color:#999;}      
+#send-btn{background:#007bff;border:none;color:#fff;font-size:20px;border-radius:50%;width:42px;height:42px;margin-left:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;}      
+#send-btn:hover{background:#0066d6;}      
+#loading{text-align:center;padding:20px;color:#777;}      
+.context-menu{position:absolute;background:#fff;border:1px solid #ccc;box-shadow:0 2px 8px rgba(0,0,0,0.15);border-radius:6px;z-index:1000;display:none;flex-direction:column;min-width:100px;}      
+.context-menu button{background:none;border:none;text-align:left;padding:8px 12px;width:100%;cursor:pointer;font-size:14px;}      
+.context-menu button:hover{background:#eee;}      
+</style>      
+</head>      
+<body>      
+<header>      
+  <div class="header-top" id="chat-header">      
+    <div class="header-left">      
+      <img id="chat-pic" class="chat-header-pic" src="" alt="Profile">      
+      <div class="chat-header-name" id="chat-name">Loading...</div>      
+    </div>      
+  </div>      
+  <div id="chat-status">Initializing...</div>      
+</header>      
+      
+<div id="chat-board"><div id="loading">Loading chat...</div></div>      
+      
+<div id="chat-input-area">      
+  <div id="reply-box"><span></span><button id="close-reply">×</button></div>      
+  <div id="chat-input-row">      
+    <input type="text" id="chat-input" placeholder="Type a message...">      
+    <button id="send-btn">➤</button>      
+  </div>      
+</div>      
+      
+<div id="menu" class="context-menu">      
+  <button id="delete-msg">Delete</button>      
+</div>      
+      
+<script type="module">      
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";      
+      
+const supabase = createClient(      
+  "https://pwsxezhugsxosbwhkdvf.supabase.co",      
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"      
+);      
+      
+const chatBoard = document.getElementById('chat-board');      
+const chatInput = document.getElementById('chat-input');      
+const sendBtn = document.getElementById('send-btn');      
+const chatName = document.getElementById('chat-name');      
+const chatPic = document.getElementById('chat-pic');      
+const replyBox = document.getElementById('reply-box');      
+const replyText = replyBox.querySelector('span');      
+const closeReply = document.getElementById('close-reply');      
+const menu = document.getElementById('menu');      
+const deleteBtn = document.getElementById('delete-msg');      
+const chatStatus = document.getElementById('chat-status');      
+      
+const chatUserId = localStorage.getItem('chatting');      
+const currentUser = JSON.parse(localStorage.getItem('faccount'));      
+const storageKey = `chat_messages_${currentUser.id}`; // store by own id      
+let linkedMsg = null;      
+let selectedMsg = null;      
+      
+if(!currentUser || !chatUserId){      
+  chatStatus.textContent = "Error: Missing chat info!";      
+  throw new Error("Missing localStorage data");      
+}      
+      
+document.getElementById('chat-header').addEventListener('click',()=>{      
+  localStorage.setItem('chat_viewing', chatUserId);      
+  window.location.href = "chat_dashboard.html";      
+});      
+      
+async function loadChatUser(){      
+  chatStatus.textContent = "Accessing Supabase account...";      
+  try{      
+    const {data,error} = await supabase.from('fwebaccount').select('*').eq('id',chatUserId).maybeSingle();      
+    if(error) throw error;      
+    if(!data) throw new Error("User not found");      
+    chatName.textContent = data.username || "Unknown User";      
+    chatPic.src = data.profile_pic || "https://via.placeholder.com/50?text=U";      
+    chatStatus.textContent = "Supabase account accessed.";      
+  }catch(err){      
+    chatName.textContent="User not found";      
+    chatStatus.textContent = "Failed to access user.";      
+    console.error(err);      
+  }      
+}      
+      
+function formatTime(t){      
+  const d = new Date(t), n = new Date();      
+  const same = d.toDateString() === n.toDateString();      
+  return same ? d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})+" UTC" :      
+                d.toLocaleString("en-US",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})+" UTC";      
+}      
+      
+function renderMessages(){      
+  const msgs = JSON.parse(localStorage.getItem(storageKey)) || [];      
+  chatBoard.innerHTML = "";      
+  if(msgs.length===0){ chatBoard.innerHTML="<div id='loading'>No messages yet.</div>"; return; }      
+  msgs.forEach((m,i)=>{      
+    const div = document.createElement("div");      
+    div.classList.add("message");      
+    if(m.sender==="me") div.classList.add("me");      
+    div.dataset.index = i;      
+    div.dataset.senderId = m.sender_id;      
+    div.innerHTML=`${m.linked?`<div class="linked-box" data-linked-time="${m.linked_message_time}">${m.linked_message}</div>`:""}      
+                   <div>${m.message}</div>      
+                   <span class="msg-time">${formatTime(m.time_utc)}</span>`;      
+    chatBoard.appendChild(div);      
+  });      
+  chatBoard.scrollTop = chatBoard.scrollHeight;      
+}      
 
-<div id="chat-board"><div id="loading">Loading chat...</div></div>
-
-<div id="chat-input-area">
-  <div id="reply-box"><span></span><button id="close-reply">×</button></div>
-  <div id="chat-input-row">
-    <input type="text" id="chat-input" placeholder="Type a message...">
-    <button id="send-btn">➤</button>
-  </div>
-</div>
-
-<script type="module">
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-
-const supabase = createClient(
-  "https://pwsxezhugsxosbwhkdvf.supabase.co",
-  "YOUR_PUBLIC_KEY_HERE"
-);
-
-const chatBoard = document.getElementById('chat-board');
-const chatInput = document.getElementById('chat-input');
-const sendBtn = document.getElementById('send-btn');
-const chatName = document.getElementById('chat-name');
-const chatPic = document.getElementById('chat-pic');
-const replyBox = document.getElementById('reply-box');
-const replyText = replyBox.querySelector('span');
-const closeReply = document.getElementById('close-reply');
-const chatStatus = document.getElementById('chat-status');
-
-const chatUserId = localStorage.getItem('chatting'); // chatting partner
-const currentUser = JSON.parse(localStorage.getItem('faccount')); // me
-const storageKey = `chat_messages_${chatUserId}`;
-let linkedMsg = null;
-
-if(!currentUser || !chatUserId){
-  chatStatus.textContent = "Error: Missing chat info!";
-  throw new Error("Missing localStorage data");
-}
-
-document.getElementById('chat-header').addEventListener('click',()=>{
-  localStorage.setItem('chat_viewing', chatUserId);
-  window.location.href = "chat_dashboard.html";
-});
-
-async function loadChatUser(){
-  chatStatus.textContent = "Loading user...";
-  try{
-    const {data,error} = await supabase.from('fwebaccount').select('*').eq('id',chatUserId).maybeSingle();
-    if(error) throw error;
-    if(!data) throw new Error("User not found");
-    chatName.textContent = data.username || "Unknown User";
-    chatPic.src = data.profile_pic || "https://via.placeholder.com/50?text=U";
-    chatStatus.textContent = "User loaded.";
-  }catch(err){
-    chatName.textContent="User not found";
-    chatStatus.textContent = "Failed to load user.";
-    console.error(err);
-  }
-}
-
-function formatTime(t){
-  const d = new Date(t), n = new Date();
-  const same = d.toDateString() === n.toDateString();
-  return same ? d.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})+" UTC"
-              : d.toLocaleString("en-US",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})+" UTC";
-}
-
-function renderMessages(){
-  const msgs = JSON.parse(localStorage.getItem(storageKey)) || [];
-  chatBoard.innerHTML = "";
-  if(msgs.length===0){ chatBoard.innerHTML="<div id='loading'>No messages yet.</div>"; return; }
-  msgs.forEach((m,i)=>{
-    const div = document.createElement("div");
-    div.classList.add("message");
-    if(m.sender==="me") div.classList.add("me");
-    div.dataset.index = i;
-    div.innerHTML = `${m.linked?`<div class="linked-box">${m.linked_message}</div>`:""}<div>${m.message}</div><span class="msg-time">${formatTime(m.time_utc)}</span>`;
-    
-    // swipe to reply
-    let startX = 0;
-    div.addEventListener('touchstart', e=>{ startX = e.touches[0].clientX; });
-    div.addEventListener('touchend', e=>{
-      const diff = e.changedTouches[0].clientX - startX;
-      if(diff > 80 && m.sender!=="me"){ // swipe right
-        linkedMsg = m;
-        replyBox.style.display="flex";
-        replyText.textContent = m.message;
-      }
-    });
-
-    chatBoard.appendChild(div);
-  });
-  chatBoard.scrollTop = chatBoard.scrollHeight;
-}
-
-async function sendMessage(){
-  const text = chatInput.value.trim();
-  if(!text) return;
-  const msgData = {
-    sender_id: currentUser.id,
-    receiver_id: chatUserId,
-    message: text,
-    time_utc: new Date().toISOString(),
-    linked: linkedMsg ? true : false,
-    linked_message: linkedMsg ? linkedMsg.message : null,
-  };
-
-  let localMsgs = JSON.parse(localStorage.getItem(storageKey)) || [];
-  localMsgs.push({...msgData, sender:"me"});
-  localStorage.setItem(storageKey, JSON.stringify(localMsgs));
-  renderMessages();
-  chatInput.value=""; linkedMsg=null; replyBox.style.display="none";
-
-  try{
-    // update recipient messages
-    const {data} = await supabase.from('fwebaccount').select('fchat_messages').eq('id', chatUserId).maybeSingle();
-    let arr = [];
-    if(data?.fchat_messages){
-      arr = Array.isArray(data.fchat_messages)? data.fchat_messages : JSON.parse(data.fchat_messages);
+// Swipe to reply
+let touchStartX = 0;
+chatBoard.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; });
+chatBoard.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].screenX - touchStartX;
+  if(dx>80){ // swipe right
+    const msgDiv = e.target.closest('.message');
+    if(msgDiv){
+      const index = msgDiv.dataset.index;
+      const msgs = JSON.parse(localStorage.getItem(storageKey)) || [];
+      linkedMsg = msgs[index];
+      replyText.textContent = linkedMsg.message;
+      replyBox.style.display = "flex";
     }
-    arr.push(msgData);
-    await supabase.from('fwebaccount').update({fchat_messages: JSON.stringify(arr)}).eq('id', chatUserId);
-  }catch(err){console.error("Send failed:",err);}
-}
-
-sendBtn.addEventListener("click",sendMessage);
-chatInput.addEventListener("keypress", e=>{if(e.key==="Enter") sendMessage();});
-
-async function receiveMessages(){
-  try{
-    chatStatus.textContent="Checking for new messages...";
-    const {data,error} = await supabase.from('fwebaccount').select('fchat_messages').eq('id', currentUser.id).maybeSingle();
-    if(error) throw error;
-    if(!data?.fchat_messages) return;
-
-    let serverMsgs = Array.isArray(data.fchat_messages)? data.fchat_messages : JSON.parse(data.fchat_messages);
-    // filter only messages from this chatUserId
-    serverMsgs = serverMsgs.filter(m=>m.sender_id === chatUserId);
-
-    let localMsgs = JSON.parse(localStorage.getItem(storageKey)) || [];
-    serverMsgs.forEach(msg=>{
-      const exists = localMsgs.some(m=>m.time_utc === msg.time_utc && m.message === msg.message);
-      if(!exists) localMsgs.push({...msg, sender:"them"});
-    });
-
-    localStorage.setItem(storageKey, JSON.stringify(localMsgs));
-    if(localMsgs.length>0) renderMessages();
-    chatStatus.textContent="All messages loaded.";
-  }catch(err){console.error(err); chatStatus.textContent="Error loading messages";}
-}
-
-window.addEventListener("load", async ()=>{
-  await loadChatUser();
-  renderMessages();
-  receiveMessages();
+  }
 });
 
-setInterval(receiveMessages, 1000);
-</script>
-</body>
+closeReply.addEventListener("click",()=>{ linkedMsg=null; replyBox.style.display="none"; });
+
+async function sendMessage(){      
+  const text = chatInput.value.trim();      
+  if(!text) return;      
+  const msgData = { sender_id:currentUser.id, receiver_id:chatUserId, message:text,      
+    time_utc:new Date().toISOString(), linked:linkedMsg?true:false,      
+    linked_message:linkedMsg?linkedMsg.message:null,      
+    linked_message_time:linkedMsg?linkedMsg.time_utc:null,      
+    seen:false };      
+  
+  // Save locally
+  const msgs = JSON.parse(localStorage.getItem(storageKey)) || [];      
+  msgs.push({...msgData,sender:"me"});      
+  localStorage.setItem(storageKey,JSON.stringify(msgs));      
+  renderMessages(); chatInput.value=""; linkedMsg=null; replyBox.style.display="none";      
+  
+  // Save to Supabase (receiver's fchat_messages)
+  try{      
+    const {data:recv} = await supabase.from('fwebaccount').select('fchat_messages').eq('id',chatUserId).maybeSingle();      
+    let arr = [];      
+    if(recv?.fchat_messages){      
+      if(Array.isArray(recv.fchat_messages)) arr = recv.fchat_messages;      
+      else { try{ arr = JSON.parse(recv.fchat_messages); } catch{ arr=[]; } }      
+    }      
+    arr.push(msgData);      
+    await supabase.from('fwebaccount').update({fchat_messages: JSON.stringify(arr)}).eq('id',chatUserId);      
+  }catch(e){console.error("Send failed:",e);}      
+}      
+      
+sendBtn.addEventListener("click",sendMessage);      
+chatInput.addEventListener("keypress",e=>{if(e.key==="Enter") sendMessage();});      
+
+async function receiveMessages(){        
+  try{        
+    chatStatus.textContent = "Checking for new messages...";        
+    
+    const {data, error} = await supabase    
+      .from('fwebaccount')    
+      .select('fchat_messages')    
+      .eq('id', currentUser.id)    // fetch messages meant for current user    
+      .maybeSingle();        
+    
+    if(error) throw error;        
+    if(!data?.fchat_messages) return;        
+    
+    let serverMsgs = [];        
+    if(Array.isArray(data.fchat_messages)) serverMsgs = data.fchat_messages;        
+    else {     
+      try { serverMsgs = JSON.parse(data.fchat_messages); }     
+      catch { serverMsgs = []; }     
+    }        
+    
+    // Filter messages only from current chat partner
+    serverMsgs = serverMsgs.filter(m=>m.sender_id===chatUserId);
+
+    // Load current localStorage messages    
+    let localMsgs = JSON.parse(localStorage.getItem(storageKey)) || [];        
+    
+    // Merge: only add messages that are not already in localStorage (compare time_utc & message)    
+    serverMsgs.forEach(msg => {    
+      const exists = localMsgs.some(m => m.time_utc === msg.time_utc && m.message === msg.message);    
+      if(!exists){    
+        localMsgs.push({...msg, sender:"them"});    
+      }    
+    });    
+    
+    // Update localStorage    
+    localStorage.setItem(storageKey, JSON.stringify(localMsgs));    
+    
+    // Render all messages    
+    if(localMsgs.length > 0){    
+      chatStatus.textContent = "New messages loaded";    
+      renderMessages();    
+    }    
+    
+  } catch(err){         
+    console.error(err);        
+    chatStatus.textContent = "Error fetching messages";        
+  }        
+}    
+    
+setInterval(receiveMessages,1000);      
+window.addEventListener("load",async()=>{ await loadChatUser(); renderMessages(); receiveMessages(); });      
+</script>      
+</body>      
 </html>
