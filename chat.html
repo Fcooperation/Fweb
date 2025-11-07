@@ -214,20 +214,35 @@ async function receiveMessages(){
       catch { serverMsgs = []; } 
     }    
 
-    if(serverMsgs.length > 0){    
-      chatStatus.textContent = "New messages found";    
+    // Load current localStorage messages
+    let localMsgs = JSON.parse(localStorage.getItem(storageKey)) || [];    
 
-      // **Overwrite localStorage with server messages**
-      localStorage.setItem(storageKey, JSON.stringify(serverMsgs));    
+    // Merge: only add messages that are not already in localStorage (compare time_utc & message)
+    serverMsgs.forEach(msg => {
+      const exists = localMsgs.some(m => m.time_utc === msg.time_utc && m.message === msg.message);
+      if(!exists){
+        // Determine sender relative to current user
+        const sender = msg.sender_id === currentUser.id ? "me" : "them";
+        localMsgs.push({...msg, sender});
+      }
+    });
 
-      // Render all messages from server
-      renderMessages();    
-    }    
+    // Update localStorage
+    localStorage.setItem(storageKey, JSON.stringify(localMsgs));
+
+    // Render all messages
+    if(localMsgs.length > 0){
+      chatStatus.textContent = "New messages found";
+      renderMessages();
+    }
+
   } catch(err){     
     console.error(err);    
     chatStatus.textContent = "Error fetching messages";    
   }    
   }
+
+    
 setInterval(receiveMessages,1000);  
 window.addEventListener("load",async()=>{ await loadChatUser(); renderMessages(); receiveMessages(); });  
 </script>  
