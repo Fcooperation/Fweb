@@ -194,22 +194,40 @@ async function sendMessage(){
 sendBtn.addEventListener("click",sendMessage);  
 chatInput.addEventListener("keypress",e=>{if(e.key==="Enter") sendMessage();});  
   
-async function receiveMessages(){  
-  try{  
-    chatStatus.textContent = "Checking for new messages...";  
-    const {data,error} = await supabase.from('fwebaccount').select('fchat_messages').eq('id',chatUserId).maybeSingle();  
-    if(error) throw error;  
-    if(!data?.fchat_messages) return;  
-    let serverMsgs = [];  
-    if(Array.isArray(data.fchat_messages)) serverMsgs = data.fchat_messages;  
-    else { try{ serverMsgs = JSON.parse(data.fchat_messages); } catch{ serverMsgs = []; } }  
-    if(serverMsgs.length>0) chatStatus.textContent = "New messages found";  
-  }catch(err){   
-    console.error(err);  
-    chatStatus.textContent = "Error fetching messages";  
-  }  
-}  
-  
+async function receiveMessages(){    
+  try{    
+    chatStatus.textContent = "Checking for new messages...";    
+
+    const {data, error} = await supabase
+      .from('fwebaccount')
+      .select('fchat_messages')
+      .eq('id', chatUserId)
+      .maybeSingle();    
+
+    if(error) throw error;    
+    if(!data?.fchat_messages) return;    
+
+    let serverMsgs = [];    
+    if(Array.isArray(data.fchat_messages)) serverMsgs = data.fchat_messages;    
+    else { 
+      try { serverMsgs = JSON.parse(data.fchat_messages); } 
+      catch { serverMsgs = []; } 
+    }    
+
+    if(serverMsgs.length > 0){    
+      chatStatus.textContent = "New messages found";    
+
+      // **Overwrite localStorage with server messages**
+      localStorage.setItem(storageKey, JSON.stringify(serverMsgs));    
+
+      // Render all messages from server
+      renderMessages();    
+    }    
+  } catch(err){     
+    console.error(err);    
+    chatStatus.textContent = "Error fetching messages";    
+  }    
+  }
 setInterval(receiveMessages,1000);  
 window.addEventListener("load",async()=>{ await loadChatUser(); renderMessages(); receiveMessages(); });  
 </script>  
