@@ -22,7 +22,7 @@ header{
 .message{
   background:#ececec;color:#000;padding:10px 15px;border-radius:14px;
   margin-bottom:10px;max-width:75%;word-wrap:break-word;position:relative;
-  align-self:flex-start;cursor:pointer;transition:background 0.2s;
+  align-self:flex-start;cursor:pointer;transition:background 0.2s, transform 0.2s;
 }
 .message.me{background:#c2ffc2;align-self:flex-end;}
 .message:hover{background:#e4e4e4;}
@@ -91,7 +91,7 @@ header{
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-const supabase = createClient(
+const supabase=createClient(
   "https://pwsxezhugsxosbwhkdvf.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
 );
@@ -147,13 +147,20 @@ function renderMessages(){
     div.innerHTML=`${m.linked?`<div class="linked-box">${m.linked_message}</div>`:""}
                    <div>${m.message}</div>
                    <span class="msg-time">${formatTime(m.time_utc)}</span>`;
-    div.addEventListener("click",()=>selectReply(m));
+    // swipe-to-reply like WhatsApp
+    let startX=0;
+    div.addEventListener("touchstart",e=>{startX=e.touches[0].clientX;});
+    div.addEventListener("touchmove",e=>{
+      const diff=e.touches[0].clientX-startX;
+      if(diff>70){ // swipe right
+        selectReply(m);
+        div.style.transform="translateX(30px)";
+        setTimeout(()=>div.style.transform="translateX(0)",200);
+      }
+    });
+    // Context menu
     div.addEventListener("contextmenu",e=>{
       e.preventDefault();showMenu(e.pageX,e.pageY,m,i);
-    });
-    div.addEventListener("touchstart",e=>{
-      let timer=setTimeout(()=>showMenu(e.touches[0].pageX,e.touches[0].pageY,m,i),600);
-      div.addEventListener("touchend",()=>clearTimeout(timer));
     });
     chatBoard.appendChild(div);
   });
@@ -172,23 +179,21 @@ deleteBtn.addEventListener("click",async()=>{
   menu.style.display="none";
   if(!selectedMsg)return;
   const {msg,index}=selectedMsg;
-  if(msg.seen){
-    alert("Can't delete. Message already seen.");
-    return;
-  }
   const msgs=JSON.parse(localStorage.getItem(storageKey))||[];
   msgs.splice(index,1);
   localStorage.setItem(storageKey,JSON.stringify(msgs));
   renderMessages();
-  try{
-    const {data}=await supabase.from('fwebaccount').select('fweb_messages').eq('id',chatUserId).maybeSingle();
-    if(data?.fweb_messages){
-      let arr=[];
-      try{arr=JSON.parse(data.fweb_messages);}catch{arr=[];}
-      const newArr=arr.filter(m=>!(m.sender_id===msg.sender_id && m.time_utc===msg.time_utc));
-      await supabase.from('fwebaccount').update({fweb_messages:JSON.stringify(newArr)}).eq('id',chatUserId);
-    }
-  }catch(err){console.error(err);}
+  // delete from server only if unseen
+  if(!msg.seen){
+    try{
+      const {data}=await supabase.from('fwebaccount').select('fweb_messages').eq('id',chatUserId).maybeSingle();
+      if(data?.fweb_messages){
+        let arr=[];try{arr=JSON.parse(data.fweb_messages);}catch{arr=[];}
+        const newArr=arr.filter(m=>!(m.sender_id===msg.sender_id && m.time_utc===msg.time_utc));
+        await supabase.from('fwebaccount').update({fweb_messages:JSON.stringify(newArr)}).eq('id',chatUserId);
+      }
+    }catch(err){console.error(err);}
+  }
 });
 
 function selectReply(m){
