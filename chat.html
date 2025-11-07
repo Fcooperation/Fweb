@@ -1,314 +1,217 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1.0" />
-<title>FCHAT - Chat</title>
-<style>
-*{box-sizing:border-box;}
-body{
-  font-family:'Poppins','Segoe UI',sans-serif;
-  background:#fdfdfd;color:#111;margin:0;height:100vh;
-  display:flex;flex-direction:column;
-}
-header{
-  background:#fff;display:flex;flex-direction:column;align-items:flex-start;
-  padding:12px 18px;border-bottom:1px solid #eee;box-shadow:0 2px 8px rgba(0,0,0,0.05);
-}
-.header-top{display:flex;justify-content:space-between;align-items:center;width:100%;}
-.header-left{display:flex;align-items:center;}
-.chat-header-pic{width:45px;height:45px;border-radius:50%;object-fit:cover;margin-right:10px;background:#ccc;}
-.chat-header-name{font-weight:600;font-size:18px;cursor:pointer;}
-#chat-status{font-size:12px;color:#555;margin-top:3px;}
-#chat-board{flex:1;background:#fafafa;overflow-y:auto;padding:15px;display:flex;flex-direction:column;}
-.message{
-  background:#ececec;color:#000;padding:10px 15px;border-radius:14px;
-  margin-bottom:10px;max-width:75%;word-wrap:break-word;position:relative;
-  align-self:flex-start;cursor:pointer;transition:background 0.2s, transform 0.2s;
-}
-.message.me{background:#c2ffc2;align-self:flex-end;}
-.message:hover{background:#e4e4e4;}
-.msg-time{display:block;text-align:right;font-size:11px;color:#555;margin-top:3px;}
-.linked-box{background:rgba(0,0,0,0.05);border-left:3px solid #007bff;
-  padding:5px 8px;border-radius:5px;font-size:13px;margin-bottom:5px;cursor:pointer;}
-#reply-box{
-  background:#f1f1f1;padding:6px 12px;font-size:13px;border-left:3px solid #007bff;
-  display:none;align-items:center;justify-content:space-between;
-}
-#reply-box span{flex:1;}
-#reply-box button{background:transparent;border:none;font-size:18px;cursor:pointer;}
-#chat-input-area{
-  display:flex;flex-direction:column;border-top:1px solid #ddd;
-  background:#fff;position:sticky;bottom:0;
-}
-#chat-input-row{display:flex;align-items:center;padding:10px 14px;}
-#chat-input{
-  flex:1;border:1px solid #ccc;border-radius:25px;padding:10px 15px;
-  font-size:15px;outline:none;background:#f7f7f7;transition:0.2s;
-}
-#chat-input:focus{background:#fff;border-color:#999;}
-#send-btn{
-  background:#007bff;border:none;color:#fff;font-size:20px;border-radius:50%;
-  width:42px;height:42px;margin-left:8px;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-}
-#send-btn:hover{background:#0066d6;}
-#loading{text-align:center;padding:20px;color:#777;}
-.context-menu{
-  position:absolute;background:#fff;border:1px solid #ccc;
-  box-shadow:0 2px 8px rgba(0,0,0,0.15);border-radius:6px;
-  z-index:1000;display:none;flex-direction:column;min-width:100px;
-}
-.context-menu button{
-  background:none;border:none;text-align:left;padding:8px 12px;
-  width:100%;cursor:pointer;font-size:14px;
-}
-.context-menu button:hover{background:#eee;}
-</style>
-</head>
-<body>
-<header>
-  <div class="header-top" id="chat-header">
-    <div class="header-left">
-      <img id="chat-pic" class="chat-header-pic" src="" alt="Profile">
-      <div class="chat-header-name" id="chat-name">Loading...</div>
-    </div>
-  </div>
-  <div id="chat-status">Initializing...</div>
-</header>
-
-<div id="chat-board"><div id="loading">Loading chat...</div></div>
-
-<div id="chat-input-area">
-  <div id="reply-box"><span></span><button id="close-reply">×</button></div>
-  <div id="chat-input-row">
-    <input type="text" id="chat-input" placeholder="Type a message...">
-    <button id="send-btn">➤</button>
-  </div>
-</div>
-
-<div id="menu" class="context-menu">
-  <button id="delete-msg">Delete</button>
-</div>
-
-<script type="module">
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-
-const supabase = createClient(
-  "https://pwsxezhugsxosbwhkdvf.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
-);
-
-const chatBoard = document.getElementById('chat-board');
-const chatInput = document.getElementById('chat-input');
-const sendBtn = document.getElementById('send-btn');
-const chatName = document.getElementById('chat-name');
-const chatPic = document.getElementById('chat-pic');
-const replyBox = document.getElementById('reply-box');
-const replyText = replyBox.querySelector('span');
-const closeReply = document.getElementById('close-reply');
-const menu = document.getElementById('menu');
-const deleteBtn = document.getElementById('delete-msg');
-const chatStatus = document.getElementById('chat-status');
-
-const chatUserId = localStorage.getItem('chatting');
-const currentUser = JSON.parse(localStorage.getItem('faccount'));
-const storageKey = `chat_messages_${chatUserId}`;
-let linkedMsg = null;
-let selectedMsg = null;
-
-if(!currentUser || !chatUserId){
-  chatStatus.textContent = "Error: Missing chat info!";
-  throw new Error("Missing localStorage data");
-}
-
-document.getElementById('chat-header').addEventListener('click',()=>{
-  localStorage.setItem('chat_viewing', chatUserId);
-  window.location.href = "chat_dashboard.html";
-});
-
-async function loadChatUser(){
-  chatStatus.textContent = "Accessing Supabase account...";
-  try{
-    const {data,error} = await supabase.from('fwebaccount').select('*').eq('id',chatUserId).maybeSingle();
-    if(error) throw error;
-    if(!data) throw new Error("User not found");
-    chatName.textContent = data.username || "Unknown User";
-    chatPic.src = data.profile_pic || "https://via.placeholder.com/50?text=U";
-    chatStatus.textContent = "Supabase account accessed.";
-  }catch(err){
-    chatName.textContent="User not found";
-    chatStatus.textContent = "Failed to access user.";
-    console.error(err);
-  }
-}
-
-function formatTime(t){
-  const d = new Date(t), n = new Date();
-  const same = d.toDateString() === n.toDateString();
-  return same ? d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})+" UTC" :
-                d.toLocaleString("en-US",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})+" UTC";
-}
-
-function renderMessages(){
-  const msgs = JSON.parse(localStorage.getItem(storageKey)) || [];
-  chatBoard.innerHTML = "";
-  if(msgs.length===0){ chatBoard.innerHTML="<div id='loading'>No messages yet.</div>"; return; }
-  msgs.forEach((m,i)=>{
-    const div = document.createElement("div");
-    div.classList.add("message");
-    if(m.sender==="me") div.classList.add("me");
-    div.dataset.index = i;
-
-    div.innerHTML=`${m.linked?`<div class="linked-box" data-linked-time="${m.linked_message_time}">${m.linked_message}</div>`:""}
-                   <div>${m.message}</div>
-                   <span class="msg-time">${formatTime(m.time_utc)}</span>`;
-
-    let startX=0;
-    div.addEventListener("touchstart",e=>{startX=e.touches[0].clientX;});
-    div.addEventListener("touchmove",e=>{
-      const diff = e.touches[0].clientX - startX;
-      if(diff>70){ selectReply(m); div.style.transform="translateX(30px)";
-        setTimeout(()=>div.style.transform="translateX(0)",200); }
-    });
-
-    const linkedBox = div.querySelector(".linked-box");
-    if(linkedBox){
-      linkedBox.addEventListener("click",()=>{
-        const targetTime = linkedBox.dataset.linkedTime;
-        const msgs = JSON.parse(localStorage.getItem(storageKey)) || [];
-        const targetIndex = msgs.findIndex(msg=>msg.time_utc===targetTime);
-        if(targetIndex>=0){
-          const msgDiv = chatBoard.children[targetIndex];
-          if(msgDiv){
-            msgDiv.scrollIntoView({behavior:"smooth",block:"center"});
-            msgDiv.style.background="rgba(0,123,255,0.2)";
-            setTimeout(()=>msgDiv.style.background="",600);
-          }
-        }
-      });
-    }
-
-    div.addEventListener("contextmenu",e=>{e.preventDefault();showMenu(e.pageX,e.pageY,m,i);});
-    chatBoard.appendChild(div);
-  });
-  chatBoard.scrollTop = chatBoard.scrollHeight;
-}
-
-function showMenu(x,y,msg,index){
-  selectedMsg = {msg,index};
-  menu.style.display = "flex";
-  menu.style.top = y+"px";
-  menu.style.left = x+"px";
-}
-window.addEventListener("click",()=>menu.style.display="none");
-
-deleteBtn.addEventListener("click",async()=>{
-  menu.style.display="none";
-  if(!selectedMsg) return;
-  const {msg,index} = selectedMsg;
-  const msgs = JSON.parse(localStorage.getItem(storageKey)) || [];
-  msgs.splice(index,1);
-  localStorage.setItem(storageKey,JSON.stringify(msgs));
-  renderMessages();
-  if(!msg.seen){
-    try{
-      const {data} = await supabase.from('fwebaccount').select('fchat_messages').eq('id',chatUserId).maybeSingle();
-      if(data?.fchat_messages){
-        let arr = [];
-        try{ arr = JSON.parse(data.fchat_messages); } catch{ arr=[]; }
-        const newArr = arr.filter(m => !(m.sender_id==msg.sender_id && m.time_utc===msg.time_utc));
-        await supabase.from('fwebaccount').update({fchat_messages: JSON.stringify(newArr)}).eq('id',chatUserId);
-      }
-    }catch(err){console.error(err);}
-  }
-});
-
-function selectReply(m){
-  linkedMsg = m;
-  replyText.textContent = m.message;
-  replyBox.style.display = "flex";
-}
-closeReply.addEventListener("click",()=>{ linkedMsg=null; replyBox.style.display="none"; });
-
-async function sendMessage(){
-  const text = chatInput.value.trim();
-  if(!text) return;
-  const msgData = { sender_id:currentUser.id, message:text,
-    time_utc:new Date().toISOString(), linked:linkedMsg?true:false,
-    linked_message:linkedMsg?linkedMsg.message:null,
-    linked_message_time:linkedMsg?linkedMsg.time_utc:null,
-    seen:false };
+<!DOCTYPE html>  
+<html lang="en">  
+<head>  
+<meta charset="UTF-8" />  
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />  
+<title>FCHAT - Chat</title>  
+<style>  
+*{box-sizing:border-box;}  
+body{  
+  font-family:'Poppins','Segoe UI',sans-serif;  
+  background:#fdfdfd;color:#111;margin:0;height:100vh;  
+  display:flex;flex-direction:column;  
+}  
+header{  
+  background:#fff;display:flex;flex-direction:column;align-items:flex-start;  
+  padding:12px 18px;border-bottom:1px solid #eee;box-shadow:0 2px 8px rgba(0,0,0,0.05);  
+}  
+.header-top{display:flex;justify-content:space-between;align-items:center;width:100%;}  
+.header-left{display:flex;align-items:center;}  
+.chat-header-pic{width:45px;height:45px;border-radius:50%;object-fit:cover;margin-right:10px;background:#ccc;}  
+.chat-header-name{font-weight:600;font-size:18px;cursor:pointer;}  
+#chat-status{font-size:12px;color:#555;margin-top:3px;}  
+#chat-board{flex:1;background:#fafafa;overflow-y:auto;padding:15px;display:flex;flex-direction:column;}  
+.message{  
+  background:#ececec;color:#000;padding:10px 15px;border-radius:14px;  
+  margin-bottom:10px;max-width:75%;word-wrap:break-word;position:relative;  
+  align-self:flex-start;cursor:pointer;transition:background 0.2s, transform 0.2s;  
+}  
+.message.me{background:#c2ffc2;align-self:flex-end;}  
+.message:hover{background:#e4e4e4;}  
+.msg-time{display:block;text-align:right;font-size:11px;color:#555;margin-top:3px;}  
+.linked-box{background:rgba(0,0,0,0.05);border-left:3px solid #007bff;  
+  padding:5px 8px;border-radius:5px;font-size:13px;margin-bottom:5px;cursor:pointer;}  
+#reply-box{  
+  background:#f1f1f1;padding:6px 12px;font-size:13px;border-left:3px solid #007bff;  
+  display:none;align-items:center;justify-content:space-between;  
+}  
+#reply-box span{flex:1;}  
+#reply-box button{background:transparent;border:none;font-size:18px;cursor:pointer;}  
+#chat-input-area{  
+  display:flex;flex-direction:column;border-top:1px solid #ddd;  
+  background:#fff;position:sticky;bottom:0;  
+}  
+#chat-input-row{display:flex;align-items:center;padding:10px 14px;}  
+#chat-input{  
+  flex:1;border:1px solid #ccc;border-radius:25px;padding:10px 15px;  
+  font-size:15px;outline:none;background:#f7f7f7;transition:0.2s;  
+}  
+#chat-input:focus{background:#fff;border-color:#999;}  
+#send-btn{  
+  background:#007bff;border:none;color:#fff;font-size:20px;border-radius:50%;  
+  width:42px;height:42px;margin-left:8px;cursor:pointer;  
+  display:flex;align-items:center;justify-content:center;  
+}  
+#send-btn:hover{background:#0066d6;}  
+#loading{text-align:center;padding:20px;color:#777;}  
+.context-menu{  
+  position:absolute;background:#fff;border:1px solid #ccc;  
+  box-shadow:0 2px 8px rgba(0,0,0,0.15);border-radius:6px;  
+  z-index:1000;display:none;flex-direction:column;min-width:100px;  
+}  
+.context-menu button{  
+  background:none;border:none;text-align:left;padding:8px 12px;  
+  width:100%;cursor:pointer;font-size:14px;  
+}  
+.context-menu button:hover{background:#eee;}  
+</style>  
+</head>  
+<body>  
+<header>  
+  <div class="header-top" id="chat-header">  
+    <div class="header-left">  
+      <img id="chat-pic" class="chat-header-pic" src="" alt="Profile">  
+      <div class="chat-header-name" id="chat-name">Loading...</div>  
+    </div>  
+  </div>  
+  <div id="chat-status">Initializing...</div>  
+</header>  
   
-  const msgs = JSON.parse(localStorage.getItem(storageKey)) || [];
-  msgs.push({...msgData,sender:"me"});
-  localStorage.setItem(storageKey,JSON.stringify(msgs));
-  renderMessages(); chatInput.value=""; linkedMsg=null; replyBox.style.display="none";
-
-  try{
-    const {data:recv} = await supabase.from('fwebaccount').select('fchat_messages').eq('id',chatUserId).maybeSingle();
-    let arr = [];
-    if(recv?.fchat_messages){
-      if(Array.isArray(recv.fchat_messages)) arr = recv.fchat_messages;
-      else { try{ arr = JSON.parse(recv.fchat_messages); } catch{ arr=[]; } }
-    }
-    arr.push(msgData);
-    await supabase.from('fwebaccount').update({fchat_messages: JSON.stringify(arr)}).eq('id',chatUserId);
-  }catch(e){console.error("Send failed:",e);}
-}
-
-sendBtn.addEventListener("click",sendMessage);
-chatInput.addEventListener("keypress",e=>{if(e.key==="Enter") sendMessage();});
-
-async function receiveMessages(){
-  try{
-    chatStatus.textContent = "Checking for new messages...";
-    const {data,error} = await supabase.from('fwebaccount').select('fchat_messages').eq('id',chatUserId).maybeSingle();
-    if(error) throw error;
-    if(!data?.fchat_messages){ chatStatus.textContent = "No new messages"; return; }
-
-    chatStatus.textContent = "Retrieving messages...";
-    let serverMsgs = [];
-    if(Array.isArray(data.fchat_messages)) serverMsgs = data.fchat_messages;
-    else {
-      try{ serverMsgs = JSON.parse(data.fchat_messages); } catch{ serverMsgs = []; }
-    }
-
-    const localMsgs = JSON.parse(localStorage.getItem(storageKey)) || [];
-    let updated = false;
-    serverMsgs.forEach(m=>{
-      if(m.sender_id != currentUser.id && !localMsgs.find(lm=>lm.time_utc===m.time_utc)){
-        localMsgs.push({...m,sender:"them"});
-        updated = true;
-      }
-    });
-
-    if(updated){
-      localStorage.setItem(storageKey,JSON.stringify(localMsgs));
-      renderMessages();
-      chatStatus.textContent = "New messages received";
-    } else {
-      chatStatus.textContent = "No new messages";
-    }
-
-    let needUpdate = false;
-    serverMsgs.forEach(m=>{
-      if(m.sender_id != currentUser.id && !m.seen){ m.seen = true; needUpdate = true; }
-    });
-    if(needUpdate){
-      await supabase.from('fwebaccount').update({fchat_messages: JSON.stringify(serverMsgs)}).eq('id',chatUserId);
-    }
-
-  }catch(err){ 
-    console.error(err);
-    chatStatus.textContent = "Error fetching messages";
-  }
-}
-
-// poll every second
-setInterval(receiveMessages,1000);
-
-window.addEventListener("load",async()=>{ await loadChatUser(); renderMessages(); receiveMessages(); });
-</script>
-</body>
+<div id="chat-board"><div id="loading">Loading chat...</div></div>  
+  
+<div id="chat-input-area">  
+  <div id="reply-box"><span></span><button id="close-reply">×</button></div>  
+  <div id="chat-input-row">  
+    <input type="text" id="chat-input" placeholder="Type a message...">  
+    <button id="send-btn">➤</button>  
+  </div>  
+</div>  
+  
+<div id="menu" class="context-menu">  
+  <button id="delete-msg">Delete</button>  
+</div>  
+  
+<script type="module">  
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";  
+  
+const supabase = createClient(  
+  "https://pwsxezhugsxosbwhkdvf.supabase.co",  
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"  
+);  
+  
+const chatBoard = document.getElementById('chat-board');  
+const chatInput = document.getElementById('chat-input');  
+const sendBtn = document.getElementById('send-btn');  
+const chatName = document.getElementById('chat-name');  
+const chatPic = document.getElementById('chat-pic');  
+const replyBox = document.getElementById('reply-box');  
+const replyText = replyBox.querySelector('span');  
+const closeReply = document.getElementById('close-reply');  
+const menu = document.getElementById('menu');  
+const deleteBtn = document.getElementById('delete-msg');  
+const chatStatus = document.getElementById('chat-status');  
+  
+const chatUserId = localStorage.getItem('chatting');  
+const currentUser = JSON.parse(localStorage.getItem('faccount'));  
+const storageKey = `chat_messages_${chatUserId}`;  
+let linkedMsg = null;  
+let selectedMsg = null;  
+  
+if(!currentUser || !chatUserId){  
+  chatStatus.textContent = "Error: Missing chat info!";  
+  throw new Error("Missing localStorage data");  
+}  
+  
+document.getElementById('chat-header').addEventListener('click',()=>{  
+  localStorage.setItem('chat_viewing', chatUserId);  
+  window.location.href = "chat_dashboard.html";  
+});  
+  
+async function loadChatUser(){  
+  chatStatus.textContent = "Accessing Supabase account...";  
+  try{  
+    const {data,error} = await supabase.from('fwebaccount').select('*').eq('id',chatUserId).maybeSingle();  
+    if(error) throw error;  
+    if(!data) throw new Error("User not found");  
+    chatName.textContent = data.username || "Unknown User";  
+    chatPic.src = data.profile_pic || "https://via.placeholder.com/50?text=U";  
+    chatStatus.textContent = "Supabase account accessed.";  
+  }catch(err){  
+    chatName.textContent="User not found";  
+    chatStatus.textContent = "Failed to access user.";  
+    console.error(err);  
+  }  
+}  
+  
+function formatTime(t){  
+  const d = new Date(t), n = new Date();  
+  const same = d.toDateString() === n.toDateString();  
+  return same ? d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})+" UTC" :  
+                d.toLocaleString("en-US",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})+" UTC";  
+}  
+  
+function renderMessages(){  
+  const msgs = JSON.parse(localStorage.getItem(storageKey)) || [];  
+  chatBoard.innerHTML = "";  
+  if(msgs.length===0){ chatBoard.innerHTML="<div id='loading'>No messages yet.</div>"; return; }  
+  msgs.forEach((m,i)=>{  
+    const div = document.createElement("div");  
+    div.classList.add("message");  
+    if(m.sender==="me") div.classList.add("me");  
+    div.dataset.index = i;  
+    div.innerHTML=`${m.linked?`<div class="linked-box" data-linked-time="${m.linked_message_time}">${m.linked_message}</div>`:""}  
+                   <div>${m.message}</div>  
+                   <span class="msg-time">${formatTime(m.time_utc)}</span>`;  
+    chatBoard.appendChild(div);  
+  });  
+  chatBoard.scrollTop = chatBoard.scrollHeight;  
+}  
+  
+async function sendMessage(){  
+  const text = chatInput.value.trim();  
+  if(!text) return;  
+  const msgData = { sender_id:currentUser.id, message:text,  
+    time_utc:new Date().toISOString(), linked:linkedMsg?true:false,  
+    linked_message:linkedMsg?linkedMsg.message:null,  
+    linked_message_time:linkedMsg?linkedMsg.time_utc:null,  
+    seen:false };  
+  const msgs = JSON.parse(localStorage.getItem(storageKey)) || [];  
+  msgs.push({...msgData,sender:"me"});  
+  localStorage.setItem(storageKey,JSON.stringify(msgs));  
+  renderMessages(); chatInput.value=""; linkedMsg=null; replyBox.style.display="none";  
+  try{  
+    const {data:recv} = await supabase.from('fwebaccount').select('fchat_messages').eq('id',chatUserId).maybeSingle();  
+    let arr = [];  
+    if(recv?.fchat_messages){  
+      if(Array.isArray(recv.fchat_messages)) arr = recv.fchat_messages;  
+      else { try{ arr = JSON.parse(recv.fchat_messages); } catch{ arr=[]; } }  
+    }  
+    arr.push(msgData);  
+    await supabase.from('fwebaccount').update({fchat_messages: JSON.stringify(arr)}).eq('id',chatUserId);  
+  }catch(e){console.error("Send failed:",e);}  
+}  
+  
+sendBtn.addEventListener("click",sendMessage);  
+chatInput.addEventListener("keypress",e=>{if(e.key==="Enter") sendMessage();});  
+  
+async function receiveMessages(){  
+  try{  
+    chatStatus.textContent = "Checking for new messages...";  
+    const {data,error} = await supabase.from('fwebaccount').select('fchat_messages').eq('id',chatUserId).maybeSingle();  
+    if(error) throw error;  
+    if(!data?.fchat_messages) return;  
+    let serverMsgs = [];  
+    if(Array.isArray(data.fchat_messages)) serverMsgs = data.fchat_messages;  
+    else { try{ serverMsgs = JSON.parse(data.fchat_messages); } catch{ serverMsgs = []; } }  
+    if(serverMsgs.length>0) chatStatus.textContent = "New messages found";  
+  }catch(err){   
+    console.error(err);  
+    chatStatus.textContent = "Error fetching messages";  
+  }  
+}  
+  
+setInterval(receiveMessages,1000);  
+window.addEventListener("load",async()=>{ await loadChatUser(); renderMessages(); receiveMessages(); });  
+</script>  
+</body>  
 </html>
