@@ -148,6 +148,10 @@ function formatTime(t){
   return same ? d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})+" UTC" :  
                 d.toLocaleString("en-US",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})+" UTC";  
 }  
+// helper to generate unique message IDs
+function generateMsgId() {
+  return `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+}
   
 /* Render messages FROM localStorage (unchanged CSS)  
    Includes .msg-status to show 'sent' text for messages sent by me.  
@@ -160,8 +164,9 @@ function renderMessages(){
     const div = document.createElement("div");  
     div.classList.add("message");  
     if(m.sender==="me") div.classList.add("me");  
-    div.dataset.index = i;  
-    div.innerHTML= `${m.linked?`<div class="linked-box" data-linked-time="${m.linked_message_time}">${escapeHtml(m.linked_message)}</div>`:""}  
+    div.dataset.index = i;
+div.dataset.msgId = m.msg_id; 
+    div.innerHTML= `${m.linked?`<div class="linked-box" data-linked-time="${m.linked?`<div class="linked-box" data-linked-id="${m.linked_message_id}">${escapeHtml(m.linked_message)}</div>`:""}</div>`:""}  
                     <div class="msg-text">${escapeHtml(m.message)}</div>  
                     <span class="msg-time">${formatTime(m.time_utc)}</span>  
                     <span class="msg-status">${m.status || ""}</span>`;  
@@ -170,6 +175,7 @@ function renderMessages(){
   });  
   chatBoard.scrollTop = chatBoard.scrollHeight;  
 }  
+
   
 /* Helper to escape HTML in inserted text */  
 function escapeHtml(s){  
@@ -180,23 +186,71 @@ function escapeHtml(s){
 /* When user sends — save locally AND write to recipient's fchat_messages column  
    Also set status 'sent' under the message immediately in localStorage  
 */  
-async function sendMessage(){  
-  const text = chatInput.value.trim();  
-  if(!text) return;  
-  // Generate a truly unique ID using timestamp + random string
-const msgId = Date.now() + "_" + Math.random().toString(36).slice(2, 8);
+async function sendMessage() {
+  const text = chatInput.value.trim();
+  if (!text) return;
 
-const msgData = {
-  msg_id: msgId,
-  sender_id: currentUser.id,
-  message: text,
-  time_utc: new Date().toISOString(),
-  linked: !!linkedMsg,
-  linked_message: linkedMsg ? linkedMsg.message : null,
-  linked_message_time: linkedMsg ? linkedMsg.time_utc : null,
-  linked_message_id: linkedMsg ? linkedMsg.msg_id : null, // link to the original msg
-  seen: false
-};
+  const msgs = JSON.parse(localStorage.getItem(storageKey)) || [];
+
+  // create unique ID
+  const msgId = generateMsgId();
+
+  const msgData = {
+    msg_id: msgId,
+    sender_id: currentUser.id,
+    message: text,
+    time_utc: new Date().toISOString(),
+    linked: !!linkedMsg,
+    linked_message: linkedMsg ? linkedMsg.message : null,
+    linked_message_time: linkedMsg ? linkedMsg.time_utc : null,
+    linked_message_id: linkedMsg ? linkedMsg.msg_id : null,
+    seen: false
+  };
+
+  // store locally (prevent duplicates)
+  if (!msgs.some(m => m.msg_id === msgId)) {
+    msgs.push({ ...msgData, sender: "me", status: "sent" });
+    localStorage.setItem(storageKey, JSON.stringify(msgs));
+  }
+
+  renderMessages();
+  chatInput.value = "";
+  linkedMsg = null;
+  replyBox.style.display = "none";
+
+  // push to recipient's Supabase fchat_messages
+  try {
+    const { data: recv, error: recvErr } = await supabase
+      .from("fwebaccount")
+      .select("fchat_messages")
+      .eq("id", chatUserId)
+      .maybeSingle();
+
+    if (recvErr) throw recvErr;
+
+    let arr = [];
+    if (recv?.fchat_messages) {
+      if (Array.isArray(recv.fchat_messages)) arr = recv.fchat_messages;
+      else {
+        try {
+          arr = JSON.parse(recv.fchat_messages);
+        } catch {
+          arr = [];
+        }
+      }
+    }
+
+    if (!arr.some(m => m.msg_id === msgId)) {
+      arr.push(msgData);
+      await supabase
+        .from("fwebaccount")
+        .update({ fchat_messages: JSON.stringify(arr) })
+        .eq("id", chatUserId);
+    }
+  } catch (e) {
+    console.error("Send failed:", e);
+  }
+}
 // Before pushing to localStorage:
 if (!msgs.some(m => m.msg_id === msgData.msg_id)) {
   msgs.push({...msgData, sender:"me", status:"sent"});
@@ -392,6 +446,25 @@ deleteBtn.addEventListener('click', async ()=>{
     hideContextMenu();  
   }  
 });  
+// when a linked message box is clicked → scroll to original message
+chatBoard.addEventListener("click", (e) => {
+  const box = e.target.closest(".linked-box");
+  if (!box) return;
+
+  const linkedId = box.dataset.linkedId || box.dataset.linkedMessageId;
+  if (!linkedId) return;
+
+  const target = chatBoard.querySelector(`.message[data-msg-id="${linkedId}"]`);
+  if (target) {
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+    target.style.background = "#fff3b0";
+    setTimeout(() => {
+      target.style.background = target.classList.contains("me")
+        ? "#c2ffc2"
+        : "#ececec";
+    }, 1200);
+  }
+});
   
 /* Close reply */  
 closeReply.addEventListener('click', ()=>{ replyBox.style.display='none'; linkedMsg=null; });  
