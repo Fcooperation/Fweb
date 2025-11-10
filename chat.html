@@ -198,7 +198,6 @@ async function receiveMessages() {
   try {
     chatStatus.textContent = "Checking for new messages...";
 
-    // Fetch messages for the currently logged-in user
     const { data, error } = await supabase
       .from('fwebaccount')
       .select('fchat_messages')
@@ -207,21 +206,37 @@ async function receiveMessages() {
 
     if (error) throw error;
 
-    if (data?.fchat_messages && Array.isArray(data.fchat_messages)) {
-      // Filter messages that are from the user you're chatting with
-      const newMsgs = data.fchat_messages.filter(
-        msg => msg.sender_id === chatUserId
-      );
+    if (data?.fchat_messages) {
+      let allMsgs = Array.isArray(data.fchat_messages)
+        ? data.fchat_messages
+        : JSON.parse(data.fchat_messages || "[]");
+
+      // Filter only messages from the user you're chatting with
+      const newMsgs = allMsgs.filter(msg => msg.sender_id === chatUserId);
+
+      // Get existing local messages
+      const localMsgs = JSON.parse(localStorage.getItem(storageKey)) || [];
+
+      // Add new messages that aren't already saved
+      const merged = [...localMsgs];
+      newMsgs.forEach(m => {
+        if (!localMsgs.some(l => l.time_utc === m.time_utc && l.message === m.message)) {
+          merged.push({ ...m, sender: "them" });
+        }
+      });
+
+      // Save and render
+      localStorage.setItem(storageKey, JSON.stringify(merged));
+      renderMessages();
 
       if (newMsgs.length > 0) {
-        console.log(`✅ New messages found (${newMsgs.length}) from user ${chatUserId}`, newMsgs);
-        chatStatus.textContent = `New messages found (${newMsgs.length})`;
+        console.log(`✅ New messages received (${newMsgs.length})`);
+        chatStatus.textContent = `New messages received (${newMsgs.length})`;
       } else {
-        console.log("ℹ️ No new messages found from this user");
         chatStatus.textContent = "No new messages found";
       }
+
     } else {
-      console.log("ℹ️ No messages data available");
       chatStatus.textContent = "No messages found";
     }
 
@@ -229,7 +244,7 @@ async function receiveMessages() {
     console.error("❌ Error checking messages:", err);
     chatStatus.textContent = "Error fetching messages";
   }
-}
+  }
 
 // Run every 2 seconds
 setInterval(receiveMessages, 2000);
