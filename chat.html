@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0" />
 <title>FCHAT - Chat</title>
 <style>
-/* --- YOUR ORIGINAL CSS (untouched except a few helper classes added at bottom) --- */
 *{box-sizing:border-box;}
 body{
   font-family:'Poppins','Segoe UI',sans-serif;
@@ -14,13 +13,19 @@ body{
 }
 header{
   background:#fff;display:flex;flex-direction:column;align-items:flex-start;
-  padding:12px 18px;border-bottom:1px solid #eee;box-shadow:0 2px 8px rgba(0,0,0,0.05);
+  padding:12px 18px;border-bottom:1px solid #eee;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05);
+  position:relative;
 }
 .header-top{display:flex;justify-content:space-between;align-items:center;width:100%;}
 .header-left{display:flex;align-items:center;}
 .chat-header-pic{width:45px;height:45px;border-radius:50%;object-fit:cover;margin-right:10px;background:#ccc;}
 .chat-header-name{font-weight:600;font-size:18px;cursor:pointer;}
-#chat-status{font-size:12px;color:#555;margin-top:3px;}
+#banner{
+  position:absolute;bottom:-25px;left:0;width:100%;
+  text-align:center;font-size:13px;padding:4px 0;
+  background:#e0f2ff;color:#007bff;display:none;
+}
 #chat-board{flex:1;background:#fafafa;overflow-y:auto;padding:15px;display:flex;flex-direction:column;}
 .message{
   background:#ececec;color:#000;padding:10px 15px;border-radius:14px;
@@ -65,11 +70,8 @@ header{
   width:100%;cursor:pointer;font-size:14px;
 }
 .context-menu button:hover{background:#eee;}
-
-/* --- small helper styles added --- */
-.message.swiping{ transform: translateX(18px) scale(1.01); box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
-.msg-status { display:block; font-size:11px; color:#444; margin-top:4px; text-align:right; }
-.menu-visible{ display:flex !important; }
+.message.swiping{ transform: translateX(18px) scale(1.01); box-shadow:0 4px 12px rgba(0,0,0,0.06);}
+.msg-status { display:block; font-size:11px; color:#444; margin-top:4px; text-align:right;}
 </style>
 </head>
 <body>
@@ -80,7 +82,7 @@ header{
       <div class="chat-header-name" id="chat-name">Loading...</div>
     </div>
   </div>
-  <div id="chat-status">Initializing...</div>
+  <div id="banner"></div>
 </header>
 
 <div id="chat-board"><div id="loading">Loading chat...</div></div>
@@ -102,298 +104,169 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 const supabase = createClient(
   "https://pwsxezhugsxosbwhkdvf.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 );
 
-const chatBoard = document.getElementById('chat-board');
-const chatInput = document.getElementById('chat-input');
-const sendBtn = document.getElementById('send-btn');
-const chatName = document.getElementById('chat-name');
-const chatPic = document.getElementById('chat-pic');
-const replyBox = document.getElementById('reply-box');
-const replyText = replyBox.querySelector('span');
-const closeReply = document.getElementById('close-reply');
-const menu = document.getElementById('menu');
-const deleteBtn = document.getElementById('delete-msg');
-const chatStatus = document.getElementById('chat-status');
+const chatBoard=document.getElementById('chat-board');
+const chatInput=document.getElementById('chat-input');
+const sendBtn=document.getElementById('send-btn');
+const chatName=document.getElementById('chat-name');
+const chatPic=document.getElementById('chat-pic');
+const replyBox=document.getElementById('reply-box');
+const replyText=replyBox.querySelector('span');
+const closeReply=document.getElementById('close-reply');
+const menu=document.getElementById('menu');
+const deleteBtn=document.getElementById('delete-msg');
+const banner=document.getElementById('banner');
 
-const chatUserId = localStorage.getItem('chatting'); // the partner you're viewing
-const currentUser = JSON.parse(localStorage.getItem('faccount'));
-const storageKey = `chat_messages_${chatUserId}`;
-let linkedMsg = null;
-let selectedMsg = null;
-let longPressTimer = null;
-let touchStartX = 0;
-let touchMoved = false;
+const chatUserId=localStorage.getItem('chatting');
+const currentUser=JSON.parse(localStorage.getItem('faccount'));
+const storageKey=`chat_messages_${chatUserId}`;
+let linkedMsg=null;
+let selectedMsg=null;
+let longPressTimer=null;
+let touchStartX=0;
+let touchMoved=false;
 
-if(!currentUser || !chatUserId){
-  chatStatus.textContent = "Error: Missing chat info!";
-  throw new Error("Missing localStorage data");
-}
+if(!currentUser||!chatUserId) throw new Error("Missing info");
 
-document.getElementById('chat-header').addEventListener('click',()=>{
-  localStorage.setItem('chat_viewing', chatUserId);
-  window.location.href = "chat_dashboard.html";
-});
-
+// -------- LOAD CHAT USER ----------
 async function loadChatUser(){
-  chatStatus.textContent = "Accessing Supabase account...";
-  try{
-    const {data,error} = await supabase.from('fwebaccount').select('*').eq('id',chatUserId).maybeSingle();
-    if(error) throw error;
-    if(!data) throw new Error("User not found");
-    chatName.textContent = data.username || "Unknown User";
-    chatPic.src = data.profile_pic || "https://via.placeholder.com/50?text=U";
-    chatStatus.textContent = "Supabase account accessed.";
-  }catch(err){
-    chatName.textContent="User not found";
-    chatStatus.textContent = "Failed to access user.";
-    console.error(err);
-  }
+  const {data}=await supabase.from('fwebaccount').select('*').eq('id',chatUserId).maybeSingle();
+  chatName.textContent=data?.username||"Unknown";
+  chatPic.src=data?.profile_pic||"https://via.placeholder.com/50?text=U";
 }
 
-function formatTime(t){
-  const d = new Date(t), n = new Date();
-  const same = d.toDateString() === n.toDateString();
-  return same ? d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})+" UTC" :
-                d.toLocaleString("en-US",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})+" UTC";
-}
-
-/* Render messages FROM localStorage (unchanged CSS)
-   Includes .msg-status to show 'sent' text for messages sent by me.
-*/
+// -------- RENDER ----------
 function renderMessages(){
-  const msgs = JSON.parse(localStorage.getItem(storageKey)) || [];
-  chatBoard.innerHTML = "";
-  if(msgs.length===0){ chatBoard.innerHTML="<div id='loading'>No messages yet.</div>"; return; }
+  const msgs=JSON.parse(localStorage.getItem(storageKey))||[];
+  chatBoard.innerHTML="";
+  if(msgs.length===0){chatBoard.innerHTML="<div id='loading'>No messages yet.</div>";return;}
   msgs.forEach((m,i)=>{
-    const div = document.createElement("div");
+    const div=document.createElement("div");
     div.classList.add("message");
-    if(m.sender==="me") div.classList.add("me");
-    div.dataset.index = i;
-    div.innerHTML= `${m.linked?`<div class="linked-box" data-linked-time="${m.linked_message_time}">${escapeHtml(m.linked_message)}</div>`:""}
-                    <div class="msg-text">${escapeHtml(m.message)}</div>
-                    <span class="msg-time">${formatTime(m.time_utc)}</span>
-                    <span class="msg-status">${m.status || ""}</span>`;
-    attachMessageHandlers(div, m, i);
+    if(m.sender==="me")div.classList.add("me");
+    div.dataset.index=i;
+    div.innerHTML=`${m.linked?`<div class='linked-box' data-linked-time='${m.linked_message_time}'>${escapeHtml(m.linked_message)}</div>`:""}
+                   <div class='msg-text'>${escapeHtml(m.message)}</div>
+                   <span class='msg-time'>${formatTime(m.time_utc)}</span>
+                   <span class='msg-status'>${m.status||""}</span>`;
+    attachHandlers(div,m,i);
     chatBoard.appendChild(div);
   });
-  chatBoard.scrollTop = chatBoard.scrollHeight;
+  chatBoard.scrollTop=chatBoard.scrollHeight;
 }
 
-/* Helper to escape HTML in inserted text */
-function escapeHtml(s){
-  if(!s) return "";
-  return s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-}
+function escapeHtml(s){return s?s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])):"";}
+function formatTime(t){const d=new Date(t);return d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});}
 
-/* When user sends — save locally AND write to recipient's fchat_messages column
-   Also set status 'sent' under the message immediately in localStorage
-*/
+// -------- SEND ----------
 async function sendMessage(){
-  const text = chatInput.value.trim();
-  if(!text) return;
-  const msgData = { sender_id:currentUser.id, message:text,
-    time_utc:new Date().toISOString(), linked:!!linkedMsg,
-    linked_message:linkedMsg?linkedMsg.message:null,
-    linked_message_time:linkedMsg?linkedMsg.time_utc:null,
-    seen:false };
-  // local storage push (sender view)
-  const msgs = JSON.parse(localStorage.getItem(storageKey)) || [];
-  msgs.push({...msgData, sender:"me", status:"sent"});
-  localStorage.setItem(storageKey,JSON.stringify(msgs));
+  const text=chatInput.value.trim();if(!text)return;
+  const msg={sender_id:currentUser.id,message:text,time_utc:new Date().toISOString(),linked:!!linkedMsg,linked_message:linkedMsg?linkedMsg.message:null,linked_message_time:linkedMsg?linkedMsg.time_utc:null,seen:false};
+  const arr=JSON.parse(localStorage.getItem(storageKey))||[];
+  arr.push({...msg,sender:"me",status:"sent"});
+  localStorage.setItem(storageKey,JSON.stringify(arr));
   renderMessages();
-  chatInput.value=""; linkedMsg=null; replyBox.style.display="none";
-
-  // push to recipient's fchat_messages column (same logic you had)
-  try{
-    const {data:recv, error:recvErr} = await supabase.from('fwebaccount').select('fchat_messages').eq('id',chatUserId).maybeSingle();
-    if(recvErr) throw recvErr;
-    let arr = [];
-    if(recv?.fchat_messages){
-      if(Array.isArray(recv.fchat_messages)) arr = recv.fchat_messages;
-      else { try{ arr = JSON.parse(recv.fchat_messages); } catch{ arr=[]; } }
-    }
-    arr.push(msgData);
-    await supabase.from('fwebaccount').update({fchat_messages: JSON.stringify(arr)}).eq('id',chatUserId);
-  }catch(e){console.error("Send failed:",e);}
+  chatInput.value="";linkedMsg=null;replyBox.style.display="none";
+  const {data}=await supabase.from('fwebaccount').select('fchat_messages').eq('id',chatUserId).maybeSingle();
+  let recv=data?.fchat_messages?JSON.parse(data.fchat_messages):[];
+  recv.push(msg);
+  await supabase.from('fwebaccount').update({fchat_messages:JSON.stringify(recv)}).eq('id',chatUserId);
 }
 
-/* ------------ RECEIVE / DETECTION FUNCTION (per your spec) -------------
-   - DOES NOT merge incoming msgs into localStorage automatically
-   - Only *detects* messages in the CURRENT USER'S fchat_messages column
-     which are FROM the chat partner (sender_id === chatUserId).
-   - Normalizes missing 'seen' property to false and updates server copy.
-*/
-async function detectIncomingForCurrentChat(){
-  try {
-    chatStatus.textContent = "Checking for new messages...";
-    const { data, error } = await supabase
-      .from('fwebaccount')
-      .select('fchat_messages')
-      .eq('id', currentUser.id)
-      .maybeSingle();
-
-    if (error) throw error;
-
-    if (data?.fchat_messages) {
-      // ensure array form
-      let arr = Array.isArray(data.fchat_messages) ? data.fchat_messages : JSON.parse(data.fchat_messages || "[]");
-
-      // normalize missing 'seen' property
-      let normalized = false;
-      arr = arr.map(m => {
-        if (typeof m.seen === 'undefined') { normalized = true; return {...m, seen:false}; }
-        return m;
-      });
-      if(normalized){
-        // write back normalized array to supabase
-        await supabase.from('fwebaccount').update({ fchat_messages: JSON.stringify(arr) }).eq('id', currentUser.id);
-      }
-
-      // filter messages that are FROM the partner you're viewing (chatUserId)
-      const fromPartner = arr.filter(msg => String(msg.sender_id) === String(chatUserId));
-      if(fromPartner.length > 0){
-        chatStatus.textContent = `New messages found (${fromPartner.length}) from ${chatName.textContent}`;
-        console.log(`✅ Detected ${fromPartner.length} incoming messages from ${chatUserId}`, fromPartner);
-        // do NOT merge automatically — only detection as requested
-      } else {
-        chatStatus.textContent = "No new messages found";
-      }
-    } else {
-      chatStatus.textContent = "No messages found";
-    }
-
-  } catch (err) {
-    console.error("Error detecting messages:", err);
-    chatStatus.textContent = "Error fetching messages";
-  }
+// -------- ONLINE/TYPING ----------
+async function updateMyStatus(state){
+  await supabase.from('fwebaccount').update({fchat_logs:state}).eq('id',currentUser.id);
 }
-/* --------------------------------------------------------------------- */
+async function checkPartnerStatus(){
+  const {data}=await supabase.from('fwebaccount').select('fchat_logs').eq('id',chatUserId).maybeSingle();
+  const val=data?.fchat_logs||"offline";
+  if(val==="online"){banner.style.display="block";banner.textContent="This user is online";}
+  else if(val==="typing"){banner.style.display="block";banner.textContent="Typing...";}
+  else{banner.style.display="none";}
+}
+setInterval(checkPartnerStatus,2000);
 
-/* Run detection every 2 seconds (as you had) */
-setInterval(detectIncomingForCurrentChat, 2000);
+chatInput.addEventListener('input',()=>{
+  updateMyStatus(chatInput.value.trim()? "typing":"online");
+});
+window.addEventListener('blur',()=>updateMyStatus("offline"));
+window.addEventListener('focus',()=>updateMyStatus("online"));
 
-/* ---------- Helpers: attach handlers for swipe, long-press, and context menu ---------- */
-function attachMessageHandlers(div, messageObj, index){
-  // clear old handlers if any
-  div.ontouchstart = div.ontouchmove = div.ontouchend = null;
-  div.onmousedown = div.onmouseup = null;
+// -------- DETECTION ----------
+async function detectIncoming(){
+  const {data}=await supabase.from('fwebaccount').select('fchat_messages').eq('id',currentUser.id).maybeSingle();
+  if(!data)return;
+  const arr=Array.isArray(data.fchat_messages)?data.fchat_messages:JSON.parse(data.fchat_messages||"[]");
+  const fromPartner=arr.filter(m=>String(m.sender_id)===String(chatUserId));
+  if(fromPartner.length>0)console.log("New messages from",chatUserId,fromPartner);
+}
+setInterval(detectIncoming,2000);
 
-  // LONG PRESS: show context menu (press & hold)
-  const startLongPress = (ev) => {
-    ev.preventDefault?.();
-    longPressTimer = setTimeout(() => {
-      selectedMsg = { index, obj: messageObj };
-      showContextMenu(div);
-    }, 480); // ~480ms long press
-  };
-  const cancelLongPress = () => {
-    if(longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
-  };
-
-  // MOUSE (desktop)
-  div.addEventListener('mousedown', (e)=>{
-    startLongPress(e);
+// -------- HANDLERS ----------
+function attachHandlers(div,obj,index){
+  div.addEventListener('mousedown',e=>{
+    longPressTimer=setTimeout(()=>{selectedMsg={index,obj};showMenu(div);},500);
   });
-  window.addEventListener('mouseup', (e)=>{ cancelLongPress(); });
-
-  // TOUCH (mobile)
-  div.addEventListener('touchstart', (e)=>{
-    touchStartX = e.touches[0].clientX;
-    touchMoved = false;
-    startLongPress(e);
-  }, {passive:true});
-  div.addEventListener('touchmove', (e)=>{
-    touchMoved = true;
-    const diff = e.touches[0].clientX - touchStartX;
-    if(diff > 8){ div.classList.add('swiping'); }
-  }, {passive:true});
-  div.addEventListener('touchend', (e)=>{
-    cancelLongPress();
+  window.addEventListener('mouseup',()=>{clearTimeout(longPressTimer);});
+  div.addEventListener('touchstart',e=>{
+    touchStartX=e.touches[0].clientX;touchMoved=false;
+    longPressTimer=setTimeout(()=>{selectedMsg={index,obj};showMenu(div);},500);
+  });
+  div.addEventListener('touchmove',e=>{
+    touchMoved=true;
+    const diff=e.touches[0].clientX-touchStartX;
+    if(diff>8)div.classList.add('swiping');
+  });
+  div.addEventListener('touchend',e=>{
+    clearTimeout(longPressTimer);
     div.classList.remove('swiping');
-    // if it was a quick swipe-right (and moved sufficiently), treat as "link/reply"
     if(touchMoved){
-      const touchEndX = e.changedTouches[0].clientX;
-      const delta = touchEndX - touchStartX;
-      if(delta > 50){
-        // trigger link action
-        linkedMsg = messageObj;
-        replyText.textContent = messageObj.message.length > 120 ? messageObj.message.slice(0,120)+"..." : messageObj.message;
-        replyBox.style.display = "flex";
+      const delta=e.changedTouches[0].clientX-touchStartX;
+      if(delta>50){
+        linkedMsg=obj;
+        replyText.textContent=obj.message.slice(0,80);
+        replyBox.style.display='flex';
+        chatInput.focus();
       }
     }
-  }, {passive:true});
-
-  // also allow click to close context menu if open elsewhere
-  div.addEventListener('click', ()=>{ if(menu.style.display==='flex') hideContextMenu(); });
+  });
+  div.querySelectorAll('.linked-box').forEach(lb=>{
+    lb.addEventListener('click',()=>{
+      const target=document.querySelector(`.msg-time:contains("${lb.dataset.linkedTime}")`);
+      if(target){target.scrollIntoView({behavior:"smooth",block:"center"});}
+    });
+  });
 }
 
-/* Context menu positioning & actions */
-function showContextMenu(targetDiv){
-  const rect = targetDiv.getBoundingClientRect();
-  menu.style.top = (rect.top + window.scrollY + 8) + 'px';
-  menu.style.left = (rect.right + 8) + 'px';
-  menu.style.display = 'flex';
+function showMenu(div){
+  const r=div.getBoundingClientRect();
+  menu.style.top=(r.top+window.scrollY+8)+'px';
+  menu.style.left=(r.right+8)+'px';
+  menu.style.display='flex';
 }
-function hideContextMenu(){
-  menu.style.display = 'none';
-  selectedMsg = null;
-}
-deleteBtn.addEventListener('click', async ()=>{
-  if(!selectedMsg) return hideContextMenu();
-  const { index, obj } = selectedMsg;
-  // read local storage
-  const msgs = JSON.parse(localStorage.getItem(storageKey)) || [];
-  const localMatch = msgs[index];
-  // Decide deletion behavior:
-  // - If message.seen === false -> remove from localStorage AND from supabase (from currentUser's fchat_messages)
-  // - If message.seen === true  -> remove only from localStorage
-  try{
-    if(obj.seen === false){
-      // remove from Supabase (current user's fchat_messages array)
-      const { data, error } = await supabase.from('fwebaccount').select('fchat_messages').eq('id', currentUser.id).maybeSingle();
-      if(error) throw error;
-      let arr = [];
-      if(data?.fchat_messages){
-        arr = Array.isArray(data.fchat_messages) ? data.fchat_messages : JSON.parse(data.fchat_messages || "[]");
-      }
-      // filter out message by unique combination (time_utc + message text + sender_id)
-      const filtered = arr.filter(m => !(m.time_utc === obj.time_utc && m.message === obj.message && String(m.sender_id) === String(obj.sender_id)));
-      await supabase.from('fwebaccount').update({ fchat_messages: JSON.stringify(filtered) }).eq('id', currentUser.id);
-      // also remove local instance if present
-      if(localMatch && localMatch.time_utc === obj.time_utc && localMatch.message === obj.message){
-        msgs.splice(index,1);
-        localStorage.setItem(storageKey, JSON.stringify(msgs));
-      }
-    } else {
-      // seen === true -> only remove from localStorage
-      if(localMatch && localMatch.time_utc === obj.time_utc && localMatch.message === obj.message){
-        msgs.splice(index,1);
-        localStorage.setItem(storageKey, JSON.stringify(msgs));
-      }
-    }
-    renderMessages();
-  }catch(err){
-    console.error("Delete failed:", err);
-  } finally {
-    hideContextMenu();
+function hideMenu(){menu.style.display='none';}
+deleteBtn.onclick=async()=>{
+  if(!selectedMsg)return hideMenu();
+  const {index,obj}=selectedMsg;
+  const msgs=JSON.parse(localStorage.getItem(storageKey))||[];
+  if(obj.seen===false){
+    const {data}=await supabase.from('fwebaccount').select('fchat_messages').eq('id',currentUser.id).maybeSingle();
+    let arr=data?.fchat_messages?JSON.parse(data.fchat_messages):[];
+    arr=arr.filter(m=>!(m.time_utc===obj.time_utc&&m.message===obj.message));
+    await supabase.from('fwebaccount').update({fchat_messages:JSON.stringify(arr)}).eq('id',currentUser.id);
   }
-});
+  msgs.splice(index,1);
+  localStorage.setItem(storageKey,JSON.stringify(msgs));
+  renderMessages();hideMenu();
+};
 
-/* Close reply */
-closeReply.addEventListener('click', ()=>{ replyBox.style.display='none'; linkedMsg=null; });
-
-/* key handlers */
-sendBtn.addEventListener("click",sendMessage);
-chatInput.addEventListener("keypress",e=>{if(e.key==="Enter") sendMessage();});
-
-/* INITIAL load */
-window.addEventListener("load", async ()=>{
-  await loadChatUser();
-  renderMessages();
-  detectIncomingForCurrentChat(); // initial detection run
-});
+// -------- INIT ----------
+window.onload=async()=>{await loadChatUser();renderMessages();updateMyStatus("online");detectIncoming();};
+sendBtn.onclick=sendMessage;
+chatInput.addEventListener('keypress',e=>{if(e.key==="Enter")sendMessage();});
+closeReply.onclick=()=>{replyBox.style.display='none';linkedMsg=null;};
 </script>
 </body>
 </html>
