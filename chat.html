@@ -265,76 +265,55 @@ async function detectIncomingForCurrentChat(){
 setInterval(detectIncomingForCurrentChat, 2000);  
   
 /* ---------- Helpers: attach handlers for swipe, long-press, and context menu ---------- */  
-function attachMessageHandlers(div, messageObj, index){
-  // Clear old handlers if any
-  div.ontouchstart = div.ontouchmove = div.ontouchend = null;
-  div.onmousedown = div.onmouseup = null;
-
-  // LONG PRESS
-  const startLongPress = (ev) => {
-    ev.preventDefault?.();
-    longPressTimer = setTimeout(() => {
-      selectedMsg = { index, obj: messageObj };
-      showContextMenu(div);
-    }, 480);
-  };
-  const cancelLongPress = () => { if(longPressTimer){ clearTimeout(longPressTimer); longPressTimer=null; } };
-
-  // MOUSE (desktop)
-  div.addEventListener('mousedown', startLongPress);
-  window.addEventListener('mouseup', cancelLongPress);
-
-  // TOUCH (mobile)
-  div.addEventListener('touchstart', (e)=>{
-    touchStartX = e.touches[0].clientX;
-    touchMoved = false;
-    startLongPress(e);
-  }, {passive:true});
-
-  div.addEventListener('touchmove', (e)=>{
-    touchMoved = true;
-    const diff = e.touches[0].clientX - touchStartX;
-    if(diff > 8){ div.classList.add('swiping'); }
-  }, {passive:true});
-
-  div.addEventListener('touchend', (e)=>{
-    cancelLongPress();
-    div.classList.remove('swiping');
-    // swipe right → link/reply
-    if(touchMoved){
-      const delta = e.changedTouches[0].clientX - touchStartX;
-      if(delta > 50){
-        linkedMsg = messageObj;
-        replyText.textContent = messageObj.message.length>120 ? messageObj.message.slice(0,120)+"..." : messageObj.message;
-        replyBox.style.display = "flex";
-      }
-    }
-  }, {passive:true});
-
-  // LINKED MESSAGE CLICK → scroll to original
-  const linkedBox = div.querySelector('.linked-box');
-  if(linkedBox){
-    linkedBox.addEventListener('click', ()=>{
-      const linkedTime = linkedBox.dataset.linkedTime;
-      if(!linkedTime) return;
-
-      const allMessages = chatBoard.querySelectorAll('.message');
-      for(let msgDiv of allMessages){
-        if(msgDiv.dataset.time === linkedTime){
-          msgDiv.scrollIntoView({behavior:'smooth', block:'center'});
-          msgDiv.style.background = '#fff3b0';
-          setTimeout(()=>{
-            msgDiv.style.background = msgDiv.classList.contains('me') ? '#c2ffc2' : '#ececec';
-          },1200);
-          break;
-        }
-      }
-    });
-  }
-
-  // Close context menu if open
-  div.addEventListener('click', ()=>{ if(menu.style.display==='flex') hideContextMenu(); });
-}
+function attachMessageHandlers(div, messageObj, index){  
+  // clear old handlers if any  
+  div.ontouchstart = div.ontouchmove = div.ontouchend = null;  
+  div.onmousedown = div.onmouseup = null;  
+  
+  // LONG PRESS: show context menu (press & hold)  
+  const startLongPress = (ev) => {  
+    ev.preventDefault?.();  
+    longPressTimer = setTimeout(() => {  
+      selectedMsg = { index, obj: messageObj };  
+      showContextMenu(div);  
+    }, 480); // ~480ms long press  
+  };  
+  const cancelLongPress = () => {  
+    if(longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }  
+  };  
+  
+  // MOUSE (desktop)  
+  div.addEventListener('mousedown', (e)=>{  
+    startLongPress(e);  
+  });  
+  window.addEventListener('mouseup', (e)=>{ cancelLongPress(); });  
+  
+  // TOUCH (mobile)  
+  div.addEventListener('touchstart', (e)=>{  
+    touchStartX = e.touches[0].clientX;  
+    touchMoved = false;  
+    startLongPress(e);  
+  }, {passive:true});  
+  div.addEventListener('touchmove', (e)=>{  
+    touchMoved = true;  
+    const diff = e.touches[0].clientX - touchStartX;  
+    if(diff > 8){ div.classList.add('swiping'); }  
+  }, {passive:true});  
+  div.addEventListener('touchend', (e)=>{  
+    cancelLongPress();  
+    div.classList.remove('swiping');  
+    // if it was a quick swipe-right (and moved sufficiently), treat as "link/reply"  
+    if(touchMoved){  
+      const touchEndX = e.changedTouches[0].clientX;  
+      const delta = touchEndX - touchStartX;  
+      if(delta > 50){  
+        // trigger link action  
+        linkedMsg = messageObj;  
+        replyText.textContent = messageObj.message.length > 120 ? messageObj.message.slice(0,120)+"..." : messageObj.message;  
+        replyBox.style.display = "flex";  
+      }  
+    }  
+  }, {passive:true});  
   
   // also allow click to close context menu if open elsewhere  
   div.addEventListener('click', ()=>{ if(menu.style.display==='flex') hideContextMenu(); });  
