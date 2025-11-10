@@ -315,6 +315,30 @@ function attachMessageHandlers(div, messageObj, index){
     }  
   }, {passive:true});  
   
+  // LINKED MESSAGE CLICK → scroll to original
+const linkedBox = div.querySelector('.linked-box');
+if(linkedBox){
+  linkedBox.addEventListener('click', ()=>{
+    const linkedTime = linkedBox.dataset.linkedTime;
+    if(!linkedTime) return;
+
+    // find the message div with the matching time_utc
+    const allMessages = chatBoard.querySelectorAll('.message');
+    for(let msgDiv of allMessages){
+      const msgIndex = msgDiv.dataset.index;
+      const msgs = JSON.parse(localStorage.getItem(storageKey)) || [];
+      const msgObj = msgs[msgIndex];
+      if(msgObj && msgObj.time_utc === linkedTime){
+        msgDiv.scrollIntoView({behavior:'smooth', block:'center'});
+        // optionally highlight the target briefly
+        msgDiv.style.background = '#fff3b0';
+        setTimeout(()=>{ msgDiv.style.background = msgObj.sender==="me"?"#c2ffc2":"#ececec"; }, 1200);
+        break;
+      }
+    }
+  });
+}
+  
   // also allow click to close context menu if open elsewhere  
   div.addEventListener('click', ()=>{ if(menu.style.display==='flex') hideContextMenu(); });  
 }  
