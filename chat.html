@@ -183,11 +183,33 @@ function escapeHtml(s){
 async function sendMessage(){  
   const text = chatInput.value.trim();  
   if(!text) return;  
-  const msgData = { sender_id:currentUser.id, message:text,  
-    time_utc:new Date().toISOString(), linked:!!linkedMsg,  
-    linked_message:linkedMsg?linkedMsg.message:null,  
-    linked_message_time:linkedMsg?linkedMsg.time_utc:null,  
-    seen:false };  
+  // Generate a truly unique ID using timestamp + random string
+const msgId = Date.now() + "_" + Math.random().toString(36).slice(2, 8);
+
+const msgData = {
+  msg_id: msgId,
+  sender_id: currentUser.id,
+  message: text,
+  time_utc: new Date().toISOString(),
+  linked: !!linkedMsg,
+  linked_message: linkedMsg ? linkedMsg.message : null,
+  linked_message_time: linkedMsg ? linkedMsg.time_utc : null,
+  linked_message_id: linkedMsg ? linkedMsg.msg_id : null, // link to the original msg
+  seen: false
+};
+// Before pushing to localStorage:
+if (!msgs.some(m => m.msg_id === msgData.msg_id)) {
+  msgs.push({...msgData, sender:"me", status:"sent"});
+  localStorage.setItem(storageKey, JSON.stringify(msgs));
+}
+
+// Before updating Supabase:
+if (!arr.some(m => m.msg_id === msgData.msg_id)) {
+  arr.push(msgData);
+  await supabase.from('fwebaccount')
+    .update({ fchat_messages: JSON.stringify(arr) })
+    .eq('id', chatUserId);
+}
   // local storage push (sender view)  
   const msgs = JSON.parse(localStorage.getItem(storageKey)) || [];  
   msgs.push({...msgData, sender:"me", status:"sent"});  
