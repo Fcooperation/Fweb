@@ -163,10 +163,12 @@ function renderMessages(){
     if(m.sender==="me") div.classList.add("me");  
     div.dataset.index = i;  
     div.dataset.id = m.id;
-    div.innerHTML= `${m.linked?`<div class="linked-box" data-linked-time="${m.linked_message_time}">${escapeHtml(m.linked_message)}</div>`:""}  
-                    <div class="msg-text">${escapeHtml(m.message)}</div>  
-                    <span class="msg-time">${formatTime(m.time_utc)}</span>  
-                    <span class="msg-status">${m.status || ""}</span>`;  
+    div.innerHTML = `${m.linked ? 
+  `<div class="linked-box" data-linked-id="${m.linked_message_id}">Linked Message</div>` : ""
+}
+<div class="msg-text">${escapeHtml(m.message)}</div>
+<span class="msg-time">${formatTime(m.time_utc)}</span>
+<span class="msg-status">${m.status || ""}</span>`;
     attachMessageHandlers(div, m, i);  
     chatBoard.appendChild(div);  
   });  
@@ -180,6 +182,20 @@ function generateUUID() {
     return v.toString(16);
   });
 }
+
+chatBoard.querySelectorAll('.linked-box').forEach(box => {
+  box.addEventListener('click', () => {
+    const targetId = box.dataset.linkedId;
+    if(!targetId) return;
+    const targetMsg = chatBoard.querySelector(`.message[data-id='${targetId}']`);
+    if(targetMsg){
+      targetMsg.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // optional: highlight for a moment
+      targetMsg.style.background = '#fff8a0';
+      setTimeout(() => targetMsg.style.background = targetMsg.classList.contains('me') ? '#c2ffc2' : '#ececec', 1500);
+    }
+  });
+});
   
 /* Helper to escape HTML in inserted text */  
 function escapeHtml(s){  
@@ -194,13 +210,12 @@ async function sendMessage(){
   const text = chatInput.value.trim();  
   if(!text) return;  
   const msgData = {
-  id: generateUUID(),   // ✅ unique identifier
+  id: generateUUID(), // current message id
   sender_id: currentUser.id,
   message: text,
   time_utc: new Date().toISOString(),
   linked: !!linkedMsg,
-  linked_message: linkedMsg ? linkedMsg.message : null,
-  linked_message_time: linkedMsg ? linkedMsg.time_utc : null,
+  linked_message_id: linkedMsg ? linkedMsg.id : null, // store id instead of text
   seen: false
 };
   // local storage push (sender view)  
