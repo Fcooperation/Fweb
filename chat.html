@@ -205,17 +205,7 @@ linked_message_id: linkedMsg ? linkedMsg.id : null,  // ✅ new line
   seen: false
 };
 
-// when message is swiped
-localStorage.setItem("linked_message_id", swipedMessage.id);
 
-// when sending a new message
-const linkedId = localStorage.getItem("linked_message_id");
-if (linkedId) {
-   newMessage.linked = true;
-   newMessage.linked_id = linkedId;
-   // optionally clear it after send
-   localStorage.removeItem("linked_message_id");
-}
   
   // local storage push (sender view)  
   const msgs = JSON.parse(localStorage.getItem(storageKey)) || [];  
