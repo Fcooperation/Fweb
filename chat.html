@@ -190,90 +190,39 @@ function escapeHtml(s){
 /* When user sends — save locally AND write to recipient's fchat_messages column  
    Also set status 'sent' under the message immediately in localStorage  
 */  
-async function sendMessage() {
-  const text = chatInput.value.trim();
-  if (!text) return;
-
-  // Get linked message id from localStorage (if any)
-  const linkedId = localStorage.getItem('linked_message_id');
-
-  // Find the linked message in current chat messages
-  let linkedMsgData = null;
-  if (linkedId) {
-    const msgs = JSON.parse(localStorage.getItem(storageKey)) || [];
-    linkedMsgData = msgs.find(m => m.id === linkedId) || null;
-  }
-
-  // Prepare message payload
+async function sendMessage(){  
+  const text = chatInput.value.trim();  
+  if(!text) return;  
   const msgData = {
-    id: generateUUID(),
-    sender_id: currentUser.id,
-    message: text,
-    time_utc: new Date().toISOString(),
-    linked: !!linkedMsgData,
-    linked_message: linkedMsgData ? linkedMsgData.message : null,
-    linked_message_time: linkedMsgData ? linkedMsgData.time_utc : null,
-    linked_message_id: linkedMsgData ? linkedMsgData.id : null,
-    seen: false
-  };
-
-  // 1️⃣ Save locally
-  const localMsgs = JSON.parse(localStorage.getItem(storageKey)) || [];
-  localMsgs.push({ ...msgData, sender: "me", status: "sent" });
-  localStorage.setItem(storageKey, JSON.stringify(localMsgs));
-  renderMessages();
-
-  // 2️⃣ Clear linked message
-  linkedMsg = null;
-  localStorage.removeItem('linked_message_id');
-  replyBox.style.display = "none";
-
-  // 3️⃣ Push to recipient's Supabase fchat_messages
-  try {
-    console.log("Attempting to send message to Supabase:", msgData);
-
-    // Ensure correct type for chatUserId
-    const recipientId = isNaN(chatUserId) ? chatUserId : parseInt(chatUserId);
-
-    // Fetch existing messages
-    const { data: recv, error: recvErr } = await supabase
-      .from('fwebaccount')
-      .select('fchat_messages')
-      .eq('id', recipientId)
-      .maybeSingle();
-
-    if (recvErr) throw recvErr;
-
-    let arr = [];
-    if (recv?.fchat_messages) {
-      if (Array.isArray(recv.fchat_messages)) arr = recv.fchat_messages;
-      else {
-        try { arr = JSON.parse(recv.fchat_messages); } catch { arr = []; }
-      }
-    }
-
-    // Append new message
-    arr.push(msgData);
-
-    // Update Supabase
-    const { data: updated, error: updateErr } = await supabase
-      .from('fwebaccount')
-      .update({ fchat_messages: JSON.stringify(arr) })
-      .eq('id', recipientId);
-
-    if (updateErr) {
-      console.error("Supabase update error:", updateErr);
-      chatStatus.textContent = "Failed to send message to server.";
-    } else {
-      console.log("Message successfully sent to Supabase:", updated);
-      chatStatus.textContent = "Message sent!";
-    }
-
-  } catch (err) {
-    console.error("Send failed:", err);
-    chatStatus.textContent = "Error sending message.";
-  }
-}
+  id: generateUUID(),   // ✅ unique identifier
+  sender_id: currentUser.id,
+  message: text,
+  time_utc: new Date().toISOString(),
+  linked: !!linkedMsg,
+  linked_message: linkedMsg ? linkedMsg.message : null,
+  linked_message_time: linkedMsg ? linkedMsg.time_utc : null,
+  seen: false
+};
+  // local storage push (sender view)  
+  const msgs = JSON.parse(localStorage.getItem(storageKey)) || [];  
+  msgs.push({...msgData, sender:"me", status:"sent"});  
+  localStorage.setItem(storageKey,JSON.stringify(msgs));  
+  renderMessages();  
+  chatInput.value=""; linkedMsg=null; replyBox.style.display="none";  
+  
+  // push to recipient's fchat_messages column (same logic you had)  
+  try{  
+    const {data:recv, error:recvErr} = await supabase.from('fwebaccount').select('fchat_messages').eq('id',chatUserId).maybeSingle();  
+    if(recvErr) throw recvErr;  
+    let arr = [];  
+    if(recv?.fchat_messages){  
+      if(Array.isArray(recv.fchat_messages)) arr = recv.fchat_messages;  
+      else { try{ arr = JSON.parse(recv.fchat_messages); } catch{ arr=[]; } }  
+    }  
+    arr.push(msgData);  
+    await supabase.from('fwebaccount').update({fchat_messages: JSON.stringify(arr)}).eq('id',chatUserId);  
+  }catch(e){console.error("Send failed:",e);}  
+}  
   
 /* ------------ RECEIVE / DETECTION FUNCTION (per your spec) -------------  
    - DOES NOT merge incoming msgs into localStorage automatically  
@@ -373,13 +322,11 @@ function attachMessageHandlers(div, messageObj, index){
       const touchEndX = e.changedTouches[0].clientX;  
       const delta = touchEndX - touchStartX;  
       if(delta > 50){  
-  linkedMsg = messageObj;  
-  // Save linked message id in localStorage (replace if exists)
-  localStorage.setItem('linked_message_id', messageObj.id);
-
-  replyText.textContent = messageObj.message.length > 120 ? messageObj.message.slice(0,120)+"..." : messageObj.message;  
-  replyBox.style.display = "flex";  
-}
+        // trigger link action  
+        linkedMsg = messageObj;  
+        replyText.textContent = messageObj.message.length > 120 ? messageObj.message.slice(0,120)+"..." : messageObj.message;  
+        replyBox.style.display = "flex";  
+      }  
     }  
   }, {passive:true});  
   
