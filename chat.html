@@ -200,9 +200,23 @@ async function sendMessage(){
   time_utc: new Date().toISOString(),
   linked: !!linkedMsg,
   linked_message: linkedMsg ? linkedMsg.message : null,
-  linked_message_time: linkedMsg ? linkedMsg.time_utc : null,
+linked_message_time: linkedMsg ? linkedMsg.time_utc : null,
+linked_message_id: linkedMsg ? linkedMsg.id : null,  // ✅ new line
   seen: false
 };
+
+// when message is swiped
+localStorage.setItem("linked_message_id", swipedMessage.id);
+
+// when sending a new message
+const linkedId = localStorage.getItem("linked_message_id");
+if (linkedId) {
+   newMessage.linked = true;
+   newMessage.linked_id = linkedId;
+   // optionally clear it after send
+   localStorage.removeItem("linked_message_id");
+}
+  
   // local storage push (sender view)  
   const msgs = JSON.parse(localStorage.getItem(storageKey)) || [];  
   msgs.push({...msgData, sender:"me", status:"sent"});  
