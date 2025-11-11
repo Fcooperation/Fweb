@@ -201,7 +201,7 @@ async function sendMessage(){
   linked: !!linkedMsg,
   linked_message: linkedMsg ? linkedMsg.message : null,
 linked_message_time: linkedMsg ? linkedMsg.time_utc : null,
-linked_message_id: linkedMsg ? linkedMsg.id : null,  // ✅ new line
+linked_message_id: linkedMsg && linkedMsg.id ? linkedMsg.id : null // ✅ new line
   seen: false
 };
 
