@@ -163,10 +163,10 @@ function renderMessages(){
     if(m.sender==="me") div.classList.add("me");  
     div.dataset.index = i;  
     div.dataset.id = m.id;
-    div.innerHTML= `${m.linked?`<div class="linked-box" data-linked-id="${m.linked_message_id}" data-linked-time="${m.linked_message_time}">${escapeHtml(m.linked_message)}</div>`:""}  
-                <div class="msg-text">${escapeHtml(m.message)}</div>  
-                <span class="msg-time">${formatTime(m.time_utc)}</span>  
-                <span class="msg-status">${m.status || ""}</span>`; 
+    div.innerHTML= `${m.linked?`<div class="linked-box" data-linked-time="${m.linked_message_time}">${escapeHtml(m.linked_message)}</div>`:""}  
+                    <div class="msg-text">${escapeHtml(m.message)}</div>  
+                    <span class="msg-time">${formatTime(m.time_utc)}</span>  
+                    <span class="msg-status">${m.status || ""}</span>`;  
     attachMessageHandlers(div, m, i);  
     chatBoard.appendChild(div);  
   });  
@@ -194,13 +194,12 @@ async function sendMessage(){
   const text = chatInput.value.trim();  
   if(!text) return;  
   const msgData = {
-  id: generateUUID(),
+  id: generateUUID(),   // ✅ unique identifier
   sender_id: currentUser.id,
   message: text,
   time_utc: new Date().toISOString(),
   linked: !!linkedMsg,
   linked_message: linkedMsg ? linkedMsg.message : null,
-  linked_message_id: linkedMsg ? linkedMsg.id : null, // ✅ new
   linked_message_time: linkedMsg ? linkedMsg.time_utc : null,
   seen: false
 };
@@ -323,16 +322,10 @@ function attachMessageHandlers(div, messageObj, index){
       const touchEndX = e.changedTouches[0].clientX;  
       const delta = touchEndX - touchStartX;  
       if(delta > 50){  
-  // trigger link action
-  linkedMsg = {
-    id: messageObj.id,               // ✅ capture the original message id
-    message: messageObj.message,
-    time_utc: messageObj.time_utc,
-    sender_id: messageObj.sender_id
-  };
-  replyText.textContent = messageObj.message.length > 120 ? messageObj.message.slice(0,120)+"..." : messageObj.message;  
-  replyBox.style.display = "flex";  
-}  
+        // trigger link action  
+        linkedMsg = messageObj;  
+        replyText.textContent = messageObj.message.length > 120 ? messageObj.message.slice(0,120)+"..." : messageObj.message;  
+        replyBox.style.display = "flex";  
       }  
     }  
   }, {passive:true});  
