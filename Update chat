@@ -200,6 +200,7 @@ async function sendMessage(){
   time_utc: new Date().toISOString(),
   linked: !!linkedMsg,
   linked_message: linkedMsg ? linkedMsg.message : null,
+  linked_message_id: linkedMsg ? linkedMsg.id : null,
   linked_message_time: linkedMsg ? linkedMsg.time_utc : null,
   seen: false
 };
