@@ -400,5 +400,23 @@ window.addEventListener("load", async ()=>{
   renderMessages();  
   detectIncomingForCurrentChat(); // initial detection run  
 });  
-</script>  </body>  
+</script>  
+<script>
+document.addEventListener("click", (e) => {
+  const msg = e.target.closest(".message");
+  if (!msg) return; // ignore clicks outside messages
+
+  // Remove old highlights first
+  document.querySelectorAll(".message.highlight").forEach(el => {
+    el.classList.remove("highlight");
+  });
+
+  // Highlight the clicked message
+  msg.classList.add("highlight");
+
+  // Optional: auto remove the glow after 2 seconds
+  setTimeout(() => msg.classList.remove("highlight"), 2000);
+});
+</script>
+</body>  
 </html>  
