@@ -15,10 +15,6 @@ header{
   background:#fff;display:flex;flex-direction:column;align-items:flex-start;  
   padding:12px 18px;border-bottom:1px solid #eee;box-shadow:0 2px 8px rgba(0,0,0,0.05);  
 }  
-.highlight {
-  background-color: #ffffa0;
-  transition: background-color 1s ease;
-}
 .header-top{display:flex;justify-content:space-between;align-items:center;width:100%;}  
 .header-left{display:flex;align-items:center;}  
 .chat-header-pic{width:45px;height:45px;border-radius:50%;object-fit:cover;margin-right:10px;background:#ccc;}  
@@ -83,9 +79,6 @@ header{
     </div>  
   </div>  
   <div id="chat-status">Initializing...</div>  
-  <div class="message" data-id="${msg.id}" onclick="handleMessageClick(${JSON.stringify(msg)})">
-  ${msg.message}
-</div>
 </header>  <div id="chat-board"><div id="loading">Loading chat...</div></div>  <div id="chat-input-area">  
   <div id="reply-box"><span></span><button id="close-reply">×</button></div>  
   <div id="chat-input-row">  
@@ -154,24 +147,8 @@ function formatTime(t){
   const same = d.toDateString() === n.toDateString();  
   return same ? d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})+" UTC" :  
                 d.toLocaleString("en-US",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})+" UTC";  
-} 
-// linked message scroll when clicked
-  function handleMessageClick(msg) {
-  if (msg.linked && msg.linked_message_id) {
-    const linkedId = msg.linked_message_id;
-    const targetMsg = document.querySelector(`[data-id="${linkedId}"]`);
-
-    if (targetMsg) {
-      targetMsg.scrollIntoView({ behavior: "smooth", block: "center" });
-      targetMsg.classList.add("highlight");
-
-      // remove highlight after 2 seconds
-      setTimeout(() => {
-        targetMsg.classList.remove("highlight");
-      }, 2000);
-    }
-  }
-}
+}  
+  
   
 /* Render messages FROM localStorage (unchanged CSS)  
    Includes .msg-status to show 'sent' text for messages sent by me.  
