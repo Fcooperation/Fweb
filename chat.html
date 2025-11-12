@@ -67,11 +67,6 @@ header{
 .message.swiping{ transform: translateX(18px) scale(1.01); box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
 .msg-status { display:block; font-size:11px; color:#444; margin-top:4px; text-align:right; }
 .menu-visible{ display:flex !important; }
-.message.highlight {
-  background: #fff8b3 !important;
-  box-shadow: 0 0 8px rgba(255, 230, 100, 0.8);
-  transition: background 0.4s ease;
-}
 </style>
 
 </head>  
@@ -185,19 +180,7 @@ function generateUUID() {
     return v.toString(16);
   });
 }
-  // 🔆 Highlight message on click
-div.addEventListener('click', () => {
-  // Remove highlight from any previously highlighted message
-  document.querySelectorAll('.message.highlight').forEach(el => {
-    el.classList.remove('highlight');
-  });
-
-  // Highlight the clicked one
-  div.classList.add('highlight');
-
-  // Remove highlight after a short delay (optional)
-  setTimeout(() => div.classList.remove('highlight'), 1200);
-});
+  
 /* Helper to escape HTML in inserted text */  
 function escapeHtml(s){  
   if(!s) return "";  
