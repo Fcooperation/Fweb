@@ -67,6 +67,11 @@ header{
 .message.swiping{ transform: translateX(18px) scale(1.01); box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
 .msg-status { display:block; font-size:11px; color:#444; margin-top:4px; text-align:right; }
 .menu-visible{ display:flex !important; }
+.message.glow {
+  box-shadow: 0 0 15px 3px #007bff;
+  transform: scale(1.02);
+  transition: box-shadow 0.2s, transform 0.2s;
+}
 </style>
 
 </head>  
@@ -332,7 +337,32 @@ function attachMessageHandlers(div, messageObj, index){
   }, {passive:true});  
   
   // also allow click to close context menu if open elsewhere  
-  div.addEventListener('click', ()=>{ if(menu.style.display==='flex') hideContextMenu(); });  
+  div.addEventListener('click', ()=>{ 
+    if(menu.style.display==='flex') hideContextMenu(); 
+
+    const msgs = JSON.parse(localStorage.getItem(storageKey)) || [];
+    const msgObj = msgs[index]; // clicked message
+
+    // Only act if this message is a linked message
+    if(msgObj && msgObj.linked && msgObj.linked_message_id){
+        // Remove glow from any other bubble first
+        document.querySelectorAll('.message.glow').forEach(msg => msg.classList.remove('glow'));
+
+        // Find the DOM element of the linked message
+        const targetDiv = Array.from(document.querySelectorAll('.message')).find(d => d.dataset.id === msgObj.linked_message_id);
+
+        if(targetDiv){
+            // Scroll smoothly to the original linked message
+            targetDiv.scrollIntoView({behavior: "smooth", block: "center"});
+
+            // Glow the original message
+            targetDiv.classList.add('glow');
+
+            // Remove glow after 1.5s
+            setTimeout(() => targetDiv.classList.remove('glow'), 1500);
+        }
+    }
+});
 }  
   
 /* Context menu positioning & actions */  
