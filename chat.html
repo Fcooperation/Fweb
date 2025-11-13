@@ -236,52 +236,20 @@ async function sendMessage(){
      which are FROM the chat partner (sender_id === chatUserId).  
    - Normalizes missing 'seen' property to false and updates server copy.  
 */  
-async function detectIncomingForCurrentChat() {
-  try {
-    chatStatus.textContent = "Checking for new messages...";
-
-    const { data, error } = await supabase
-      .from('fwebaccount')
-      .select('fchat_messages')
-      .eq('id', currentUser.id)
-      .maybeSingle();
-
-    if (error) throw error;
-
-    if (data?.fchat_messages) {
-      let arr = Array.isArray(data.fchat_messages) ? data.fchat_messages : JSON.parse(data.fchat_messages || "[]");
-
-      // Filter messages from the chat partner
-      const fromPartner = arr.filter(msg => String(msg.sender_id) === String(chatUserId));
-
-      if (fromPartner.length > 0) {
-        chatStatus.textContent = `New messages found (${fromPartner.length}) from ${chatName.textContent}`;
-
-        // Show extracting log
-        chatStatus.textContent = `Extracting ${fromPartner.length} new messages...`;
-
-        // Save messages to localStorage
-        const existingMsgs = JSON.parse(localStorage.getItem(storageKey)) || [];
-        localStorage.setItem(storageKey, JSON.stringify([...existingMsgs, ...fromPartner]));
-
-        console.log(`✅ Extracted and saved ${fromPartner.length} new messages from ${chatUserId}`, fromPartner);
-
-        // OPTIONAL: delete these from Supabase if you want to clear them
-        // await supabase.from('fwebaccount')
-        //   .update({ fchat_messages: JSON.stringify(arr.filter(m => String(m.sender_id) !== String(chatUserId))) })
-        //   .eq('id', currentUser.id);
-      } else {
-        chatStatus.textContent = "No new messages found";
-      }
-    } else {
-      chatStatus.textContent = "No messages found";
-    }
-
-  } catch (err) {
-    console.error("Error detecting messages:", err);
-    chatStatus.textContent = "Error fetching messages";
-  }
-}
+async function detectIncomingForCurrentChat(){  
+  try {  
+    chatStatus.textContent = "Checking for new messages...";  
+    const { data, error } = await supabase  
+      .from('fwebaccount')  
+      .select('fchat_messages')  
+      .eq('id', currentUser.id)  
+      .maybeSingle();  
+  
+    if (error) throw error;  
+  
+    if (data?.fchat_messages) {  
+      // ensure array form  
+      let arr = Array.isArray(data.fchat_messages) ? data.fchat_messages : JSON.parse(data.fchat_messages || "[]");  
   
       // normalize missing 'seen' property  
       let normalized = false;  
