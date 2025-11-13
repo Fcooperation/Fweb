@@ -292,13 +292,17 @@ function attachMessageHandlers(div, messageObj, index){
   div.onmousedown = div.onmouseup = null;  
   
   // LONG PRESS: show context menu (press & hold)  
-  const startLongPress = (ev) => {  
-    ev.preventDefault?.();  
-    longPressTimer = setTimeout(() => {  
-      selectedMsg = { index, obj: messageObj };  
-      showContextMenu(div);  
-    }, 480); // ~480ms long press  
-  };  
+  const startLongPress = (ev) => {      
+  ev.preventDefault?.();      
+  longPressTimer = setTimeout(() => {      
+    selectedMsg = { index, obj: messageObj };      
+    showContextMenu(div);      
+
+    // 💡 Add a glow to the message when the menu opens
+    div.classList.add('glow');      
+    setTimeout(() => div.classList.remove('glow'), 1200); // remove after 1.2s      
+  }, 480); // ~480ms long press      
+};
   const cancelLongPress = () => {  
     if(longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }  
   };  
