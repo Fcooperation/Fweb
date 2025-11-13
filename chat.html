@@ -67,8 +67,6 @@ header{
 .message.swiping{ transform: translateX(18px) scale(1.01); box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
 .msg-status { display:block; font-size:11px; color:#444; margin-top:4px; text-align:right; }
 .menu-visible{ display:flex !important; }
-
-}
 </style>
 
 </head>  
@@ -334,8 +332,8 @@ function attachMessageHandlers(div, messageObj, index){
   }, {passive:true});  
   
   // also allow click to close context menu if open elsewhere  
-  div.addEventListener('click', ()=>{ 
-    if(menu.style.display==='flex') hideContextMenu(); 
+  div.addEventListener('click', ()=>{ if(menu.style.display==='flex') hideContextMenu(); });  
+}  
   
 /* Context menu positioning & actions */  
 function showContextMenu(targetDiv){
