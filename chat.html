@@ -236,62 +236,21 @@ async function sendMessage(){
      which are FROM the chat partner (sender_id === chatUserId).  
    - Normalizes missing 'seen' property to false and updates server copy.  
 */  
-async function detectIncomingForCurrentChat(){
-  try {
-    chatStatus.textContent = "Checking for new messages...";
-    const { data, error } = await supabase
-      .from('fwebaccount')
-      .select('fchat_messages')
-      .eq('id', currentUser.id)
-      .maybeSingle();
-
-    if (error) throw error;
-
-    if (data?.fchat_messages) {
-      let arr = Array.isArray(data.fchat_messages) ? data.fchat_messages : JSON.parse(data.fchat_messages || "[]");
-
-      // Filter messages that are FROM this chat partner
-      const fromPartner = arr.filter(msg => String(msg.sender_id) === String(chatUserId));
-
-      if (fromPartner.length > 0) {
-        console.log(`📩 Receiving ${fromPartner.length} new messages from ${chatUserId}`);
-
-        // Load local messages
-        const localMsgs = JSON.parse(localStorage.getItem(storageKey)) || [];
-
-        // Append received ones
-        fromPartner.forEach(m => {
-          localMsgs.push({
-            ...m,
-            sender: "them",   // mark sender visually
-            status: "",       // no status for received
-          });
-        });
-
-        // Save locally
-        localStorage.setItem(storageKey, JSON.stringify(localMsgs));
-
-        // Render immediately
-        renderMessages();
-
-        // Remove them from Supabase (delete from your column)
-        const remaining = arr.filter(m => String(m.sender_id) !== String(chatUserId));
-        await supabase.from('fwebaccount').update({
-          fchat_messages: JSON.stringify(remaining)
-        }).eq('id', currentUser.id);
-
-        chatStatus.textContent = `Received ${fromPartner.length} new message(s)`;
-      } else {
-        chatStatus.textContent = "No new messages";
-      }
-    } else {
-      chatStatus.textContent = "No messages found";
-    }
-  } catch (err) {
-    console.error("Error detecting messages:", err);
-    chatStatus.textContent = "Error fetching messages";
-  }
-}
+async function detectIncomingForCurrentChat(){  
+  try {  
+    chatStatus.textContent = "Checking for new messages...";  
+    const { data, error } = await supabase  
+      .from('fwebaccount')  
+      .select('fchat_messages')  
+      .eq('id', currentUser.id)  
+      .maybeSingle();  
+  
+    if (error) throw error;  
+  
+    if (data?.fchat_messages) {  
+      // ensure array form  
+      let arr = Array.isArray(data.fchat_messages) ? data.fchat_messages : JSON.parse(data.fchat_messages || "[]");  
+  
       // normalize missing 'seen' property  
       let normalized = false;  
       arr = arr.map(m => {  
