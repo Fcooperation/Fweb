@@ -337,17 +337,25 @@ function attachMessageHandlers(div, messageObj, index){
   }, {passive:true});  
   
   // also allow click to close context menu if open elsewhere  
-  div.addEventListener('click', ()=>{ if(menu.style.display==='flex') hideContextMenu(); 
-    
-    // Remove glow from any other bubble first
-    document.querySelectorAll('.message.glow').forEach(msg => msg.classList.remove('glow'));
+  div.addEventListener('click', ()=>{ 
+    if(menu.style.display==='flex') hideContextMenu(); 
 
-    // Add glow to this bubble
-    div.classList.add('glow');
+    // Get current messages from localStorage
+    const msgs = JSON.parse(localStorage.getItem(storageKey)) || [];
+    const msgObj = msgs[index]; // get the message object for this bubble
 
-    // Optional: remove glow automatically after 1.5 seconds
-    setTimeout(() => div.classList.remove('glow'), 1500);
-  });  
+    // Only glow if this message is a linked message
+    if(msgObj && msgObj.linked){
+        // Remove glow from any other bubble first
+        document.querySelectorAll('.message.glow').forEach(msg => msg.classList.remove('glow'));
+
+        // Add glow to this bubble
+        div.classList.add('glow');
+
+        // Optional: remove glow automatically after 1.5 seconds
+        setTimeout(() => div.classList.remove('glow'), 1500);
+    }
+});
 }  
   
 /* Context menu positioning & actions */  
