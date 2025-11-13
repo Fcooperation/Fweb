@@ -340,20 +340,27 @@ function attachMessageHandlers(div, messageObj, index){
   div.addEventListener('click', ()=>{ 
     if(menu.style.display==='flex') hideContextMenu(); 
 
-    // Get current messages from localStorage
     const msgs = JSON.parse(localStorage.getItem(storageKey)) || [];
-    const msgObj = msgs[index]; // get the message object for this bubble
+    const msgObj = msgs[index]; // clicked message
 
-    // Only glow if this message is a linked message
-    if(msgObj && msgObj.linked){
+    // Only act if this message is a linked message
+    if(msgObj && msgObj.linked && msgObj.linked_message_id){
         // Remove glow from any other bubble first
         document.querySelectorAll('.message.glow').forEach(msg => msg.classList.remove('glow'));
 
-        // Add glow to this bubble
-        div.classList.add('glow');
+        // Find the DOM element of the linked message
+        const targetDiv = Array.from(document.querySelectorAll('.message')).find(d => d.dataset.id === msgObj.linked_message_id);
 
-        // Optional: remove glow automatically after 1.5 seconds
-        setTimeout(() => div.classList.remove('glow'), 1500);
+        if(targetDiv){
+            // Scroll smoothly to the original linked message
+            targetDiv.scrollIntoView({behavior: "smooth", block: "center"});
+
+            // Glow the original message
+            targetDiv.classList.add('glow');
+
+            // Remove glow after 1.5s
+            setTimeout(() => targetDiv.classList.remove('glow'), 1500);
+        }
     }
 });
 }  
