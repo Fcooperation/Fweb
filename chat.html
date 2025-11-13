@@ -236,32 +236,87 @@ async function sendMessage(){
      which are FROM the chat partner (sender_id === chatUserId).  
    - Normalizes missing 'seen' property to false and updates server copy.  
 */  
-async function detectIncomingForCurrentChat(){  
-  try {  
-    chatStatus.textContent = "Checking for new messages...";  
-    const { data, error } = await supabase  
-      .from('fwebaccount')  
-      .select('fchat_messages')  
-      .eq('id', currentUser.id)  
-      .maybeSingle();  
-  
-    if (error) throw error;  
-  
-    if (data?.fchat_messages) {  
-      // ensure array form  
-      let arr = Array.isArray(data.fchat_messages) ? data.fchat_messages : JSON.parse(data.fchat_messages || "[]");  
-  
-      // normalize missing 'seen' property  
-      let normalized = false;  
-      arr = arr.map(m => {  
-        if (typeof m.seen === 'undefined') { normalized = true; return {...m, seen:false}; }  
-        return m;  
-      });  
-      if(normalized){  
-        // write back normalized array to supabase  
-        await supabase.from('fwebaccount').update({ fchat_messages: JSON.stringify(arr) }).eq('id', currentUser.id);  
-      }  
-  
+async function detectIncomingForCurrentChat() {
+  try {
+    chatStatus.textContent = "Checking for new messages...";
+    const { data, error } = await supabase
+      .from('fwebaccount')
+      .select('fchat_messages')
+      .eq('id', currentUser.id)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    if (data?.fchat_messages) {
+      let arr = Array.isArray(data.fchat_messages)
+        ? data.fchat_messages
+        : JSON.parse(data.fchat_messages || "[]");
+
+      // normalize missing 'seen'
+      let normalized = false;
+      arr = arr.map(m => {
+        if (typeof m.seen === "undefined") {
+          normalized = true;
+          return { ...m, seen: false };
+        }
+        return m;
+      });
+      if (normalized) {
+        await supabase
+          .from("fwebaccount")
+          .update({ fchat_messages: JSON.stringify(arr) })
+          .eq("id", currentUser.id);
+      }
+
+      // messages from partner
+      const fromPartner = arr.filter(
+        (msg) => String(msg.sender_id) === String(chatUserId) && msg.seen === false
+      );
+
+      if (fromPartner.length > 0) {
+        chatStatus.textContent = `New messages received (${fromPartner.length})`;
+
+        // ✅ 1. Load local messages
+        const localMsgs = JSON.parse(localStorage.getItem(storageKey)) || [];
+
+        // ✅ 2. Add each new message if not already saved
+        fromPartner.forEach((msg) => {
+          const exists = localMsgs.some(
+            (m) =>
+              m.time_utc === msg.time_utc &&
+              m.message === msg.message &&
+              String(m.sender_id) === String(msg.sender_id)
+          );
+          if (!exists) {
+            localMsgs.push({
+              ...msg,
+              sender: "partner",
+              status: "",
+            });
+          }
+          msg.seen = true; // mark seen
+        });
+
+        // ✅ 3. Save to localStorage and re-render
+        localStorage.setItem(storageKey, JSON.stringify(localMsgs));
+        renderMessages();
+
+        // ✅ 4. Write back updated "seen:true" flags
+        await supabase
+          .from("fwebaccount")
+          .update({ fchat_messages: JSON.stringify(arr) })
+          .eq("id", currentUser.id);
+      } else {
+        chatStatus.textContent = "No new messages found";
+      }
+    } else {
+      chatStatus.textContent = "No messages found";
+    }
+  } catch (err) {
+    console.error("Error detecting messages:", err);
+    chatStatus.textContent = "Error fetching messages";
+  }
+}
       // filter messages that are FROM the partner you're viewing (chatUserId)  
       const fromPartner = arr.filter(msg => String(msg.sender_id) === String(chatUserId));  
       if(fromPartner.length > 0){  
@@ -436,7 +491,7 @@ chatInput.addEventListener("keypress",e=>{if(e.key==="Enter") sendMessage();});
   
 /* INITIAL load */  
 window.addEventListener("load", async ()=>{  
-  await loadChatUser();  
+  await loadChatUser(); 
   renderMessages();  
   detectIncomingForCurrentChat(); // initial detection run  
 });  
