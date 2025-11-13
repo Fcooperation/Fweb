@@ -336,12 +336,18 @@ function attachMessageHandlers(div, messageObj, index){
 }  
   
 /* Context menu positioning & actions */  
-function showContextMenu(targetDiv){  
-  const rect = targetDiv.getBoundingClientRect();  
-  menu.style.top = (rect.top + window.scrollY + 8) + 'px';  
-  menu.style.left = (rect.right + 8) + 'px';  
-  menu.style.display = 'flex';  
-}  
+function showContextMenu(targetDiv){
+  const rect = targetDiv.getBoundingClientRect();
+  menu.style.top = (rect.bottom + window.scrollY + 4) + 'px'; // below message
+  if(targetDiv.classList.contains('me')){
+    // message sent by me → show menu to the left
+    menu.style.left = (rect.left + window.scrollX - menu.offsetWidth - 4) + 'px';
+  } else {
+    // received message → show menu to the right
+    menu.style.left = (rect.right + window.scrollX + 4) + 'px';
+  }
+  menu.style.display = 'flex';
+}
 function hideContextMenu(){  
   menu.style.display = 'none';  
   selectedMsg = null;  
