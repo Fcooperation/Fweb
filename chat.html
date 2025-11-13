@@ -406,5 +406,123 @@ window.addEventListener("load", async ()=>{
   renderMessages();  
   detectIncomingForCurrentChat(); // initial detection run  
 });  
-</script>  </body>  
+</script>
+  <style>
+/* Multiple selection highlight */
+.message.selected {
+  outline: 2px solid #007bff;
+  background-color: #d0e7ff !important;
+}
+</style>
+<script>
+let selectionMode = false;
+let selectedMessages = new Set();
+
+// Override attachMessageHandlers for multiple selection
+function attachMessageHandlers(div, messageObj, index) {
+  // existing handlers removed
+  div.ontouchstart = div.ontouchmove = div.ontouchend = null;
+  div.onmousedown = div.onmouseup = null;
+
+  const startLongPress = (ev) => {
+    ev.preventDefault?.();
+    longPressTimer = setTimeout(() => {
+      selectionMode = true;
+      toggleSelection(div, index);
+      showContextMenuForSelection(div);
+    }, 480);
+  };
+  const cancelLongPress = () => {
+    if(longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+  };
+
+  // MOUSE
+  div.addEventListener('mousedown', (e) => startLongPress(e));
+  window.addEventListener('mouseup', (e) => cancelLongPress());
+
+  // TOUCH
+  div.addEventListener('touchstart', (e) => {
+    touchStartX = e.touches[0].clientX; touchMoved=false;
+    startLongPress(e);
+  }, {passive:true});
+
+  div.addEventListener('touchmove', (e)=>{
+    touchMoved = true;
+    const diff = e.touches[0].clientX - touchStartX;
+    if(diff > 8){ div.classList.add('swiping'); }
+  }, {passive:true});
+
+  div.addEventListener('touchend', (e)=>{
+    cancelLongPress();
+    div.classList.remove('swiping');
+    if(touchMoved){
+      const delta = e.changedTouches[0].clientX - touchStartX;
+      if(delta > 50){ linkedMsg = messageObj; replyText.textContent = messageObj.message.length>120? messageObj.message.slice(0,120)+'...' : messageObj.message; replyBox.style.display='flex'; }
+    }
+  }, {passive:true});
+
+  // CLICK to select in selectionMode
+  div.addEventListener('click', ()=>{
+    if(selectionMode){
+      toggleSelection(div, index);
+      showContextMenuForSelection(div);
+    } else if(menu.style.display==='flex'){
+      hideContextMenu();
+    }
+  });
+}
+
+function toggleSelection(div, index){
+  if(selectedMessages.has(index)){
+    selectedMessages.delete(index);
+    div.classList.remove('selected');
+  } else {
+    selectedMessages.add(index);
+    div.classList.add('selected');
+  }
+}
+
+function showContextMenuForSelection(targetDiv){
+  if(selectedMessages.size === 0){
+    selectionMode = false;
+    hideContextMenu();
+    return;
+  }
+  const rect = targetDiv.getBoundingClientRect();
+  menu.style.top = (rect.bottom + window.scrollY + 4) + 'px';
+  menu.style.left = (rect.right + window.scrollX + 4) + 'px';
+  menu.style.display = 'flex';
+}
+
+// Delete multiple selected messages
+deleteBtn.onclick = async () => {
+  if(selectedMessages.size === 0) return hideContextMenu();
+
+  const msgs = JSON.parse(localStorage.getItem(storageKey)) || [];
+  let updatedMsgs = [...msgs];
+
+  for(let idx of Array.from(selectedMessages).sort((a,b)=>b-a)){ // delete from end to start
+    const obj = msgs[idx];
+    if(obj){
+      if(obj.seen === false){
+        // remove from Supabase current user's messages
+        try{
+          const {data,error} = await supabase.from('fwebaccount').select('fchat_messages').eq('id', currentUser.id).maybeSingle();
+          if(error) throw error;
+          let arr = data?.fchat_messages ? (Array.isArray(data.fchat_messages)?data.fchat_messages:JSON.parse(data.fchat_messages||"[]")) : [];
+          arr = arr.filter(m => !(m.time_utc===obj.time_utc && m.message===obj.message && String(m.sender_id)===String(obj.sender_id)));
+          await supabase.from('fwebaccount').update({ fchat_messages: JSON.stringify(arr) }).eq('id', currentUser.id);
+        }catch(e){ console.error("Delete failed:", e); }
+      }
+      updatedMsgs.splice(idx,1);
+    }
+  }
+  localStorage.setItem(storageKey, JSON.stringify(updatedMsgs));
+  renderMessages();
+  selectedMessages.clear();
+  selectionMode = false;
+  hideContextMenu();
+};
+</script>
+</body>  
 </html>  
