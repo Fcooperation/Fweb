@@ -91,74 +91,84 @@ header{
     <button id="send-btn">➤</button>  
   </div>  
 </div>  <div id="menu" class="context-menu">  
-  <button id="delete-msg">Delete</button>  <script>
-const API_BASE = "https://fweb-backend.onrender.com";  // ← replace this with your real Render backend URL
+  <button id="delete-msg">Delete</button> <script>
+const API_BASE = "https://fweb-backend.onrender.com";
 
-let currentUser = JSON.parse(localStorage.getItem("fweb_user")); // logged-in user
-let chatPartnerId = localStorage.getItem("fchat_current_partner"); // id of the user you are chatting with
+// local user
+let currentUser = JSON.parse(localStorage.getItem("fweb_user"));
+
+// id of the user you are chatting with
+let chatPartnerId = localStorage.getItem("fchat_current_partner");
 
 const chatName = document.getElementById("chat-name");
 const chatPic = document.getElementById("chat-pic");
 const chatStatus = document.getElementById("chat-status");
 
-/* -------------------------------
-   LOAD CHAT USER SAFE
---------------------------------*/
+
+/* ---------------------------------------------------------
+   LOAD CHAT PARTNER ACCOUNT
+   1. Look for fchat_current_partner
+   2. Load fchat_user_<id> from localStorage
+   3. If not found → GET /chatuser/:id
+----------------------------------------------------------*/
 async function loadChatUser() {
     if (!chatPartnerId) {
-        chatStatus.textContent = "❌ No chat user selected";
+        chatStatus.textContent = "No chat selected.";
+        console.warn("⚠ No chat partner ID found in localStorage");
         return;
     }
 
     const LS_KEY = "fchat_user_" + chatPartnerId;
 
-    // 1️⃣ Check localStorage first
-    let cached = localStorage.getItem(LS_KEY);
-    if (cached) {
-        console.log("📦 Loaded chat user from localStorage");
-        const user = JSON.parse(cached);
-        applyUserToHeader(user);
+    // 1️⃣ Check if full user account exists in localStorage
+    let cachedUser = localStorage.getItem(LS_KEY);
+    if (cachedUser) {
+        console.log("📦 Loaded user from localStorage");
+        const user = JSON.parse(cachedUser);
+        applyUserHeader(user);
         return user;
     }
 
-    // 2️⃣ Not found → call backend
+    // 2️⃣ Not found → fetch from backend
     try {
-        console.log("🌐 Fetching chat user from backend...");
-        chatStatus.textContent = "Loading user...";
+        console.log("🌐 Fetching chat user from Render backend:", chatPartnerId);
+        chatStatus.textContent = "Fetching user...";
 
-        const res = await fetch(`${API_BASE}/chatuser/${chatPartnerId}`);
-        const json = await res.json();
+        const response = await fetch(`${API_BASE}/chatuser/${chatPartnerId}`);
+        const data = await response.json();
 
-        if (!json.success) throw new Error(json.error);
+        if (!data.success) throw new Error(data.error);
 
-        const user = json.user;
+        const user = data.user;
 
-        // store it
+        // save
         localStorage.setItem(LS_KEY, JSON.stringify(user));
 
-        console.log("✅ User loaded from backend + saved to localStorage");
+        console.log("✅ User saved to localStorage:", LS_KEY);
 
-        applyUserToHeader(user);
+        applyUserHeader(user);
         return user;
 
     } catch (err) {
-        console.error("❌ Chat user load error:", err.message);
-        chatStatus.textContent = "Failed to load user";
+        console.error("❌ Error loading chat user:", err.message);
+        chatStatus.textContent = "Failed to load user.";
     }
 }
 
-/* -----------------------------------
-   APPLY USER TO CHAT HEADER
-------------------------------------*/
-function applyUserToHeader(user) {
+
+/* ---------------------------------------------------------
+   APPLY TO HEADER
+----------------------------------------------------------*/
+function applyUserHeader(user) {
     chatName.textContent = user.username || "Unknown";
     chatPic.src = user.avatar || "default.png";
     chatStatus.textContent = "Online";
 }
 
-/* -----------------------------------
-   INIT ON PAGE LOAD
-------------------------------------*/
+
+/* ---------------------------------------------------------
+   RUN ON PAGE LOAD
+----------------------------------------------------------*/
 window.addEventListener("DOMContentLoaded", () => {
     loadChatUser();
 });
