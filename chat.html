@@ -118,39 +118,10 @@ let longPressTimer = null;
 let touchStartX = 0;  
 let touchMoved = false;  
   
-// If no local faccount → auto-load from Render backend
-if (!currentUser) {
-  chatStatus.textContent = "Loading account from server...";
-
-  fetch(`https://fweb-backend.onrender.com/account?id=${localStorage.getItem('fid')}`)
-    .then(res => res.json())
-    .then(acc => {
-      localStorage.setItem('faccount', JSON.stringify(acc));
-      window.location.reload();
-    })
-    .catch(err => {
-      console.error(err);
-      chatStatus.textContent = "Failed to load account.";
-    });
-}
-
-// If no chatting user → also auto-load from Render
-if (!chatUserId) {
-  chatStatus.textContent = "Loading chat target...";
-
-  fetch(`https://fweb-backend.onrender.com/account?id=${localStorage.getItem('chatting')}`)
-    .then(res => res.json())
-    .then(u => {
-      if (!u) throw "User not found";
-      // Save minimal info so frontend can continue
-      localStorage.setItem("chatting", u.id);
-      window.location.reload();
-    })
-    .catch(err => {
-      console.error(err);
-      chatStatus.textContent = "User not found on server.";
-    });
-}
+if(!currentUser || !chatUserId){  
+  chatStatus.textContent = "Error: Missing chat info!";  
+  throw new Error("Missing localStorage data");  
+}  
   
 document.getElementById('chat-header').addEventListener('click',()=>{  
   localStorage.setItem('chat_viewing', chatUserId);  
@@ -158,34 +129,47 @@ document.getElementById('chat-header').addEventListener('click',()=>{
 });  
   
 async function loadChatUser() {
-  // Try to get user data from localStorage first
-  const cached = localStorage.getItem('chatting_user_data');
-  if (cached) {
-    const data = JSON.parse(cached);
+  chatStatus.textContent = "Initializing user check...";
+  console.log("[FCHAT] Checking localStorage for chat user...");
+
+  // 1️⃣ Check localStorage first
+  const localData = localStorage.getItem(`chat_user_${chatUserId}`);
+  if (localData) {
+    console.log("[FCHAT] Found user data in localStorage.");
+    const data = JSON.parse(localData);
     chatName.textContent = data.username || "Unknown User";
     chatPic.src = data.profile_pic || "https://via.placeholder.com/50?text=U";
-    chatStatus.textContent = "User loaded from local cache.";
-    return; // Done, no need to fetch
+    chatStatus.textContent = "Loaded user from localStorage.";
+    return;
   }
 
-  // Not in cache → fetch from Render
-  chatStatus.textContent = "Loading user from server...";
-  try {
-    const res = await fetch(`https://fweb-backend.onrender.com/account?id=${chatUserId}`);
-    const data = await res.json();
-    if (!data || !data.id) throw new Error("User not found");
+  console.log("[FCHAT] User not found in localStorage. Contacting Render server...");
+  chatStatus.textContent = "Contacting Render server...";
 
-    // Set frontend display
+  try {
+    // 2️⃣ Fetch from Render URL
+    const renderUrl = `https://your-render-url.com/getUser?id=${chatUserId}`; // Replace with your real endpoint
+    console.log(`[FCHAT] Render URL live: ${renderUrl}`);
+    chatStatus.textContent = "Retrieving user from Render...";
+
+    const response = await fetch(renderUrl);
+    if (!response.ok) throw new Error(`Render fetch failed: ${response.status}`);
+
+    const data = await response.json();
+    console.log("[FCHAT] User data retrieved from Render:", data);
+    chatStatus.textContent = "User retrieved from Render.";
+
     chatName.textContent = data.username || "Unknown User";
     chatPic.src = data.profile_pic || "https://via.placeholder.com/50?text=U";
 
-    // Save in localStorage for later use
-    localStorage.setItem('chatting_user_data', JSON.stringify(data));
-    chatStatus.textContent = "User loaded from server.";
+    // Save to localStorage for next time
+    localStorage.setItem(`chat_user_${chatUserId}`, JSON.stringify(data));
+    console.log("[FCHAT] User data saved to localStorage.");
   } catch (err) {
+    console.error("[FCHAT] Failed to retrieve user:", err);
     chatName.textContent = "User not found";
-    chatStatus.textContent = "Failed to load user.";
-    console.error(err);
+    chatPic.src = "https://via.placeholder.com/50?text=U";
+    chatStatus.textContent = "Failed to access user.";
   }
 }
   
