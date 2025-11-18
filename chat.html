@@ -121,10 +121,39 @@ let longPressTimer = null;
 let touchStartX = 0;  
 let touchMoved = false;  
   
-if(!currentUser || !chatUserId){  
-  chatStatus.textContent = "Error: Missing chat info!";  
-  throw new Error("Missing localStorage data");  
-}  
+// If no local faccount → auto-load from Render backend
+if (!currentUser) {
+  chatStatus.textContent = "Loading account from server...";
+
+  fetch(`https://fweb-backend.onrender.com/account?id=${localStorage.getItem('fid')}`)
+    .then(res => res.json())
+    .then(acc => {
+      localStorage.setItem('faccount', JSON.stringify(acc));
+      window.location.reload();
+    })
+    .catch(err => {
+      console.error(err);
+      chatStatus.textContent = "Failed to load account.";
+    });
+}
+
+// If no chatting user → also auto-load from Render
+if (!chatUserId) {
+  chatStatus.textContent = "Loading chat target...";
+
+  fetch(`https://fweb-backend.onrender.com/account?id=${localStorage.getItem('chatting')}`)
+    .then(res => res.json())
+    .then(u => {
+      if (!u) throw "User not found";
+      // Save minimal info so frontend can continue
+      localStorage.setItem("chatting", u.id);
+      window.location.reload();
+    })
+    .catch(err => {
+      console.error(err);
+      chatStatus.textContent = "User not found on server.";
+    });
+}
   
 document.getElementById('chat-header').addEventListener('click',()=>{  
   localStorage.setItem('chat_viewing', chatUserId);  
