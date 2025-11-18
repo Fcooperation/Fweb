@@ -95,10 +95,7 @@ header{
 </div>  <script type="module">  
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";  
   
-const supabase = createClient(  
-  "https://pwsxezhugsxosbwhkdvf.supabase.co",  
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"  
-);  
+
   
 const chatBoard = document.getElementById('chat-board');  
 const chatInput = document.getElementById('chat-input');  
@@ -160,21 +157,37 @@ document.getElementById('chat-header').addEventListener('click',()=>{
   window.location.href = "chat_dashboard.html";  
 });  
   
-async function loadChatUser(){  
-  chatStatus.textContent = "Accessing Supabase account...";  
-  try{  
-    const {data,error} = await supabase.from('fwebaccount').select('*').eq('id',chatUserId).maybeSingle();  
-    if(error) throw error;  
-    if(!data) throw new Error("User not found");  
-    chatName.textContent = data.username || "Unknown User";  
-    chatPic.src = data.profile_pic || "https://via.placeholder.com/50?text=U";  
-    chatStatus.textContent = "Supabase account accessed.";  
-  }catch(err){  
-    chatName.textContent="User not found";  
-    chatStatus.textContent = "Failed to access user.";  
-    console.error(err);  
-  }  
-}  
+async function loadChatUser() {
+  // Try to get user data from localStorage first
+  const cached = localStorage.getItem('chatting_user_data');
+  if (cached) {
+    const data = JSON.parse(cached);
+    chatName.textContent = data.username || "Unknown User";
+    chatPic.src = data.profile_pic || "https://via.placeholder.com/50?text=U";
+    chatStatus.textContent = "User loaded from local cache.";
+    return; // Done, no need to fetch
+  }
+
+  // Not in cache → fetch from Render
+  chatStatus.textContent = "Loading user from server...";
+  try {
+    const res = await fetch(`https://fweb-backend.onrender.com/account?id=${chatUserId}`);
+    const data = await res.json();
+    if (!data || !data.id) throw new Error("User not found");
+
+    // Set frontend display
+    chatName.textContent = data.username || "Unknown User";
+    chatPic.src = data.profile_pic || "https://via.placeholder.com/50?text=U";
+
+    // Save in localStorage for later use
+    localStorage.setItem('chatting_user_data', JSON.stringify(data));
+    chatStatus.textContent = "User loaded from server.";
+  } catch (err) {
+    chatName.textContent = "User not found";
+    chatStatus.textContent = "Failed to load user.";
+    console.error(err);
+  }
+}
   
 function formatTime(t){  
   const d = new Date(t), n = new Date();  
