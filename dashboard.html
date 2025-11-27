@@ -6,83 +6,28 @@
   <title>Dashboard</title>
   <style>
     body { margin: 0; font-family: Arial, sans-serif; background: #f5f7fa; text-align: center; }
-    .profile-section {
-      width: 100%; height: 300px; background: #ccc;
-      display: flex; align-items: center; justify-content: center;
-      overflow: hidden;
-    }
-    .profile-section img {
-      width: 100%; height: 100%; object-fit: cover;
-    }
-    .upload-box {
-      margin: 15px auto;
-      display: flex; justify-content: center; align-items: center; gap: 10px;
-    }
-    .upload-box input {
-      padding: 6px;
-    }
-    .upload-box button {
-      padding: 8px 14px; background: #007bff; color: #fff;
-      border: none; border-radius: 6px; cursor: pointer;
-    }
-    h2 {
-      margin: 20px 0; font-size: 28px; font-weight: bold;
-      color: #007bff; text-transform: uppercase;
-    }
-    .details-section {
-      margin: 30px auto; padding: 20px; max-width: 400px;
-      background: #fff; border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1); text-align: left;
-    }
+    .profile-section { width: 100%; height: 300px; background: #ccc; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .profile-section img { width: 100%; height: 100%; object-fit: cover; }
+    .upload-box { margin: 15px auto; display: flex; justify-content: center; align-items: center; gap: 10px; }
+    .upload-box input { padding: 6px; }
+    .upload-box button { padding: 8px 14px; background: #007bff; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
+    h2 { margin: 20px 0; font-size: 28px; font-weight: bold; color: #007bff; text-transform: uppercase; }
+    .details-section { margin: 30px auto; padding: 20px; max-width: 400px; background: #fff; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); text-align: left; }
     .details-section h3 { margin-bottom: 15px; }
-    .details-section input {
-      width: 100%; padding: 10px; margin-bottom: 10px;
-      border: 1px solid #ddd; border-radius: 6px;
-    }
-    .details-section button {
-      width: 100%; padding: 10px;
-      background: #007bff; color: #fff; border: none;
-      border-radius: 6px; cursor: pointer;
-    }
+    .details-section input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 6px; }
+    .details-section button { width: 100%; padding: 10px; background: #007bff; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
     .details-section button:hover { background: #0056b3; }
-
-    /* Dark mode */
-    body.dark-mode, html.dark-mode {
-      background: #111;
-      color: #f5f5f5;
-    }
-    body.dark-mode * {
-      background: inherit !important;
-      color: inherit !important;
-    }
-
-    /* Full-width black Fchat button */
-    #fchat-btn {
-      display: block;
-      width: 100%;
-      padding: 15px 0;
-      background-color: black;
-      color: white;
-      font-size: 18px;
-      font-weight: bold;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-      margin-top: 20px;
-    }
-    #fchat-btn:hover {
-      background-color: #222;
-    }
+    body.dark-mode, html.dark-mode { background: #111; color: #f5f5f5; }
+    body.dark-mode * { background: inherit !important; color: inherit !important; }
+    #fchat-btn { display: block; width: 100%; padding: 15px 0; background-color: black; color: white; font-size: 18px; font-weight: bold; border: none; border-radius: 5px; cursor: pointer; transition: background-color 0.3s ease; margin-top: 20px; }
+    #fchat-btn:hover { background-color: #222; }
   </style>
 </head>
 <body>
-  <!-- Profile Section -->
   <div class="profile-section">
     <img id="profile-pic" src="default.png" alt="Profile Picture">
   </div>
 
-  <!-- Upload Box -->
   <div class="upload-box">
     <input type="file" id="file-input" accept="image/*">
     <button onclick="uploadImage()">Upload</button>
@@ -90,7 +35,6 @@
 
   <h2 id="username">Loading...</h2>
 
-  <!-- Account Update -->
   <div class="details-section">
     <h3>Update Account Details</h3>
     <input type="text" id="new-name" placeholder="New Username">
@@ -98,13 +42,11 @@
     <button onclick="updateDetails()">Save Changes</button>
   </div>
 
-  <!-- Logout/Delete -->
   <div class="details-section" style="margin-top: 15px;">
     <button id="logout-btn" style="background:#dc3545;">Logout</button>
     <button id="delete-btn" style="background:#6c757d; margin-top:10px;">Delete Account</button>
   </div>
 
-  <!-- Quick Navigation Buttons -->
   <script>
     const lastSection = document.querySelectorAll('.details-section');
     if (lastSection.length) {
@@ -134,17 +76,9 @@
     }
   </script>
 
-  <!-- Fchat Button -->
   <button id="fchat-btn">Go to Fchat</button>
 
-  <script type="module">
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-
-    const supabase = createClient(
-      "https://pwsxezhugsxosbwhkdvf.supabase.co",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
-    );
-
+  <script>
     const faccount = JSON.parse(localStorage.getItem("faccount"));
     if (!faccount) {
       alert("No account found in local storage. Please log in again.");
@@ -154,7 +88,21 @@
       if (faccount.profile_pic) document.getElementById("profile-pic").src = faccount.profile_pic;
     }
 
-    // --- Upload Image ---
+    async function callFWebBackend(action, data = {}) {
+      const payload = { action, email: faccount.email, password: faccount.password_hash, ...data };
+      try {
+        const res = await fetch("https://fweb-backend.onrender.com/fchat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        return await res.json();
+      } catch (err) {
+        console.error("Backend request failed:", err);
+        return { error: "Backend request failed" };
+      }
+    }
+
     async function uploadImage() {
       const fileInput = document.getElementById("file-input");
       if (!fileInput.files.length) return alert("Select an image first.");
@@ -165,44 +113,34 @@
         r.onerror = rej;
         r.readAsDataURL(file);
       });
-      const { error } = await supabase
-        .from("fwebaccount")
-        .update({ profile_pic: base64 })
-        .eq("email", faccount.email);
-      if (error) return alert("Error: " + error.message);
-
-      faccount.profile_pic = base64;
-      localStorage.setItem("faccount", JSON.stringify(faccount));
-      document.getElementById("profile-pic").src = base64;
-      alert("Profile picture updated!");
+      const result = await callFWebBackend("update_pic", { profile_pic: base64 });
+      if (result.error) return alert("Error: " + result.error);
+      if (result.success) {
+        faccount.profile_pic = base64;
+        localStorage.setItem("faccount", JSON.stringify(faccount));
+        document.getElementById("profile-pic").src = base64;
+        alert(result.message || "Profile picture updated!");
+      } else {
+        alert(result.message || "Failed to update profile picture.");
+      }
     }
 
-    // --- Update Details ---
     async function updateDetails() {
       const newName = document.getElementById("new-name").value;
       const newPass = document.getElementById("new-pass").value;
-      const updates = {};
-      if (newName) updates.username = newName;
-      if (newPass) updates.password_hash = newPass;
-      if (Object.keys(updates).length === 0) return alert("Enter details to update.");
-
-      const { error } = await supabase
-        .from("fwebaccount")
-        .update(updates)
-        .eq("email", faccount.email);
-
-      if (error) return alert("Error updating: " + error.message);
-
-      if (newName) {
-        faccount.username = newName;
-        document.getElementById("username").innerText = newName;
+      if (!newName && !newPass) return alert("Enter details to update.");
+      const result = await callFWebBackend("update_details", { username: newName, password_hash: newPass });
+      if (result.error) return alert("Error: " + result.error);
+      if (result.success) {
+        if (newName) { faccount.username = newName; document.getElementById("username").innerText = newName; }
+        if (newPass) faccount.password_hash = newPass;
+        localStorage.setItem("faccount", JSON.stringify(faccount));
+        alert(result.message || "Account details updated!");
+      } else {
+        alert(result.message || "Failed to update account.");
       }
-      if (newPass) faccount.password_hash = newPass;
-      localStorage.setItem("faccount", JSON.stringify(faccount));
-      alert("Account updated!");
     }
 
-    // Logout/Delete buttons
     document.getElementById("logout-btn").addEventListener("click", () => {
       localStorage.removeItem("faccount");
       alert("Logged out successfully!");
@@ -211,94 +149,51 @@
 
     document.getElementById("delete-btn").addEventListener("click", async () => {
       if (!confirm("Are you sure you want to delete your account?")) return;
-      const { error } = await supabase
-        .from("fwebaccount")
-        .delete()
-        .eq("email", faccount.email);
-      if (error) return alert("Error deleting: " + error.message);
-      localStorage.removeItem("faccount");
-      alert("Account deleted.");
-      window.location.href = "signup.html";
+      const result = await callFWebBackend("delete_account");
+      if (result.error) return alert("Error: " + result.error);
+      if (result.success) {
+        localStorage.removeItem("faccount");
+        alert(result.message || "Account deleted successfully.");
+        window.location.href = "signup.html";
+      } else {
+        alert(result.message || "Failed to delete account.");
+      }
     });
 
-    window.uploadImage = uploadImage;
-    window.updateDetails = updateDetails;
-
-    // Check account status without blocking new users
     async function checkAccountStatus() {
-      if (!faccount) return;
-      try {
-        const { data, error } = await supabase
-          .from("fwebaccount")
-          .select("suspended_until, status")
-          .eq("email", faccount.email)
-          .maybeSingle();
-
-        if (error) {
-          console.warn("Supabase lookup failed:", error.message);
-          return;
-        }
-
-        if (!data) {
-          console.log("Account not found in Supabase yet. Using localStorage for now.");
-          return;
-        }
-
-        const status = (data.status || "").toLowerCase().trim();
-        if (status === "banned") {
-          window.location.replace("fbanned.html");
-          return;
-        }
-
-        if (data.suspended_until) {
-          const suspendedUTC = new Date(data.suspended_until);
-          const nowUTC = new Date();
-          if (nowUTC < suspendedUTC) {
-            window.location.replace("fsuspend.html");
-            return;
-          }
-        }
-      } catch (err) {
-        console.error("Error checking account status:", err);
+      const result = await callFWebBackend("check_status");
+      if (result.error) { console.warn(result.error); return; }
+      if (result.status === "banned") { window.location.replace("fbanned.html"); return; }
+      if (result.suspended_until && new Date() < new Date(result.suspended_until)) {
+        window.location.replace("fsuspend.html"); return;
       }
     }
 
     checkAccountStatus();
     setInterval(checkAccountStatus, 5000);
 
-    // --- Fchat Button ---
     const fchatBtn = document.getElementById("fchat-btn");
     fchatBtn.addEventListener("click", async () => {
-      const localData = JSON.parse(localStorage.getItem("faccount"));
-      if (!localData || !localData.email) {
-        alert("No user data found. Please log in first.");
-        return;
-      }
-
       fchatBtn.innerText = "Checking access...";
       fchatBtn.disabled = true;
-
-      try {
-        const { data } = await supabase
-          .from("fwebaccount")
-          .select("*")
-          .eq("email", localData.email)
-          .maybeSingle();
-
-        const accountData = data || localData; // fallback to localStorage
-
-        if (accountData.fchat && accountData.fchat.toLowerCase() === "yes") {
-          localStorage.setItem("fweb_user", JSON.stringify(accountData));
-          window.location.href = "fchat.html";
-        } else {
-          window.location.href = "welcometofchat.html";
-        }
-      } catch (err) {
-        console.error(err);
-        alert("Error checking access. Using localStorage fallback.");
+      const result = await callFWebBackend("check_fchat_access");
+      if (result.error) {
+        console.error(result.error);
+        alert(result.message || "Unable to check Fchat access.");
+        fchatBtn.disabled = false;
+        fchatBtn.innerText = "Go to Fchat";
+        return;
+      }
+      if (result.fchat && result.fchat.toLowerCase() === "yes") {
+        localStorage.setItem("fweb_user", JSON.stringify(result));
+        window.location.href = "fchat.html";
+      } else {
         window.location.href = "welcometofchat.html";
       }
     });
+
+    window.uploadImage = uploadImage;
+    window.updateDetails = updateDetails;
   </script>
 </body>
 </html>
