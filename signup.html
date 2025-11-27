@@ -1,9 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Supabase Signup</title>
+  <title>Fweb Signup</title>
   <style>
     body {
       font-family: sans-serif;
@@ -40,8 +39,7 @@
 </head>
 <body>
 <div class="account-box">
-  <h2>Signup to Fweb Account</h2>
-
+  <h2>Signup to Fweb Account</h2>  
   <div class="input-group">
     <label for="username">Username</label>
     <input type="text" id="username" placeholder="Username" />
@@ -61,116 +59,85 @@
   <div class="input-group">
     <label for="secret">Secret Code</label>
     <input type="text" id="secret" placeholder="Secret Code" />
-  </div>
-
+  </div>  
   <div class="captcha-group">
     <input type="checkbox" id="human-check">
     <label for="human-check">I am not a robot</label>
   </div>
-
-  <button class="btn" id="signup-btn">Sign Up</button>
-
-  <div class="toggle-link">
+  <button class="btn" id="signup-btn">Sign Up</button>  <div class="toggle-link">
     Already have an account? <a href="login.html">Login here</a>
   </div>
-</div>
+</div><script>
+  const RENDER_URL = "https://fweb-backend.onrender.com/fchat";
 
-<script type="module">
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+  document.getElementById("signup-btn").addEventListener("click", async () => {
+    const btn = document.getElementById("signup-btn");
+    btn.innerText = "Signing Up...";
+    btn.disabled = true;
 
-const supabaseUrl = "https://pwsxezhugsxosbwhkdvf.supabase.co";
-const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const username = document.getElementById("username").value.trim();
+    const name = document.getElementById("name").value.trim();
+    const email = document.getElementById("email").value.trim().toLowerCase();
+    const password = document.getElementById("password").value;
+    const secret = document.getElementById("secret").value.trim();
+    const humanChecked = document.getElementById("human-check").checked;
 
-document.getElementById("signup-btn").addEventListener("click", async () => {
-  const btn = document.getElementById("signup-btn");
-  btn.innerText = "Signing Up...";
-  btn.disabled = true;
-
-  const username = document.getElementById("username").value.trim();
-  const name = document.getElementById("name").value.trim();
-  const email = document.getElementById("email").value.trim().toLowerCase();
-  const password = document.getElementById("password").value;
-  const secret = document.getElementById("secret").value.trim();
-  const humanChecked = document.getElementById("human-check").checked;
-
-  if (!username || !name || !email || !password || !secret) {
-    alert("Please fill in all fields.");
-    btn.innerText = "Sign Up";
-    btn.disabled = false;
-    return;
-  }
-  if (!humanChecked) {
-    alert("Please confirm you are human.");
-    btn.innerText = "Sign Up";
-    btn.disabled = false;
-    return;
-  }
-
-  try {
-    // Check if email already exists
-    const { data: emailData } = await supabase
-      .from("fwebaccount")
-      .select("email")
-      .eq("email", email)
-      .maybeSingle();
-
-    if (emailData) {
-      alert("Email already exists. Please login.");
+    if (!username || !name || !email || !password || !secret) {
+      alert("Please fill in all fields.");
+      btn.innerText = "Sign Up";
+      btn.disabled = false;
+      return;
+    }
+    if (!humanChecked) {
+      alert("Please confirm you are human.");
       btn.innerText = "Sign Up";
       btn.disabled = false;
       return;
     }
 
-    // Generate a unique numeric ID (up to 15 digits)
-    let uniqueId;
-    while (true) {
-      uniqueId = Math.floor(Math.random() * 1e15);
-      const { data: idCheck } = await supabase
-        .from("fwebaccount")
-        .select("id")
-        .eq("id", uniqueId)
-        .maybeSingle();
-      if (!idCheck) break; // id is unique
-    }
-
-    // Insert new account
-    const { data, error } = await supabase
-      .from("fwebaccount")
-      .insert([
-        {
-          id: uniqueId,
+    try {
+      const res = await fetch(RENDER_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "signup",
           username,
           full_name: name,
           email,
-          password_hash: password,
-          secret,
-          status: "active"
-        }
-      ])
-      .select()
-      .maybeSingle();
+          password,
+          secret
+        })
+      });
 
-    if (error || !data) {
-      console.error("Error saving account:", error);
-      alert("Error: " + JSON.stringify(error));
+      const data = await res.json();
+
+      if (data.error) {
+        // Show backend message
+        alert(data.error);
+        btn.innerText = "Sign Up";
+        btn.disabled = false;
+        return;
+      }
+
+      // Backend tells success
+      if (data.status === "success" && data.user) {
+        localStorage.setItem("faccount", JSON.stringify(data.user));
+        alert(data.message || "✅ Account created successfully! You are now logged in.");
+        window.location.href = "dashboard.html";
+        return;
+      }
+
+      // Fallback message
+      alert(data.message || "Something went wrong");
       btn.innerText = "Sign Up";
       btn.disabled = false;
-      return;
+
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      alert("Unexpected error: " + err.message);
+      btn.innerText = "Sign Up";
+      btn.disabled = false;
     }
-
-    // Save to localStorage
-    localStorage.setItem("faccount", JSON.stringify(data));
-    alert("✅ Account created successfully! You are now logged in.");
-    window.location.href = "dashboard.html";
-
-  } catch (err) {
-    console.error("Unexpected error:", err);
-    alert("Unexpected error: " + err.message);
-    btn.innerText = "Sign Up";
-    btn.disabled = false;
-  }
-});
-</script>
-</body>
+  });
+</script></body>
 </html>
