@@ -1,5 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -26,28 +25,19 @@
 <body>
   <div class="profile-section">
     <img id="profile-pic" src="default.png" alt="Profile Picture">
-  </div>
-
-  <div class="upload-box">
+  </div>  <div class="upload-box">
     <input type="file" id="file-input" accept="image/*">
     <button onclick="uploadImage()">Upload</button>
-  </div>
-
-  <h2 id="username">Loading...</h2>
-
-  <div class="details-section">
+  </div>  <h2 id="username">Loading...</h2>  <div class="details-section">
     <h3>Update Account Details</h3>
     <input type="text" id="new-name" placeholder="New Username">
     <input type="password" id="new-pass" placeholder="New Password">
     <button onclick="updateDetails()">Save Changes</button>
-  </div>
-
-  <div class="details-section" style="margin-top: 15px;">
+  </div>  <div class="details-section" style="margin-top: 15px;">
     <button id="logout-btn" style="background:#dc3545;">Logout</button>
     <button id="delete-btn" style="background:#6c757d; margin-top:10px;">Delete Account</button>
-  </div>
-
-  <script>
+  </div>  <script>
+    // Add navigation buttons
     const lastSection = document.querySelectorAll('.details-section');
     if (lastSection.length) {
       const container = document.createElement('div');
@@ -74,14 +64,12 @@
       });
       lastSection[lastSection.length - 1].after(container);
     }
-  </script>
-
-  <button id="fchat-btn">Go to Fchat</button>
+  </script><button id="fchat-btn">Go to Fchat</button>
 
   <script>
     const faccount = JSON.parse(localStorage.getItem("faccount"));
     if (!faccount) {
-      alert("No account found in local storage. Please log in again.");
+      alert("No account found. Please log in again.");
       window.location.href = "login.html";
     } else {
       document.getElementById("username").innerText = faccount.username || "No Username";
@@ -103,25 +91,53 @@
       }
     }
 
+    // --- Compress image before sending ---
+    async function compressImage(file, maxWidth = 800, quality = 0.6) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        const reader = new FileReader();
+        reader.onload = e => img.src = e.target.result;
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const scale = Math.min(1, maxWidth / img.width);
+          canvas.width = img.width * scale;
+          canvas.height = img.height * scale;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          canvas.toBlob(blob => {
+            const fr = new FileReader();
+            fr.onload = e => resolve(e.target.result);
+            fr.onerror = reject;
+            fr.readAsDataURL(blob);
+          }, 'image/jpeg', quality);
+        };
+        img.onerror = reject;
+      });
+    }
+
     async function uploadImage() {
       const fileInput = document.getElementById("file-input");
       if (!fileInput.files.length) return alert("Select an image first.");
       const file = fileInput.files[0];
-      const base64 = await new Promise((res, rej) => {
-        const r = new FileReader();
-        r.onload = () => res(r.result);
-        r.onerror = rej;
-        r.readAsDataURL(file);
-      });
-      const result = await callFWebBackend("update_pic", { profile_pic: base64 });
-      if (result.error) return alert("Error: " + result.error);
-      if (result.success) {
-        faccount.profile_pic = base64;
-        localStorage.setItem("faccount", JSON.stringify(faccount));
-        document.getElementById("profile-pic").src = base64;
-        alert(result.message || "Profile picture updated!");
-      } else {
-        alert(result.message || "Failed to update profile picture.");
+
+      try {
+        const base64 = await compressImage(file, 800, 0.6); // resize & compress
+        const result = await callFWebBackend("update_pic", { profile_pic: base64 });
+        if (result.error) return alert("Error: " + result.error);
+        if (result.success) {
+          faccount.profile_pic = base64;
+          localStorage.setItem("faccount", JSON.stringify(faccount));
+          document.getElementById("profile-pic").src = base64;
+          alert(result.message || "Profile picture updated!");
+        } else {
+          alert(result.message || "Failed to update profile picture.");
+        }
+      } catch(err) {
+        console.error("Image compression/upload failed:", err);
+        alert("Failed to compress or upload image.");
       }
     }
 
@@ -160,6 +176,7 @@
       }
     });
 
+    // --- Check account status every 5 seconds ---
     async function checkAccountStatus() {
       const result = await callFWebBackend("check_status");
       if (result.error) { console.warn(result.error); return; }
@@ -194,6 +211,5 @@
 
     window.uploadImage = uploadImage;
     window.updateDetails = updateDetails;
-  </script>
-</body>
+  </script></body>
 </html>
