@@ -124,12 +124,30 @@
 </div>
 
 <script type="module">
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-const supabaseUrl = "https://pwsxezhugsxosbwhkdvf.supabase.co";
-const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ";
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// ==== Render API URL ====
+const API = "https://fweb-backend.onrender.com/fchat";   // ← Replace this
 
+
+
+
+// ==== Helper: POST to Render ====
+async function api(action, extra = {}) {
+  const user = JSON.parse(localStorage.getItem("faccount"));
+  const payload = { action, email: user.email, ...extra };
+
+  const res = await fetch(API, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+
+  return res.json();
+}
+
+
+
+// ==== ELEMENTS ====
 const brand = document.getElementById("brand");
 const welcomeText = document.getElementById("welcome-text");
 const hiUser = document.getElementById("hiUser");
@@ -138,6 +156,8 @@ const bioBox = document.getElementById("bio-box");
 const logSection = document.getElementById("log-section");
 const logs = document.getElementById("logs");
 const user = JSON.parse(localStorage.getItem("faccount"));
+
+
 
 // Step 1 — Brand fade in
 setTimeout(() => {
@@ -156,13 +176,14 @@ setTimeout(() => {
   hiUser.innerHTML = `
     <h2 style="animation-delay:0s;">Hi ${user?.username || "User"}<br>Welcome to FCHAT</h2>
     <button class='btn hidden' id='next-btn'>Next</button>`;
+
   setTimeout(() => {
     document.getElementById("next-btn").classList.remove("hidden");
   }, 1500);
 
   document.getElementById("next-btn").addEventListener("click", () => {
     hiUser.classList.add("hidden");
-    setTimeout(() => dobBox.style.display = "flex", 200);
+    setTimeout(() => (dobBox.style.display = "flex"), 200);
   });
 }, 4500);
 
@@ -170,15 +191,15 @@ setTimeout(() => {
 document.getElementById("save-dob").addEventListener("click", async () => {
   const dob = document.getElementById("dob").value;
   if (!dob) return alert("Please enter your date of birth.");
-  const { error } = await supabase
-    .from("fwebaccount")
-    .update({ dob })
-    .eq("email", user.email);
-  if (error) return alert("Error saving DOB: " + error.message);
+
+  const result = await api("update_details", { dob });
+  if (result.error) return alert("Error saving DOB: " + result.error);
+
   user.dob = dob;
   localStorage.setItem("faccount", JSON.stringify(user));
+
   dobBox.style.display = "none";
-  setTimeout(() => bioBox.style.display = "flex", 200);
+  setTimeout(() => (bioBox.style.display = "flex"), 200);
 });
 
 // Step 4 — Save BIO + mark fchat + local storage
@@ -188,35 +209,30 @@ async function completeFchat(bioValue) {
   logs.style.opacity = 1;
   logs.innerHTML = `<p>Saving your profile...</p><div class='dot-loader'><span></span><span></span><span></span></div>`;
 
-  const updates = { bio: bioValue, fchat: "yes" };
-  const { data, error } = await supabase
-    .from("fwebaccount")
-    .update(updates)
-    .eq("email", user.email)
-    .select()
-    .single();
+  const result = await api("update_details", { bio: bioValue, fchat: "yes" });
 
-  if (error) {
-    logs.textContent = "⚠️ Error updating account: " + error.message;
+  if (result.error) {
+    logs.textContent = "⚠️ Error updating account: " + result.error;
     return;
   }
 
   // Save updated account locally
-  localStorage.setItem("faccount", JSON.stringify(data));
+  localStorage.setItem("faccount", JSON.stringify({ ...user, bio: bioValue, fchat: "yes" }));
 
-  // Replace loader with success message
   setTimeout(() => {
     logs.innerHTML = "✅ FCHAT setup complete! Redirecting...";
   }, 1000);
 
-  setTimeout(() => window.location.href = "fchat.html", 2000);
+  setTimeout(() => (window.location.href = "fchat.html"), 2000);
 }
 
 document.getElementById("save-bio").addEventListener("click", () => {
   const bio = document.getElementById("bio").value.trim();
   completeFchat(bio);
 });
+
 document.getElementById("skip-bio").addEventListener("click", () => completeFchat(""));
+
 </script>
 </body>
 </html>
