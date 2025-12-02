@@ -182,9 +182,27 @@ function renderCard(u) {
     }</div>
   `;
 
-  // ADD BUTTON
-  const addBtn = document.createElement("button");
-  addBtn.className = "add-btn";
+// ADD BUTTON
+let addBtn = document.createElement("button");
+addBtn.className = "add-btn";
+
+// ❗ HIDE ADD BUTTON FOR NON-FCHAT USERS
+if (u.fchat !== "yes") {
+    addBtn.style.display = "none";
+} else {
+    // Normal logic for Fchat users
+    if (u.friend_requests && u.friend_requests.includes(u.my_id)) {
+        addBtn.textContent = "Sent";
+        addBtn.disabled = true;
+    } else {
+        addBtn.textContent = "Add";
+        addBtn.onclick = async () => {
+            await api("add_user", { invite_id: u.id });
+            addBtn.textContent = "Sent";
+            addBtn.disabled = true;
+        };
+    }
+}
 
   if (u.friend_requests && u.friend_requests.includes(u.my_id)) {
     addBtn.textContent = "Sent";
