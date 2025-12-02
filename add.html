@@ -183,6 +183,32 @@ function renderCard(u) {
   addBtn.className = "add-btn";
 
   const fzone = verifiedMap[u.id];
+  /* VERIFIED USER HANDLING (new patch) */
+if (u.verified === "yes") {
+
+    if (fzone === "friend_request") {
+        addBtn.textContent = "Sent";
+        addBtn.disabled = true;
+        addBtn.style.display = "block";
+        resultsEl.appendChild(card);
+        return;
+    }
+
+    if (fzone === "fchat_messages") {
+        addBtn.style.display = "none";
+
+        const extraText = document.createElement("div");
+        extraText.style.fontSize = "12px";
+        extraText.style.color = "#555";
+        extraText.textContent = "Already in your Fzone";
+        info.appendChild(extraText);
+
+        resultsEl.appendChild(card);
+        return;
+    }
+
+    // Verified but not in any fzone → allow normal logic to continue
+}
 
   if (fzone === "friend_request") {
     addBtn.textContent = "Sent";
