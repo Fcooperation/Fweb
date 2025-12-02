@@ -146,8 +146,6 @@ async function api(action, extra={}) {
 
 /* ------------------ RENDER CARD ------------------ */
 function renderCard(u) {
-  if (verifiedIds.includes(u.id)) return;  // ❗REMOVE VERIFIED USERS COMPLETELY
-
   if (displayedIds.has(u.id)) return;
   displayedIds.add(u.id);
 
@@ -165,26 +163,57 @@ function renderCard(u) {
     pfp.onclick = () => {
       document.getElementById("profile-modal").style.display = "flex";
       document.getElementById("profileView").src = u.profile_pic;
-    }
+    };
   } else {
     pfp.textContent = (u.username || "U").charAt(0).toUpperCase();
   }
 
-  // INFO (middle)
+  // INFO
   const info = document.createElement("div");
   info.className = "info";
   info.innerHTML = `
     <div class="name">${u.username}</div>
     <div class="status">${
-      u.fchat === "yes"
-        ? (u.status_text || "Active on Fchat")
-        : "Not on Fchat"
+      u.fchat === "yes" ? (u.status_text || "Active on Fchat") : "Not on Fchat"
     }</div>
   `;
 
-// ADD BUTTON
-let addBtn = document.createElement("button");
-addBtn.className = "add-btn";
+  // ADD BUTTON
+  let addBtn = document.createElement("button");
+  addBtn.className = "add-btn";
+
+  const fzone = verifiedMap[u.id];
+
+  if (fzone === "friend_request") {
+    addBtn.textContent = "Sent";
+    addBtn.disabled = true;
+  } else if (fzone === "fchat_messages") {
+    addBtn.style.display = "none";
+    // Add text under status
+    const extraText = document.createElement("div");
+    extraText.style.fontSize = "12px";
+    extraText.style.color = "#555";
+    extraText.textContent = "Account already exists in your fzone";
+    info.appendChild(extraText);
+  } else {
+    // normal logic
+    if (u.fchat !== "yes") {
+      addBtn.style.display = "none";
+    } else {
+      addBtn.textContent = "Add";
+      addBtn.onclick = async () => {
+        await api("add_user", { invite_id: u.id });
+        addBtn.textContent = "Sent";
+        addBtn.disabled = true;
+      };
+    }
+  }
+
+  card.appendChild(pfp);
+  card.appendChild(info);
+  card.appendChild(addBtn);
+
+  resultsEl.appendChild(card);
 
 // ❗ HIDE ADD BUTTON FOR NON-FCHAT USERS
 if (u.fchat !== "yes") {
@@ -203,24 +232,6 @@ if (u.fchat !== "yes") {
         };
     }
 }
-
-  if (u.friend_requests && u.friend_requests.includes(u.my_id)) {
-    addBtn.textContent = "Sent";
-    addBtn.disabled = true;
-  } else {
-    addBtn.textContent = "Add";
-    addBtn.onclick = async () => {
-      await api("add_user", { invite_id: u.id });
-      addBtn.textContent = "Sent";
-      addBtn.disabled = true;
-    };
-  }
-
-  card.appendChild(pfp);
-  card.appendChild(info);
-  card.appendChild(addBtn);
-
-  resultsEl.appendChild(card);
 }
 
 /* ------------------ FETCH USERS ------------------ */
@@ -235,9 +246,29 @@ async function fetchAllUsers() {
 }
 
 /* ------------------ VERIFY USERS (to hide them) ------------------ */
+let verifiedMap = {}; // id => fzone
+
 async function verifyUsers() {
   const res = await api("verify_users");
-  verifiedIds = res.data || [];
+  const verified = res.data || []; // array of IDs
+
+  // Fetch all users to determine fzone
+  const allRes = await api("get_all_users");
+  const allUsers = allRes.data || [];
+
+  verifiedMap = {};
+  verified.forEach(id => {
+    const u = allUsers.find(user => user.id === id);
+    if (!u) return;
+    // Determine fzone
+    let fzone = null;
+    if (u.friend_requests && u.friend_requests.includes(localStorage.getItem("faccount")?.id)) {
+      fzone = "friend_request";
+    } else if (u.fchat_messages && u.fchat_messages.includes(localStorage.getItem("faccount")?.id)) {
+      fzone = "fchat_messages";
+    }
+    verifiedMap[id] = fzone;
+  });
 }
 
 /* ------------------ SEARCH ------------------ */
