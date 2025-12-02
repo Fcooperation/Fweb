@@ -292,6 +292,13 @@ const interval = setInterval(() => {
   document.getElementById("loading-screen").style.display = "none";
   document.getElementById("interface").style.display = "block";
 
+  // Render only broadcasted users on page load
+  displayedIds.clear();
+  resultsEl.innerHTML = "";
+  combined
+    .filter(u => u.broadcast === "yes") // Only broadcasted
+    .forEach(renderCard);
+
   // Keep updating every 5 seconds
   setInterval(fetchAllUsers, 5000);
 })();
