@@ -284,37 +284,23 @@ const interval = setInterval(() => {
 
 /* ------------------ INITIALIZE ------------------ */
 (async () => {
+  await verifyUsers();     // Get verified list (to hide them)
+  await fetchAllUsers();   // Load users
 
-  // 1. Start both async tasks in parallel
-  const verifyTask = verifyUsers();
-  const fetchTask = fetchAllUsers();
+  clearInterval(interval);
 
-  // 2. WAIT until both finish at least once
-  await Promise.all([verifyTask, fetchTask]);
-
-  // 3. Now you are SURE the initial data is complete → show interface
   document.getElementById("loading-screen").style.display = "none";
   document.getElementById("interface").style.display = "block";
 
-  // 4. Render the initial broadcast users
+  // Render only broadcasted users on page load
   displayedIds.clear();
   resultsEl.innerHTML = "";
   combined
-    .filter(u => u.broadcast === "yes")
+    .filter(u => u.broadcast === "yes") // Only broadcasted
     .forEach(renderCard);
 
-  // 5. Continue updates every 5 seconds
-  setInterval(async () => {
-    await fetchAllUsers();
-
-    // Re-render broadcast
-    displayedIds.clear();
-    resultsEl.innerHTML = "";
-    combined
-      .filter(u => u.broadcast === "yes")
-      .forEach(renderCard);
-
-  }, 5000);
+  // Keep updating every 5 seconds
+  setInterval(fetchAllUsers, 5000);
 })();
 </script>
 
