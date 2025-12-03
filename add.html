@@ -283,24 +283,39 @@ const interval = setInterval(() => {
 }, 800);
 
 /* ------------------ INITIALIZE ------------------ */
+/* ------------------ INITIALIZE ------------------ */
 (async () => {
-  await verifyUsers();     // Get verified list (to hide them)
-  await fetchAllUsers();   // Load users
+  // Start fetching immediately, but do NOT wait for it
+  verifyUsers();    
+  fetchAllUsers();
 
-  clearInterval(interval);
+  // Show interface after exactly 5 seconds
+  setTimeout(() => {
+    clearInterval(interval);
+    document.getElementById("loading-screen").style.display = "none";
+    document.getElementById("interface").style.display = "block";
 
-  document.getElementById("loading-screen").style.display = "none";
-  document.getElementById("interface").style.display = "block";
+    // Render broadcasted users (whatever has loaded so far)
+    displayedIds.clear();
+    resultsEl.innerHTML = "";
+    combined
+      .filter(u => u.broadcast === "yes")
+      .forEach(renderCard);
 
-  // Render only broadcasted users on page load
-  displayedIds.clear();
-  resultsEl.innerHTML = "";
-  combined
-    .filter(u => u.broadcast === "yes") // Only broadcasted
-    .forEach(renderCard);
+  }, 5000);
 
-  // Keep updating every 5 seconds
-  setInterval(fetchAllUsers, 5000);
+  // Continue updating users every 5 seconds
+  setInterval(async () => {
+    await fetchAllUsers();
+
+    // Re-render broadcast on updates
+    displayedIds.clear();
+    resultsEl.innerHTML = "";
+    combined
+      .filter(u => u.broadcast === "yes")
+      .forEach(renderCard);
+
+  }, 5000);
 })();
 </script>
 
