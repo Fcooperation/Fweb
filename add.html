@@ -2,109 +2,56 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fchat Users</title><style>
+<title>Fchat Users</title>
+<style>
 body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #000; }
-
-#loading-screen { display: flex; flex-direction: column; justify-content: center; align-items: center;
-  height: 100vh; font-size: 18px; font-weight: bold; color: #000; }
-
+#loading-screen { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; font-size: 18px; font-weight: bold; color: #000; }
 #loading-logs { margin-top: 10px; font-size: 14px; color: #555; max-width: 80%; text-align: center; }
-
 #interface { display: none; padding: 20px; }
-
 #search-container { display: flex; gap: 5px; margin-bottom: 10px; flex-wrap: wrap; }
 #searchInput { flex: 1; padding: 10px; font-size: 16px; border-radius: 8px; border: 1px solid #aaa; }
-#searchBtn { padding: 10px 15px; font-size: 16px; border-radius: 6px; border: 1px solid #000;
-  background: #fff; color:#000; cursor:pointer; }
-
+#searchBtn { padding: 10px 15px; font-size: 16px; border-radius: 6px; border: 1px solid #000; background: #fff; color:#000; cursor:pointer; }
 #update-log { font-size: 12px; color:#555; margin-bottom: 10px; }
-
 #results { display: flex; flex-direction: column; gap: 10px; }
-
-/* CARD LAYOUT */
-.card {
-  display: flex;
-  align-items: center;
-  padding: 10px;
-  border-radius: 10px;
-  background: #f5f5f5;
-  width: 100%;
-}
-
-/* PFP LEFT */
-.pfp {
-  width: 55px;
-  height: 55px;
-  border-radius: 50%;
-  background:#000;
-  color:#fff;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  font-size:20px;
-  font-weight:bold;
-  object-fit:cover;
-  cursor:pointer;
-  overflow:hidden;
-}
-
-/* INFO MIDDLE */
-.info {
-  flex: 1;
-  margin-left: 12px;
-}
+.card { display: flex; align-items: center; padding: 10px; border-radius: 10px; background: #f5f5f5; width: 100%; }
+.pfp { width: 55px; height: 55px; border-radius: 50%; background:#000; color:#fff; display:flex; justify-content:center; align-items:center; font-size:20px; font-weight:bold; object-fit:cover; cursor:pointer; overflow:hidden; }
+.info { flex: 1; margin-left: 12px; }
 .name { font-size: 16px; font-weight: bold; }
 .status { font-size: 12px; color:#555; margin-top:3px; }
-
-/* ADD BUTTON RIGHT */
-.add-btn {
-  background:#000;
-  color:#fff;
-  border:none;
-  padding: 6px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  margin-left: 10px;
-}
-
+.add-btn { background:#000; color:#fff; border:none; padding: 6px 12px; border-radius: 6px; cursor: pointer; margin-left: 10px; }
 .not-found { text-align:center; margin-top:10px; font-size:14px; color:#555; }
-
-/* PROFILE MODAL */
-#profile-modal {
-  position:fixed; top:0; left:0; width:100%; height:100%;
-  background:rgba(0,0,0,0.85);
-  display:none;
-  justify-content:center;
-  align-items:center;
-  z-index:100;
-}
-#profile-modal img {
-  width: 80%;
-  max-width: 400px;
-  border-radius: 50%;
-}
-.pfp img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 50%;
-}
-</style></head>
-<body><!-- LOADING --><div id="loading-screen">
+#profile-modal { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); display:none; justify-content:center; align-items:center; z-index:100; }
+#profile-modal img { width: 80%; max-width: 400px; border-radius: 50%; }
+.pfp img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+</style>
+</head>
+<body><div id="loading-screen">
   <div>Loading...</div>
   <div id="loading-logs">Starting...</div>
-</div><!-- MAIN UI --><div id="interface">
+</div><div id="interface">
   <div id="search-container">
     <input id="searchInput" placeholder="Search username or ID..." />
     <button id="searchBtn">Search</button>
-  </div>  <div id="update-log">Initializing...</div>
+  </div>
+  <div id="update-log">Initializing...</div>
   <div id="results"></div>
-</div><!-- PROFILE MODAL --><div id="profile-modal"><img id="profileView"></div><script>
+</div><div id="profile-modal"><img id="profileView"></div><script>
 const API = "https://fweb-backend.onrender.com/fchat";
-
 let combined = [];
 let displayedIds = new Set();
 const resultsEl = document.getElementById("results");
+
+/* Get local requested users */
+function getRequestedUsers() {
+  return JSON.parse(localStorage.getItem("requested_users") || "[]");
+}
+
+/* Save a new requested user */
+function addRequestedUser(id) {
+  const arr = getRequestedUsers();
+  if (!arr.includes(id)) arr.push(id);
+  localStorage.setItem("requested_users", JSON.stringify(arr));
+}
 
 /* ------------------ API HELPER ------------------ */
 async function api(action, extra={}) {
@@ -149,26 +96,25 @@ function renderCard(u) {
   info.className = "info";
   info.innerHTML = `
     <div class="name">${u.username}</div>
-    <div class="status">${
-      u.fchat === "yes"
-        ? (u.status_text || "Active on Fchat")
-        : "Not on Fchat"
-    }</div>
+    <div class="status">${u.fchat === "yes" ? (u.status_text || "Active on Fchat") : "Not on Fchat"}</div>
   `;
 
   const addBtn = document.createElement("button");
   addBtn.className = "add-btn";
 
+  const requested = getRequestedUsers();
+  const isSent = requested.includes(u.id) || (u.friend_requests && u.friend_requests.includes(u.my_id));
+
   if (u.fchat === "yes") {
-    if (u.friend_requests && u.friend_requests.includes(u.my_id)) {
-      addBtn.textContent = "Sent";
+    if (isSent) {
+      addBtn.textContent = "Sent✅";
       addBtn.disabled = true;
     } else {
       addBtn.textContent = "Add";
       addBtn.onclick = async () => {
         await api("add_user", { invite_id: u.id });
-        addBtn.textContent = "Sent";
-        addBtn.disabled = true;
+        addRequestedUser(u.id);
+        updateAllButtons();
       };
     }
   } else {
@@ -178,8 +124,24 @@ function renderCard(u) {
   card.appendChild(pfp);
   card.appendChild(info);
   card.appendChild(addBtn);
-
   resultsEl.appendChild(card);
+}
+
+/* Update all buttons based on local storage and friend_requests */
+function updateAllButtons() {
+  const cards = document.querySelectorAll(".card");
+  const requested = getRequestedUsers();
+  cards.forEach(card => {
+    const btn = card.querySelector(".add-btn");
+    const uid = combined.find(u => u.username === card.querySelector(".name").textContent)?.id;
+    const user = combined.find(u => u.id === uid);
+    if (!btn || !user) return;
+    const isSent = requested.includes(user.id) || (user.friend_requests && user.friend_requests.includes(user.my_id));
+    if (isSent) {
+      btn.textContent = "Sent✅";
+      btn.disabled = true;
+    }
+  });
 }
 
 /* ------------------ FETCH USERS ------------------ */
@@ -187,9 +149,8 @@ async function fetchAllUsers() {
   const res = await api("get_all_users");
   const users = res.data || [];
   const seen = new Set(combined.map(u => u.id));
-  users.forEach(u => {
-    if (!seen.has(u.id)) combined.push(u);
-  });
+  users.forEach(u => { if (!seen.has(u.id)) combined.push(u); });
+  updateAllButtons();
 }
 
 /* ------------------ SEARCH ------------------ */
@@ -198,8 +159,7 @@ document.getElementById("searchBtn").onclick = () => {
   displayedIds.clear();
   resultsEl.innerHTML = "";
   const filtered = combined.filter(u =>
-    (u.username && u.username.toLowerCase().includes(q)) ||
-    String(u.id).includes(q)
+    (u.username && u.username.toLowerCase().includes(q)) || String(u.id).includes(q)
   );
   if (filtered.length === 0) {
     const nf = document.createElement("div");
@@ -217,33 +177,20 @@ document.getElementById("profile-modal").onclick = () => {
 };
 
 /* ------------------ LOADING SCREEN ------------------ */
-const logSteps = [
-  "Starting...",
-  "Connecting to server...",
-  "Syncing accounts...",
-  "Loading data...",
-  "Finalizing..."
-];
+const logSteps = ["Starting...", "Connecting to server...", "Syncing accounts...", "Loading data...", "Finalizing..."];
 let step = 0;
 const logs = document.getElementById("loading-logs");
-const interval = setInterval(() => {
-  logs.textContent = logSteps[step % logSteps.length];
-  step++;
-}, 800);
+const interval = setInterval(() => { logs.textContent = logSteps[step % logSteps.length]; step++; }, 800);
 
 /* ------------------ INITIALIZE ------------------ */
 (async () => {
-  await fetchAllUsers(); // Load users
+  await fetchAllUsers();
   clearInterval(interval);
   document.getElementById("loading-screen").style.display = "none";
   document.getElementById("interface").style.display = "block";
-
   displayedIds.clear();
   resultsEl.innerHTML = "";
-  combined
-    .filter(u => u.broadcast === "yes")
-    .forEach(renderCard);
-
+  combined.filter(u => u.broadcast === "yes").forEach(renderCard);
   setInterval(fetchAllUsers, 5000);
 })();
 </script></body>
