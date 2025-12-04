@@ -1,11 +1,8 @@
-<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fchat Users</title>
-
-<style>
+<title>Fchat Users</title><style>
 body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #000; }
 
 #loading-screen { display: flex; flex-direction: column; justify-content: center; align-items: center;
@@ -86,51 +83,33 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #fff; 
   max-width: 400px;
   border-radius: 50%;
 }
-/* FIX: make profile pics visible immediately */
 .pfp img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   border-radius: 50%;
 }
-</style>
-</head>
-<body>
-
-<!-- LOADING -->
-<div id="loading-screen">
+</style></head>
+<body><!-- LOADING --><div id="loading-screen">
   <div>Loading...</div>
   <div id="loading-logs">Starting...</div>
-</div>
-
-<!-- MAIN UI -->
-<div id="interface">
+</div><!-- MAIN UI --><div id="interface">
   <div id="search-container">
     <input id="searchInput" placeholder="Search username or ID..." />
     <button id="searchBtn">Search</button>
-  </div>
-
-  <div id="update-log">Initializing...</div>
+  </div>  <div id="update-log">Initializing...</div>
   <div id="results"></div>
-</div>
-
-<!-- PROFILE MODAL -->
-<div id="profile-modal"><img id="profileView"></div>
-
-<script>
+</div><!-- PROFILE MODAL --><div id="profile-modal"><img id="profileView"></div><script>
 const API = "https://fweb-backend.onrender.com/fchat";
 
 let combined = [];
 let displayedIds = new Set();
-let verifiedIds = []; // Will be used to HIDE verified users
-
 const resultsEl = document.getElementById("results");
 
 /* ------------------ API HELPER ------------------ */
 async function api(action, extra={}) {
   const acc = JSON.parse(localStorage.getItem("faccount")) || {};
   const body = { action, ...extra, email: acc.email, password_hash: acc.password_hash, my_id: acc.id };
-
   try {
     const r = await fetch(API, {
       method: "POST",
@@ -146,18 +125,14 @@ async function api(action, extra={}) {
 
 /* ------------------ RENDER CARD ------------------ */
 function renderCard(u) {
-  if (verifiedIds.includes(u.id)) return;  // ❗REMOVE VERIFIED USERS COMPLETELY
-
   if (displayedIds.has(u.id)) return;
   displayedIds.add(u.id);
 
   const card = document.createElement("div");
   card.className = "card";
 
-  // PROFILE PIC
   const pfp = document.createElement("div");
   pfp.className = "pfp";
-
   if (u.profile_pic) {
     const img = document.createElement("img");
     img.src = u.profile_pic;
@@ -170,7 +145,6 @@ function renderCard(u) {
     pfp.textContent = (u.username || "U").charAt(0).toUpperCase();
   }
 
-  // INFO (middle)
   const info = document.createElement("div");
   info.className = "info";
   info.innerHTML = `
@@ -182,38 +156,23 @@ function renderCard(u) {
     }</div>
   `;
 
-// ADD BUTTON
-let addBtn = document.createElement("button");
-addBtn.className = "add-btn";
+  const addBtn = document.createElement("button");
+  addBtn.className = "add-btn";
 
-// ❗ HIDE ADD BUTTON FOR NON-FCHAT USERS
-if (u.fchat !== "yes") {
-    addBtn.style.display = "none";
-} else {
-    // Normal logic for Fchat users
+  if (u.fchat === "yes") {
     if (u.friend_requests && u.friend_requests.includes(u.my_id)) {
-        addBtn.textContent = "Sent";
-        addBtn.disabled = true;
-    } else {
-        addBtn.textContent = "Add";
-        addBtn.onclick = async () => {
-            await api("add_user", { invite_id: u.id });
-            addBtn.textContent = "Sent";
-            addBtn.disabled = true;
-        };
-    }
-}
-
-  if (u.friend_requests && u.friend_requests.includes(u.my_id)) {
-    addBtn.textContent = "Sent";
-    addBtn.disabled = true;
-  } else {
-    addBtn.textContent = "Add";
-    addBtn.onclick = async () => {
-      await api("add_user", { invite_id: u.id });
       addBtn.textContent = "Sent";
       addBtn.disabled = true;
-    };
+    } else {
+      addBtn.textContent = "Add";
+      addBtn.onclick = async () => {
+        await api("add_user", { invite_id: u.id });
+        addBtn.textContent = "Sent";
+        addBtn.disabled = true;
+      };
+    }
+  } else {
+    addBtn.style.display = "none";
   }
 
   card.appendChild(pfp);
@@ -227,31 +186,21 @@ if (u.fchat !== "yes") {
 async function fetchAllUsers() {
   const res = await api("get_all_users");
   const users = res.data || [];
-
   const seen = new Set(combined.map(u => u.id));
   users.forEach(u => {
     if (!seen.has(u.id)) combined.push(u);
   });
 }
 
-/* ------------------ VERIFY USERS (to hide them) ------------------ */
-async function verifyUsers() {
-  const res = await api("verify_users");
-  verifiedIds = res.data || [];
-}
-
 /* ------------------ SEARCH ------------------ */
 document.getElementById("searchBtn").onclick = () => {
   const q = document.getElementById("searchInput").value.toLowerCase().trim();
-
   displayedIds.clear();
   resultsEl.innerHTML = "";
-
   const filtered = combined.filter(u =>
     (u.username && u.username.toLowerCase().includes(q)) ||
     String(u.id).includes(q)
   );
-
   if (filtered.length === 0) {
     const nf = document.createElement("div");
     nf.className = "not-found";
@@ -284,25 +233,18 @@ const interval = setInterval(() => {
 
 /* ------------------ INITIALIZE ------------------ */
 (async () => {
-  await verifyUsers();     // Get verified list (to hide them)
-  await fetchAllUsers();   // Load users
-
+  await fetchAllUsers(); // Load users
   clearInterval(interval);
-
   document.getElementById("loading-screen").style.display = "none";
   document.getElementById("interface").style.display = "block";
 
-  // Render only broadcasted users on page load
   displayedIds.clear();
   resultsEl.innerHTML = "";
   combined
-    .filter(u => u.broadcast === "yes") // Only broadcasted
+    .filter(u => u.broadcast === "yes")
     .forEach(renderCard);
 
-  // Keep updating every 5 seconds
   setInterval(fetchAllUsers, 5000);
 })();
-</script>
-
-</body>
+</script></body>
 </html>
