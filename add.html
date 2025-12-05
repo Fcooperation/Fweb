@@ -1,3 +1,4 @@
+
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -128,6 +129,9 @@ function renderCard(u) {
   if (displayedIds.has(u.id)) return;
   displayedIds.add(u.id);
 
+  const acc = JSON.parse(localStorage.getItem("faccount")) || {};
+  const myId = acc.id;
+
   const card = document.createElement("div");
   card.className = "card";
 
@@ -160,7 +164,10 @@ function renderCard(u) {
   addBtn.className = "add-btn";
 
   if (u.fchat === "yes") {
-    if (u.friend_requests && u.friend_requests.includes(u.my_id)) {
+    // Check if myId exists in the comma-separated friend_requests
+    const requests = u.friend_requests || "";
+    const requestIds = requests.split(",").map(s => s.trim());
+    if (requestIds.includes(String(myId))) {
       addBtn.textContent = "Sent";
       addBtn.disabled = true;
     } else {
