@@ -1,9 +1,9 @@
-
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fchat Users</title><style>
+<title>Fchat Users</title>
+<style>
 body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #000; }
 
 #loading-screen { display: flex; flex-direction: column; justify-content: center; align-items: center;
@@ -90,17 +90,32 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #fff; 
   object-fit: cover;
   border-radius: 50%;
 }
-</style></head>
-<body><!-- LOADING --><div id="loading-screen">
+</style>
+</head>
+
+<body>
+
+<!-- LOADING -->
+<div id="loading-screen">
   <div>Loading...</div>
   <div id="loading-logs">Starting...</div>
-</div><!-- MAIN UI --><div id="interface">
+</div>
+
+<!-- MAIN UI -->
+<div id="interface">
   <div id="search-container">
     <input id="searchInput" placeholder="Search username or ID..." />
     <button id="searchBtn">Search</button>
-  </div>  <div id="update-log">Initializing...</div>
+  </div>
+
+  <div id="update-log">Initializing...</div>
   <div id="results"></div>
-</div><!-- PROFILE MODAL --><div id="profile-modal"><img id="profileView"></div><script>
+</div>
+
+<!-- PROFILE MODAL -->
+<div id="profile-modal"><img id="profileView"></div>
+
+<script>
 const API = "https://fweb-backend.onrender.com/fchat";
 
 let combined = [];
@@ -160,11 +175,26 @@ function renderCard(u) {
     }</div>
   `;
 
+  /* ------------------ FZONE LOGIC ------------------ */
+  const messages = (u.fchat_messages || "").split(",").map(s => s.trim());
+  let alreadyInFzone = false;
+  if (messages.includes(String(myId))) {
+    alreadyInFzone = true;
+
+    const fzone = document.createElement("div");
+    fzone.style.fontSize = "12px";
+    fzone.style.color = "#000";
+    fzone.style.marginTop = "3px";
+    fzone.textContent = "Already in FZONE";
+    info.appendChild(fzone);
+  }
+
   const addBtn = document.createElement("button");
   addBtn.className = "add-btn";
 
-  if (u.fchat === "yes") {
-    // Check if myId exists in the comma-separated friend_requests
+  if (alreadyInFzone) {
+    addBtn.style.display = "none"; // Remove add button
+  } else if (u.fchat === "yes") {
     const requests = u.friend_requests || "";
     const requestIds = requests.split(",").map(s => s.trim());
     if (requestIds.includes(String(myId))) {
@@ -240,7 +270,7 @@ const interval = setInterval(() => {
 
 /* ------------------ INITIALIZE ------------------ */
 (async () => {
-  await fetchAllUsers(); // Load users
+  await fetchAllUsers();
   clearInterval(interval);
   document.getElementById("loading-screen").style.display = "none";
   document.getElementById("interface").style.display = "block";
@@ -253,5 +283,7 @@ const interval = setInterval(() => {
 
   setInterval(fetchAllUsers, 5000);
 })();
-</script></body>
+</script>
+
+</body>
 </html>
