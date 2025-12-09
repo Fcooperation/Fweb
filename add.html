@@ -20,7 +20,7 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #fff; 
 
 #update-log { font-size: 12px; color:#555; margin-bottom: 10px; }
 
-#results { display: flex; flex-direction: column; gap: 10px; }
+#results { display: flex; flex-direction: column; gap: 20px; } /* NEW: bigger gap after adding IDs */
 
 /* CARD LAYOUT */
 .card {
@@ -56,6 +56,7 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #fff; 
 }
 .name { font-size: 16px; font-weight: bold; }
 .status { font-size: 12px; color:#555; margin-top:3px; }
+.userid { font-size: 12px; color:#000; margin-top: 5px; font-weight: bold; } /* NEW */
 
 /* ADD BUTTON RIGHT */
 .add-btn {
@@ -107,7 +108,6 @@ body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #fff; 
     <input id="searchInput" placeholder="Search username or ID..." />
     <button id="searchBtn">Search</button>
   </div>
-
   <div id="update-log">Initializing...</div>
   <div id="results"></div>
 </div>
@@ -145,13 +145,18 @@ function renderCard(u) {
   displayedIds.add(u.id);
 
   const acc = JSON.parse(localStorage.getItem("faccount")) || {};
-  const myId = acc.id;
+  const myId = String(acc.id);
+
+  /* ------------ NEW: CHECK IF MY ID IS IN THEIR FZONE ------------- */
+  const msgs = (u.fchat_messages || "").split(",").map(s => s.trim());
+  const alreadyInFzone = msgs.includes(myId);
 
   const card = document.createElement("div");
   card.className = "card";
 
   const pfp = document.createElement("div");
   pfp.className = "pfp";
+
   if (u.profile_pic) {
     const img = document.createElement("img");
     img.src = u.profile_pic;
@@ -166,38 +171,35 @@ function renderCard(u) {
 
   const info = document.createElement("div");
   info.className = "info";
+
+  /* ---------- NEW: STATUS + FZONE MESSAGE ---------- */
+  let statusText = "";
+
+  if (alreadyInFzone) {
+    statusText = "Already in FZONE";  // NEW
+  } else if (u.fchat === "yes") {
+    statusText = u.status_text || "Active on Fchat";
+  } else {
+    statusText = "Not on Fchat";
+  }
+
   info.innerHTML = `
     <div class="name">${u.username}</div>
-    <div class="status">${
-      u.fchat === "yes"
-        ? (u.status_text || "Active on Fchat")
-        : "Not on Fchat"
-    }</div>
+    <div class="status">${statusText}</div>
+    <div class="userid">ID: ${u.id}</div>  <!-- NEW -->
   `;
-
-  /* ------------------ FZONE LOGIC ------------------ */
-  const messages = (u.fchat_messages || "").split(",").map(s => s.trim());
-  let alreadyInFzone = false;
-  if (messages.includes(String(myId))) {
-    alreadyInFzone = true;
-
-    const fzone = document.createElement("div");
-    fzone.style.fontSize = "12px";
-    fzone.style.color = "#000";
-    fzone.style.marginTop = "3px";
-    fzone.textContent = "Already in FZONE";
-    info.appendChild(fzone);
-  }
 
   const addBtn = document.createElement("button");
   addBtn.className = "add-btn";
 
+  /* ---------- NEW: If in FZONE → HIDE ADD BUTTON ---------- */
   if (alreadyInFzone) {
-    addBtn.style.display = "none"; // Remove add button
+    addBtn.style.display = "none";
   } else if (u.fchat === "yes") {
     const requests = u.friend_requests || "";
     const requestIds = requests.split(",").map(s => s.trim());
-    if (requestIds.includes(String(myId))) {
+
+    if (requestIds.includes(myId)) {
       addBtn.textContent = "Sent";
       addBtn.disabled = true;
     } else {
@@ -284,6 +286,5 @@ const interval = setInterval(() => {
   setInterval(fetchAllUsers, 5000);
 })();
 </script>
-
 </body>
 </html>
