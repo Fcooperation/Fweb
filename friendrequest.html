@@ -138,6 +138,7 @@ body {
 
 <script>
 const API_URL = "https://fweb-backend.onrender.com/fchat";
+const existingCards = new Map(); // Store current fcards by user id
 
 // -------------------- Helper to call backend --------------------
 async function callBackend(action, body = {}) {
@@ -161,89 +162,103 @@ async function callBackend(action, body = {}) {
   }
 }
 
-// -------------------- Load friend requesters --------------------
-async function loadRequests() {
-  const container = document.getElementById("requests-container");
-  const empty = document.getElementById("empty");
-  const log = document.getElementById("log");
+// -------------------- Add single request card --------------------
+function addRequestCard(user) {
+  if (existingCards.has(user.id)) return; // skip if already exists
 
-  container.innerHTML = "";
-  empty.style.display = "none";
+  const container = document.getElementById("requests-container");
+
+  const card = document.createElement("div");
+  card.className = "request-card";
+
+  // Profile picture or initials
+  const pfpEl = document.createElement("div");
+  pfpEl.className = "pfp";
+  if (user.profile_pic) {
+    const img = document.createElement("img");
+    img.src = user.profile_pic;
+    img.alt = "Profile Picture";
+    img.style.width = "100%";
+    img.style.height = "100%";
+    img.style.borderRadius = "50%";
+    pfpEl.appendChild(img);
+
+    pfpEl.onclick = () => {
+      document.getElementById("profile-modal").style.display = "flex";
+      document.getElementById("profileView").src = user.profile_pic;
+    };
+  } else {
+    const initials = (user.username || "U").split(" ").map(n => n[0].toUpperCase()).join("").slice(0,2);
+    pfpEl.textContent = initials;
+  }
+
+  // Info section
+  const info = document.createElement("div");
+  info.className = "info";
+  info.innerHTML = `
+    <div class="username">${user.username}</div>
+    <div class="status">${user.status_text || "No status"}</div>
+    <div class="userid">ID: ${user.id}</div>
+  `;
+
+  // Action buttons
+  const actions = document.createElement("div");
+  actions.className = "actions";
+
+  const acceptBtn = document.createElement("button");
+  acceptBtn.className = "accept-btn";
+  acceptBtn.textContent = "Accept";
+  acceptBtn.onclick = async () => {
+    await callBackend("accept", { user_id: user.id });
+    card.remove();
+    existingCards.delete(user.id);
+    updateLog(`Accepted user ${user.username}`);
+  };
+
+  const rejectBtn = document.createElement("button");
+  rejectBtn.className = "reject-btn";
+  rejectBtn.textContent = "Reject";
+  rejectBtn.onclick = async () => {
+    await callBackend("reject", { user_id: user.id });
+    card.remove();
+    existingCards.delete(user.id);
+    updateLog(`Rejected user ${user.username}`);
+  };
+
+  actions.appendChild(acceptBtn);
+  actions.appendChild(rejectBtn);
+
+  card.appendChild(pfpEl);
+  card.appendChild(info);
+  card.appendChild(actions);
+
+  container.appendChild(card);
+  existingCards.set(user.id, card);
+}
+
+// -------------------- Update log --------------------
+function updateLog(message) {
+  const log = document.getElementById("log");
+  const now = new Date().toLocaleTimeString();
+  log.textContent = `[${now}] ${message}`;
+}
+
+// -------------------- Load friend requesters incrementally --------------------
+async function loadRequests() {
+  const empty = document.getElementById("empty");
 
   const response = await callBackend("get_requesters");
-  const now = new Date().toLocaleTimeString();
-
   if (!response.data || response.data.length === 0) {
-    empty.style.display = "block";
-    log.textContent = `Updated at ${now} — No friend requests`;
+    empty.style.display = existingCards.size === 0 ? "block" : "none";
+    updateLog("No new friend requests");
     return;
   }
 
-  log.textContent = `Updated at ${now} — ${response.data.length} friend request(s)`;
+  empty.style.display = "none";
 
-  response.data.forEach(user => {
-    const card = document.createElement("div");
-    card.className = "request-card";
+  response.data.forEach(user => addRequestCard(user));
 
-    // Profile picture or initials
-    const pfpEl = document.createElement("div");
-    pfpEl.className = "pfp";
-    if (user.profile_pic) {
-      const img = document.createElement("img");
-      img.src = user.profile_pic;
-      img.alt = "Profile Picture";
-      img.style.width = "100%";
-      img.style.height = "100%";
-      img.style.borderRadius = "50%";
-      pfpEl.appendChild(img);
-
-      pfpEl.onclick = () => {
-        document.getElementById("profile-modal").style.display = "flex";
-        document.getElementById("profileView").src = user.profile_pic;
-      };
-    } else {
-      const initials = (user.username || "U").split(" ").map(n => n[0].toUpperCase()).join("").slice(0,2);
-      pfpEl.textContent = initials;
-    }
-
-    // Info section
-    const info = document.createElement("div");
-    info.className = "info";
-    info.innerHTML = `
-      <div class="username">${user.username}</div>
-      <div class="status">${user.status_text || "No status"}</div>
-      <div class="userid">ID: ${user.id}</div>
-    `;
-
-    // Action buttons below card
-    const actions = document.createElement("div");
-    actions.className = "actions";
-
-    const acceptBtn = document.createElement("button");
-    acceptBtn.className = "accept-btn";
-    acceptBtn.textContent = "Accept";
-    acceptBtn.onclick = async () => {
-      await callBackend("accept", { user_id: user.id });
-      card.remove();
-    };
-
-    const rejectBtn = document.createElement("button");
-    rejectBtn.className = "reject-btn";
-    rejectBtn.textContent = "Reject";
-    rejectBtn.onclick = async () => {
-      await callBackend("reject", { user_id: user.id });
-      card.remove();
-    };
-
-    actions.appendChild(acceptBtn);
-    actions.appendChild(rejectBtn);
-
-    card.appendChild(pfpEl);
-    card.appendChild(info);
-    card.appendChild(actions);
-
-    container.appendChild(card);
-  });
+  updateLog(`${existingCards.size} friend request(s) displayed`);
 }
 
 // Close modal when clicked
@@ -251,9 +266,9 @@ document.getElementById("profile-modal").onclick = () => {
   document.getElementById("profile-modal").style.display = "none";
 };
 
-// -------------------- Real-time updates --------------------
+// -------------------- Real-time incremental updates --------------------
 loadRequests();
-setInterval(loadRequests, 5000); // refresh every 5 seconds
+setInterval(loadRequests, 5000);
 </script>
 
 </body>
