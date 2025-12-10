@@ -1,448 +1,177 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FCHAT</title>
-  <style>
-    :root {
-      --bg: #ffffff;
-      --text: #000000;
-      --card-bg: #f5f5f5;
-      --shadow: rgba(0, 0, 0, 0.1);
-      --accent: #007aff;
-      --subtext: #666;
-      --online: #2ecc71;
-      --offline: #999;
-    }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #121212;
-        --text: #f1f1f1;
-        --card-bg: #1f1f1f;
-        --shadow: rgba(255, 255, 255, 0.05);
-        --subtext: #aaa;
-      }
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fchat</title>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #f0f0f0;
+  padding: 0;
+  margin: 0;
+}
 
-    * {
-      box-sizing: border-box;
-      transition: background 0.3s, color 0.3s;
-    }
+/* ------- LOADING SCREEN ------- */
+#loading-screen {
+  position: fixed;
+  top:0; left:0;
+  width:100%; height:100%;
+  background:white;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  gap:20px;
+  z-index:1000;
+}
 
-    body {
-      margin: 0;
-      font-family: 'Poppins','Segoe UI',sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      overflow: hidden;
-    }
+#loading-title {
+  font-size:38px;
+  font-weight:bold;
+  padding:10px 20px;
+  border-radius:8px;
+  background:#000;
+  color:#fff;
+}
 
-    /* ====== TOP BAR ====== */
-    .topbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      height: 60px;
-      padding: 0 16px;
-      font-size: 20px;
-      font-weight: 600;
-      box-shadow: 0 2px 5px var(--shadow);
-      z-index: 10;
-      background: var(--bg);
-      position: relative;
-    }
-    .menu-btn, .reload-btn {
-      background: none;
-      border: none;
-      color: var(--text);
-      font-size: 22px;
-      cursor: pointer;
-      margin-left: 6px;
-    }
+#loading-logs {
+  font-size:16px;
+  color:#444;
+  text-align:center;
+}
 
-    /* ===== MENU ===== */
-    .menu-dropdown {
-      position: absolute;
-      top: 60px;
-      right: 12px;
-      background: var(--card-bg);
-      border-radius: 10px;
-      box-shadow: 0 4px 10px var(--shadow);
-      display: none;
-      flex-direction: column;
-      z-index: 20;
-    }
-    .menu-dropdown button {
-      border: none;
-      background: none;
-      color: var(--text);
-      padding: 12px 16px;
-      font-size: 14px;
-      text-align: left;
-      cursor: pointer;
-      width: 180px;
-    }
-    .menu-dropdown button:hover {
-      background: rgba(0,0,0,0.08);
-    }
+/* ------- REAL UI ------- */
+#main-ui {
+  display:none;
+  padding:20px;
+}
 
-    /* ===== SEARCH ===== */
-    .search-bar {
-      margin: 10px 16px;
-      padding: 10px 16px;
-      border-radius: 25px;
-      background: var(--card-bg);
-      border: none;
-      outline: none;
-      color: var(--text);
-      font-size: 14px;
-      width: calc(100% - 32px);
-    }
+#users-list {
+  margin-top:20px;
+}
 
-    #logline {
-      text-align: center;
-      font-size: 13px;
-      color: var(--subtext);
-      margin-top: 4px;
-      height: 18px;
-    }
+.user {
+  background:white;
+  padding:10px;
+  margin-bottom:10px;
+  border-radius:8px;
+  box-shadow:0 2px 5px rgba(0,0,0,0.1);
+}
 
-    /* ===== CHAT LIST ===== */
-    .chat-list {
-      flex: 1;
-      overflow-y: auto;
-      padding: 10px 0 80px;
-    }
-
-    .fchat-card {
-      display: flex;
-      align-items: center;
-      padding: 12px 16px;
-      background: var(--card-bg);
-      margin: 6px 12px;
-      border-radius: 12px;
-      box-shadow: 0 2px 6px var(--shadow);
-      cursor: pointer;
-      transition: transform 0.15s;
-    }
-    .fchat-card:hover {
-      transform: scale(1.01);
-    }
-
-    .fchat-left {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .profile-pic, .initials {
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      flex-shrink: 0;
-      cursor: pointer;
-      position: relative;
-    }
-
-    .profile-pic {
-      object-fit: cover;
-    }
-
-    .initials {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--accent);
-      color: #fff;
-      font-weight: bold;
-      font-size: 18px;
-      text-transform: uppercase;
-    }
-
-    .username {
-      font-weight: 600;
-      font-size: 15px;
-    }
-
-    .status {
-      font-size: 12px;
-      color: var(--subtext);
-      margin-top: 2px;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-    }
-
-    /* ===== ADD BUTTON ===== */
-    .add-btn {
-      position: fixed;
-      bottom: 80px;
-      right: 20px;
-      width: 55px;
-      height: 55px;
-      border-radius: 50%;
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      font-size: 32px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 4px 10px var(--shadow);
-      z-index: 15;
-    }
-    .add-btn:hover {
-      transform: scale(1.05);
-    }
-
-    /* ===== BOTTOM NAV ===== */
-    .bottom-nav {
-      position: fixed;
-      bottom: 0;
-      width: 100%;
-      height: 60px;
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      background: var(--card-bg);
-      box-shadow: 0 -2px 8px var(--shadow);
-      z-index: 10;
-    }
-    .bottom-nav button {
-      background: none;
-      border: none;
-      color: var(--text);
-      font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
-    }
-    .bottom-nav .active {
-      font-weight: 700;
-      text-decoration: underline;
-      color: var(--accent);
-    }
-
-    /* ===== IMAGE PREVIEW ===== */
-    .img-preview {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.85);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 999;
-    }
-    .img-preview img {
-      max-width: 90%;
-      max-height: 90%;
-      border-radius: 10px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.6);
-    }
-  </style>
+#add-btn {
+  margin-top:20px;
+  padding:10px 16px;
+  background:#2196f3;
+  color:white;
+  border:none;
+  border-radius:8px;
+  font-weight:bold;
+  cursor:pointer;
+}
+</style>
 </head>
 <body>
-  <div class="topbar">
-    <div>FCHAT</div>
-    <div>
-      <button class="reload-btn" id="reloadBtn">↻</button>
-      <button class="menu-btn">⋮</button>
-      <div class="menu-dropdown" id="menu">
-        <button onclick="location.href='friendrequest.html'">Friend Requests</button>
-        <button onclick="location.href='fchatsettings.html'">Settings</button>
-      </div>
-    </div>
-  </div>
 
-  <input type="text" id="search" placeholder="Search chats" class="search-bar" />
-  <p id="logline">Loading chats...</p>
+<!-- LOADING SCREEN -->
+<div id="loading-screen">
+  <div id="loading-title">FCHAT</div>
+  <div id="loading-logs">Starting...</div>
+</div>
 
-  <div class="chat-list" id="fchat-container"></div>
+<!-- REAL UI -->
+<div id="main-ui">
+  <h2>Your Chats</h2>
+  <button id="add-btn" onclick="location.href='add.html'">Add Friends</button>
+  <div id="users-list"></div>
+</div>
 
-  <button class="add-btn" onclick="location.href='add.html'">＋</button>
+<script>
+const API_URL = "https://fweb-backend.onrender.com/fchat";
 
-  <div class="bottom-nav">
-    <button class="active">Fchat</button>
-    <button onclick="location.href='fchatupdate.html'">Updates</button>
-    <button onclick="location.href='fvids.html'">Fvids</button>
-    <button onclick="location.href='fchatme.html'">Me</button>
-  </div>
+/* ---------------- HELPER ---------------- */
+async function callBackend(action, body = {}) {
+  const account = JSON.parse(localStorage.getItem("faccount")) || {};
+  if (!account.email) return { data: [] };
 
-  <!-- Fullscreen Image Preview -->
-  <div class="img-preview" id="imgPreview">
-    <img id="previewImg" src="" alt="Profile picture" />
-  </div>
+  const payload = { action, email: account.email, ...body };
 
-  <script type="module">
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-    const supabase = createClient(
-      "https://pwsxezhugsxosbwhkdvf.supabase.co",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
-    );
-
-    const log = (msg) => (document.getElementById("logline").textContent = msg);
-    const container = document.getElementById("fchat-container");
-    const menu = document.getElementById("menu");
-    const menuBtn = document.querySelector(".menu-btn");
-    const reloadBtn = document.getElementById("reloadBtn");
-    const search = document.getElementById("search");
-    const preview = document.getElementById("imgPreview");
-    const previewImg = document.getElementById("previewImg");
-    let friendsCache = [];
-
-    menuBtn.onclick = () => (menu.style.display = menu.style.display === "flex" ? "none" : "flex");
-    document.addEventListener("click", (e) => {
-      if (!menu.contains(e.target) && !menuBtn.contains(e.target)) menu.style.display = "none";
+  try {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
     });
-    preview.onclick = () => (preview.style.display = "none");
+    return await res.json();
+  } catch (e) {
+    console.error(e);
+    return { data: [] };
+  }
+}
 
-    reloadBtn.onclick = () => loadChats(true);
+/* ---------------- LOADING LOGS ---------------- */
+async function runLoadingSequence() {
+  const logs = [
+    "Starting...",
+    "Calling API...",
+    "Processing...",
+    "Initializing...",
+    "Finalizing..."
+  ];
 
-    async function updateStatus(status) {
-      const faccount = JSON.parse(localStorage.getItem("faccount"));
-      if (!faccount?.id) return;
-      await supabase.from("fwebaccount").update({ fchat_logs: status }).eq("id", faccount.id);
+  const logBox = document.getElementById("loading-logs");
+
+  // Show logs one by one
+  for (let i = 0; i < logs.length; i++) {
+    logBox.textContent = logs[i];
+    await new Promise(res => setTimeout(res, 600));
+  }
+
+  // FIRE request but DON'T WAIT
+  callBackend("get_all_users", { limit: 10 }).then(response => {
+    if (response.data) {
+      localStorage.setItem("all_users", JSON.stringify(response.data));
     }
+  });
 
-    async function loadChats(showLog = true) {
-      const faccount = JSON.parse(localStorage.getItem("faccount"));
-      if (!faccount?.id) {
-        container.innerHTML = "<p style='text-align:center;'>Please log in first.</p>";
-        log("No account found ❌");
-        return;
-      }
+  // Immediately load real UI
+  showMainUI();
+}
 
-      if (showLog) log("Accessing Supabase...");
-      const { data: user } = await supabase.from("fwebaccount").select("*").eq("id", faccount.id).maybeSingle();
-      if (!user) return log("Error loading user ❌");
+/* ---------------- SHOW MAIN UI ---------------- */
+function showMainUI() {
+  document.getElementById("loading-screen").style.display = "none";
+  document.getElementById("main-ui").style.display = "block";
+}
 
-      const acceptedIds = (user.accepted || "").split(",").map(a => a.trim()).filter(Boolean);
-      if (!acceptedIds.length) {
-        container.innerHTML = "<p style='text-align:center;'>No chats yet 😢</p>";
-        return log("No accepted users");
-      }
+/* ---------------- LIVE REFRESH EVERY 5s ---------------- */
+async function autoRefreshUsers() {
+  const response = await callBackend("get_all_users");
 
-      const { data: friends } = await supabase
-        .from("fwebaccount")
-        .select("id, username, profile_pic, fchat_logs")
-        .in("id", acceptedIds);
+  if (response.data) {
+    localStorage.setItem("all_users", JSON.stringify(response.data));
+    displayUsers(response.data);
+  }
+}
 
-      friendsCache = friends;
-      localStorage.setItem("friendsCache", JSON.stringify(friends));
-      renderChats(friends);
-      log(`Loaded ${friends.length} chat(s) ✅`);
-    }
+function displayUsers(users) {
+  const box = document.getElementById("users-list");
+  box.innerHTML = "";
 
-    function renderChats(friends) {
-      container.innerHTML = "";
-      for (const f of friends) {
-        const card = document.createElement("div");
-        card.className = "fchat-card";
-        card.onclick = (e) => {
-          if (e.target.classList.contains("profile-pic")) return; // prevent when clicking image
-          localStorage.setItem("chatting", f.id);
-          location.href = "chat.html";
-        };
+  users.forEach(u => {
+    const div = document.createElement("div");
+    div.className = "user";
+    div.textContent = u.username + " (" + u.id + ")";
+    box.appendChild(div);
+  });
+}
 
-        const left = document.createElement("div");
-        left.className = "fchat-left";
+/* ---------------- STARTUP ---------------- */
+runLoadingSequence();
 
-        // Profile or initials
-        let avatar;
-        if (f.profile_pic) {
-          avatar = document.createElement("img");
-          avatar.src = f.profile_pic;
-          avatar.className = "profile-pic";
-          avatar.onclick = (e) => {
-            e.stopPropagation();
-            previewImg.src = f.profile_pic;
-            preview.style.display = "flex";
-          };
-        } else {
-          avatar = document.createElement("div");
-          avatar.className = "initials";
-          avatar.textContent = f.username?.substring(0, 2) || "?";
-        }
+// Auto refresh every 5 seconds
+setInterval(autoRefreshUsers, 5000);
+</script>
 
-        const info = document.createElement("div");
-        const name = document.createElement("div");
-        name.className = "username";
-        name.textContent = f.username;
-
-        const status = document.createElement("div");
-        status.className = "status";
-        const dot = document.createElement("span");
-        dot.className = "status-dot";
-        if (f.fchat_logs?.toLowerCase() === "online") {
-          dot.style.background = "var(--online)";
-          status.append(dot, "Online");
-        } else if (f.fchat_logs?.toLowerCase().includes("last seen")) {
-          dot.style.background = "var(--offline)";
-          const date = new Date(f.fchat_logs.replace("last seen ", "").replace(" UTC", ""));
-          if (!isNaN(date)) {
-            const formatted = date.toISOString().replace("T", " ").split(".")[0];
-            status.append(dot, `Last seen ${formatted} UTC`);
-          } else status.append(dot, f.fchat_logs);
-        } else {
-          dot.style.background = "var(--offline)";
-          status.append(dot, f.fchat_logs || "");
-        }
-
-        info.append(name, status);
-        left.append(avatar, info);
-        card.append(left);
-        container.append(card);
-      }
-    }
-
-    search.addEventListener("input", e => {
-      const val = e.target.value.toLowerCase();
-      const filtered = friendsCache.filter(f => f.username.toLowerCase().includes(val));
-      renderChats(filtered);
-    });
-
-    // auto-refresh every 2s
-    setInterval(async () => {
-      log("Refreshing chats...");
-      await loadChats(false);
-    }, 2000);
-
-    // ---- Presence fix ----
-    let lastActive = Date.now();
-    setInterval(async () => {
-      const now = Date.now();
-      const inactiveFor = now - lastActive;
-      if (inactiveFor > 20000) {
-        const lastSeen = new Date().toISOString().replace("T", " ").split(".")[0];
-        await updateStatus(`last seen ${lastSeen} UTC`);
-      } else {
-        await updateStatus("online");
-      }
-    }, 5000);
-    ["click", "mousemove", "keydown", "scroll", "touchstart", "visibilitychange"].forEach(evt =>
-      document.addEventListener(evt, () => (lastActive = Date.now()))
-    );
-
-    window.addEventListener("beforeunload", async () => {
-      const lastSeen = new Date().toISOString().replace("T", " ").split(".")[0];
-      await updateStatus(`last seen ${lastSeen} UTC`);
-    });
-
-    // Initial load
-    loadChats(true);
-    updateStatus("online");
-  </script>
 </body>
 </html>
