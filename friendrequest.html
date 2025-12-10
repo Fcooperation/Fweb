@@ -34,6 +34,13 @@ body {
   flex-direction: column; /* vertical layout */
   gap: 8px;
   box-shadow: 0px 3px 10px rgba(0,0,0,0.1);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+/* Fade-out effect */
+.request-card.fade-out {
+  opacity: 0;
+  transform: translateX(30px);
 }
 
 /* Profile picture / initials */
@@ -209,8 +216,11 @@ function addRequestCard(user) {
   acceptBtn.className = "accept-btn";
   acceptBtn.textContent = "Accept";
   acceptBtn.onclick = async () => {
+    acceptBtn.textContent = "Accepting…";
+    acceptBtn.disabled = true;
+    rejectBtn.disabled = true;
     await callBackend("accept", { user_id: user.id });
-    card.remove();
+    fadeOutCard(card);
     existingCards.delete(user.id);
     updateLog(`Accepted user ${user.username}`);
   };
@@ -219,8 +229,11 @@ function addRequestCard(user) {
   rejectBtn.className = "reject-btn";
   rejectBtn.textContent = "Reject";
   rejectBtn.onclick = async () => {
+    rejectBtn.textContent = "Rejecting…";
+    acceptBtn.disabled = true;
+    rejectBtn.disabled = true;
     await callBackend("reject", { user_id: user.id });
-    card.remove();
+    fadeOutCard(card);
     existingCards.delete(user.id);
     updateLog(`Rejected user ${user.username}`);
   };
@@ -234,6 +247,12 @@ function addRequestCard(user) {
 
   container.appendChild(card);
   existingCards.set(user.id, card);
+}
+
+// -------------------- Fade out card --------------------
+function fadeOutCard(card) {
+  card.classList.add("fade-out");
+  setTimeout(() => card.remove(), 500); // remove after fade animation
 }
 
 // -------------------- Update log --------------------
@@ -272,4 +291,4 @@ setInterval(loadRequests, 5000);
 </script>
 
 </body>
-</html>
+  </html>
