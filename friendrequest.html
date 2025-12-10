@@ -11,6 +11,13 @@ body {
   padding: 20px;
 }
 
+/* Logs */
+#log {
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: #333;
+}
+
 /* Requests container */
 #requests-container {
   display: flex;
@@ -24,8 +31,8 @@ body {
   border-radius: 10px;
   padding: 12px;
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column; /* vertical layout */
+  gap: 8px;
   box-shadow: 0px 3px 10px rgba(0,0,0,0.1);
 }
 
@@ -49,7 +56,6 @@ body {
 .info {
   display: flex;
   flex-direction: column;
-  flex: 1;
 }
 
 .username {
@@ -70,10 +76,12 @@ body {
   font-weight: bold;
 }
 
-/* Buttons */
+/* Buttons below card */
 .actions {
   display: flex;
   gap: 8px;
+  justify-content: flex-start;
+  margin-top: 6px;
 }
 
 .accept-btn, .reject-btn {
@@ -119,6 +127,9 @@ body {
 <body>
 
 <h2>Friend Requests</h2>
+
+<div id="log">Loading requests...</div>
+
 <div id="requests-container"></div>
 <div id="empty" style="display:none;">No friend requests yet...</div>
 
@@ -154,14 +165,21 @@ async function callBackend(action, body = {}) {
 async function loadRequests() {
   const container = document.getElementById("requests-container");
   const empty = document.getElementById("empty");
+  const log = document.getElementById("log");
+
   container.innerHTML = "";
   empty.style.display = "none";
 
   const response = await callBackend("get_requesters");
+  const now = new Date().toLocaleTimeString();
+
   if (!response.data || response.data.length === 0) {
     empty.style.display = "block";
+    log.textContent = `Updated at ${now} — No friend requests`;
     return;
   }
+
+  log.textContent = `Updated at ${now} — ${response.data.length} friend request(s)`;
 
   response.data.forEach(user => {
     const card = document.createElement("div");
@@ -197,7 +215,7 @@ async function loadRequests() {
       <div class="userid">ID: ${user.id}</div>
     `;
 
-    // Action buttons
+    // Action buttons below card
     const actions = document.createElement("div");
     actions.className = "actions";
 
@@ -206,7 +224,7 @@ async function loadRequests() {
     acceptBtn.textContent = "Accept";
     acceptBtn.onclick = async () => {
       await callBackend("accept", { user_id: user.id });
-      card.remove(); // Remove the card instantly
+      card.remove();
     };
 
     const rejectBtn = document.createElement("button");
@@ -214,7 +232,7 @@ async function loadRequests() {
     rejectBtn.textContent = "Reject";
     rejectBtn.onclick = async () => {
       await callBackend("reject", { user_id: user.id });
-      card.remove(); // Remove the card instantly
+      card.remove();
     };
 
     actions.appendChild(acceptBtn);
@@ -235,7 +253,7 @@ document.getElementById("profile-modal").onclick = () => {
 
 // -------------------- Real-time updates --------------------
 loadRequests();
-setInterval(loadRequests, 5000); // update every 5 seconds
+setInterval(loadRequests, 5000); // refresh every 5 seconds
 </script>
 
 </body>
