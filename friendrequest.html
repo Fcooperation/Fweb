@@ -49,6 +49,7 @@ body {
 .info {
   display: flex;
   flex-direction: column;
+  flex: 1;
 }
 
 .username {
@@ -68,6 +69,24 @@ body {
   margin-top: 5px;
   font-weight: bold;
 }
+
+/* Buttons */
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.accept-btn, .reject-btn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.accept-btn { background: #2196f3; color: white; }
+.reject-btn { background: #f44336; color: white; }
 
 /* Empty state */
 #empty {
@@ -107,7 +126,6 @@ body {
 <div id="profile-modal"><img id="profileView"></div>
 
 <script>
-// Backend URL
 const API_URL = "https://fweb-backend.onrender.com/fchat";
 
 // -------------------- Helper to call backend --------------------
@@ -140,8 +158,6 @@ async function loadRequests() {
   empty.style.display = "none";
 
   const response = await callBackend("get_requesters");
-  console.log("Friend requests response:", response);
-
   if (!response.data || response.data.length === 0) {
     empty.style.display = "block";
     return;
@@ -168,7 +184,6 @@ async function loadRequests() {
         document.getElementById("profileView").src = user.profile_pic;
       };
     } else {
-      // Use initials
       const initials = (user.username || "U").split(" ").map(n => n[0].toUpperCase()).join("").slice(0,2);
       pfpEl.textContent = initials;
     }
@@ -182,8 +197,33 @@ async function loadRequests() {
       <div class="userid">ID: ${user.id}</div>
     `;
 
+    // Action buttons
+    const actions = document.createElement("div");
+    actions.className = "actions";
+
+    const acceptBtn = document.createElement("button");
+    acceptBtn.className = "accept-btn";
+    acceptBtn.textContent = "Accept";
+    acceptBtn.onclick = async () => {
+      await callBackend("accept", { user_id: user.id });
+      card.remove(); // Remove the card instantly
+    };
+
+    const rejectBtn = document.createElement("button");
+    rejectBtn.className = "reject-btn";
+    rejectBtn.textContent = "Reject";
+    rejectBtn.onclick = async () => {
+      await callBackend("reject", { user_id: user.id });
+      card.remove(); // Remove the card instantly
+    };
+
+    actions.appendChild(acceptBtn);
+    actions.appendChild(rejectBtn);
+
     card.appendChild(pfpEl);
     card.appendChild(info);
+    card.appendChild(actions);
+
     container.appendChild(card);
   });
 }
@@ -193,8 +233,9 @@ document.getElementById("profile-modal").onclick = () => {
   document.getElementById("profile-modal").style.display = "none";
 };
 
-// Load on page start
-window.addEventListener("DOMContentLoaded", loadRequests);
+// -------------------- Real-time updates --------------------
+loadRequests();
+setInterval(loadRequests, 5000); // update every 5 seconds
 </script>
 
 </body>
