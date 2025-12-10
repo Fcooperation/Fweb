@@ -29,13 +29,20 @@ body {
   box-shadow: 0px 3px 10px rgba(0,0,0,0.1);
 }
 
-/* Profile picture */
-.request-card img {
+/* Profile picture / initials */
+.request-card .pfp {
   height: 55px;
   width: 55px;
   border-radius: 50%;
   object-fit: cover;
   cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 20px;
+  font-weight: bold;
+  color: white;
+  background-color: black;
 }
 
 /* Info section */
@@ -144,26 +151,38 @@ async function loadRequests() {
     const card = document.createElement("div");
     card.className = "request-card";
 
-    // Clickable profile picture
-    const imgSrc = user.profile_pic || 'default.png';
-    const imgEl = document.createElement("img");
-    imgEl.src = imgSrc;
-    imgEl.alt = "Profile Picture";
-    imgEl.onclick = () => {
-      document.getElementById("profile-modal").style.display = "flex";
-      document.getElementById("profileView").src = imgSrc;
-    };
+    // Profile picture or initials
+    const pfpEl = document.createElement("div");
+    pfpEl.className = "pfp";
+    if (user.profile_pic) {
+      const img = document.createElement("img");
+      img.src = user.profile_pic;
+      img.alt = "Profile Picture";
+      img.style.width = "100%";
+      img.style.height = "100%";
+      img.style.borderRadius = "50%";
+      pfpEl.appendChild(img);
+
+      pfpEl.onclick = () => {
+        document.getElementById("profile-modal").style.display = "flex";
+        document.getElementById("profileView").src = user.profile_pic;
+      };
+    } else {
+      // Use initials
+      const initials = (user.username || "U").split(" ").map(n => n[0].toUpperCase()).join("").slice(0,2);
+      pfpEl.textContent = initials;
+    }
 
     // Info section
     const info = document.createElement("div");
     info.className = "info";
     info.innerHTML = `
       <div class="username">${user.username}</div>
-      <div class="status">${user.status_text || "Active on Fchat"}</div>
+      <div class="status">${user.status_text || "No status"}</div>
       <div class="userid">ID: ${user.id}</div>
     `;
 
-    card.appendChild(imgEl);
+    card.appendChild(pfpEl);
     card.appendChild(info);
     container.appendChild(card);
   });
