@@ -1,293 +1,150 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Friend Requests</title>
+  <meta charset="UTF-8" />
+  <title>Fchat – Friend Requests</title>
   <style>
     body {
-      margin: 0;
-      background: #fff;
-      color: #000;
-      font-family: 'Poppins','Segoe UI',sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
+      background: #f0f0f0;
       padding: 20px;
+      font-family: Arial, sans-serif;
     }
-    h1 {
-      color: #000;
-      margin-bottom: 10px;
-    }
-    #logline {
-      font-size: 13px;
-      color: #555;
-      margin-bottom: 15px;
-      height: 18px;
-    }
+
     #requests-container {
-      width: 100%;
-      max-width: 500px;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 14px;
     }
-    .fchat-card {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: #f2f2f2;
-      padding: 14px;
+
+    .request-card {
+      background: white;
       border-radius: 10px;
-      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
-      transition: 0.3s;
-    }
-    .fchat-card:hover {
-      transform: scale(1.02);
-      background: #eaeaea;
-    }
-    .fchat-left {
+      padding: 12px;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
+      box-shadow: 0px 3px 10px rgba(0,0,0,0.1);
     }
-    .profile-pic {
-      width: 50px;
-      height: 50px;
+
+    .request-card img {
+      height: 55px;
+      width: 55px;
       border-radius: 50%;
       object-fit: cover;
-      border: 2px solid #000;
     }
-    .username {
-      font-weight: bold;
-      color: #000;
-    }
+
     .actions {
+      margin-left: auto;
       display: flex;
-      gap: 10px;
+      gap: 8px;
     }
-    button {
-      background: #000;
+
+    .accept-btn, .reject-btn {
+      padding: 6px 12px;
       border: none;
-      color: #fff;
-      padding: 6px 10px;
       border-radius: 6px;
       cursor: pointer;
-      transition: 0.2s;
-      font-size: 13px;
+      font-size: 14px;
+      font-weight: bold;
     }
-    button:hover {
-      background: #333;
+
+    .accept-btn {
+      background: #00c853;
+      color: white;
     }
-    .reject {
-      background: #c0392b;
+
+    .reject-btn {
+      background: #e91e63;
+      color: white;
     }
-    .reject:hover {
-      background: #e74c3c;
+
+    #empty {
+      text-align: center;
+      padding: 30px;
+      font-size: 16px;
+      color: #666;
     }
+
   </style>
 </head>
 <body>
-  <h1>Friend Requests</h1>
-  <p id="logline">Loading...</p>
-  <div id="requests-container">
-    <p id="status">Loading...</p>
-  </div>
 
-  <script type="module">
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+<h2>Friend Requests</h2>
 
-    const supabase = createClient(
-      "https://pwsxezhugsxosbwhkdvf.supabase.co",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3c3hlemh1Z3N4b3Nid2hrZHZmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTkyODM4NywiZXhwIjoyMDY3NTA0Mzg3fQ.u7lU9gAE-hbFprFIDXQlep4q2bhjj0QdlxXF-kylVBQ"
-    );
+<div id="requests-container"></div>
+<div id="empty" style="display:none;">No friend requests yet...</div>
 
+<script>
+  const API_URL = "https://fweb-backend.onrender.com/fchat";   // ⭐ replace with your Render backend URL
+  const email = localStorage.getItem("fweb_email");
+
+  async function callBackend(action, body = {}) {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action, email, ...body })
+    });
+
+    return await res.json();
+  }
+
+  // -------------------------
+  // LOAD ALL FRIEND REQUESTERS
+  // -------------------------
+  async function loadRequests() {
     const container = document.getElementById("requests-container");
-    const statusText = document.getElementById("status");
-    const logLine = document.getElementById("logline");
+    const empty = document.getElementById("empty");
 
-    const log = msg => (logLine.textContent = msg);
+    container.innerHTML = "";
+    empty.style.display = "none";
 
-    async function loadUserData() {
-      const faccount = JSON.parse(localStorage.getItem("faccount"));
-      if (!faccount || !faccount.id) {
-        log("No account found in localStorage.");
-        statusText.textContent = "No account found.";
-        return;
-      }
+    const response = await callBackend("get_requesters");
 
-      log("Accessing account...");
-      const { data: user, error } = await supabase
-        .from("fwebaccount")
-        .select("*")
-        .eq("id", faccount.id)
-        .maybeSingle();
-
-      if (error || !user) {
-        log("Error fetching user data.");
-        statusText.textContent = "Error loading data.";
-        return;
-      }
-
-      const requests = Array.isArray(user.friend_requests)
-        ? user.friend_requests
-        : user.friend_requests
-        ? user.friend_requests.split(",").map(r => r.trim()).filter(Boolean)
-        : [];
-
-      if (requests.length === 0) {
-        log("No friend requests found.");
-        statusText.textContent = "No friend requests.";
-        return;
-      }
-
-      statusText.remove();
-      log("Fetching requesters...");
-
-      const { data: requesters, error: reqErr } = await supabase
-        .from("fwebaccount")
-        .select("id, username, profile_pic, accepted")
-        .in("id", requests);
-
-      if (reqErr || !requesters?.length) {
-        log("Error fetching requesters.");
-        return;
-      }
-
-      log(`Loaded ${requesters.length} requester(s).`);
-
-      for (const requestUser of requesters) {
-        const card = document.createElement("div");
-        card.className = "fchat-card";
-
-        const left = document.createElement("div");
-        left.className = "fchat-left";
-
-        const img = document.createElement("img");
-        img.src = requestUser.profile_pic || "default.png";
-        img.className = "profile-pic";
-
-        const name = document.createElement("div");
-        name.className = "username";
-        name.innerText = requestUser.username;
-
-        left.appendChild(img);
-        left.appendChild(name);
-
-        const actions = document.createElement("div");
-        actions.className = "actions";
-
-        const acceptBtn = document.createElement("button");
-        acceptBtn.innerText = "Accept";
-        const rejectBtn = document.createElement("button");
-        rejectBtn.innerText = "Reject";
-        rejectBtn.className = "reject";
-
-        actions.appendChild(acceptBtn);
-        actions.appendChild(rejectBtn);
-        card.appendChild(left);
-        card.appendChild(actions);
-        container.appendChild(card);
-
-        // ✅ Accept logic
-        acceptBtn.onclick = async () => {
-          log(`Accepting ${requestUser.username}...`);
-          acceptBtn.textContent = "Accepting...";
-          acceptBtn.disabled = true;
-          rejectBtn.disabled = true;
-          card.style.opacity = 0.6;
-
-          try {
-            // Step 1: Save to Supabase
-            log("Saving to Supabase...");
-            const acceptedList = (user.accepted || "")
-              .split(",").map(a => a.trim()).filter(Boolean);
-            if (!acceptedList.includes(requestUser.id.toString()))
-              acceptedList.push(requestUser.id.toString());
-
-            const updatedRequests = requests.filter(id => id !== requestUser.id.toString());
-            await supabase
-              .from("fwebaccount")
-              .update({
-                accepted: acceptedList.join(","),
-                friend_requests: updatedRequests.join(",")
-              })
-              .eq("id", faccount.id);
-
-            // Step 2: Update requester side
-            const requesterAccepted = (requestUser.accepted || "")
-              .split(",").map(a => a.trim()).filter(Boolean);
-            if (!requesterAccepted.includes(faccount.id.toString()))
-              requesterAccepted.push(faccount.id.toString());
-
-            await supabase
-              .from("fwebaccount")
-              .update({ accepted: requesterAccepted.join(",") })
-              .eq("id", requestUser.id);
-
-            // Step 3: Update localStorage
-            log("Accepting user (saving to localStorage)...");
-let local = JSON.parse(localStorage.getItem("faccount")) || {};
-local.updated = "yes";
-local.username = requestUser.username;
-local.profile_pic = requestUser.profile_pic;
-localStorage.setItem("faccount", JSON.stringify(local));
-            // Step 4: Updating FCHAT
-            log("Updating FCHAT...");
-            setTimeout(() => {
-              log(`✅ Accepted ${requestUser.username}`);
-              card.style.transition = "all 0.6s ease";
-              card.style.background = "#c8f7c5";
-              acceptBtn.textContent = "Accepted";
-              rejectBtn.remove();
-              setTimeout(() => {
-                card.style.opacity = "0";
-                setTimeout(() => card.remove(), 700);
-              }, 800);
-            }, 1000);
-          } catch (e) {
-            log("❌ Error saving to Supabase.");
-            console.error(e);
-            acceptBtn.textContent = "Error";
-          }
-        };
-
-        // ❌ Reject
-        rejectBtn.onclick = async () => {
-          log(`Rejecting ${requestUser.username}...`);
-          rejectBtn.textContent = "Rejecting...";
-          acceptBtn.disabled = true;
-          rejectBtn.disabled = true;
-          card.style.opacity = 0.6;
-
-          try {
-            const updatedRequests = requests.filter(id => id !== requestUser.id.toString());
-            await supabase
-              .from("fwebaccount")
-              .update({ friend_requests: updatedRequests.join(",") })
-              .eq("id", faccount.id);
-
-            log(`✗ Rejected ${requestUser.username}`);
-            card.style.transition = "all 0.7s ease";
-            card.style.background = "#f5b7b1";
-            rejectBtn.textContent = "Rejected";
-            acceptBtn.remove();
-            setTimeout(() => {
-              card.style.opacity = "0";
-              setTimeout(() => card.remove(), 700);
-            }, 800);
-          } catch {
-            log("Error rejecting user.");
-            rejectBtn.textContent = "Error";
-          }
-        };
-      }
-
-      log("All friend requests displayed successfully.");
+    if (!response.data || response.data.length === 0) {
+      empty.style.display = "block";
+      return;
     }
 
-    loadUserData();
-  </script>
+    response.data.forEach(user => {
+      const card = document.createElement("div");
+      card.className = "request-card";
+
+      card.innerHTML = `
+        <img src="${user.profile_pic || 'default.png'}" />
+        <div>
+          <div><b>${user.username}</b></div>
+          <div style="font-size:12px; color:#777;">ID: ${user.id}</div>
+        </div>
+
+        <div class="actions">
+          <button class="accept-btn" onclick="acceptRequest('${user.id}')">Accept</button>
+          <button class="reject-btn" onclick="rejectRequest('${user.id}')">Reject</button>
+        </div>
+      `;
+
+      container.appendChild(card);
+    });
+  }
+
+  // -------------------------
+  // ACCEPT FRIEND REQUEST
+  // -------------------------
+  async function acceptRequest(userId) {
+    await callBackend("accept", { user_id: userId });
+    loadRequests(); // refresh UI
+  }
+
+  // -------------------------
+  // REJECT FRIEND REQUEST
+  // -------------------------
+  async function rejectRequest(userId) {
+    await callBackend("reject", { user_id: userId });
+    loadRequests(); // refresh UI
+  }
+
+  // Load requests on start
+  loadRequests();
+</script>
+
 </body>
 </html>
