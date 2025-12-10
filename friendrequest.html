@@ -1,149 +1,112 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Fchat – Friend Requests</title>
-  <style>
-    body {
-      background: #f0f0f0;
-      padding: 20px;
-      font-family: Arial, sans-serif;
-    }
-
-    #requests-container {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-
-    .request-card {
-      background: white;
-      border-radius: 10px;
-      padding: 12px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      box-shadow: 0px 3px 10px rgba(0,0,0,0.1);
-    }
-
-    .request-card img {
-      height: 55px;
-      width: 55px;
-      border-radius: 50%;
-      object-fit: cover;
-    }
-
-    .actions {
-      margin-left: auto;
-      display: flex;
-      gap: 8px;
-    }
-
-    .accept-btn, .reject-btn {
-      padding: 6px 12px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: bold;
-    }
-
-    .accept-btn {
-      background: #00c853;
-      color: white;
-    }
-
-    .reject-btn {
-      background: #e91e63;
-      color: white;
-    }
-
-    #empty {
-      text-align: center;
-      padding: 30px;
-      font-size: 16px;
-      color: #666;
-    }
-
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fchat Friend Requests</title>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #f0f0f0;
+  padding: 20px;
+}
+#requests-container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.request-card {
+  background: white;
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0px 3px 10px rgba(0,0,0,0.1);
+}
+.request-card img {
+  height: 55px;
+  width: 55px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+#empty {
+  text-align: center;
+  padding: 30px;
+  font-size: 16px;
+  color: #666;
+}
+</style>
 </head>
 <body>
 
 <h2>Friend Requests</h2>
-
 <div id="requests-container"></div>
 <div id="empty" style="display:none;">No friend requests yet...</div>
 
 <script>
-  const API_URL = "https://fweb-backend.onrender.com/fchat";   // ⭐ replace with your Render backend URL
-  const email = localStorage.getItem("fweb_email");
+// Replace with your backend URL
+const API_URL = "https://fweb-backend.onrender.com/fchat";
 
-  async function callBackend(action, body = {}) {
+// -------------------- Helper to call backend --------------------
+async function callBackend(action, body = {}) {
+  const account = JSON.parse(localStorage.getItem("faccount")) || {};
+  if (!account.email) {
+    console.error("No email found in localStorage!");
+    return { data: [] };
+  }
+
+  const payload = {
+    action,
+    email: account.email, // ✅ email from localStorage
+    ...body
+  };
+
+  try {
     const res = await fetch(API_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action, email, ...body })
+      body: JSON.stringify(payload)
     });
-
     return await res.json();
+  } catch (err) {
+    console.error("Error calling backend:", err);
+    return { data: [] };
+  }
+}
+
+// -------------------- Load friend requesters --------------------
+async function loadRequests() {
+  const container = document.getElementById("requests-container");
+  const empty = document.getElementById("empty");
+  container.innerHTML = "";
+  empty.style.display = "none";
+
+  const response = await callBackend("get_requesters");
+
+  if (!response.data || response.data.length === 0) {
+    empty.style.display = "block";
+    return;
   }
 
-  // -------------------------
-  // LOAD ALL FRIEND REQUESTERS
-  // -------------------------
-  async function loadRequests() {
-    const container = document.getElementById("requests-container");
-    const empty = document.getElementById("empty");
+  response.data.forEach(user => {
+    const card = document.createElement("div");
+    card.className = "request-card";
 
-    container.innerHTML = "";
-    empty.style.display = "none";
+    card.innerHTML = `
+      <img src="${user.profile_pic || 'default.png'}" alt="Profile Picture" />
+      <div>
+        <div><b>${user.username}</b></div>
+        <div style="font-size:12px; color:#777;">ID: ${user.id}</div>
+      </div>
+    `;
 
-    const response = await callBackend("get_requesters");
+    container.appendChild(card);
+  });
+}
 
-    if (!response.data || response.data.length === 0) {
-      empty.style.display = "block";
-      return;
-    }
-
-    response.data.forEach(user => {
-      const card = document.createElement("div");
-      card.className = "request-card";
-
-      card.innerHTML = `
-        <img src="${user.profile_pic || 'default.png'}" />
-        <div>
-          <div><b>${user.username}</b></div>
-          <div style="font-size:12px; color:#777;">ID: ${user.id}</div>
-        </div>
-
-        <div class="actions">
-          <button class="accept-btn" onclick="acceptRequest('${user.id}')">Accept</button>
-          <button class="reject-btn" onclick="rejectRequest('${user.id}')">Reject</button>
-        </div>
-      `;
-
-      container.appendChild(card);
-    });
-  }
-
-  // -------------------------
-  // ACCEPT FRIEND REQUEST
-  // -------------------------
-  async function acceptRequest(userId) {
-    await callBackend("accept", { user_id: userId });
-    loadRequests(); // refresh UI
-  }
-
-  // -------------------------
-  // REJECT FRIEND REQUEST
-  // -------------------------
-  async function rejectRequest(userId) {
-    await callBackend("reject", { user_id: userId });
-    loadRequests(); // refresh UI
-  }
-
-  // Load requests on start
-  loadRequests();
+// -------------------- Run on page load --------------------
+window.addEventListener("DOMContentLoaded", loadRequests);
 </script>
 
 </body>
