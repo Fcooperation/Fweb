@@ -217,16 +217,38 @@ function addRequestCard(user) {
   acceptBtn.className = "accept-btn";
   acceptBtn.textContent = "Accept";
   acceptBtn.onclick = async () => {
-    pauseUpdates();
-    acceptBtn.textContent = "Accepting…";
-    acceptBtn.disabled = true;
-    rejectBtn.disabled = true;
-    const res = await callBackend("accept", { user_id: user.id });
-    fadeOutCard(card);
-    existingCards.delete(user.id);
-    updateLog(`Accepted user ${user.username}`);
-    resumeUpdates();
-  };
+  pauseUpdates();
+  acceptBtn.textContent = "Accepting…";
+  acceptBtn.disabled = true;
+  rejectBtn.disabled = true;
+
+  // 1️⃣ Load current fchat messages list
+  let chats = JSON.parse(localStorage.getItem("fchat_messages")) || [];
+
+  // 2️⃣ Add this accepted user IF not already inside
+  if (!chats.some(c => c.id === user.id)) {
+    chats.push({
+      id: user.id,
+      username: user.username,
+      profile_pic: user.profile_pic || null,
+      status_text: user.status_text || "No status",
+      last_message: "",
+      messages: []
+    });
+  }
+
+  // 3️⃣ Save back into localStorage
+  localStorage.setItem("fchat_messages", JSON.stringify(chats));
+
+  // 4️⃣ Backend: confirm acceptance
+  await callBackend("accept", { user_id: user.id });
+
+  // 5️⃣ UI effect
+  fadeOutCard(card);
+  existingCards.delete(user.id);
+  updateLog(`Accepted user ${user.username}`);
+  resumeUpdates();
+};
 
   const rejectBtn = document.createElement("button");
   rejectBtn.className = "reject-btn";
