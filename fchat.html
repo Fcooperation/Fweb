@@ -4,94 +4,134 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Fchat</title>
+
 <style>
 body {
   font-family: Arial, sans-serif;
-  background: #f0f0f0;
+  background:white;
   padding: 0;
   margin: 0;
+  overflow-x:hidden;
 }
 
-/* ------- LOADING SCREEN ------- */
-#loading-screen {
-  position: fixed;
-  top:0; left:0;
-  width:100%; height:100%;
-  background:white;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  gap:20px;
-  z-index:1000;
-}
-
-#loading-title {
-  font-size:38px;
-  font-weight:bold;
-  padding:10px 20px;
-  border-radius:8px;
+/* ---------- TOP BAR (WhatsApp style) ---------- */
+#top-bar {
+  width:100%;
+  padding:15px 20px;
   background:white;
   color:black;
-  border:2px solid black;
+  font-size:25px;
+  font-weight:bold;
+  border-bottom:1px solid #ddd;
 }
 
-#loading-logs {
+/* ---------- SEARCH BAR ---------- */
+#search-box {
+  width: calc(100% - 40px);
+  margin:15px 20px;
+  padding:10px 15px;
+  border-radius:8px;
+  border:1px solid #ccc;
   font-size:16px;
-  color:#444;
-  text-align:center;
 }
 
-/* ------- MAIN UI ------- */
-#main-ui {
-  display:none;
-  padding:20px;
-}
-
+/* ---------- CHAT LIST ---------- */
 #users-list {
-  margin-top:20px;
+  margin:10px 0 80px 0;
   display:flex;
   flex-direction:column;
-  gap:15px;
+  gap:12px;
+  padding:0 15px;
 }
 
-/* ------- FCARD ------- */
 .fcard {
   background:white;
-  border-radius:10px;
-  padding:12px;
+  border-bottom:1px solid #eee;
+  padding:12px 5px;
   display:flex;
   align-items:center;
   gap:14px;
-  box-shadow:0 2px 5px rgba(0,0,0,0.15);
 }
 
 .pfp {
-  width:60px;
-  height:60px;
+  width:55px;
+  height:55px;
   border-radius:50%;
-  object-fit:cover;
   background:black;
   color:white;
   display:flex;
   justify-content:center;
   align-items:center;
   font-weight:bold;
-  font-size:22px;
+  font-size:20px;
   cursor:pointer;
+  overflow:hidden;
+}
+
+.pfp img {
+  width:100%;
+  height:100%;
+  border-radius:50%;
+  object-fit:cover;
 }
 
 .username {
-  font-size:17px;
-  font-weight:bold;
+  font-size:18px;
+  font-weight:600;
 }
 
 .userid {
   font-size:12px;
-  color:#555;
+  color:#777;
 }
 
-/* ------- MODAL ------- */
+/* ---------- FLOATING ADD BUTTON ---------- */
+#add-btn {
+  position:fixed;
+  right:20px;
+  bottom:90px;
+  width:55px;
+  height:55px;
+  background:#2196f3;
+  color:white;
+  border:none;
+  border-radius:50%;
+  font-size:30px;
+  font-weight:bold;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  cursor:pointer;
+  box-shadow:0 5px 10px rgba(0,0,0,0.2);
+}
+
+/* ---------- BOTTOM NAV BAR ---------- */
+#bottom-nav {
+  position:fixed;
+  bottom:0;
+  left:0;
+  width:100%;
+  height:60px;
+  background:white;
+  border-top:1px solid #ddd;
+  display:flex;
+  justify-content:space-around;
+  align-items:center;
+  font-size:14px;
+}
+
+.nav-item {
+  text-align:center;
+  color:#555;
+  cursor:pointer;
+}
+
+.nav-item.active {
+  color:black;
+  font-weight:bold;
+}
+
+/* ---------- MODAL ---------- */
 #profile-modal {
   position:fixed;
   top:0; left:0;
@@ -108,77 +148,46 @@ body {
   max-width:350px;
   border-radius:50%;
 }
-
-/* ------- BUTTON ------- */
-#add-btn {
-  margin-top:20px;
-  padding:10px 16px;
-  background:#2196f3;
-  color:white;
-  border:none;
-  border-radius:8px;
-  font-weight:bold;
-  cursor:pointer;
-}
 </style>
 </head>
+
 <body>
 
-<!-- LOADING SCREEN -->
-<div id="loading-screen">
-  <div id="loading-title">FCHAT</div>
-  <div id="loading-logs">Starting...</div>
-</div>
+<!-- TOP BAR -->
+<div id="top-bar">FCHAT</div>
 
-<!-- MAIN UI -->
-<div id="main-ui">
-  <h2>Your Chats</h2>
-  <button id="add-btn" onclick="location.href='add.html'">Add Friends</button>
-  <div id="users-list"></div>
-</div>
+<!-- SEARCH BAR -->
+<input id="search-box" type="text" placeholder="Search…">
+
+<!-- CHAT LIST -->
+<div id="users-list"></div>
+
+<!-- FLOATING ADD BUTTON -->
+<div id="add-btn" onclick="location.href='add.html'">+</div>
 
 <!-- PROFILE MODAL -->
 <div id="profile-modal">
   <img id="modal-img">
 </div>
 
+<!-- BOTTOM NAV -->
+<div id="bottom-nav">
+  <div class="nav-item active">Fchat</div>
+  <div class="nav-item" onclick="location.href='fvids.html'">Fvids</div>
+  <div class="nav-item" onclick="location.href='fchatupdates.html'">Updates</div>
+  <div class="nav-item" onclick="location.href='fchatme.html'">Me</div>
+</div>
+
 <script>
+/* LOAD SAVED CHATS */
+let allChats = [];
 
-/* ---------------- LOADING LOGS ---------------- */
-async function runLoadingSequence() {
-  const logs = [
-    "Starting...",
-    "Preparing modules...",
-    "Checking storage...",
-    "Loading chats...",
-    "Finalizing..."
-  ];
-
-  const logBox = document.getElementById("loading-logs");
-
-  for (let i = 0; i < logs.length; i++) {
-    logBox.textContent = logs[i];
-    await new Promise(res => setTimeout(res, 600));
-  }
-
-  // After logs → load main UI
-  showMainUI();
-  loadSavedChats();
-}
-
-/* ---------------- SHOW MAIN UI ---------------- */
-function showMainUI() {
-  document.getElementById("loading-screen").style.display = "none";
-  document.getElementById("main-ui").style.display = "block";
-}
-
-/* ---------------- LOAD LOCAL CHATS ---------------- */
 function loadSavedChats() {
-  const chats = JSON.parse(localStorage.getItem("fchat_messages")) || [];
-  displayChats(chats);
+  allChats = JSON.parse(localStorage.getItem("fchat_messages")) || [];
+  displayChats(allChats);
 }
 
-/* ---------------- DISPLAY FCARDS ---------------- */
+/* DISPLAY CHATS */
 function displayChats(chats) {
   const box = document.getElementById("users-list");
   box.innerHTML = "";
@@ -193,10 +202,6 @@ function displayChats(chats) {
     if (user.profile_pic) {
       let img = document.createElement("img");
       img.src = user.profile_pic;
-      img.style.width = "100%";
-      img.style.height = "100%";
-      img.style.borderRadius = "50%";
-
       pfp.appendChild(img);
 
       pfp.onclick = () => {
@@ -204,8 +209,7 @@ function displayChats(chats) {
         document.getElementById("modal-img").src = user.profile_pic;
       };
     } else {
-      let initials = user.username?.[0]?.toUpperCase() || "U";
-      pfp.textContent = initials;
+      pfp.textContent = user.username?.[0]?.toUpperCase() || "U";
     }
 
     let info = document.createElement("div");
@@ -220,14 +224,22 @@ function displayChats(chats) {
   });
 }
 
-/* ---------------- CLOSE MODAL ---------------- */
+/* CLOSE MODAL */
 document.getElementById("profile-modal").onclick = () => {
   document.getElementById("profile-modal").style.display = "none";
 };
 
-/* ---------------- START ---------------- */
-runLoadingSequence();
+/* SEARCH FILTER */
+document.getElementById("search-box").addEventListener("input", function() {
+  const text = this.value.toLowerCase();
+  const filtered = allChats.filter(u =>
+    u.username.toLowerCase().includes(text)
+  );
+  displayChats(filtered);
+});
 
+/* START */
+loadSavedChats();
 </script>
 
 </body>
