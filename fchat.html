@@ -31,8 +31,9 @@ body {
   font-weight:bold;
   padding:10px 20px;
   border-radius:8px;
-  background:#000;
-  color:#fff;
+  background:white;
+  color:black;
+  border:2px solid black;
 }
 
 #loading-logs {
@@ -41,7 +42,7 @@ body {
   text-align:center;
 }
 
-/* ------- REAL UI ------- */
+/* ------- MAIN UI ------- */
 #main-ui {
   display:none;
   padding:20px;
@@ -49,16 +50,66 @@ body {
 
 #users-list {
   margin-top:20px;
+  display:flex;
+  flex-direction:column;
+  gap:15px;
 }
 
-.user {
+/* ------- FCARD ------- */
+.fcard {
   background:white;
-  padding:10px;
-  margin-bottom:10px;
-  border-radius:8px;
-  box-shadow:0 2px 5px rgba(0,0,0,0.1);
+  border-radius:10px;
+  padding:12px;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  box-shadow:0 2px 5px rgba(0,0,0,0.15);
 }
 
+.pfp {
+  width:60px;
+  height:60px;
+  border-radius:50%;
+  object-fit:cover;
+  background:black;
+  color:white;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-weight:bold;
+  font-size:22px;
+  cursor:pointer;
+}
+
+.username {
+  font-size:17px;
+  font-weight:bold;
+}
+
+.userid {
+  font-size:12px;
+  color:#555;
+}
+
+/* ------- MODAL ------- */
+#profile-modal {
+  position:fixed;
+  top:0; left:0;
+  width:100%; height:100%;
+  background:rgba(0,0,0,0.85);
+  display:none;
+  justify-content:center;
+  align-items:center;
+  z-index:2000;
+}
+
+#profile-modal img {
+  width:75%;
+  max-width:350px;
+  border-radius:50%;
+}
+
+/* ------- BUTTON ------- */
 #add-btn {
   margin-top:20px;
   padding:10px 16px;
@@ -79,63 +130,40 @@ body {
   <div id="loading-logs">Starting...</div>
 </div>
 
-<!-- REAL UI -->
+<!-- MAIN UI -->
 <div id="main-ui">
   <h2>Your Chats</h2>
   <button id="add-btn" onclick="location.href='add.html'">Add Friends</button>
   <div id="users-list"></div>
 </div>
 
+<!-- PROFILE MODAL -->
+<div id="profile-modal">
+  <img id="modal-img">
+</div>
+
 <script>
-const API_URL = "https://fweb-backend.onrender.com/fchat";
-
-/* ---------------- HELPER ---------------- */
-async function callBackend(action, body = {}) {
-  const account = JSON.parse(localStorage.getItem("faccount")) || {};
-  if (!account.email) return { data: [] };
-
-  const payload = { action, email: account.email, ...body };
-
-  try {
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-    return await res.json();
-  } catch (e) {
-    console.error(e);
-    return { data: [] };
-  }
-}
 
 /* ---------------- LOADING LOGS ---------------- */
 async function runLoadingSequence() {
   const logs = [
     "Starting...",
-    "Calling API...",
-    "Processing...",
-    "Initializing...",
+    "Preparing modules...",
+    "Checking storage...",
+    "Loading chats...",
     "Finalizing..."
   ];
 
   const logBox = document.getElementById("loading-logs");
 
-  // Show logs one by one
   for (let i = 0; i < logs.length; i++) {
     logBox.textContent = logs[i];
     await new Promise(res => setTimeout(res, 600));
   }
 
-  // FIRE request but DON'T WAIT
-  callBackend("get_all_users", { limit: 10 }).then(response => {
-    if (response.data) {
-      localStorage.setItem("all_users", JSON.stringify(response.data));
-    }
-  });
-
-  // Immediately load real UI
+  // After logs → load main UI
   showMainUI();
+  loadSavedChats();
 }
 
 /* ---------------- SHOW MAIN UI ---------------- */
@@ -144,34 +172,63 @@ function showMainUI() {
   document.getElementById("main-ui").style.display = "block";
 }
 
-/* ---------------- LIVE REFRESH EVERY 5s ---------------- */
-async function autoRefreshUsers() {
-  const response = await callBackend("get_all_users");
-
-  if (response.data) {
-    localStorage.setItem("all_users", JSON.stringify(response.data));
-    displayUsers(response.data);
-  }
+/* ---------------- LOAD LOCAL CHATS ---------------- */
+function loadSavedChats() {
+  const chats = JSON.parse(localStorage.getItem("fchat_messages")) || [];
+  displayChats(chats);
 }
 
-function displayUsers(users) {
+/* ---------------- DISPLAY FCARDS ---------------- */
+function displayChats(chats) {
   const box = document.getElementById("users-list");
   box.innerHTML = "";
 
-  users.forEach(u => {
-    const div = document.createElement("div");
-    div.className = "user";
-    div.textContent = u.username + " (" + u.id + ")";
-    box.appendChild(div);
+  chats.forEach(user => {
+    const card = document.createElement("div");
+    card.className = "fcard";
+
+    let pfp = document.createElement("div");
+    pfp.className = "pfp";
+
+    if (user.profile_pic) {
+      let img = document.createElement("img");
+      img.src = user.profile_pic;
+      img.style.width = "100%";
+      img.style.height = "100%";
+      img.style.borderRadius = "50%";
+
+      pfp.appendChild(img);
+
+      pfp.onclick = () => {
+        document.getElementById("profile-modal").style.display = "flex";
+        document.getElementById("modal-img").src = user.profile_pic;
+      };
+    } else {
+      let initials = user.username?.[0]?.toUpperCase() || "U";
+      pfp.textContent = initials;
+    }
+
+    let info = document.createElement("div");
+    info.innerHTML = `
+      <div class="username">${user.username}</div>
+      <div class="userid">ID: ${user.id}</div>
+    `;
+
+    card.appendChild(pfp);
+    card.appendChild(info);
+    box.appendChild(card);
   });
 }
 
-/* ---------------- STARTUP ---------------- */
+/* ---------------- CLOSE MODAL ---------------- */
+document.getElementById("profile-modal").onclick = () => {
+  document.getElementById("profile-modal").style.display = "none";
+};
+
+/* ---------------- START ---------------- */
 runLoadingSequence();
 
-// Auto refresh every 5 seconds
-setInterval(autoRefreshUsers, 5000);
 </script>
 
 </body>
-</html>
+  </html>
