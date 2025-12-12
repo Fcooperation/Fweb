@@ -138,13 +138,12 @@ body {
   border-radius:50%;
 }
 
-/* ----------------- LOG BAR ----------------- */
+/* ----------------- UPDATE LOG LINE ----------------- */
 #update-log {
-  width:100%;
   text-align:center;
-  padding:4px 0;
+  padding:6px;
   font-size:13px;
-  color:#444;
+  color:#333;
 }
 
 /* ----------------- ADD BUTTON ----------------- */
@@ -207,11 +206,10 @@ body {
 
 <!-- MAIN UI -->
 <div id="main-ui">
-
   <div id="top-bar">FCHAT</div>
-
   <input type="text" id="search-bar" placeholder="Search users...">
 
+  <!-- update log line -->
   <div id="update-log"></div>
 
   <div id="users-list"></div>
@@ -226,14 +224,13 @@ body {
   </div>
 </div>
 
-<!-- MODAL -->
+<!-- PROFILE MODAL -->
 <div id="profile-modal">
   <img id="modal-img">
 </div>
 
 <script>
-
-/* ----------------- LOADING ----------------- */
+/* ----------------- LOADING SEQUENCE ----------------- */
 async function runLoadingSequence() {
   const logs = [
     "Starting...",
@@ -243,12 +240,18 @@ async function runLoadingSequence() {
     "Finalizing..."
   ];
   const logBox = document.getElementById("loading-logs");
-  for (let i=0;i<logs.length;i++){
+
+  for (let i = 0; i < logs.length; i++) {
     logBox.textContent = logs[i];
-    await new Promise(res=>setTimeout(res,600));
+    await new Promise(res => setTimeout(res, 600));
   }
+
+  // initial call: get_all_users (save only)
+  await callBackend("get_all_users");
+
   showMainUI();
   loadSavedChats();
+  startFchattersUpdating();
 }
 
 /* ----------------- SHOW MAIN UI ----------------- */
@@ -257,29 +260,23 @@ function showMainUI(){
   document.getElementById("main-ui").style.display="flex";
 }
 
-/* ----------------- LOAD LOCAL CHATS ----------------- */
+/* ----------------- LOAD SAVED CHATS ----------------- */
 function loadSavedChats(){
   const chats = JSON.parse(localStorage.getItem("fchat_messages")) || [];
   displayChats(chats);
 }
 
-/* ----------------- RENDER FCARDS ----------------- */
+/* ----------------- DISPLAY FCARDS ----------------- */
 function displayChats(chats){
   const box = document.getElementById("users-list");
+  box.innerHTML="";
 
-  chats.forEach(user => {
-    let card = document.getElementById("card-" + user.id);
+  chats.forEach(user=>{
+    const card = document.createElement("div");
+    card.className="fcard";
 
-    if (!card) {
-      card = document.createElement("div");
-      card.className = "fcard";
-      card.id = "card-" + user.id;
-    } else {
-      card.innerHTML = "";
-    }
-
-    let pfp = document.createElement("div");
-    pfp.className = "pfp";
+    let pfp=document.createElement("div");
+    pfp.className="pfp";
 
     if(user.profile_pic){
       let img=document.createElement("img");
@@ -290,35 +287,28 @@ function displayChats(chats){
       pfp.appendChild(img);
       pfp.onclick=()=>{
         document.getElementById("profile-modal").style.display="flex";
-        document.getElementById("modal-img").src=user.profile_pic;
+        document.getElementById("modal-img").src=user.profile_pic
       };
     } else {
-      pfp.textContent = user.username[0].toUpperCase();
+      let initials=user.username?.[0]?.toUpperCase()||"U";
+      pfp.textContent=initials;
     }
 
     let info=document.createElement("div");
-    info.innerHTML=`
-      <div class="username">${user.username}</div>
-      <div class="userid">ID: ${user.id}</div>
-    `;
+    info.innerHTML=
+      `<div class="username">${user.username}</div>
+       <div class="userid">ID: ${user.id}</div>`;
 
     card.appendChild(pfp);
     card.appendChild(info);
-
-    if (!document.getElementById("card-" + user.id)) {
-      box.appendChild(card);
-    }
-  });
-
-  // Remove deleted users
-  const currentCards = document.querySelectorAll(".fcard");
-  currentCards.forEach(c => {
-    const id = c.id.replace("card-","");
-    if (!chats.find(u => u.id == id)) {
-      c.remove();
-    }
+    box.appendChild(card);
   });
 }
+
+/* ----------------- CLOSE MODAL ----------------- */
+document.getElementById("profile-modal").onclick=()=>{
+  document.getElementById("profile-modal").style.display="none";
+};
 
 /* ----------------- SEARCH ----------------- */
 document.getElementById("search-bar").addEventListener("input", function(){
@@ -330,48 +320,55 @@ document.getElementById("search-bar").addEventListener("input", function(){
 
 /* ----------------- API CALL ----------------- */
 const API_URL = "https://fweb-backend.onrender.com/fchat";
+async function callBackend(action, body = {}){
+  const account = JSON.parse(localStorage.getItem("faccount")) || {};
+  if(!account.email) return {data:[]};
 
-async function callBackend(action, body={}) {
-  const acc = JSON.parse(localStorage.getItem("faccount")) || {};
-  if (!acc.email) return {data:[]};
+  const payload = { action, email: account.email, ...body };
 
-  const payload = { action, email: acc.email, ...body };
-
-  try {
-    const res = await fetch(API_URL, {
+  try{
+    const res = await fetch(API_URL,{
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify(payload)
     });
-    return await res.json();
-  } catch {
+    const data = await res.json();
+
+    if(action === "get_all_users" && data.data){
+      localStorage.setItem("all_users", JSON.stringify(data.data));
+    }
+    if(action === "get_fchatters" && data.data){
+      localStorage.setItem("fchat_messages", JSON.stringify(data.data));
+    }
+
+    return data;
+  }catch(e){
+    console.error(e);
     return {data:[]};
   }
 }
 
-/* ----------------- PERIODIC UPDATE ----------------- */
-async function updateFchatters() {
-  const log = document.getElementById("update-log");
-  log.textContent = "Updating...";
+/* ----------------- UPDATE FCHATTTERS EVERY 5 SEC ----------------- */
+function startFchattersUpdating(){
+  setInterval(async ()=>{
+    document.getElementById("update-log").textContent = "Updating...";
 
-  const data = await callBackend("get_all_users", {limit:50});
-  if (data?.data) {
-    localStorage.setItem("fchat_messages", JSON.stringify(data.data));
-    displayChats(data.data);
-  }
+    const data = await callBackend("get_fchatters");
 
-  log.textContent = "Updated";
+    const chats = JSON.parse(localStorage.getItem("fchat_messages")) || [];
+    const newChats = data.data || [];
+
+    if(JSON.stringify(chats) !== JSON.stringify(newChats)){
+      localStorage.setItem("fchat_messages", JSON.stringify(newChats));
+      displayChats(newChats);
+    }
+
+    document.getElementById("update-log").textContent = "Updated";
+  }, 5000);
 }
 
-/* ----------------- START EVERYTHING ----------------- */
+/* ----------------- START ----------------- */
 runLoadingSequence();
-setInterval(updateFchatters, 5000);
-
-/* ----------------- CLOSE MODAL ----------------- */
-document.getElementById("profile-modal").onclick=()=>{
-  document.getElementById("profile-modal").style.display="none";
-};
-
 </script>
 </body>
   </html>
