@@ -157,13 +157,28 @@
 
     // --- Verify account every 5 seconds ---
     async function verifyAccount() {
-      const result = await callFWebBackend("verify_account");
-      if (result.error || !result.exists) {
-        alert("Account not found. Please re-login.");
-        localStorage.removeItem("faccount");
-        window.location.href = "login.html";
-      }
-    }
+
+  // If offline → skip silently
+  if (!navigator.onLine) {
+    console.log("Offline: skipping account verification.");
+    return;
+  }
+
+  const result = await callFWebBackend("verify_account");
+
+  // If server unreachable → skip
+  if (!result || result.error) {
+    console.log("Server not reachable: skipping verification.");
+    return;
+  }
+
+  // If account truly doesn't exist → logout
+  if (!result.exists) {
+    alert("Account not found. Please re-login.");
+    localStorage.removeItem("faccount");
+    window.location.href = "login.html";
+  }
+}
     verifyAccount();
     setInterval(verifyAccount, 5000);
 
