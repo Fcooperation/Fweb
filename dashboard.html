@@ -183,14 +183,20 @@
     setInterval(verifyAccount, 5000);
 
     // --- Fchat button using localStorage ---
-    const fchatBtn = document.getElementById("fchat-btn");
-    fchatBtn.addEventListener("click", () => {
-      if (faccount.fchat && faccount.fchat.toLowerCase() === "yes") {
-        window.location.href = "fchat.html";
-      } else {
-        window.location.href = "welcometofchat.html";
-      }
-    });
+    document.addEventListener("DOMContentLoaded", () => {
+  const fchatBtn = document.getElementById("fchat-btn");
+  fchatBtn.addEventListener("click", () => {
+
+    const status = faccount.fchat ? faccount.fchat.toLowerCase() : "no";
+
+    if (status === "yes") {
+      window.location.href = "fchat.html";
+    } else {
+      window.location.href = "welcometofchat.html";
+    }
+
+  });
+});
 
     window.uploadImage = uploadImage;
     window.updateDetails = updateDetails;
