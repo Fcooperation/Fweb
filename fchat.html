@@ -1,363 +1,360 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fchat</title>
-<style>
-/* ----------------- GENERAL ----------------- */
-body {
-  font-family: Arial, sans-serif;
-  margin: 0;
-  padding: 0;
-  background:white;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
+<!DOCTYPE html>  
+<html lang="en">  
+<head>  
+<meta charset="UTF-8">  
+<meta name="viewport" content="width=device-width, initial-scale=1.0">  
+<title>Fchat</title>  
+<style>  
+/* ----------------- GENERAL ----------------- */  
+body {  
+  font-family: Arial, sans-serif;  
+  margin: 0;  
+  padding: 0;  
+  background:white;  
+  height: 100vh;  
+  display: flex;  
+  flex-direction: column;  
+}  
+  
+/* ----------------- LOADING SCREEN ----------------- */  
+#loading-screen {  
+  position: fixed;  
+  top:0; left:0;  
+  width:100%; height:100%;  
+  background:white;  
+  display:flex;  
+  flex-direction:column;  
+  justify-content:center;  
+  align-items:center;  
+  gap:20px;  
+  z-index:1000;  
+}  
+  
+#loading-title {  
+  font-size:38px;  
+  font-weight:bold;  
+  color:black;  
+}  
+  
+#loading-logs {  
+  font-size:16px;  
+  color:#444;  
+  text-align:center;  
+}  
+  
+/* ----------------- MAIN UI ----------------- */  
+#main-ui {  
+  display:none;  
+  flex:1;  
+  flex-direction: column;  
+  height: 100vh;  
+  overflow: hidden;  
+}  
+  
+/* ----------------- TOP BAR ----------------- */  
+#top-bar {  
+  padding: 12px 16px;  
+  font-size: 24px;  
+  font-weight: bold;  
+  color: black;  
+  border-bottom: 1px solid #ddd;  
+  display:flex;  
+  align-items:center;  
+  justify-content:space-between;  
+}  
+  
+#search-bar {  
+  margin: 8px 16px;  
+  padding:8px 12px;  
+  border-radius:20px;  
+  border:1px solid #ccc;  
+  font-size:14px;  
+  width: calc(100% - 32px);  
+}  
+  
+/* ----------------- USERS LIST ----------------- */  
+#users-list {  
+  flex:1;  
+  overflow-y:auto;  
+  margin: 0 16px;  
+  display:flex;  
+  flex-direction:column;  
+  gap:12px;  
+  padding-bottom: 70px; /* for bottom nav */  
+}  
+  
+/* ----------------- FCARD ----------------- */  
+.fcard {  
+  background:white;  
+  border-radius:10px;  
+  padding:12px;  
+  display:flex;  
+  align-items:center;  
+  gap:12px;  
+  box-shadow:0 2px 5px rgba(0,0,0,0.1);  
+  cursor:pointer;  
+}  
+  
+.pfp {  
+  width:50px;  
+  height:50px;  
+  border-radius:50%;  
+  object-fit:cover;  
+  background:black;  
+  color:white;  
+  display:flex;  
+  justify-content:center;  
+  align-items:center;  
+  font-weight:bold;  
+  font-size:18px;  
+}  
+  
+.username {  
+  font-size:16px;  
+  font-weight:bold;  
+}  
+  
+.userid {  
+  font-size:12px;  
+  color:#555;  
+}  
+  
+/* ----------------- MODAL ----------------- */  
+#profile-modal {  
+  position:fixed;  
+  top:0; left:0;  
+  width:100%; height:100%;  
+  background:rgba(0,0,0,0.85);  
+  display:none;  
+  justify-content:center;  
+  align-items:center;  
+  z-index:2000;  
+}  
+  
+#profile-modal img {  
+  width:75%;  
+  max-width:300px;  
+  border-radius:50%;  
+}  
+  
+/* ----------------- ADD BUTTON ----------------- */  
+#add-btn {  
+  position:fixed;  
+  right:16px;  
+  bottom:80px;  
+  width:55px;  
+  height:55px;  
+  border-radius:50%;  
+  background:#2196f3;  
+  color:white;  
+  border:none;  
+  font-size:28px;  
+  font-weight:bold;  
+  display:flex;  
+  justify-content:center;  
+  align-items:center;  
+  box-shadow:0 3px 6px rgba(0,0,0,0.2);  
+}  
+  
+/* ----------------- BOTTOM NAV ----------------- */  
+#bottom-nav {  
+  position:fixed;  
+  bottom:0;  
+  left:0;  
+  width:100%;  
+  height:60px;  
+  display:flex;  
+  border-top:1px solid #ddd;  
+  background:white;  
+}  
+  
+.nav-item {  
+  flex:1;  
+  text-align:center;  
+  font-size:14px;  
+  display:flex;  
+  flex-direction:column;  
+  justify-content:center;  
+  align-items:center;  
+  color:#555;  
+}  
+  
+.nav-item.active {  
+  color:#2196f3;  
+  font-weight:bold;  
+}  
+  
+/* ----------------- UPDATE LOG ----------------- */  
+#update-log {  
+  position:fixed;  
+  bottom:65px;  
+  left:0;  
+  width:100%;  
+  text-align:center;  
+  font-size:14px;  
+  color:#555;  
+}  
+</style>  
+</head>  
+<body>  
+  
+<!-- LOADING SCREEN -->  
+<div id="loading-screen">  
+  <div id="loading-title">FCHAT</div>  
+  <div id="loading-logs">Starting...</div>  
+</div>  
+  
+<!-- MAIN UI -->  
+<div id="main-ui">  
+  <div id="top-bar">FCHAT</div>  
+  <input type="text" id="search-bar" placeholder="Search users...">  
+  <div id="users-list"></div>  
+  <div id="update-log"></div>  
+  <button id="add-btn" onclick="location.href='add.html'">+</button>  
+  <div id="bottom-nav">  
+    <div class="nav-item active">FCHAT</div>  
+    <div class="nav-item" onclick="location.href='fvids.html'">FVIDS</div>  
+    <div class="nav-item" onclick="location.href='fchatupdates.html'">UPDATES</div>  
+    <div class="nav-item" onclick="location.href='fchatme.html'">ME</div>  
+  </div>  
+</div>  
+  
+<!-- PROFILE MODAL -->  
+<div id="profile-modal">  
+  <img id="modal-img">  
+</div>  
+  
+<script>  
+const API_URL = "https://fweb-backend.onrender.com/fchat";  
 
-/* ----------------- LOADING SCREEN ----------------- */
-#loading-screen {
-  position: fixed;
-  top:0; left:0;
-  width:100%; height:100%;
-  background:white;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  gap:20px;
-  z-index:1000;
-}
+// Load account from localStorage  
+let account = JSON.parse(localStorage.getItem("faccount")) || { email: "", password: "" };  
+const EMAIL = account.email;  
+const PASSWORD = account.password;  
 
-#loading-title {
-  font-size:38px;
-  font-weight:bold;
-  color:black;
-}
+// Load previous fchatters from localStorage immediately  
+const savedChats = JSON.parse(localStorage.getItem("fchat_messages")) || [];  
+if(savedChats.length > 0){  
+  displayChats(savedChats);  
+}  
 
-#loading-logs {
-  font-size:16px;
-  color:#444;
-  text-align:center;
-}
+/* ----------------- LOADING SEQUENCE ----------------- */  
+async function runLoadingSequence(){  
+  const logs = ["Starting...", "Preparing modules...", "Checking storage...", "Loading chats...", "Finalizing..."];  
+  const logBox = document.getElementById("loading-logs");  
+  for(let i=0;i<logs.length;i++){  
+    logBox.textContent = logs[i];  
+    await new Promise(r=>setTimeout(r,600));  
+  }  
+  showMainUI();  
 
-/* ----------------- MAIN UI ----------------- */
-#main-ui {
-  display:none;
-  flex:1;
-  flex-direction: column;
-  height: 100vh;
-  overflow: hidden;
-}
+  // Only fetch from server if online  
+  if(navigator.onLine){  
+    try{  
+      await callBackend("get_all_users");  
+      await fetchAndRenderFchatters();  
+    }catch(e){ console.warn("Offline or server error, using cached data."); }  
+  }  
+}  
 
-/* ----------------- TOP BAR ----------------- */
-#top-bar {
-  padding: 12px 16px;
-  font-size: 24px;
-  font-weight: bold;
-  color: black;
-  border-bottom: 1px solid #ddd;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-}
+/* ----------------- SHOW MAIN UI ----------------- */  
+function showMainUI(){  
+  document.getElementById("loading-screen").style.display="none";  
+  document.getElementById("main-ui").style.display="flex";  
+}  
 
-#search-bar {
-  margin: 8px 16px;
-  padding:8px 12px;
-  border-radius:20px;
-  border:1px solid #ccc;
-  font-size:14px;
-  width: calc(100% - 32px);
-}
+/* ----------------- CALL BACKEND ----------------- */  
+async function callBackend(action, body={}){  
+  const payload = { action, email: EMAIL, password: PASSWORD, ...body };  
+  try{  
+    const res = await fetch(API_URL,{  
+      method:"POST",  
+      headers:{"Content-Type":"application/json"},  
+      body: JSON.stringify(payload)  
+    });  
+    const data = await res.json();  
+    if(action==="get_all_users" && data.data){  
+      localStorage.setItem("all_users", JSON.stringify(data.data));  
+    }  
+    return data;  
+  }catch(e){  
+    console.warn("Backend call failed:", e);  
+    return {data:[]};  
+  }  
+}  
 
-/* ----------------- USERS LIST ----------------- */
-#users-list {
-  flex:1;
-  overflow-y:auto;
-  margin: 0 16px;
-  display:flex;
-  flex-direction:column;
-  gap:12px;
-  padding-bottom: 70px; /* for bottom nav */
-}
+/* ----------------- FETCH AND RENDER FCHATTERS ----------------- */  
+async function fetchAndRenderFchatters(){  
+  document.getElementById("update-log").textContent="Updating...";  
+  if(!navigator.onLine) return; // skip if offline  
+  try{  
+    const data = await callBackend("get_all_fchatters");  
+    if(data.data){  
+      localStorage.setItem("fchat_messages", JSON.stringify(data.data));  
+      displayChats(data.data);  
+    }  
+  }catch(e){  
+    console.warn("Fetch fchatters failed:", e);  
+  }  
+  document.getElementById("update-log").textContent="Updated";  
+}  
 
-/* ----------------- FCARD ----------------- */
-.fcard {
-  background:white;
-  border-radius:10px;
-  padding:12px;
-  display:flex;
-  align-items:center;
-  gap:12px;
-  box-shadow:0 2px 5px rgba(0,0,0,0.1);
-}
+/* ----------------- DISPLAY FCARDS ----------------- */  
+function displayChats(chats){  
+  const box = document.getElementById("users-list");  
+  box.innerHTML="";  
+  chats.forEach(user=>{  
+    const card = document.createElement("div");  
+    card.className="fcard";  
 
-.pfp {
-  width:50px;
-  height:50px;
-  border-radius:50%;
-  object-fit:cover;
-  background:black;
-  color:white;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  font-weight:bold;
-  font-size:18px;
-  cursor:pointer;
-}
+    const pfp = document.createElement("div");  
+    pfp.className="pfp";  
 
-.username {
-  font-size:16px;
-  font-weight:bold;
-}
+    if(user.profile_pic){  
+      const img = document.createElement("img");  
+      img.src=user.profile_pic;  
+      img.style.width="100%";  
+      img.style.height="100%";  
+      img.style.borderRadius="50%";  
+      pfp.appendChild(img);  
+      pfp.onclick=()=>{  
+        document.getElementById("profile-modal").style.display="flex";  
+        document.getElementById("modal-img").src=user.profile_pic;  
+      };  
+    }else{  
+      pfp.textContent=user.username?.[0]?.toUpperCase()||"U";  
+    }  
 
-.userid {
-  font-size:12px;
-  color:#555;
-}
+    const info=document.createElement("div");  
+    info.innerHTML=`<div class="username">${user.username}</div><div class="userid">ID: ${user.id}</div>`;  
+    card.appendChild(pfp);  
+    card.appendChild(info);  
 
-/* ----------------- MODAL ----------------- */
-#profile-modal {
-  position:fixed;
-  top:0; left:0;
-  width:100%; height:100%;
-  background:rgba(0,0,0,0.85);
-  display:none;
-  justify-content:center;
-  align-items:center;
-  z-index:2000;
-}
+    card.onclick = ()=>{  
+      localStorage.setItem("chatting_with", user.id);  
+      window.location.href="chat.html";  
+    };  
 
-#profile-modal img {
-  width:75%;
-  max-width:300px;
-  border-radius:50%;
-}
+    box.appendChild(card);  
+  });  
+}  
 
-/* ----------------- ADD BUTTON ----------------- */
-#add-btn {
-  position:fixed;
-  right:16px;
-  bottom:80px;
-  width:55px;
-  height:55px;
-  border-radius:50%;
-  background:#2196f3;
-  color:white;
-  border:none;
-  font-size:28px;
-  font-weight:bold;
-  cursor:pointer;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  box-shadow:0 3px 6px rgba(0,0,0,0.2);
-}
+/* ----------------- SEARCH ----------------- */  
+document.getElementById("search-bar").addEventListener("input", function(){  
+  const term=this.value.toLowerCase();  
+  const chats=JSON.parse(localStorage.getItem("fchat_messages"))||[];  
+  const filtered=chats.filter(u=>u.username.toLowerCase().includes(term));  
+  displayChats(filtered);  
+});  
 
-/* ----------------- BOTTOM NAV ----------------- */
-#bottom-nav {
-  position:fixed;
-  bottom:0;
-  left:0;
-  width:100%;
-  height:60px;
-  display:flex;
-  border-top:1px solid #ddd;
-  background:white;
-}
+/* ----------------- MODAL ----------------- */  
+document.getElementById("profile-modal").onclick=()=>{  
+  document.getElementById("profile-modal").style.display="none";  
+};  
 
-.nav-item {
-  flex:1;
-  text-align:center;
-  font-size:14px;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  color:#555;
-  cursor:pointer;
-}
-
-.nav-item.active {
-  color:#2196f3;
-  font-weight:bold;
-}
-
-/* ----------------- UPDATE LOG ----------------- */
-#update-log {
-  position:fixed;
-  bottom:65px;
-  left:0;
-  width:100%;
-  text-align:center;
-  font-size:14px;
-  color:#555;
-}
-</style>
-</head>
-<body>
-
-<!-- LOADING SCREEN -->
-<div id="loading-screen">
-  <div id="loading-title">FCHAT</div>
-  <div id="loading-logs">Starting...</div>
-</div>
-
-<!-- MAIN UI -->
-<div id="main-ui">
-  <div id="top-bar">FCHAT</div>
-  <input type="text" id="search-bar" placeholder="Search users...">
-  <div id="users-list"></div>
-
-  <!-- Update log -->
-  <div id="update-log"></div>
-
-  <!-- Add Button -->
-  <button id="add-btn" onclick="location.href='add.html'">+</button>
-
-  <!-- Bottom Nav -->
-  <div id="bottom-nav">
-    <div class="nav-item active">FCHAT</div>
-    <div class="nav-item" onclick="location.href='fvids.html'">FVIDS</div>
-    <div class="nav-item" onclick="location.href='fchatupdates.html'">UPDATES</div>
-    <div class="nav-item" onclick="location.href='fchatme.html'">ME</div>
-  </div>
-</div>
-
-<!-- PROFILE MODAL -->
-<div id="profile-modal">
-  <img id="modal-img">
-</div>
-
-<script>
-const API_URL = "https://fweb-backend.onrender.com/fchat";
-
-// Load account from localStorage
-let account = JSON.parse(localStorage.getItem("faccount")) || { email: "", password: "" };
-const EMAIL = account.email;
-const PASSWORD = account.password;
-
-/* ----------------- LOADING SEQUENCE ----------------- */
-async function runLoadingSequence() {
-  const logs = ["Starting...", "Preparing modules...", "Checking storage...", "Loading chats...", "Finalizing..."];
-  const logBox = document.getElementById("loading-logs");
-  for (let i=0;i<logs.length;i++){
-    logBox.textContent = logs[i];
-    await new Promise(res=>setTimeout(res,600));
-  }
-
-  // Preload all users (for add page)
-  await callBackend("get_all_users");
-
-  // Fetch and render fchatters
-  await fetchAndRenderFchatters();
-
-  showMainUI();
-}
-
-/* ----------------- SHOW MAIN UI ----------------- */
-function showMainUI(){
-  document.getElementById("loading-screen").style.display="none";
-  document.getElementById("main-ui").style.display="flex";
-}
-
-/* ----------------- CALL BACKEND ----------------- */
-async function callBackend(action, body={}) {
-  const payload = { action, email: EMAIL, password: PASSWORD, ...body };
-  try{
-    const res = await fetch(API_URL,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify(payload)
-    });
-    const data = await res.json();
-    if(action==="get_all_users" && data.data){
-      localStorage.setItem("all_users", JSON.stringify(data.data));
-    }
-    return data;
-  }catch(e){
-    console.error(e);
-    return {data:[]};
-  }
-}
-
-/* ----------------- FETCH AND RENDER FCHATTERS ----------------- */
-async function fetchAndRenderFchatters(){
-  document.getElementById("update-log").textContent="Updating...";
-  const data = await callBackend("get_all_fchatters");
-  if(data.data){
-    // Update localStorage before rendering
-    localStorage.setItem("fchat_messages", JSON.stringify(data.data));
-    // Render cards
-    displayChats(data.data);
-  }
-  document.getElementById("update-log").textContent="Updated";
-}
-
-/* ----------------- DISPLAY FCARDS ----------------- */
-function displayChats(chats){
-  const box = document.getElementById("users-list");
-  box.innerHTML="";
-  chats.forEach(user=>{
-    const card = document.createElement("div");
-    card.className="fcard";
-
-    const pfp = document.createElement("div");
-    pfp.className="pfp";
-
-    if(user.profile_pic){
-      const img = document.createElement("img");
-      img.src = user.profile_pic;
-      img.style.width="100%";
-      img.style.height="100%";
-      img.style.borderRadius="50%";
-      pfp.appendChild(img);
-      pfp.onclick=()=>{
-        document.getElementById("profile-modal").style.display="flex";
-        document.getElementById("modal-img").src=user.profile_pic;
-      };
-    }else{
-      pfp.textContent=user.username?.[0]?.toUpperCase()||"U";
-    }
-
-    const info=document.createElement("div");
-    info.innerHTML=`<div class="username">${user.username}</div>
-                    <div class="userid">ID: ${user.id}</div>`;
-    card.appendChild(pfp);
-    card.appendChild(info);
-
-    // --- CLICK TO CHAT ---
-    card.onclick = () => {
-      localStorage.setItem("chatting_with", user.id); // overwrite previous
-      window.location.href = "chat.html";
-    }
-
-    box.appendChild(card);
-  });
-}
-
-/* ----------------- SEARCH ----------------- */
-document.getElementById("search-bar").addEventListener("input", function(){
-  const term=this.value.toLowerCase();
-  const chats=JSON.parse(localStorage.getItem("fchat_messages"))||[];
-  const filtered=chats.filter(u=>u.username.toLowerCase().includes(term));
-  displayChats(filtered);
-});
-
-/* ----------------- MODAL ----------------- */
-document.getElementById("profile-modal").onclick=()=>{
-  document.getElementById("profile-modal").style.display="none";
-};
-
-/* ----------------- START ----------------- */
-runLoadingSequence();
-
-// Auto-refresh every 5 seconds
-setInterval(fetchAndRenderFchatters,5000);
-
-</script>
-</body>
-</html>
+/* ----------------- START ----------------- */  
+runLoadingSequence();  
+setInterval(fetchAndRenderFchatters,5000);  
+</script>  
+</body>  
+  </html>
