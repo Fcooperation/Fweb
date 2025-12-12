@@ -81,7 +81,7 @@ body {
   display:flex;
   flex-direction:column;
   gap:12px;
-  padding-bottom: 70px; /* for bottom nav */
+  padding-bottom: 70px;
 }
 
 /* ----------------- FCARD ----------------- */
@@ -136,6 +136,15 @@ body {
   width:75%;
   max-width:300px;
   border-radius:50%;
+}
+
+/* ----------------- LOG BAR ----------------- */
+#update-log {
+  width:100%;
+  text-align:center;
+  padding:4px 0;
+  font-size:13px;
+  color:#444;
 }
 
 /* ----------------- ADD BUTTON ----------------- */
@@ -198,31 +207,33 @@ body {
 
 <!-- MAIN UI -->
 <div id="main-ui">
-  <div id="top-bar">
-    FCHAT
-  </div>
+
+  <div id="top-bar">FCHAT</div>
+
   <input type="text" id="search-bar" placeholder="Search users...">
+
+  <div id="update-log"></div>
+
   <div id="users-list"></div>
 
-  <!-- Add Button -->
   <button id="add-btn" onclick="location.href='add.html'">+</button>
 
-  <!-- Bottom Nav -->
   <div id="bottom-nav">
-    <div class="nav-item active" onclick="">FCHAT</div>
+    <div class="nav-item active">FCHAT</div>
     <div class="nav-item" onclick="location.href='fvids.html'">FVIDS</div>
     <div class="nav-item" onclick="location.href='fchatupdates.html'">UPDATES</div>
     <div class="nav-item" onclick="location.href='fchatme.html'">ME</div>
   </div>
 </div>
 
-<!-- PROFILE MODAL -->
+<!-- MODAL -->
 <div id="profile-modal">
   <img id="modal-img">
 </div>
 
 <script>
-/* ----------------- LOADING SEQUENCE ----------------- */
+
+/* ----------------- LOADING ----------------- */
 async function runLoadingSequence() {
   const logs = [
     "Starting...",
@@ -246,22 +257,29 @@ function showMainUI(){
   document.getElementById("main-ui").style.display="flex";
 }
 
-/* ----------------- LOAD SAVED CHATS ----------------- */
+/* ----------------- LOAD LOCAL CHATS ----------------- */
 function loadSavedChats(){
   const chats = JSON.parse(localStorage.getItem("fchat_messages")) || [];
   displayChats(chats);
 }
 
-/* ----------------- DISPLAY FCARDS ----------------- */
+/* ----------------- RENDER FCARDS ----------------- */
 function displayChats(chats){
   const box = document.getElementById("users-list");
-  box.innerHTML="";
-  chats.forEach(user=>{
-    const card = document.createElement("div");
-    card.className="fcard";
 
-    let pfp=document.createElement("div");
-    pfp.className="pfp";
+  chats.forEach(user => {
+    let card = document.getElementById("card-" + user.id);
+
+    if (!card) {
+      card = document.createElement("div");
+      card.className = "fcard";
+      card.id = "card-" + user.id;
+    } else {
+      card.innerHTML = "";
+    }
+
+    let pfp = document.createElement("div");
+    pfp.className = "pfp";
 
     if(user.profile_pic){
       let img=document.createElement("img");
@@ -270,26 +288,37 @@ function displayChats(chats){
       img.style.height="100%";
       img.style.borderRadius="50%";
       pfp.appendChild(img);
-      pfp.onclick=()=>{document.getElementById("profile-modal").style.display="flex";
-      document.getElementById("modal-img").src=user.profile_pic};
+      pfp.onclick=()=>{
+        document.getElementById("profile-modal").style.display="flex";
+        document.getElementById("modal-img").src=user.profile_pic;
+      };
     } else {
-      let initials=user.username?.[0]?.toUpperCase()||"U";
-      pfp.textContent=initials;
+      pfp.textContent = user.username[0].toUpperCase();
     }
 
     let info=document.createElement("div");
-    info.innerHTML=`<div class="username">${user.username}</div>
-                    <div class="userid">ID: ${user.id}</div>`;
+    info.innerHTML=`
+      <div class="username">${user.username}</div>
+      <div class="userid">ID: ${user.id}</div>
+    `;
+
     card.appendChild(pfp);
     card.appendChild(info);
-    box.appendChild(card);
+
+    if (!document.getElementById("card-" + user.id)) {
+      box.appendChild(card);
+    }
+  });
+
+  // Remove deleted users
+  const currentCards = document.querySelectorAll(".fcard");
+  currentCards.forEach(c => {
+    const id = c.id.replace("card-","");
+    if (!chats.find(u => u.id == id)) {
+      c.remove();
+    }
   });
 }
-
-/* ----------------- CLOSE MODAL ----------------- */
-document.getElementById("profile-modal").onclick=()=>{
-  document.getElementById("profile-modal").style.display="none";
-};
 
 /* ----------------- SEARCH ----------------- */
 document.getElementById("search-bar").addEventListener("input", function(){
@@ -299,35 +328,50 @@ document.getElementById("search-bar").addEventListener("input", function(){
   displayChats(filtered);
 });
 
-/* ----------------- START ----------------- */
-runLoadingSequence();
-
-/* ----------------- GET ALL USERS CALL (unchanged) ----------------- */
+/* ----------------- API CALL ----------------- */
 const API_URL = "https://fweb-backend.onrender.com/fchat";
-async function callBackend(action, body = {}){
-  const account = JSON.parse(localStorage.getItem("faccount"))||{};
-  if(!account.email) return {data:[]};
-  const payload={action,email:account.email,...body};
-  try{
-    const res=await fetch(API_URL,{
+
+async function callBackend(action, body={}) {
+  const acc = JSON.parse(localStorage.getItem("faccount")) || {};
+  if (!acc.email) return {data:[]};
+
+  const payload = { action, email: acc.email, ...body };
+
+  try {
+    const res = await fetch(API_URL, {
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify(payload)
     });
-    const data=await res.json();
-    if(action==="get_all_users" && data.data){
-      localStorage.setItem("all_users",JSON.stringify(data.data));
-    }
-    return data;
-  }catch(e){
-    console.error(e);
+    return await res.json();
+  } catch {
     return {data:[]};
   }
 }
 
-// Optional: call get_all_users every 5s in background for add page
-setInterval(()=>callBackend("get_all_users",{limit:10}),5000);
+/* ----------------- PERIODIC UPDATE ----------------- */
+async function updateFchatters() {
+  const log = document.getElementById("update-log");
+  log.textContent = "Updating...";
+
+  const data = await callBackend("get_all_users", {limit:50});
+  if (data?.data) {
+    localStorage.setItem("fchat_messages", JSON.stringify(data.data));
+    displayChats(data.data);
+  }
+
+  log.textContent = "Updated";
+}
+
+/* ----------------- START EVERYTHING ----------------- */
+runLoadingSequence();
+setInterval(updateFchatters, 5000);
+
+/* ----------------- CLOSE MODAL ----------------- */
+document.getElementById("profile-modal").onclick=()=>{
+  document.getElementById("profile-modal").style.display="none";
+};
 
 </script>
 </body>
-      </html>
+  </html>
