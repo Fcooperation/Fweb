@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -25,46 +26,26 @@
 <body>
   <div class="profile-section">
     <img id="profile-pic" src="default.png" alt="Profile Picture">
-  </div>  <div class="upload-box">
+  </div>
+
+  <div class="upload-box">
     <input type="file" id="file-input" accept="image/*">
     <button onclick="uploadImage()">Upload</button>
-  </div>  <h2 id="username">Loading...</h2>  <div class="details-section">
+  </div>
+
+  <h2 id="username">Loading...</h2>
+
+  <div class="details-section">
     <h3>Update Account Details</h3>
     <input type="text" id="new-name" placeholder="New Username">
     <input type="password" id="new-pass" placeholder="New Password">
     <button onclick="updateDetails()">Save Changes</button>
-  </div>  <div class="details-section" style="margin-top: 15px;">
+  </div>
+
+  <div class="details-section" style="margin-top: 15px;">
     <button id="logout-btn" style="background:#dc3545;">Logout</button>
     <button id="delete-btn" style="background:#6c757d; margin-top:10px;">Delete Account</button>
-  </div>  <script>
-    // Add navigation buttons
-    const lastSection = document.querySelectorAll('.details-section');
-    if (lastSection.length) {
-      const container = document.createElement('div');
-      container.className = 'details-section';
-      container.style.marginTop = '15px';
-      const buttons = [
-        { text: 'Fminers', href: 'fminers.html', color: '#28a745' },
-        { text: 'Fpublisher', href: 'fpublisher.html', color: '#17a2b8' },
-        { text: 'Fadvertisers', href: 'fadvertisers.html', color: '#ffc107' }
-      ];
-      buttons.forEach(btn => {
-        const b = document.createElement('button');
-        b.innerText = btn.text;
-        b.style.background = btn.color;
-        b.style.border = 'none';
-        b.style.color = '#fff';
-        b.style.padding = '10px';
-        b.style.width = '100%';
-        b.style.borderRadius = '6px';
-        b.style.cursor = 'pointer';
-        b.style.marginBottom = '10px';
-        b.onclick = () => window.location.href = btn.href;
-        container.appendChild(b);
-      });
-      lastSection[lastSection.length - 1].after(container);
-    }
-  </script><button id="fchat-btn">Go to Fchat</button>
+  </div>
 
   <script>
     const faccount = JSON.parse(localStorage.getItem("faccount"));
@@ -91,7 +72,7 @@
       }
     }
 
-    // --- Compress image before sending ---
+    // --- Compress image ---
     async function compressImage(file, maxWidth = 800, quality = 0.6) {
       return new Promise((resolve, reject) => {
         const img = new Image();
@@ -99,7 +80,6 @@
         reader.onload = e => img.src = e.target.result;
         reader.onerror = reject;
         reader.readAsDataURL(file);
-
         img.onload = () => {
           const canvas = document.createElement('canvas');
           const scale = Math.min(1, maxWidth / img.width);
@@ -122,9 +102,8 @@
       const fileInput = document.getElementById("file-input");
       if (!fileInput.files.length) return alert("Select an image first.");
       const file = fileInput.files[0];
-
       try {
-        const base64 = await compressImage(file, 800, 0.6); // resize & compress
+        const base64 = await compressImage(file, 800, 0.6);
         const result = await callFWebBackend("update_pic", { profile_pic: base64 });
         if (result.error) return alert("Error: " + result.error);
         if (result.success) {
@@ -176,33 +155,22 @@
       }
     });
 
-    // --- Check account status every 5 seconds ---
-    async function checkAccountStatus() {
-      const result = await callFWebBackend("check_status");
-      if (result.error) { console.warn(result.error); return; }
-      if (result.status === "banned") { window.location.replace("fbanned.html"); return; }
-      if (result.suspended_until && new Date() < new Date(result.suspended_until)) {
-        window.location.replace("fsuspend.html"); return;
+    // --- Verify account every 5 seconds ---
+    async function verifyAccount() {
+      const result = await callFWebBackend("verify_account");
+      if (result.error || !result.exists) {
+        alert("Account not found. Please re-login.");
+        localStorage.removeItem("faccount");
+        window.location.href = "login.html";
       }
     }
+    verifyAccount();
+    setInterval(verifyAccount, 5000);
 
-    checkAccountStatus();
-    setInterval(checkAccountStatus, 5000);
-
+    // --- Fchat button using localStorage ---
     const fchatBtn = document.getElementById("fchat-btn");
-    fchatBtn.addEventListener("click", async () => {
-      fchatBtn.innerText = "Checking access...";
-      fchatBtn.disabled = true;
-      const result = await callFWebBackend("check_fchat_access");
-      if (result.error) {
-        console.error(result.error);
-        alert(result.message || "Unable to check Fchat access.");
-        fchatBtn.disabled = false;
-        fchatBtn.innerText = "Go to Fchat";
-        return;
-      }
-      if (result.fchat && result.fchat.toLowerCase() === "yes") {
-        localStorage.setItem("fweb_user", JSON.stringify(result));
+    fchatBtn.addEventListener("click", () => {
+      if (faccount.fchat && faccount.fchat.toLowerCase() === "yes") {
         window.location.href = "fchat.html";
       } else {
         window.location.href = "welcometofchat.html";
@@ -211,5 +179,38 @@
 
     window.uploadImage = uploadImage;
     window.updateDetails = updateDetails;
-  </script></body>
+  </script>
+
+  <script>
+    // Add navigation buttons dynamically
+    const lastSection = document.querySelectorAll('.details-section');
+    if (lastSection.length) {
+      const container = document.createElement('div');
+      container.className = 'details-section';
+      container.style.marginTop = '15px';
+      const buttons = [
+        { text: 'Fminers', href: 'fminers.html', color: '#28a745' },
+        { text: 'Fpublisher', href: 'fpublisher.html', color: '#17a2b8' },
+        { text: 'Fadvertisers', href: 'fadvertisers.html', color: '#ffc107' }
+      ];
+      buttons.forEach(btn => {
+        const b = document.createElement('button');
+        b.innerText = btn.text;
+        b.style.background = btn.color;
+        b.style.border = 'none';
+        b.style.color = '#fff';
+        b.style.padding = '10px';
+        b.style.width = '100%';
+        b.style.borderRadius = '6px';
+        b.style.cursor = 'pointer';
+        b.style.marginBottom = '10px';
+        b.onclick = () => window.location.href = btn.href;
+        container.appendChild(b);
+      });
+      lastSection[lastSection.length - 1].after(container);
+    }
+  </script>
+
+  <button id="fchat-btn">Go to Fchat</button>
+</body>
 </html>
