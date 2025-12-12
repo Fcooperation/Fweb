@@ -234,8 +234,11 @@ body {
 
 <script>
 const API_URL = "https://fweb-backend.onrender.com/fchat";
-const EMAIL = "ok@gmail.com"; // or get from localStorage if you have saved account
-const PASSWORD = "ok";
+
+// Load account from localStorage
+let account = JSON.parse(localStorage.getItem("faccount")) || { email: "", password: "" };
+const EMAIL = account.email;
+const PASSWORD = account.password;
 
 /* ----------------- LOADING SEQUENCE ----------------- */
 async function runLoadingSequence() {
@@ -246,10 +249,10 @@ async function runLoadingSequence() {
     await new Promise(res=>setTimeout(res,600));
   }
 
-  // Call get_all_users for add page but don't show
+  // Preload all users (for add page)
   await callBackend("get_all_users");
 
-  // Call get_all_fchatters immediately to render cards
+  // Fetch and render fchatters
   await fetchAndRenderFchatters();
 
   showMainUI();
@@ -286,7 +289,7 @@ async function fetchAndRenderFchatters(){
   document.getElementById("update-log").textContent="Updating...";
   const data = await callBackend("get_all_fchatters");
   if(data.data){
-    // Save to localStorage
+    // Update localStorage before rendering
     localStorage.setItem("fchat_messages", JSON.stringify(data.data));
     // Render cards
     displayChats(data.data);
@@ -325,6 +328,13 @@ function displayChats(chats){
                     <div class="userid">ID: ${user.id}</div>`;
     card.appendChild(pfp);
     card.appendChild(info);
+
+    // --- CLICK TO CHAT ---
+    card.onclick = () => {
+      localStorage.setItem("chatting_with", user.id); // overwrite previous
+      window.location.href = "chat.html";
+    }
+
     box.appendChild(card);
   });
 }
@@ -345,7 +355,7 @@ document.getElementById("profile-modal").onclick=()=>{
 /* ----------------- START ----------------- */
 runLoadingSequence();
 
-// Update every 5 seconds
+// Auto-refresh every 5 seconds
 setInterval(fetchAndRenderFchatters,5000);
 
 </script>
