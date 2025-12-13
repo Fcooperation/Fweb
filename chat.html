@@ -68,6 +68,7 @@ body {
   font-size: 14px;
   line-height: 1.4;
   position: relative;
+  word-break: break-word;
 }
 
 .sent {
@@ -86,6 +87,27 @@ body {
 
 .pending {
   opacity: 0.6;
+}
+
+.linked {
+  border-left: 3px solid #555;
+  padding-left: 8px;
+  margin-bottom: 4px;
+  cursor: pointer;
+  background: #e0e0e0;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.linked span.username {
+  font-weight: bold;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.highlight {
+  background: yellow;
+  transition: background 1s ease;
 }
 
 /* ---------- INPUT BAR ---------- */
@@ -143,7 +165,7 @@ const API_URL = "https://fweb-backend.onrender.com/fchat";
 const chatWith = JSON.parse(localStorage.getItem("chatting_with")) || null;
 const account = JSON.parse(localStorage.getItem("faccount")) || {email:"", password:""};
 
-if (!chatWith || !chatWith.id) {
+if(!chatWith || !chatWith.id){
   alert("No chat selected");
   window.location.href = "fchat.html";
 }
@@ -168,6 +190,7 @@ header.onclick = () => {
 /* ---------- MESSAGE STORAGE ---------- */
 const STORAGE_KEY = "chat_messages_" + chatWith.id;
 let messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+let replyingTo = null; // store message id being replied
 
 /* ---------- RENDER MESSAGES ---------- */
 function renderMessages() {
@@ -176,7 +199,30 @@ function renderMessages() {
   messages.forEach(msg => {
     const div = document.createElement("div");
     div.className = "message " + msg.type + (msg.status==="pending"?" pending":"");
-    div.textContent = msg.text;
+    
+    if(msg.linked && msg.linked_message_id){
+      const linkedMsg = messages.find(m=>m.id===msg.linked_message_id);
+      if(linkedMsg){
+        const linkedDiv = document.createElement("div");
+        linkedDiv.className = "linked";
+        linkedDiv.dataset.id = linkedMsg.id;
+        const userLabel = linkedMsg.type==="sent" ? "You" : chatWith.username;
+        linkedDiv.innerHTML = `<span class="username">${userLabel}</span>${linkedMsg.text}`;
+        linkedDiv.onclick = ()=>{
+          const target = document.querySelector(`.message[data-id='${linkedMsg.id}']`);
+          if(target){
+            target.classList.add("highlight");
+            setTimeout(()=>target.classList.remove("highlight"),1000);
+            target.scrollIntoView({behavior:"smooth", block:"center"});
+          }
+        };
+        div.appendChild(linkedDiv);
+      }
+    }
+    
+    const textNode = document.createTextNode(msg.text);
+    div.appendChild(textNode);
+    div.dataset.id = msg.id;
     box.appendChild(div);
   });
   scrollToBottom();
@@ -189,53 +235,56 @@ function scrollToBottom() {
 }
 
 /* ---------- SEND TO BACKEND ---------- */
-async function sendToBackend(msgObj) {
-  try {
+async function sendToBackend(msgObj){
+  try{
     const payload = {
       action: "send_messages",
       email: account.email,
       id: msgObj.id,
       sender_id: account.email,
       receiver_id: chatWith.id,
-      linked: false,
-      linked_message_id: null,
+      linked: msgObj.linked || false,
+      linked_message_id: msgObj.linked_message_id || null,
       sent_at: new Date().toISOString(),
       text: msgObj.text
     };
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
+    const res = await fetch(API_URL,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
       body: JSON.stringify(payload)
     });
     const data = await res.json();
     if(data.success){
-      msgObj.status = "sent";
+      msgObj.status="sent";
       localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
       renderMessages();
     }
-  } catch(e) {
+  }catch(e){
     console.warn("Failed to send, message pending");
-    msgObj.status = "pending";
+    msgObj.status="pending";
     localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
     renderMessages();
   }
 }
 
 /* ---------- SEND MESSAGE ---------- */
-function sendMessage() {
+function sendMessage(){
   const input = document.getElementById("message-input");
   const text = input.value.trim();
   if(!text) return;
 
   const msgObj = {
-    id: Date.now(), // unique message id
+    id: Date.now(),
     type: "sent",
     text,
-    status: navigator.onLine ? "sending" : "pending"
+    status: navigator.onLine ? "sending" : "pending",
+    linked: replyingTo ? true : false,
+    linked_message_id: replyingTo || null
   };
   messages.push(msgObj);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-  input.value = "";
+  input.value="";
+  replyingTo=null;
   renderMessages();
 
   if(navigator.onLine){
@@ -243,12 +292,17 @@ function sendMessage() {
   }
 }
 
+/* ---------- REPLY LINKING ---------- */
+function linkReply(id){
+  replyingTo = id;
+}
+
 /* ---------- RETRY PENDING MESSAGES ---------- */
-async function retryPending() {
+async function retryPending(){
   if(!navigator.onLine) return;
   for(const msg of messages){
-    if(msg.status === "pending" || msg.status==="sending"){
-      msg.status = "sending";
+    if(msg.status==="pending" || msg.status==="sending"){
+      msg.status="sending";
       await sendToBackend(msg);
     }
   }
@@ -259,9 +313,9 @@ window.addEventListener("online", retryPending);
 /* ---------- INIT ---------- */
 renderMessages();
 
-document.getElementById("send-btn").onclick = sendMessage;
-document.getElementById("message-input").addEventListener("keydown", e => {
-  if(e.key === "Enter") sendMessage();
+document.getElementById("send-btn").onclick=sendMessage;
+document.getElementById("message-input").addEventListener("keydown",e=>{
+  if(e.key==="Enter") sendMessage();
 });
 </script>
 
