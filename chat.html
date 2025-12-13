@@ -256,16 +256,18 @@ function addSwipeListeners(msgDiv, msgId){
   msgDiv.addEventListener("touchmove", e=>{
     if(!isSwiping) return;
     const touch = e.touches[0];
-    const diffX = startX - touch.clientX;
-    const diffY = startY - touch.clientY;
+    const diffX = touch.clientX - startX;
+    const diffY = touch.clientY - startY;
 
-    // horizontal swipe left with threshold
-    if(Math.abs(diffX) > 30 && Math.abs(diffX) > Math.abs(diffY) && diffX > 0){
-      linkReply(msgId);
-      msgDiv.style.backgroundColor = "#d0f0ff";
-      isSwiping = false;
+    // detect small horizontal swipe (even 10px)
+    if(Math.abs(diffX) > 10 && Math.abs(diffX) > Math.abs(diffY)){
+      if(diffX < 0){ // swipe left
+        linkReply(msgId);
+        msgDiv.style.backgroundColor = "#d0f0ff";
+        isSwiping = false;
+      }
     }
-  });
+  }, {passive: false});
 
   msgDiv.addEventListener("touchend", ()=>{
     isSwiping = false;
@@ -411,7 +413,6 @@ window.addEventListener("online", retryPending);
 
 /* ---------- INIT ---------- */
 renderMessages();
-
 document.getElementById("send-btn").onclick = sendMessage;
 document.getElementById("message-input").addEventListener("keydown", e=>{
   if(e.key==="Enter") sendMessage();
@@ -419,4 +420,4 @@ document.getElementById("message-input").addEventListener("keydown", e=>{
 </script>
 
 </body>
-  </html>
+</html>
