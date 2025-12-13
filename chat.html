@@ -63,12 +63,16 @@ body {
 /* ---------- MESSAGE BUBBLES ---------- */
 .message {
   max-width: 75%;
-  padding: 10px 14px;
+  padding: 14px 18px; /* taller box */
   border-radius: 14px;
   font-size: 14px;
-  line-height: 1.4;
+  line-height: 1.5;
   position: relative;
   word-break: break-word;
+  min-height: 50px; /* makes swipe easier */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .sent {
@@ -87,6 +91,13 @@ body {
 
 .pending {
   opacity: 0.6;
+}
+
+.message-status {
+  font-size: 11px;
+  color: #888;
+  margin-top: 4px;
+  align-self: flex-end;
 }
 
 .linked {
@@ -190,7 +201,7 @@ header.onclick = () => {
 /* ---------- MESSAGE STORAGE ---------- */
 const STORAGE_KEY = "chat_messages_" + chatWith.id;
 let messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-let replyingTo = null; // store message id being replied
+let replyingTo = null;
 
 /* ---------- ADD SWIPE FUNCTIONALITY ---------- */
 function addSwipeListeners(msgDiv, msgId){
@@ -206,9 +217,9 @@ function addSwipeListeners(msgDiv, msgId){
     if(!isSwiping) return;
     const currentX = e.touches[0].clientX;
     const diff = startX - currentX;
-    if(diff > 50){ // swipe left
+    if(diff > 30){ // easier swipe left
       linkReply(msgId);
-      msgDiv.style.backgroundColor = "#d0f0ff"; // visual feedback
+      msgDiv.style.backgroundColor = "#d0f0ff";
       isSwiping = false;
     }
   });
@@ -226,7 +237,7 @@ function renderMessages() {
   messages.forEach(msg => {
     const div = document.createElement("div");
     div.className = "message " + msg.type + (msg.status==="pending"?" pending":"");
-
+    
     // linked message display
     if(msg.linked && msg.linked_message_id){
       const linkedMsg = messages.find(m=>m.id===msg.linked_message_id);
@@ -250,6 +261,13 @@ function renderMessages() {
 
     const textNode = document.createTextNode(msg.text);
     div.appendChild(textNode);
+
+    // status below message
+    const statusDiv = document.createElement("div");
+    statusDiv.className = "message-status";
+    statusDiv.textContent = msg.status==="pending" ? "Pending" : "Sent";
+    div.appendChild(statusDiv);
+
     div.dataset.id = msg.id;
 
     // add swipe to reply only for received messages
@@ -329,6 +347,7 @@ function sendMessage(){
 /* ---------- REPLY LINKING ---------- */
 function linkReply(id){
   replyingTo = id;
+  alert("Replying to message ID: " + id); // optional visual feedback
 }
 
 /* ---------- RETRY PENDING MESSAGES ---------- */
@@ -347,11 +366,11 @@ window.addEventListener("online", retryPending);
 /* ---------- INIT ---------- */
 renderMessages();
 
-document.getElementById("send-btn").onclick=sendMessage;
-document.getElementById("message-input").addEventListener("keydown",e=>{
+document.getElementById("send-btn").onclick = sendMessage;
+document.getElementById("message-input").addEventListener("keydown", e=>{
   if(e.key==="Enter") sendMessage();
 });
 </script>
 
 </body>
-</html>
+  </html>
