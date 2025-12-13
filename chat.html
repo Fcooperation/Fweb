@@ -121,6 +121,29 @@ body {
   transition: background 1s ease;
 }
 
+/* ---------- REPLY BANNER ---------- */
+#replying-banner {
+  background: #e0f0ff;
+  padding: 6px 12px;
+  font-size: 13px;
+  display: none;
+  align-items: center;
+  gap: 10px;
+}
+
+#replying-banner span {
+  font-weight: bold;
+}
+
+#replying-banner button {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: #333;
+}
+
 /* ---------- INPUT BAR ---------- */
 #chat-input {
   display: flex;
@@ -158,6 +181,12 @@ body {
     <div class="username" id="chat-username">Loading...</div>
     <div class="status" id="chat-status">Status...</div>
   </div>
+</div>
+
+<!-- ---------- REPLY BANNER ---------- -->
+<div id="replying-banner">
+  Replying to <span id="replying-text"></span>
+  <button id="cancel-reply">✖</button>
 </div>
 
 <!-- ---------- MESSAGES ---------- -->
@@ -203,7 +232,16 @@ const STORAGE_KEY = "chat_messages_" + chatWith.id;
 let messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
 let replyingTo = null;
 
-/* ---------- ADD SWIPE ONLY TO RECEIVED ---------- */
+/* ---------- REPLY BANNER ELEMENTS ---------- */
+const replyBanner = document.getElementById("replying-banner");
+const replyText = document.getElementById("replying-text");
+const cancelReplyBtn = document.getElementById("cancel-reply");
+cancelReplyBtn.onclick = () => {
+  replyingTo = null;
+  replyBanner.style.display = "none";
+};
+
+/* ---------- ADD SWIPE FUNCTIONALITY ---------- */
 function addSwipeListeners(msgDiv, msgId){
   let startX = 0, startY = 0;
   let isSwiping = false;
@@ -221,8 +259,8 @@ function addSwipeListeners(msgDiv, msgId){
     const diffX = startX - touch.clientX;
     const diffY = startY - touch.clientY;
 
-    // swipe left: horizontal > vertical & > 30px
-    if(diffX > 30 && Math.abs(diffX) > Math.abs(diffY)){
+    // horizontal swipe left with threshold
+    if(Math.abs(diffX) > 30 && Math.abs(diffX) > Math.abs(diffY) && diffX > 0){
       linkReply(msgId);
       msgDiv.style.backgroundColor = "#d0f0ff";
       isSwiping = false;
@@ -243,7 +281,7 @@ function renderMessages() {
     const div = document.createElement("div");
     div.className = "message " + msg.type + (msg.status==="pending"?" pending":"");
 
-    // linked message
+    // linked message display
     if(msg.linked && msg.linked_message_id){
       const linkedMsg = messages.find(m=>m.id===msg.linked_message_id);
       if(linkedMsg){
@@ -267,7 +305,7 @@ function renderMessages() {
     const textNode = document.createTextNode(msg.text);
     div.appendChild(textNode);
 
-    // status below
+    // status below message
     const statusDiv = document.createElement("div");
     statusDiv.className = "message-status";
     statusDiv.textContent = msg.status==="pending" ? "Pending" : "Sent";
@@ -275,8 +313,8 @@ function renderMessages() {
 
     div.dataset.id = msg.id;
 
-    // add swipe only for received
-    if(msg.type === "received"){
+    // add swipe to reply only for received messages
+    if(msg.type !== "sent"){
       addSwipeListeners(div, msg.id);
     }
 
@@ -342,6 +380,7 @@ function sendMessage(){
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   input.value="";
   replyingTo=null;
+  replyBanner.style.display = "none";
   renderMessages();
 
   if(navigator.onLine){
@@ -352,7 +391,9 @@ function sendMessage(){
 /* ---------- REPLY LINKING ---------- */
 function linkReply(id){
   replyingTo = id;
-  alert("Replying to message ID: " + id); // optional visual feedback
+  const targetMsg = messages.find(m => m.id === id);
+  replyText.textContent = targetMsg ? targetMsg.text : "Message";
+  replyBanner.style.display = "flex";
 }
 
 /* ---------- RETRY PENDING MESSAGES ---------- */
