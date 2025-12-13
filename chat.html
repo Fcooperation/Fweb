@@ -24,6 +24,7 @@ body {
   gap: 12px;
   padding: 12px 16px;
   border-bottom: 1px solid #ddd;
+  cursor: pointer;
 }
 
 #chat-header img {
@@ -148,9 +149,21 @@ if (!chatWith || !chatWith.id) {
 }
 
 /* ---------- HEADER DATA ---------- */
+const header = document.getElementById("chat-header");
 document.getElementById("chat-username").textContent = chatWith.username || "Unknown";
 document.getElementById("chat-status").textContent = chatWith.status || "";
 document.getElementById("chat-pic").src = chatWith.profile_pic || "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCI+PC9zdmc+";
+
+/* ---------- HEADER CLICK TO DASHBOARD ---------- */
+header.onclick = () => {
+  localStorage.setItem("chat_viewing", JSON.stringify({
+    id: chatWith.id,
+    username: chatWith.username || "",
+    profile_pic: chatWith.profile_pic || "",
+    status: chatWith.status || ""
+  }));
+  window.location.href = "chatdashboard.html";
+};
 
 /* ---------- MESSAGE STORAGE ---------- */
 const STORAGE_KEY = "chat_messages_" + chatWith.id;
@@ -183,6 +196,7 @@ async function sendToBackend(msgObj) {
       email: account.email,
       id: msgObj.id,
       sender_id: account.email,
+      receiver_id: chatWith.id,
       linked: false,
       linked_message_id: null,
       sent_at: new Date().toISOString(),
@@ -252,4 +266,4 @@ document.getElementById("message-input").addEventListener("keydown", e => {
 </script>
 
 </body>
-      </html>
+  </html>
