@@ -299,22 +299,21 @@ function displayChats(chats){
     info.innerHTML = `<div class="username">${user.username}</div><div class="userid">ID: ${user.id}</div>`;
     card.appendChild(pfp);
     card.appendChild(info);
-card.onclick = () => { 
-  // Build the object with all necessary details
-  const chatTarget = {
-    id: user.id,
-    username: user.username || "",
-    profile_pic: user.profile_pic || "",
-    status: user.status || ""
-  };
 
-  // Save it as a JSON string so chat.html can parse it
-  localStorage.setItem("chatting_with", JSON.stringify(chatTarget));
+    // ---------- UPDATED ONCLICK ----------
+    card.onclick = ()=>{ 
+      const chatTarget = {
+        id: user.id,
+        username: user.username || "",
+        profile_pic: user.profile_pic || "",
+        status: user.status || ""
+      };
+      localStorage.setItem("chatting_with", JSON.stringify(chatTarget));
+      window.location.href="chat.html";
+    };
 
-  // Go to the chat page
-  window.location.href = "chat.html";
-};
-    
+    box.appendChild(card);
+  });
 }
 
 /* ----------------- SEARCH ----------------- */
