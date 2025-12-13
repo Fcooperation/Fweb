@@ -4,25 +4,20 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Chat</title>
-
 <style>
-/* -------- RESET -------- */
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+/* ---------- RESET ---------- */
+* { box-sizing: border-box; margin:0; padding:0; }
 
-/* -------- BODY -------- */
+/* ---------- BODY ---------- */
 body {
   font-family: Arial, sans-serif;
-  background: white;
   height: 100vh;
   display: flex;
   flex-direction: column;
+  background: white;
 }
 
-/* -------- TOP BAR -------- */
+/* ---------- TOP BAR ---------- */
 #chat-header {
   display: flex;
   align-items: center;
@@ -32,8 +27,8 @@ body {
 }
 
 #chat-header img {
-  width: 45px;
-  height: 45px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
   object-fit: cover;
   background: black;
@@ -49,12 +44,12 @@ body {
   font-weight: bold;
 }
 
-#chat-header .userid {
+#chat-header .status {
   font-size: 12px;
   color: #555;
 }
 
-/* -------- CHAT AREA -------- */
+/* ---------- CHAT BODY ---------- */
 #chat-body {
   flex: 1;
   padding: 16px;
@@ -64,7 +59,7 @@ body {
   gap: 10px;
 }
 
-/* -------- MESSAGE BUBBLES -------- */
+/* ---------- MESSAGE BUBBLES ---------- */
 .message {
   max-width: 75%;
   padding: 10px 14px;
@@ -87,11 +82,11 @@ body {
   border-bottom-left-radius: 4px;
 }
 
-/* -------- INPUT BAR -------- */
+/* ---------- INPUT BAR ---------- */
 #chat-input {
   display: flex;
   gap: 10px;
-  padding: 10px;
+  padding: 10px 16px;
   border-top: 1px solid #ddd;
 }
 
@@ -117,33 +112,27 @@ body {
 </head>
 <body>
 
-<!-- -------- HEADER -------- -->
+<!-- ---------- HEADER ---------- -->
 <div id="chat-header">
-  <img id="chat-pic">
+  <img id="chat-pic" src="">
   <div class="info">
     <div class="username" id="chat-username">Loading...</div>
-    <div class="userid" id="chat-id">ID: ...</div>
+    <div class="status" id="chat-status">Status...</div>
   </div>
 </div>
 
-<!-- -------- MESSAGES -------- -->
+<!-- ---------- MESSAGES ---------- -->
 <div id="chat-body"></div>
 
-<!-- -------- INPUT -------- -->
+<!-- ---------- INPUT ---------- -->
 <div id="chat-input">
   <input type="text" id="message-input" placeholder="Type a message…">
   <button id="send-btn">Send</button>
 </div>
 
 <script>
-/* ---------- LOAD CHAT TARGET SAFELY ---------- */
-let chatWith = null;
-
-try {
-  chatWith = JSON.parse(localStorage.getItem("chatting_with"));
-} catch (e) {
-  chatWith = null;
-}
+/* ---------- LOAD CHAT TARGET ---------- */
+const chatWith = JSON.parse(localStorage.getItem("chatting_with")) || null;
 
 if (!chatWith || !chatWith.id) {
   alert("No chat selected");
@@ -151,18 +140,9 @@ if (!chatWith || !chatWith.id) {
 }
 
 /* ---------- HEADER DATA ---------- */
-document.getElementById("chat-username").textContent =
-  chatWith.username || "Unknown";
-
-document.getElementById("chat-id").textContent =
-  "ID: " + chatWith.id;
-
-if (chatWith.profile_pic) {
-  document.getElementById("chat-pic").src = chatWith.profile_pic;
-} else {
-  document.getElementById("chat-pic").src =
-    "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2NjYyI+PC9zdmc+";
-}
+document.getElementById("chat-username").textContent = chatWith.username || "Unknown";
+document.getElementById("chat-status").textContent = chatWith.status || "";
+document.getElementById("chat-pic").src = chatWith.profile_pic || "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCI+PC9zdmc+";
 
 /* ---------- MESSAGE STORAGE ---------- */
 const STORAGE_KEY = "chat_messages_" + chatWith.id;
@@ -172,18 +152,13 @@ let messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
 function renderMessages() {
   const box = document.getElementById("chat-body");
   box.innerHTML = "";
-
   messages.forEach(msg => {
     const div = document.createElement("div");
     div.className = "message " + msg.type;
     div.textContent = msg.text;
     box.appendChild(div);
   });
-
-  box.scrollTop = box.scrollHeight;
 }
-
-renderMessages();
 
 /* ---------- SEND MESSAGE ---------- */
 function sendMessage() {
@@ -191,35 +166,36 @@ function sendMessage() {
   const text = input.value.trim();
   if (!text) return;
 
-  messages.push({
-    type: "sent",
-    text: text,
-    time: Date.now()
-  });
-
+  messages.push({ type: "sent", text });
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   input.value = "";
   renderMessages();
+  scrollToBottom();
 
-  /* ---- simulated reply ---- */
+  // Simulate a small "Delivered" reply
   setTimeout(() => {
-    messages.push({
-      type: "received",
-      text: "Delivered ✔",
-      time: Date.now()
-    });
+    messages.push({ type: "received", text: "Delivered ✔" });
     localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
     renderMessages();
-  }, 700);
+    scrollToBottom();
+  }, 800);
 }
 
-/* ---------- EVENTS ---------- */
-document.getElementById("send-btn").onclick = sendMessage;
+/* ---------- SCROLL ---------- */
+function scrollToBottom() {
+  const box = document.getElementById("chat-body");
+  box.scrollTop = box.scrollHeight;
+}
 
+/* ---------- INIT ---------- */
+renderMessages();
+scrollToBottom();
+
+document.getElementById("send-btn").onclick = sendMessage;
 document.getElementById("message-input").addEventListener("keydown", e => {
   if (e.key === "Enter") sendMessage();
 });
 </script>
 
 </body>
-  </html>
+</html>
