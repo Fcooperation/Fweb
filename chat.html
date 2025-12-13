@@ -63,13 +63,13 @@ body {
 /* ---------- MESSAGE BUBBLES ---------- */
 .message {
   max-width: 75%;
-  padding: 14px 18px; /* taller box */
+  padding: 14px 18px;
   border-radius: 14px;
   font-size: 14px;
   line-height: 1.5;
   position: relative;
   word-break: break-word;
-  min-height: 50px; /* makes swipe easier */
+  min-height: 50px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -203,21 +203,26 @@ const STORAGE_KEY = "chat_messages_" + chatWith.id;
 let messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
 let replyingTo = null;
 
-/* ---------- ADD SWIPE FUNCTIONALITY ---------- */
+/* ---------- ADD SWIPE ONLY TO RECEIVED ---------- */
 function addSwipeListeners(msgDiv, msgId){
-  let startX = 0;
+  let startX = 0, startY = 0;
   let isSwiping = false;
 
   msgDiv.addEventListener("touchstart", e=>{
-    startX = e.touches[0].clientX;
+    const touch = e.touches[0];
+    startX = touch.clientX;
+    startY = touch.clientY;
     isSwiping = true;
   });
 
   msgDiv.addEventListener("touchmove", e=>{
     if(!isSwiping) return;
-    const currentX = e.touches[0].clientX;
-    const diff = startX - currentX;
-    if(diff > 30){ // easier swipe left
+    const touch = e.touches[0];
+    const diffX = startX - touch.clientX;
+    const diffY = startY - touch.clientY;
+
+    // swipe left: horizontal > vertical & > 30px
+    if(diffX > 30 && Math.abs(diffX) > Math.abs(diffY)){
       linkReply(msgId);
       msgDiv.style.backgroundColor = "#d0f0ff";
       isSwiping = false;
@@ -237,8 +242,8 @@ function renderMessages() {
   messages.forEach(msg => {
     const div = document.createElement("div");
     div.className = "message " + msg.type + (msg.status==="pending"?" pending":"");
-    
-    // linked message display
+
+    // linked message
     if(msg.linked && msg.linked_message_id){
       const linkedMsg = messages.find(m=>m.id===msg.linked_message_id);
       if(linkedMsg){
@@ -262,7 +267,7 @@ function renderMessages() {
     const textNode = document.createTextNode(msg.text);
     div.appendChild(textNode);
 
-    // status below message
+    // status below
     const statusDiv = document.createElement("div");
     statusDiv.className = "message-status";
     statusDiv.textContent = msg.status==="pending" ? "Pending" : "Sent";
@@ -270,8 +275,8 @@ function renderMessages() {
 
     div.dataset.id = msg.id;
 
-    // add swipe to reply only for received messages
-    if(msg.type !== "sent"){
+    // add swipe only for received
+    if(msg.type === "received"){
       addSwipeListeners(div, msg.id);
     }
 
