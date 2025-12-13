@@ -192,6 +192,33 @@ const STORAGE_KEY = "chat_messages_" + chatWith.id;
 let messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
 let replyingTo = null; // store message id being replied
 
+/* ---------- ADD SWIPE FUNCTIONALITY ---------- */
+function addSwipeListeners(msgDiv, msgId){
+  let startX = 0;
+  let isSwiping = false;
+
+  msgDiv.addEventListener("touchstart", e=>{
+    startX = e.touches[0].clientX;
+    isSwiping = true;
+  });
+
+  msgDiv.addEventListener("touchmove", e=>{
+    if(!isSwiping) return;
+    const currentX = e.touches[0].clientX;
+    const diff = startX - currentX;
+    if(diff > 50){ // swipe left
+      linkReply(msgId);
+      msgDiv.style.backgroundColor = "#d0f0ff"; // visual feedback
+      isSwiping = false;
+    }
+  });
+
+  msgDiv.addEventListener("touchend", ()=>{
+    isSwiping = false;
+    setTimeout(()=>msgDiv.style.backgroundColor = "", 200);
+  });
+}
+
 /* ---------- RENDER MESSAGES ---------- */
 function renderMessages() {
   const box = document.getElementById("chat-body");
@@ -199,7 +226,8 @@ function renderMessages() {
   messages.forEach(msg => {
     const div = document.createElement("div");
     div.className = "message " + msg.type + (msg.status==="pending"?" pending":"");
-    
+
+    // linked message display
     if(msg.linked && msg.linked_message_id){
       const linkedMsg = messages.find(m=>m.id===msg.linked_message_id);
       if(linkedMsg){
@@ -219,10 +247,16 @@ function renderMessages() {
         div.appendChild(linkedDiv);
       }
     }
-    
+
     const textNode = document.createTextNode(msg.text);
     div.appendChild(textNode);
     div.dataset.id = msg.id;
+
+    // add swipe to reply only for received messages
+    if(msg.type !== "sent"){
+      addSwipeListeners(div, msg.id);
+    }
+
     box.appendChild(div);
   });
   scrollToBottom();
@@ -320,4 +354,4 @@ document.getElementById("message-input").addEventListener("keydown",e=>{
 </script>
 
 </body>
-  </html>
+</html>
