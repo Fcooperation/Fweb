@@ -119,7 +119,7 @@ body {
 
 <!-- -------- HEADER -------- -->
 <div id="chat-header">
-  <img id="chat-pic" src="">
+  <img id="chat-pic">
   <div class="info">
     <div class="username" id="chat-username">Loading...</div>
     <div class="userid" id="chat-id">ID: ...</div>
@@ -136,10 +136,16 @@ body {
 </div>
 
 <script>
-/* ---------- LOAD CHAT TARGET ---------- */
-const chatWith = JSON.parse(localStorage.getItem("chatting_with")) || {};
+/* ---------- LOAD CHAT TARGET SAFELY ---------- */
+let chatWith = null;
 
-if (!chatWith.id) {
+try {
+  chatWith = JSON.parse(localStorage.getItem("chatting_with"));
+} catch (e) {
+  chatWith = null;
+}
+
+if (!chatWith || !chatWith.id) {
   alert("No chat selected");
   window.location.href = "fchat.html";
 }
@@ -154,7 +160,8 @@ document.getElementById("chat-id").textContent =
 if (chatWith.profile_pic) {
   document.getElementById("chat-pic").src = chatWith.profile_pic;
 } else {
-  document.getElementById("chat-pic").src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCI+PC9zdmc+";
+  document.getElementById("chat-pic").src =
+    "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2NjYyI+PC9zdmc+";
 }
 
 /* ---------- MESSAGE STORAGE ---------- */
@@ -184,27 +191,35 @@ function sendMessage() {
   const text = input.value.trim();
   if (!text) return;
 
-  messages.push({ type: "sent", text });
+  messages.push({
+    type: "sent",
+    text: text,
+    time: Date.now()
+  });
+
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   input.value = "";
   renderMessages();
 
-  // --- Simulated reply ---
+  /* ---- simulated reply ---- */
   setTimeout(() => {
     messages.push({
       type: "received",
-      text: "Delivered ✔"
+      text: "Delivered ✔",
+      time: Date.now()
     });
     localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
     renderMessages();
-  }, 800);
+  }, 700);
 }
 
+/* ---------- EVENTS ---------- */
 document.getElementById("send-btn").onclick = sendMessage;
+
 document.getElementById("message-input").addEventListener("keydown", e => {
   if (e.key === "Enter") sendMessage();
 });
 </script>
 
 </body>
-</html>
+  </html>
