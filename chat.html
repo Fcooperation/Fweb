@@ -66,6 +66,7 @@ body {
   border-radius: 14px;
   font-size: 14px;
   line-height: 1.4;
+  position: relative;
 }
 
 .sent {
@@ -80,6 +81,10 @@ body {
   background: #f1f1f1;
   color: black;
   border-bottom-left-radius: 4px;
+}
+
+.pending {
+  opacity: 0.6;
 }
 
 /* ---------- INPUT BAR ---------- */
@@ -131,8 +136,11 @@ body {
 </div>
 
 <script>
+const API_URL = "https://fweb-backend.onrender.com/fchat";
+
 /* ---------- LOAD CHAT TARGET ---------- */
 const chatWith = JSON.parse(localStorage.getItem("chatting_with")) || null;
+const account = JSON.parse(localStorage.getItem("faccount")) || {email:"", password:""};
 
 if (!chatWith || !chatWith.id) {
   alert("No chat selected");
@@ -154,31 +162,11 @@ function renderMessages() {
   box.innerHTML = "";
   messages.forEach(msg => {
     const div = document.createElement("div");
-    div.className = "message " + msg.type;
+    div.className = "message " + msg.type + (msg.status==="pending"?" pending":"");
     div.textContent = msg.text;
     box.appendChild(div);
   });
-}
-
-/* ---------- SEND MESSAGE ---------- */
-function sendMessage() {
-  const input = document.getElementById("message-input");
-  const text = input.value.trim();
-  if (!text) return;
-
-  messages.push({ type: "sent", text });
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-  input.value = "";
-  renderMessages();
   scrollToBottom();
-
-  // Simulate a small "Delivered" reply
-  setTimeout(() => {
-    messages.push({ type: "received", text: "Delivered ✔" });
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-    renderMessages();
-    scrollToBottom();
-  }, 800);
 }
 
 /* ---------- SCROLL ---------- */
@@ -187,15 +175,81 @@ function scrollToBottom() {
   box.scrollTop = box.scrollHeight;
 }
 
+/* ---------- SEND TO BACKEND ---------- */
+async function sendToBackend(msgObj) {
+  try {
+    const payload = {
+      action: "send_messages",
+      email: account.email,
+      id: msgObj.id,
+      sender_id: account.email,
+      linked: false,
+      linked_message_id: null,
+      sent_at: new Date().toISOString(),
+      text: msgObj.text
+    };
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if(data.success){
+      msgObj.status = "sent";
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+      renderMessages();
+    }
+  } catch(e) {
+    console.warn("Failed to send, message pending");
+    msgObj.status = "pending";
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+    renderMessages();
+  }
+}
+
+/* ---------- SEND MESSAGE ---------- */
+function sendMessage() {
+  const input = document.getElementById("message-input");
+  const text = input.value.trim();
+  if(!text) return;
+
+  const msgObj = {
+    id: Date.now(), // unique message id
+    type: "sent",
+    text,
+    status: navigator.onLine ? "sending" : "pending"
+  };
+  messages.push(msgObj);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+  input.value = "";
+  renderMessages();
+
+  if(navigator.onLine){
+    sendToBackend(msgObj);
+  }
+}
+
+/* ---------- RETRY PENDING MESSAGES ---------- */
+async function retryPending() {
+  if(!navigator.onLine) return;
+  for(const msg of messages){
+    if(msg.status === "pending" || msg.status==="sending"){
+      msg.status = "sending";
+      await sendToBackend(msg);
+    }
+  }
+}
+
+window.addEventListener("online", retryPending);
+
 /* ---------- INIT ---------- */
 renderMessages();
-scrollToBottom();
 
 document.getElementById("send-btn").onclick = sendMessage;
 document.getElementById("message-input").addEventListener("keydown", e => {
-  if (e.key === "Enter") sendMessage();
+  if(e.key === "Enter") sendMessage();
 });
 </script>
 
 </body>
-</html>
+      </html>
