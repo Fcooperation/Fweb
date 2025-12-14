@@ -1,261 +1,257 @@
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fchat Users</title>
-<style>
-body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #000; }
+<html lang="en">    
+<head>    
+<meta charset="UTF-8">    
+<meta name="viewport" content="width=device-width, initial-scale=1.0">    
+<title>Fchat Users</title>    
+<style>    
+body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #000; }    
 
-#loading-screen { display: flex; flex-direction: column; justify-content: center; align-items: center;
-  height: 100vh; font-size: 18px; font-weight: bold; color: #000; }
+#loading-screen { display: flex; flex-direction: column; justify-content: center; align-items: center;    
+  height: 100vh; font-size: 18px; font-weight: bold; color: #000; }    
 
-#loading-logs { margin-top: 10px; font-size: 14px; color: #555; max-width: 80%; text-align: center; }
+#loading-logs { margin-top: 10px; font-size: 14px; color: #555; max-width: 80%; text-align: center; }    
 
-#interface { display: none; padding: 20px; }
+#interface { display: none; padding: 20px; }    
 
-#search-container { display: flex; gap: 5px; margin-bottom: 10px; flex-wrap: wrap; }
-#searchInput { flex: 1; padding: 10px; font-size: 16px; border-radius: 8px; border: 1px solid #aaa; }
-#searchBtn { padding: 10px 15px; font-size: 16px; border-radius: 6px; border: 1px solid #000;
-  background: #fff; color:#000; cursor:pointer; }
+#search-container { display: flex; gap: 5px; margin-bottom: 10px; flex-wrap: wrap; }    
+#searchInput { flex: 1; padding: 10px; font-size: 16px; border-radius: 8px; border: 1px solid #aaa; }    
+#searchBtn { padding: 10px 15px; font-size: 16px; border-radius: 6px; border: 1px solid #000;    
+  background: #fff; color:#000; cursor:pointer; }    
 
-#update-log { font-size: 12px; color:#555; margin-bottom: 10px; }
+#update-log { font-size: 12px; color:#555; margin-bottom: 10px; }    
 
-#results { display: flex; flex-direction: column; gap: 20px; } /* NEW: bigger gap after adding IDs */
+#results { display: flex; flex-direction: column; gap: 20px; }    
 
-/* CARD LAYOUT */
-.card {
-  display: flex;
-  align-items: center;
-  padding: 10px;
-  border-radius: 10px;
-  background: #f5f5f5;
-  width: 100%;
-}
+.card {    
+  display: flex;    
+  align-items: center;    
+  padding: 10px;    
+  border-radius: 10px;    
+  background: #f5f5f5;    
+  width: 100%;    
+}    
 
-/* PFP LEFT */
-.pfp {
-  width: 55px;
-  height: 55px;
-  border-radius: 50%;
-  background:#000;
-  color:#fff;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  font-size:20px;
-  font-weight:bold;
-  object-fit:cover;
-  cursor:pointer;
-  overflow:hidden;
-}
+.pfp {    
+  width: 55px;    
+  height: 55px;    
+  border-radius: 50%;    
+  background:#000;    
+  color:#fff;    
+  display:flex;    
+  justify-content:center;    
+  align-items:center;    
+  font-size:20px;    
+  font-weight:bold;    
+  object-fit:cover;    
+  cursor:pointer;    
+  overflow:hidden;    
+}    
 
-/* INFO MIDDLE */
-.info {
-  flex: 1;
-  margin-left: 12px;
-}
-.name { font-size: 16px; font-weight: bold; }
-.status { font-size: 12px; color:#555; margin-top:3px; }
-.userid { font-size: 12px; color:#000; margin-top: 5px; font-weight: bold; } /* NEW */
+.info {    
+  flex: 1;    
+  margin-left: 12px;    
+}    
+.name { font-size: 16px; font-weight: bold; }    
+.status { font-size: 12px; color:#555; margin-top:3px; }    
+.userid { font-size: 12px; color:#000; margin-top: 5px; font-weight: bold; }    
 
-/* ADD BUTTON RIGHT */
-.add-btn {
-  background:#000;
-  color:#fff;
-  border:none;
-  padding: 6px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  margin-left: 10px;
-}
+.add-btn {    
+  background:#000;    
+  color:#fff;    
+  border:none;    
+  padding: 6px 12px;    
+  border-radius: 6px;    
+  cursor: pointer;    
+  margin-left: 10px;    
+}    
 
-.not-found { text-align:center; margin-top:10px; font-size:14px; color:#555; }
+.not-found { text-align:center; margin-top:10px; font-size:14px; color:#555; }    
+#loading-msg { font-size:14px; color:#555; margin-top:10px; text-align:center; }    
 
-/* PROFILE MODAL */
-#profile-modal {
-  position:fixed; top:0; left:0; width:100%; height:100%;
-  background:rgba(0,0,0,0.85);
-  display:none;
-  justify-content:center;
-  align-items:center;
-  z-index:100;
-}
-#profile-modal img {
-  width: 80%;
-  max-width: 400px;
-  border-radius: 50%;
-}
-.pfp img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 50%;
-}
-</style>
-</head>
+#profile-modal {    
+  position:fixed; top:0; left:0; width:100%; height:100%;    
+  background:rgba(0,0,0,0.85);    
+  display:none;    
+  justify-content:center;    
+  align-items:center;    
+  z-index:100;    
+}    
+#profile-modal img {    
+  width: 80%;    
+  max-width: 400px;    
+  border-radius: 50%;    
+}    
+.pfp img {    
+  width: 100%;    
+  height: 100%;    
+  object-fit: cover;    
+  border-radius: 50%;    
+}    
+</style>    
+</head>    
 
-<body>
+<body>    
 
-<!-- LOADING -->
-<div id="loading-screen">
-  <div>Loading...</div>
-  <div id="loading-logs">Starting...</div>
-</div>
+<div id="loading-screen">    
+  <div>Loading...</div>    
+  <div id="loading-logs">Starting...</div>    
+</div>    
 
-<!-- MAIN UI -->
-<div id="interface">
-  <div id="search-container">
-    <input id="searchInput" placeholder="Search username or ID..." />
-    <button id="searchBtn">Search</button>
-  </div>
-  <div id="update-log">Initializing...</div>
-  <div id="results"></div>
-</div>
+<div id="interface">    
+  <div id="search-container">    
+    <input id="searchInput" placeholder="Search username or ID..." />    
+    <button id="searchBtn">Search</button>    
+  </div>    
+  <div id="update-log">Initializing...</div>    
+  <div id="loading-msg">Loading broadcast users...</div>
+  <div id="results"></div>    
+</div>    
 
-<!-- PROFILE MODAL -->
-<div id="profile-modal"><img id="profileView"></div>
+<div id="profile-modal"><img id="profileView"></div>    
 
-<script>
-const API = "https://fweb-backend.onrender.com/fchat";
+<script>    
+const API = "https://fweb-backend.onrender.com/fchat";    
 
-let combined = [];
-let displayedIds = new Set();
-const resultsEl = document.getElementById("results");
+let combined = [];    
+let displayedIds = new Set();    
+const resultsEl = document.getElementById("results");    
+const loadingMsg = document.getElementById("loading-msg");    
 
-/* ------------------ API HELPER ------------------ */
-async function api(action, extra={}) {
-  const acc = JSON.parse(localStorage.getItem("faccount")) || {};
-  const body = { action, ...extra, email: acc.email, password_hash: acc.password_hash, my_id: acc.id };
-  try {
-    const r = await fetch(API, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body)
-    });
-    return r.json();
-  } catch (e) {
-    console.log("API error:", e);
-    return { data: [] };
-  }
-}
+async function api(action, extra={}) {    
+  const acc = JSON.parse(localStorage.getItem("faccount")) || {};    
+  const body = { action, ...extra, email: acc.email, password_hash: acc.password_hash, my_id: acc.id };    
+  try {    
+    const r = await fetch(API, {    
+      method: "POST",    
+      headers: { "Content-Type": "application/json" },    
+      body: JSON.stringify(body)    
+    });    
+    return r.json();    
+  } catch (e) {    
+    console.log("API error:", e);    
+    return { data: [] };    
+  }    
+}    
 
-/* ------------------ RENDER CARD ------------------ */
-function renderCard(u) {
-  if (displayedIds.has(u.id)) return;
-  displayedIds.add(u.id);
+function renderCard(u) {    
+  if (displayedIds.has(u.id)) return;    
+  displayedIds.add(u.id);    
 
-  const acc = JSON.parse(localStorage.getItem("faccount")) || {};
-  const myId = String(acc.id);
+  const acc = JSON.parse(localStorage.getItem("faccount")) || {};    
+  const myId = String(acc.id);    
+  const msgs = (u.fchat_messages || "").split(",").map(s => s.trim());    
+  const alreadyInFzone = msgs.includes(myId);    
 
-  /* ------------ NEW: CHECK IF MY ID IS IN THEIR FZONE ------------- */
-  const msgs = (u.fchat_messages || "").split(",").map(s => s.trim());
-  const alreadyInFzone = msgs.includes(myId);
+  const card = document.createElement("div");    
+  card.className = "card";    
 
-  const card = document.createElement("div");
-  card.className = "card";
+  const pfp = document.createElement("div");    
+  pfp.className = "pfp";    
 
-  const pfp = document.createElement("div");
-  pfp.className = "pfp";
+  if (u.profile_pic) {    
+    const img = document.createElement("img");    
+    img.src = u.profile_pic;    
+    pfp.appendChild(img);    
+    pfp.onclick = () => {    
+      document.getElementById("profile-modal").style.display = "flex";    
+      document.getElementById("profileView").src = u.profile_pic;    
+    }    
+  } else {    
+    pfp.textContent = (u.username || "U").charAt(0).toUpperCase();    
+  }    
 
-  if (u.profile_pic) {
-    const img = document.createElement("img");
-    img.src = u.profile_pic;
-    pfp.appendChild(img);
-    pfp.onclick = () => {
-      document.getElementById("profile-modal").style.display = "flex";
-      document.getElementById("profileView").src = u.profile_pic;
-    }
-  } else {
-    pfp.textContent = (u.username || "U").charAt(0).toUpperCase();
-  }
+  const info = document.createElement("div");    
+  info.className = "info";    
 
-  const info = document.createElement("div");
-  info.className = "info";
+  let statusText = "";    
+  if (alreadyInFzone) {    
+    statusText = "Already in FZONE";    
+  } else if (u.fchat === "yes") {    
+    statusText = u.status_text || "Active on Fchat";    
+  } else {    
+    statusText = "Not on Fchat";    
+  }    
 
-  /* ---------- NEW: STATUS + FZONE MESSAGE ---------- */
-  let statusText = "";
+  info.innerHTML = `    
+    <div class="name">${u.username}</div>    
+    <div class="status">${statusText}</div>    
+    <div class="userid">ID: ${u.id}</div>    
+  `;    
 
-  if (alreadyInFzone) {
-    statusText = "Already in FZONE";  // NEW
-  } else if (u.fchat === "yes") {
-    statusText = u.status_text || "Active on Fchat";
-  } else {
-    statusText = "Not on Fchat";
-  }
+  const addBtn = document.createElement("button");    
+  addBtn.className = "add-btn";    
 
-  info.innerHTML = `
-    <div class="name">${u.username}</div>
-    <div class="status">${statusText}</div>
-    <div class="userid">ID: ${u.id}</div>  <!-- NEW -->
-  `;
+  if (alreadyInFzone) {    
+    addBtn.style.display = "none";    
+  } else if (u.fchat === "yes") {    
+    const requests = u.friend_requests || "";    
+    const requestIds = requests.split(",").map(s => s.trim());    
+    if (requestIds.includes(myId)) {    
+      addBtn.textContent = "Sent";    
+      addBtn.disabled = true;    
+    } else {    
+      addBtn.textContent = "Add";    
+      addBtn.onclick = async () => {    
+        await api("add_user", { invite_id: u.id });    
+        addBtn.textContent = "Sent";    
+        addBtn.disabled = true;    
+      };    
+    }    
+  } else {    
+    addBtn.style.display = "none";    
+  }    
 
-  const addBtn = document.createElement("button");
-  addBtn.className = "add-btn";
+  card.appendChild(pfp);    
+  card.appendChild(info);    
+  card.appendChild(addBtn);    
+  resultsEl.appendChild(card);    
+}    
 
-  /* ---------- NEW: If in FZONE → HIDE ADD BUTTON ---------- */
-  if (alreadyInFzone) {
-    addBtn.style.display = "none";
-  } else if (u.fchat === "yes") {
-    const requests = u.friend_requests || "";
-    const requestIds = requests.split(",").map(s => s.trim());
+// Fetch users in background and save to combined/localStorage, but do NOT render automatically
+async function fetchAllUsers() {    
+  const res = await api("get_all_users");    
+  const users = res.data || [];    
+  const seen = new Set(combined.map(u => u.id));    
+  users.forEach(u => {    
+    if (!seen.has(u.id)) combined.push(u);    
+  });    
+  localStorage.setItem("combined_users", JSON.stringify(combined));    
+}    
 
-    if (requestIds.includes(myId)) {
-      addBtn.textContent = "Sent";
-      addBtn.disabled = true;
-    } else {
-      addBtn.textContent = "Add";
-      addBtn.onclick = async () => {
-        await api("add_user", { invite_id: u.id });
-        addBtn.textContent = "Sent";
-        addBtn.disabled = true;
-      };
-    }
-  } else {
-    addBtn.style.display = "none";
-  }
-
-  card.appendChild(pfp);
-  card.appendChild(info);
-  card.appendChild(addBtn);
-
-  resultsEl.appendChild(card);
-}
-
-/* ------------------ FETCH USERS ------------------ */
-async function fetchAllUsers() {
-  const res = await api("get_all_users");
-  const users = res.data || [];
-  const seen = new Set(combined.map(u => u.id));
-  users.forEach(u => {
-    if (!seen.has(u.id)) combined.push(u);
-  });
-}
-
-/* ------------------ SEARCH ------------------ */
 document.getElementById("searchBtn").onclick = () => {
   const q = document.getElementById("searchInput").value.toLowerCase().trim();
   displayedIds.clear();
   resultsEl.innerHTML = "";
-  const filtered = combined.filter(u =>
-    (u.username && u.username.toLowerCase().includes(q)) ||
-    String(u.id).includes(q)
-  );
-  if (filtered.length === 0) {
-    const nf = document.createElement("div");
-    nf.className = "not-found";
-    nf.textContent = "Not found";
-    resultsEl.appendChild(nf);
-  } else {
-    filtered.forEach(renderCard);
-  }
+  loadingMsg.style.display = "block";
+  loadingMsg.textContent = "Searching...";
+
+  let found = false;
+
+  const timeout = setTimeout(() => {
+    if (!found) loadingMsg.textContent = "Not found";
+  }, 15000);
+
+  setTimeout(() => {
+    const storedUsers = JSON.parse(localStorage.getItem("combined_users") || "[]");
+    const filtered = storedUsers.filter(u =>
+      (u.username && u.username.toLowerCase().includes(q)) ||
+      String(u.id).includes(q)
+    );
+
+    if (filtered.length) {
+      clearTimeout(timeout);
+      found = true;
+      loadingMsg.style.display = "none";
+      resultsEl.innerHTML = "";
+      filtered.forEach(renderCard);
+    }
+  }, 100);
 };
 
-/* ------------------ PROFILE MODAL CLOSE ------------------ */
 document.getElementById("profile-modal").onclick = () => {
   document.getElementById("profile-modal").style.display = "none";
 };
 
-/* ------------------ LOADING SCREEN ------------------ */
 const logSteps = [
   "Starting...",
   "Connecting to server...",
@@ -266,25 +262,33 @@ const logSteps = [
 let step = 0;
 const logs = document.getElementById("loading-logs");
 const interval = setInterval(() => {
-  logs.textContent = logSteps[step % logSteps.length];
+  logs.textContent = logSteps[step];
   step++;
+  if (step >= logSteps.length) {
+    clearInterval(interval);
+    // Immediately redirect to interface
+    document.getElementById("loading-screen").style.display = "none";
+    document.getElementById("interface").style.display = "block";
+    loadingMsg.style.display = "block";
+    loadingMsg.textContent = "Loading broadcast users...";
+
+    // Render broadcast users ONCE
+    const storedUsers = JSON.parse(localStorage.getItem("combined_users") || "[]");
+    const broadcastUsers = storedUsers.filter(u => u.broadcast === "yes");
+    if (broadcastUsers.length) {
+      loadingMsg.style.display = "none";
+      displayedIds.clear();
+      resultsEl.innerHTML = "";
+      broadcastUsers.forEach(renderCard);
+    }
+  }
 }, 800);
 
-/* ------------------ INITIALIZE ------------------ */
+// Fetch in background without rendering
 (async () => {
-  await fetchAllUsers();
-  clearInterval(interval);
-  document.getElementById("loading-screen").style.display = "none";
-  document.getElementById("interface").style.display = "block";
-
-  displayedIds.clear();
-  resultsEl.innerHTML = "";
-  combined
-    .filter(u => u.broadcast === "yes")
-    .forEach(renderCard);
-
-  setInterval(fetchAllUsers, 5000);
+  await fetchAllUsers(); // initial fetch
+  setInterval(fetchAllUsers, 5000); // continue updating combined in background
 })();
-</script>
-</body>
+</script>    
+</body>    
 </html>
