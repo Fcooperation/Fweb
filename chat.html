@@ -68,6 +68,7 @@ body {
   font-size: 14px;
   line-height: 1.4;
   position: relative;
+  cursor: pointer; /* so we can "swipe/click" to reply */
 }
 
 .sent {
@@ -88,12 +89,34 @@ body {
   opacity: 0.6;
 }
 
+/* ---------- REPLY PREVIEW ---------- */
+#reply-preview {
+  display: none;
+  padding: 6px 12px;
+  border-left: 4px solid #555;
+  background: #f5f5f5;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+#reply-preview .sender {
+  font-weight: bold;
+  font-size: 12px;
+  margin-bottom: 2px;
+}
+
 /* ---------- INPUT BAR ---------- */
 #chat-input {
   display: flex;
-  gap: 10px;
+  flex-direction: column;
+  gap: 4px;
   padding: 10px 16px;
   border-top: 1px solid #ddd;
+}
+
+#chat-input-bar {
+  display: flex;
+  gap: 10px;
 }
 
 #chat-input input {
@@ -132,8 +155,15 @@ body {
 
 <!-- ---------- INPUT ---------- -->
 <div id="chat-input">
-  <input type="text" id="message-input" placeholder="Type a message…">
-  <button id="send-btn">Send</button>
+  <!-- Reply preview -->
+  <div id="reply-preview">
+    <div class="sender"></div>
+    <div class="text"></div>
+  </div>
+  <div id="chat-input-bar">
+    <input type="text" id="message-input" placeholder="Type a message…">
+    <button id="send-btn">Send</button>
+  </div>
 </div>
 
 <script>
@@ -169,6 +199,12 @@ header.onclick = () => {
 const STORAGE_KEY = "chat_messages_" + chatWith.id;
 let messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
 
+/* ---------- REPLY/LINKED MESSAGE ---------- */
+let replyingTo = null;
+const replyPreview = document.getElementById("reply-preview");
+const replySender = replyPreview.querySelector(".sender");
+const replyText = replyPreview.querySelector(".text");
+
 /* ---------- RENDER MESSAGES ---------- */
 function renderMessages() {
   const box = document.getElementById("chat-body");
@@ -177,6 +213,16 @@ function renderMessages() {
     const div = document.createElement("div");
     div.className = "message " + msg.type + (msg.status==="pending"?" pending":"");
     div.textContent = msg.text;
+
+    // click/swipe to reply
+    div.onclick = () => {
+      replyingTo = msg;
+      replySender.textContent = msg.type === "sent" ? "You" : chatWith.username;
+      replyText.textContent = msg.text;
+      replyPreview.style.display = "block";
+      document.getElementById("message-input").focus();
+    };
+
     box.appendChild(div);
   });
   scrollToBottom();
@@ -197,8 +243,8 @@ async function sendToBackend(msgObj) {
       id: msgObj.id,
       sender_id: account.email,
       receiver_id: chatWith.id,
-      linked: false,
-      linked_message_id: null,
+      linked: !!msgObj.linked_message_id,
+      linked_message_id: msgObj.linked_message_id || null,
       sent_at: new Date().toISOString(),
       text: msgObj.text
     };
@@ -212,6 +258,8 @@ async function sendToBackend(msgObj) {
       msgObj.status = "sent";
       localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
       renderMessages();
+      replyingTo = null;
+      replyPreview.style.display = "none";
     }
   } catch(e) {
     console.warn("Failed to send, message pending");
@@ -228,10 +276,11 @@ function sendMessage() {
   if(!text) return;
 
   const msgObj = {
-    id: Date.now(), // unique message id
+    id: Date.now(),
     type: "sent",
     text,
-    status: navigator.onLine ? "sending" : "pending"
+    status: navigator.onLine ? "sending" : "pending",
+    linked_message_id: replyingTo ? replyingTo.id : null
   };
   messages.push(msgObj);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
@@ -240,6 +289,9 @@ function sendMessage() {
 
   if(navigator.onLine){
     sendToBackend(msgObj);
+  } else {
+    replyingTo = null;
+    replyPreview.style.display = "none";
   }
 }
 
@@ -266,4 +318,4 @@ document.getElementById("message-input").addEventListener("keydown", e => {
 </script>
 
 </body>
-</html>
+    </html>
