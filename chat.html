@@ -5,8 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Chat</title>
 <style>
+/* ---------- RESET ---------- */
 * { box-sizing: border-box; margin:0; padding:0; }
 
+/* ---------- BODY ---------- */
 body {
   font-family: Arial, sans-serif;
   height: 100vh;
@@ -15,6 +17,7 @@ body {
   background: white;
 }
 
+/* ---------- TOP BAR ---------- */
 #chat-header {
   display: flex;
   align-items: center;
@@ -47,6 +50,7 @@ body {
   color: #555;
 }
 
+/* ---------- CHAT BODY ---------- */
 #chat-body {
   flex: 1;
   padding: 16px;
@@ -56,19 +60,14 @@ body {
   gap: 10px;
 }
 
+/* ---------- MESSAGE BUBBLES ---------- */
 .message {
   max-width: 75%;
-  padding: 14px 18px;
+  padding: 10px 14px;
   border-radius: 14px;
   font-size: 14px;
-  line-height: 1.5;
+  line-height: 1.4;
   position: relative;
-  word-break: break-word;
-  min-height: 50px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  transition: transform 0.2s ease;
 }
 
 .sent {
@@ -85,55 +84,11 @@ body {
   border-bottom-left-radius: 4px;
 }
 
-.pending { opacity: 0.6; }
-
-.message-status {
-  font-size: 11px;
-  color: #888;
-  margin-top: 4px;
-  align-self: flex-end;
+.pending {
+  opacity: 0.6;
 }
 
-.linked {
-  border-left: 3px solid #555;
-  padding-left: 8px;
-  margin-bottom: 4px;
-  cursor: pointer;
-  background: #e0e0e0;
-  border-radius: 6px;
-  font-size: 13px;
-}
-
-.linked span.username {
-  font-weight: bold;
-  display: block;
-  margin-bottom: 2px;
-}
-
-.highlight {
-  background: yellow;
-  transition: background 1s ease;
-}
-
-#replying-banner {
-  background: #e0f0ff;
-  padding: 6px 12px;
-  font-size: 13px;
-  display: none;
-  align-items: center;
-  gap: 10px;
-}
-
-#replying-banner span { font-weight: bold; }
-
-#replying-banner button {
-  margin-left: auto;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  font-size: 14px;
-}
-
+/* ---------- INPUT BAR ---------- */
 #chat-input {
   display: flex;
   gap: 10px;
@@ -147,6 +102,7 @@ body {
   border-radius: 20px;
   border: 1px solid #ccc;
   font-size: 14px;
+  outline: none;
 }
 
 #chat-input button {
@@ -156,112 +112,158 @@ body {
   background: black;
   color: white;
   font-size: 14px;
+  cursor: pointer;
 }
 </style>
 </head>
-
 <body>
 
+<!-- ---------- HEADER ---------- -->
 <div id="chat-header">
-  <img id="chat-pic">
+  <img id="chat-pic" src="">
   <div class="info">
-    <div class="username" id="chat-username"></div>
-    <div class="status" id="chat-status"></div>
+    <div class="username" id="chat-username">Loading...</div>
+    <div class="status" id="chat-status">Status...</div>
   </div>
 </div>
 
-<div id="replying-banner">
-  Replying to <span id="replying-text"></span>
-  <button id="cancel-reply">✖</button>
-</div>
-
+<!-- ---------- MESSAGES ---------- -->
 <div id="chat-body"></div>
 
+<!-- ---------- INPUT ---------- -->
 <div id="chat-input">
-  <input id="message-input" placeholder="Type a message…">
+  <input type="text" id="message-input" placeholder="Type a message…">
   <button id="send-btn">Send</button>
 </div>
 
 <script>
 const API_URL = "https://fweb-backend.onrender.com/fchat";
 
-const chatWith = JSON.parse(localStorage.getItem("chatting_with"));
-const account = JSON.parse(localStorage.getItem("faccount")) || {};
+/* ---------- LOAD CHAT TARGET ---------- */
+const chatWith = JSON.parse(localStorage.getItem("chatting_with")) || null;
+const account = JSON.parse(localStorage.getItem("faccount")) || {email:"", password:""};
 
-document.getElementById("chat-username").textContent = chatWith.username;
-document.getElementById("chat-status").textContent = chatWith.status;
-document.getElementById("chat-pic").src = chatWith.profile_pic;
-
-const STORAGE_KEY = "chat_messages_" + chatWith.id;
-let messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-let replyingTo = null;
-
-const replyBanner = document.getElementById("replying-banner");
-const replyText = document.getElementById("replying-text");
-document.getElementById("cancel-reply").onclick = () => {
-  replyingTo = null;
-  replyBanner.style.display = "none";
-};
-
-/* ✅ FIXED WHATSAPP-LIKE SWIPE */
-function addSwipeListeners(el, msgId){
-  let startX = 0, startY = 0;
-  let isHorizontal = false;
-
-  el.addEventListener("touchstart", e => {
-    const t = e.touches[0];
-    startX = t.clientX;
-    startY = t.clientY;
-    isHorizontal = false;
-  }, { passive: true });
-
-  el.addEventListener("touchmove", e => {
-    const t = e.touches[0];
-    const dx = t.clientX - startX;
-    const dy = t.clientY - startY;
-
-    if (!isHorizontal && Math.abs(dx) > 15 && Math.abs(dx) > Math.abs(dy)) {
-      isHorizontal = true;
-    }
-
-    if (isHorizontal) {
-      e.preventDefault();
-      el.style.transform = `translateX(${dx}px)`;
-    }
-  }, { passive: false });
-
-  el.addEventListener("touchend", e => {
-    const dx = e.changedTouches[0].clientX - startX;
-    el.style.transform = "";
-
-    if (dx < -60) {
-      linkReply(msgId);
-    }
-  });
+if (!chatWith || !chatWith.id) {
+  alert("No chat selected");
+  window.location.href = "fchat.html";
 }
 
-function renderMessages(){
+/* ---------- HEADER DATA ---------- */
+const header = document.getElementById("chat-header");
+document.getElementById("chat-username").textContent = chatWith.username || "Unknown";
+document.getElementById("chat-status").textContent = chatWith.status || "";
+document.getElementById("chat-pic").src = chatWith.profile_pic || "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCI+PC9zdmc+";
+
+/* ---------- HEADER CLICK TO DASHBOARD ---------- */
+header.onclick = () => {
+  localStorage.setItem("chat_viewing", JSON.stringify({
+    id: chatWith.id,
+    username: chatWith.username || "",
+    profile_pic: chatWith.profile_pic || "",
+    status: chatWith.status || ""
+  }));
+  window.location.href = "chatdashboard.html";
+};
+
+/* ---------- MESSAGE STORAGE ---------- */
+const STORAGE_KEY = "chat_messages_" + chatWith.id;
+let messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+
+/* ---------- RENDER MESSAGES ---------- */
+function renderMessages() {
   const box = document.getElementById("chat-body");
   box.innerHTML = "";
   messages.forEach(msg => {
     const div = document.createElement("div");
-    div.className = "message " + msg.type;
+    div.className = "message " + msg.type + (msg.status==="pending"?" pending":"");
     div.textContent = msg.text;
-    div.dataset.id = msg.id;
-
-    if(msg.type !== "sent") addSwipeListeners(div, msg.id);
     box.appendChild(div);
   });
+  scrollToBottom();
+}
+
+/* ---------- SCROLL ---------- */
+function scrollToBottom() {
+  const box = document.getElementById("chat-body");
   box.scrollTop = box.scrollHeight;
 }
 
-function linkReply(id){
-  replyingTo = id;
-  replyText.textContent = messages.find(m=>m.id===id)?.text || "";
-  replyBanner.style.display = "flex";
+/* ---------- SEND TO BACKEND ---------- */
+async function sendToBackend(msgObj) {
+  try {
+    const payload = {
+      action: "send_messages",
+      email: account.email,
+      id: msgObj.id,
+      sender_id: account.email,
+      receiver_id: chatWith.id,
+      linked: false,
+      linked_message_id: null,
+      sent_at: new Date().toISOString(),
+      text: msgObj.text
+    };
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if(data.success){
+      msgObj.status = "sent";
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+      renderMessages();
+    }
+  } catch(e) {
+    console.warn("Failed to send, message pending");
+    msgObj.status = "pending";
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+    renderMessages();
+  }
 }
 
+/* ---------- SEND MESSAGE ---------- */
+function sendMessage() {
+  const input = document.getElementById("message-input");
+  const text = input.value.trim();
+  if(!text) return;
+
+  const msgObj = {
+    id: Date.now(), // unique message id
+    type: "sent",
+    text,
+    status: navigator.onLine ? "sending" : "pending"
+  };
+  messages.push(msgObj);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+  input.value = "";
+  renderMessages();
+
+  if(navigator.onLine){
+    sendToBackend(msgObj);
+  }
+}
+
+/* ---------- RETRY PENDING MESSAGES ---------- */
+async function retryPending() {
+  if(!navigator.onLine) return;
+  for(const msg of messages){
+    if(msg.status === "pending" || msg.status==="sending"){
+      msg.status = "sending";
+      await sendToBackend(msg);
+    }
+  }
+}
+
+window.addEventListener("online", retryPending);
+
+/* ---------- INIT ---------- */
 renderMessages();
+
+document.getElementById("send-btn").onclick = sendMessage;
+document.getElementById("message-input").addEventListener("keydown", e => {
+  if(e.key === "Enter") sendMessage();
+});
 </script>
+
 </body>
 </html>
