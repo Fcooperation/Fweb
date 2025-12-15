@@ -62,12 +62,13 @@ body {
 
 /* ---------- MESSAGE BUBBLES ---------- */
 .message {
-  max-width: 75%;
-  padding: 10px 14px;
+  max-width: 85%; /* increased for easier swipe */
+  padding: 14px 18px;
   border-radius: 14px;
   font-size: 14px;
   line-height: 1.4;
   position: relative;
+  word-wrap: break-word;
 }
 
 .sent {
@@ -86,6 +87,40 @@ body {
 
 .pending {
   opacity: 0.6;
+}
+
+/* ---------- REPLY PREVIEW ---------- */
+#reply-preview {
+  padding: 8px 12px;
+  border-left: 4px solid #007bff;
+  background: #f1f1f1;
+  font-family: Arial, sans-serif;
+  margin: 0 16px 6px 16px;
+  border-radius: 6px;
+  display: none;
+  position: relative;
+}
+
+#reply-sender {
+  font-weight: bold;
+  font-size: 12px;
+  margin-bottom: 2px;
+}
+
+#reply-text {
+  font-size: 14px;
+  color: #555;
+}
+
+#cancel-reply {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: #888;
+  position: absolute;
+  top: 4px;
+  right: 6px;
 }
 
 /* ---------- INPUT BAR ---------- */
@@ -114,24 +149,6 @@ body {
   font-size: 14px;
   cursor: pointer;
 }
-
-#reply-preview {
-  padding: 6px 12px;
-  border-left: 4px solid #007bff;
-  background: #f1f1f1;
-  font-family: Arial, sans-serif;
-  margin: 0 16px 6px 16px;
-  border-radius: 6px;
-  position: relative;
-}
-
-#cancel-reply {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 14px;
-  color: #888;
-}
 </style>
 </head>
 <body>
@@ -145,15 +162,15 @@ body {
   </div>
 </div>
 
+<!-- ---------- REPLY PREVIEW ---------- -->
+<div id="reply-preview">
+  <div id="reply-sender"></div>
+  <div id="reply-text"></div>
+  <button id="cancel-reply">✖</button>
+</div>
+
 <!-- ---------- MESSAGES ---------- -->
 <div id="chat-body"></div>
-
-<!-- REPLY PREVIEW -->
-<div id="reply-preview" style="display:none;">
-  <div id="reply-sender" style="font-weight:bold; font-size:12px;"></div>
-  <div id="reply-text" style="font-size:14px; color:#555;"></div>
-  <button id="cancel-reply" style="float:right;">✖</button>
-</div>
 
 <!-- ---------- INPUT ---------- -->
 <div id="chat-input">
@@ -202,6 +219,21 @@ function renderMessages() {
     const div = document.createElement("div");
     div.className = "message " + msg.type + (msg.status==="pending"?" pending":"");
     div.textContent = msg.text;
+
+    // Show linked message preview above message if exists
+    if(msg.linked && msg.linked_message_id){
+      const linkedMsg = messages.find(m => m.id === msg.linked_message_id);
+      if(linkedMsg){
+        const linkDiv = document.createElement("div");
+        linkDiv.style.fontSize = "12px";
+        linkDiv.style.color = "#555";
+        linkDiv.style.fontStyle = "italic";
+        const sender = linkedMsg.type==="sent" ? "You" : chatWith.username;
+        linkDiv.textContent = sender + ": " + linkedMsg.text;
+        div.prepend(linkDiv);
+      }
+    }
+
     box.appendChild(div);
   });
   scrollToBottom();
@@ -222,8 +254,8 @@ async function sendToBackend(msgObj) {
       id: msgObj.id,
       sender_id: account.email,
       receiver_id: chatWith.id,
-      linked: false,
-      linked_message_id: null,
+      linked: msgObj.linked || false,
+      linked_message_id: msgObj.linked_message_id || null,
       sent_at: new Date().toISOString(),
       text: msgObj.text
     };
@@ -246,45 +278,9 @@ async function sendToBackend(msgObj) {
   }
 }
 
-/* ---------- SEND MESSAGE ---------- */
-function sendMessage() {
-  const input = document.getElementById("message-input");
-  const text = input.value.trim();
-  if(!text) return;
+/* ---------- REPLY PREVIEW LOGIC ---------- */
+let replyingTo = null;
 
-  const msgObj = {
-    id: Date.now(), // unique message id
-    type: "sent",
-    text,
-    status: navigator.onLine ? "sending" : "pending"
-  };
-  messages.push(msgObj);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-  input.value = "";
-  renderMessages();
-
-  if(navigator.onLine){
-    sendToBackend(msgObj);
-  }
-}
-
-/* ---------- RETRY PENDING MESSAGES ---------- */
-async function retryPending() {
-  if(!navigator.onLine) return;
-  for(const msg of messages){
-    if(msg.status === "pending" || msg.status==="sending"){
-      msg.status = "sending";
-      await sendToBackend(msg);
-    }
-  }
-}
-
-window.addEventListener("online", retryPending);
-
-
-let replyingTo = null; // holds the message object being replied to
-
-// Add click/swipe detection for messages
 document.getElementById("chat-body").addEventListener("click", e => {
   const msgDiv = e.target.closest(".message");
   if(!msgDiv) return;
@@ -300,13 +296,12 @@ document.getElementById("chat-body").addEventListener("click", e => {
   document.getElementById("reply-preview").style.display = "block";
 });
 
-// Cancel reply
 document.getElementById("cancel-reply").onclick = () => {
   replyingTo = null;
   document.getElementById("reply-preview").style.display = "none";
 };
 
-// Modify sendMessage to include linked_message_id
+/* ---------- SEND MESSAGE ---------- */
 function sendMessage() {
   const input = document.getElementById("message-input");
   const text = input.value.trim();
@@ -326,7 +321,6 @@ function sendMessage() {
   input.value = "";
   renderMessages();
 
-  // hide preview after sending
   replyingTo = null;
   document.getElementById("reply-preview").style.display = "none";
 
@@ -334,6 +328,20 @@ function sendMessage() {
     sendToBackend(msgObj);
   }
 }
+
+/* ---------- RETRY PENDING MESSAGES ---------- */
+async function retryPending() {
+  if(!navigator.onLine) return;
+  for(const msg of messages){
+    if(msg.status === "pending" || msg.status==="sending"){
+      msg.status = "sending";
+      await sendToBackend(msg);
+    }
+  }
+}
+
+window.addEventListener("online", retryPending);
+
 /* ---------- INIT ---------- */
 renderMessages();
 
