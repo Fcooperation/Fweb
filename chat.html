@@ -132,6 +132,12 @@ body {
 <!-- ---------- MESSAGES ---------- -->
 <div id="chat-body"></div>
 
+<!-- ---------- REPLY PREVIEW ---------- -->
+<div id="reply-preview" style="display:none; padding:8px 16px; border-left:4px solid #007bff; background:#f1f1f1;">
+  <div id="reply-sender" style="font-weight:bold; font-size:12px;"></div>
+  <div id="reply-text" style="font-size:14px; color:#555;"></div>
+</div>
+
 <!-- ---------- INPUT ---------- -->
 <div id="chat-input">
   <input type="text" id="message-input" placeholder="Type a message…">
@@ -176,15 +182,20 @@ function renderMessages() {
   const box = document.getElementById("chat-body");
   box.innerHTML = "";
   messages.forEach(msg => {
-    const div = document.createElement("div");
-    div.className = "message " + msg.type + (msg.status==="pending"?" pending":"");
-    div.textContent = msg.text;
-    box.appendChild(div);
-  });
+  const div = document.createElement("div");
+  div.className = "message " + msg.type + (msg.status==="pending"?" pending":"");
+  div.textContent = msg.text;
+
+  // 🔑 link DOM to message data
+  div.dataset.id = msg.id;
+
+  box.appendChild(div);
+});
   scrollToBottom();
 }
 let startX = 0;
 let currentMsg = null;
+let replyingMessage = null;
 
 document.getElementById("chat-body").addEventListener("touchstart", e => {
   const msg = e.target.closest(".message");
@@ -216,8 +227,19 @@ document.getElementById("chat-body").addEventListener("touchend", e => {
   currentMsg.style.transform = "translateX(0)";
 
   if (diffX > 50) {
-    console.log("Message swiped 👉 (no action yet)");
+  const msgId = currentMsg.dataset.id;
+  const msgData = messages.find(m => m.id == msgId);
+
+  if (msgData) {
+    replyingMessage = msgData;
+
+    const senderName = msgData.type === "sent" ? "You" : chatWith.username;
+    document.getElementById("reply-sender").textContent = senderName;
+    document.getElementById("reply-text").textContent = msgData.text;
+
+    document.getElementById("reply-preview").style.display = "block";
   }
+}
 
   currentMsg = null;
 });
