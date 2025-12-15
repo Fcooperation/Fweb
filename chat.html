@@ -60,15 +60,17 @@ body {
   gap: 10px;
 }
 
-/* ---------- MESSAGE BUBBLES ---------- */
-.message {
-  max-width: 75%;
-  padding: 10px 14px;
+/* ---------- MESSAGE BUBBLES ---------- */.message {
+  max-width: 85%;          /* longer like WhatsApp */
+  padding: 12px 18px;      /* bigger touch area */
+  touch-action: pan-y;     /* allows horizontal swipe */
   border-radius: 14px;
   font-size: 14px;
   line-height: 1.4;
   position: relative;
+  transition: transform 0.2s ease;
 }
+
 
 .sent {
   align-self: flex-end;
@@ -181,6 +183,44 @@ function renderMessages() {
   });
   scrollToBottom();
 }
+let startX = 0;
+let currentMsg = null;
+
+document.getElementById("chat-body").addEventListener("touchstart", e => {
+  const msg = e.target.closest(".message");
+  if (!msg) return;
+
+  startX = e.touches[0].clientX;
+  currentMsg = msg;
+});
+
+document.getElementById("chat-body").addEventListener("touchmove", e => {
+  if (!currentMsg) return;
+
+  const moveX = e.touches[0].clientX;
+  const diffX = moveX - startX;
+
+  // Move message slightly with finger
+  if (diffX > 0 && diffX < 80) {
+    currentMsg.style.transform = `translateX(${diffX}px)`;
+  }
+});
+
+document.getElementById("chat-body").addEventListener("touchend", e => {
+  if (!currentMsg) return;
+
+  const endX = e.changedTouches[0].clientX;
+  const diffX = endX - startX;
+
+  // Reset position
+  currentMsg.style.transform = "translateX(0)";
+
+  if (diffX > 50) {
+    console.log("Message swiped 👉 (no action yet)");
+  }
+
+  currentMsg = null;
+});
 
 /* ---------- SCROLL ---------- */
 function scrollToBottom() {
