@@ -114,6 +114,24 @@ body {
   font-size: 14px;
   cursor: pointer;
 }
+
+#reply-preview {
+  padding: 6px 12px;
+  border-left: 4px solid #007bff;
+  background: #f1f1f1;
+  font-family: Arial, sans-serif;
+  margin: 0 16px 6px 16px;
+  border-radius: 6px;
+  position: relative;
+}
+
+#cancel-reply {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: #888;
+}
 </style>
 </head>
 <body>
@@ -129,6 +147,13 @@ body {
 
 <!-- ---------- MESSAGES ---------- -->
 <div id="chat-body"></div>
+
+<!-- REPLY PREVIEW -->
+<div id="reply-preview" style="display:none;">
+  <div id="reply-sender" style="font-weight:bold; font-size:12px;"></div>
+  <div id="reply-text" style="font-size:14px; color:#555;"></div>
+  <button id="cancel-reply" style="float:right;">✖</button>
+</div>
 
 <!-- ---------- INPUT ---------- -->
 <div id="chat-input">
@@ -256,6 +281,59 @@ async function retryPending() {
 
 window.addEventListener("online", retryPending);
 
+
+let replyingTo = null; // holds the message object being replied to
+
+// Add click/swipe detection for messages
+document.getElementById("chat-body").addEventListener("click", e => {
+  const msgDiv = e.target.closest(".message");
+  if(!msgDiv) return;
+
+  const index = Array.from(msgDiv.parentNode.children).indexOf(msgDiv);
+  const msg = messages[index];
+
+  replyingTo = msg;
+
+  const senderName = msg.type === "sent" ? "You" : chatWith.username;
+  document.getElementById("reply-sender").textContent = senderName;
+  document.getElementById("reply-text").textContent = msg.text;
+  document.getElementById("reply-preview").style.display = "block";
+});
+
+// Cancel reply
+document.getElementById("cancel-reply").onclick = () => {
+  replyingTo = null;
+  document.getElementById("reply-preview").style.display = "none";
+};
+
+// Modify sendMessage to include linked_message_id
+function sendMessage() {
+  const input = document.getElementById("message-input");
+  const text = input.value.trim();
+  if(!text) return;
+
+  const msgObj = {
+    id: Date.now(),
+    type: "sent",
+    text,
+    status: navigator.onLine ? "sending" : "pending",
+    linked: replyingTo ? true : false,
+    linked_message_id: replyingTo ? replyingTo.id : null
+  };
+
+  messages.push(msgObj);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+  input.value = "";
+  renderMessages();
+
+  // hide preview after sending
+  replyingTo = null;
+  document.getElementById("reply-preview").style.display = "none";
+
+  if(navigator.onLine){
+    sendToBackend(msgObj);
+  }
+}
 /* ---------- INIT ---------- */
 renderMessages();
 
