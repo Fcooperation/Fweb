@@ -171,9 +171,18 @@ body {
   opacity: 0.7;
 }
 .message.highlight {
-  box-shadow: 0 0 0 2px rgba(30, 136, 229, 0.8),
-              0 0 10px rgba(30, 136, 229, 0.6);
-  transition: box-shadow 0.3s ease;
+  animation: glowPulse 1.5s ease-out 1;
+}
+
+@keyframes glowPulse {
+  0% {
+    box-shadow:
+      0 0 0 3px #1e88e5,
+      0 0 20px 8px rgba(30,136,229,1);
+  }
+  100% {
+    box-shadow: none;
+  }
 }
 </style>
 </head>
