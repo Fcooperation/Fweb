@@ -352,34 +352,27 @@ function enableLinkedMessageJump() {
       }
     };
   });
+  
+  const replyBoxes = document.querySelectorAll(".message > div:first-child"); // first child = replyBox
+replyBoxes.forEach(box => {
+  box.style.cursor = "pointer"; // optional
+  box.onclick = (e) => {
+    e.stopPropagation(); // prevent bubbling to parent
+    const parentMsgEl = box.parentElement;
+    const msgId = parentMsgEl.dataset.id;
+    const msgData = messages.find(m => m.id == msgId);
+    if (msgData && msgData.linked && msgData.linked_message_id) {
+      const linkedEl = document.querySelector(`.message[data-id='${msgData.linked_message_id}']`);
+      if (linkedEl) {
+        linkedEl.scrollIntoView({ behavior: "smooth", block: "center" });
+        linkedEl.classList.add("highlight");
+        setTimeout(() => linkedEl.classList.remove("highlight"), 2000);
+      }
+    }
+  };
+});
 }
 
-/* ---------- STATUS TEXT (only for sent messages) ---------- */
-if (msg.type === "sent") {
-  const status = document.createElement("div");
-  status.classList.add("status-text");
-
-  const timeSpan = document.createElement("span");
-  timeSpan.classList.add("message-time");
-  timeSpan.textContent = formatMessageTime(msg.sent_at);
-
-  status.appendChild(timeSpan);
-
-  if (msg.status === "sending") {
-    status.append("Sending…");
-    status.classList.add("status-sending");
-  } 
-  else if (msg.status === "pending") {
-    status.append("Pending");
-    status.classList.add("status-pending");
-  } 
-  else if (msg.status === "sent") {
-    status.append("Sent");
-    status.classList.add("status-sent");
-  }
-
-  div.appendChild(status);
-}
   // 🔑 link DOM to message data
   div.dataset.id = msg.id;
 
