@@ -170,6 +170,15 @@ body {
 .message:active {
   opacity: 0.7;
 }
+.message.highlight {
+  animation: flash 2s ease;
+  box-shadow: 0 0 0 2px #007bff inset;
+}
+
+@keyframes flash {
+  0%   { background-color: #ffeaa7; }
+  100% { background-color: inherit; }
+}
 </style>
 </head>
 <body>
@@ -339,11 +348,28 @@ function enableMessageTap() {
 
       if (!msgData) return;
 
-      if (msgData.linked) {
-        alert("linked");
-      } else {
-        alert("not linked");
-      }
+      // ❌ Not linked → do nothing
+      if (!msgData.linked || !msgData.linked_message_id) return;
+
+      // ✅ Linked → find original message
+      const linkedEl = document.querySelector(
+        `.message[data-id='${msgData.linked_message_id}']`
+      );
+
+      if (!linkedEl) return;
+
+      // Scroll to original
+      linkedEl.scrollIntoView({
+        behavior: "smooth",
+        block: "center"
+      });
+
+      // Highlight
+      linkedEl.classList.add("highlight");
+
+      setTimeout(() => {
+        linkedEl.classList.remove("highlight");
+      }, 2000);
     };
   });
 }
