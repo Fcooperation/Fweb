@@ -186,47 +186,6 @@ body {
     box-shadow: none;
   }
 }
-/* ---------- MULTI-SELECT MODE ---------- */
-.message.multi-selected {
-  background-color: rgba(30, 136, 229, 0.2);
-  border: 2px solid #1e88e5;
-}
-
-#multi-select-bar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 60px;
-  background: white;
-  border-bottom: 1px solid #ddd;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 0 16px;
-  z-index: 1000;
-  display: none; /* hidden by default */
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-}
-
-#multi-select-bar img {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-#multi-select-bar .username {
-  font-weight: bold;
-  font-size: 16px;
-}
-
-#multi-select-bar .close-selection {
-  margin-left: auto;
-  cursor: pointer;
-  font-size: 20px;
-  font-weight: bold;
-}
 </style>
 </head>
 <body>
@@ -238,11 +197,6 @@ body {
     <div class="username" id="chat-username">Loading...</div>
     <div class="status" id="chat-status">Status...</div>
   </div>
-</div>
-<div id="multi-select-bar">
-  <img id="multi-select-pic" src="">
-  <div class="username" id="multi-select-username"></div>
-  <div class="close-selection" id="close-selection">✕</div>
 </div>
 
 <!-- ---------- MESSAGES ---------- -->
@@ -429,92 +383,6 @@ setTimeout(() => {
     };
   });
 }
-
-let multiSelectMode = false;
-let selectedMessages = [];
-
-const multiBar = document.getElementById("multi-select-bar");
-const multiPic = document.getElementById("multi-select-pic");
-const multiUsername = document.getElementById("multi-select-username");
-const closeSelection = document.getElementById("close-selection");
-
-// Initialize dashboard with chat user info
-multiPic.src = chatWith.profile_pic || '';
-multiUsername.textContent = chatWith.username || '';
-
-// Function to enter multi-select mode
-function enterMultiSelect(msgEl) {
-  multiSelectMode = true;
-  multiBar.style.display = "flex";
-  toggleMessageSelection(msgEl);
-}
-
-// Function to exit multi-select mode
-function exitMultiSelect() {
-  multiSelectMode = false;
-  selectedMessages.forEach(el => el.classList.remove("multi-selected"));
-  selectedMessages = [];
-  multiBar.style.display = "none";
-}
-
-// Toggle selection on a message
-function toggleMessageSelection(msgEl) {
-  if (selectedMessages.includes(msgEl)) {
-    msgEl.classList.remove("multi-selected");
-    selectedMessages = selectedMessages.filter(m => m !== msgEl);
-  } else {
-    msgEl.classList.add("multi-selected");
-    selectedMessages.push(msgEl);
-  }
-}
-
-// Add long-press / double-tap listeners
-function enableMultiSelect() {
-  const allMessages = document.querySelectorAll(".message");
-  allMessages.forEach(msgEl => {
-    let tapTimer = null;
-    let longPress = false;
-
-    // LONG PRESS
-    msgEl.addEventListener("touchstart", e => {
-      longPress = false;
-      tapTimer = setTimeout(() => {
-        longPress = true;
-        enterMultiSelect(msgEl);
-      }, 500); // 500ms long press
-    });
-    msgEl.addEventListener("touchend", e => {
-      clearTimeout(tapTimer);
-      if (!longPress && multiSelectMode) {
-        toggleMessageSelection(msgEl);
-      }
-    });
-
-    // DOUBLE TAP (desktop alternative)
-    msgEl.addEventListener("dblclick", e => {
-      if (!multiSelectMode) enterMultiSelect(msgEl);
-      else toggleMessageSelection(msgEl);
-    });
-
-    // TAP to select when already in multi-select
-    msgEl.addEventListener("click", e => {
-      if (multiSelectMode) toggleMessageSelection(msgEl);
-    });
-  });
-}
-
-// Close multi-select bar
-closeSelection.addEventListener("click", exitMultiSelect);
-
-// Re-enable multi-select after messages re-render
-function renderMessagesWithMultiSelect() {
-  renderMessages();
-  enableMultiSelect();
-}
-
-// Replace all calls to renderMessages() with renderMessagesWithMultiSelect() in your code
-renderMessagesWithMultiSelect();
-
 let startX = 0;
 let currentMsg = null;
 let replyingMessage = null;
