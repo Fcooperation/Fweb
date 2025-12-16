@@ -405,17 +405,17 @@ function scrollToBottom() {
 /* ---------- SEND TO BACKEND ---------- */
 async function sendToBackend(msgObj) {
   try {
-    const payload = {
-      action: "send_messages",
-      email: account.email,
-      id: msgObj.id,
-      sender_id: account.email,
-      receiver_id: chatWith.id,
-      linked: false,
-      linked_message_id: null,
-      sent_at: new Date().toISOString(),
-      text: msgObj.text
-    };
+    const payload = {  
+  action: "send_messages",  
+  email: account.email,  
+  id: msgObj.id,  
+  sender_id: account.email,  
+  receiver_id: chatWith.id,  
+  linked: msgObj.linked,
+  linked_message_id: msgObj.linked_message_id,
+  sent_at: msgObj.sent_at,
+  text: msgObj.text  
+};
     const res = await fetch(API_URL, {
       method: "POST",
       headers: {"Content-Type": "application/json"},
@@ -453,7 +453,9 @@ function sendMessage() {
         text: replyingMessage.text,
         sender: getReplySenderName(replyingMessage)
       }
-    : null
+    : null,
+  linked: replyingMessage ? true : false,
+  linked_message_id: replyingMessage ? replyingMessage.id : null
 };
   messages.push(msgObj);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
