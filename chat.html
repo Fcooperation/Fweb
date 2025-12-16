@@ -171,13 +171,9 @@ body {
   opacity: 0.7;
 }
 .message.highlight {
-  animation: flash 2s ease;
-  box-shadow: 0 0 0 2px #007bff inset;
-}
-
-@keyframes flash {
-  0%   { background-color: #ffeaa7; }
-  100% { background-color: inherit; }
+  box-shadow: 0 0 0 2px rgba(30, 136, 229, 0.8),
+              0 0 10px rgba(30, 136, 229, 0.6);
+  transition: box-shadow 0.3s ease;
 }
 </style>
 </head>
