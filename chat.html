@@ -275,9 +275,10 @@ function formatMessageTime(sentAt) {
 }
 
 /* ---------- RENDER MESSAGES ---------- */
-function renderMessages() {
+ function renderMessages() {
   const box = document.getElementById("chat-body");
   box.innerHTML = "";
+
   messages.forEach(msg => {
     const div = document.createElement("div");
     div.className = "message " + msg.type + (msg.status==="pending"?" pending":"");
@@ -309,16 +310,9 @@ function renderMessages() {
       timeSpan.textContent = formatMessageTime(msg.sent_at);
       status.appendChild(timeSpan);
 
-      if (msg.status === "sending") {
-        status.append("Sending…");
-        status.classList.add("status-sending");
-      } else if (msg.status === "pending") {
-        status.append("Pending");
-        status.classList.add("status-pending");
-      } else if (msg.status === "sent") {
-        status.append("Sent");
-        status.classList.add("status-sent");
-      }
+      if (msg.status === "sending") status.append("Sending…");
+      else if (msg.status === "pending") status.append("Pending");
+      else if (msg.status === "sent") status.append("Sent");
 
       div.appendChild(status);
     }
@@ -328,7 +322,7 @@ function renderMessages() {
   });
 
   scrollToBottom();
-  enableLinkedMessageJump(); // <-- add this
+  enableLinkedMessageJump(); // tap reply boxes
 }
 
 // ---------- TAP LINKED MESSAGE ----------
