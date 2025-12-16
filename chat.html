@@ -442,6 +442,7 @@ function enableMessageTap() {
 
   allMessages.forEach(msgEl => {
     msgEl.onclick = () => {
+      if (selectMode) return; // 🚫 disable jump while selecting
       const msgId = msgEl.dataset.id;
       const msgData = messages.find(m => m.id == msgId);
 
