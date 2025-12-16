@@ -344,6 +344,7 @@ if (msg.type === "sent") {
 });
   scrollToBottom();
   enableMessageTap();
+  enableGlowOnHold();
 }
 function enableMessageTap() {
   const allMessages = document.querySelectorAll(".message");
@@ -548,6 +549,35 @@ document.getElementById("send-btn").onclick = sendMessage;
 document.getElementById("message-input").addEventListener("keydown", e => {
   if(e.key === "Enter") sendMessage();
 });
+function enableGlowOnHold() {
+  const allMessages = document.querySelectorAll(".message");
+  allMessages.forEach(msg => {
+    let holdTimer;
+
+    msg.addEventListener("touchstart", () => {
+      // start timer for 500ms hold
+      holdTimer = setTimeout(() => {
+        msg.classList.add("highlight");
+
+        // remove highlight after animation (2s)
+        setTimeout(() => {
+          msg.classList.remove("highlight");
+        }, 2000);
+      }, 500);
+    });
+
+    msg.addEventListener("touchend", () => {
+      clearTimeout(holdTimer); // cancel if released early
+    });
+
+    msg.addEventListener("touchmove", () => {
+      clearTimeout(holdTimer); // cancel if user scrolls
+    });
+  });
+}
+
+// call this after messages render
+enableGlowOnHold();
 </script>
 
 </body>
