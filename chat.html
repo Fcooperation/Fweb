@@ -208,9 +208,58 @@ body {
 .message {
   user-select: none;
 }
+/* ---------- SELECTION BAR ---------- */
+#selection-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background: #1e88e5;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  z-index: 999;
+  display: none; /* hidden by default */
+}
+
+#selection-bar.active {
+  display: flex;
+}
+
+#selection-bar img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+#select-back {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+#select-title {
+  font-weight: bold;
+  font-size: 16px;
+}
 </style>
 </head>
 <body>
+  
+  <!-- ---------- SELECTION BAR (HIDDEN BY DEFAULT) ---------- -->
+<div id="selection-bar">
+  <button id="select-back">←</button>
+
+  <img id="select-pic" src="">
+
+  <span id="select-title"></span>
+</div>
 
 <!-- ---------- HEADER ---------- -->
 <div id="chat-header">
@@ -308,6 +357,16 @@ function formatMessageTime(sentAt) {
 
 let selectMode = false;
 let selectedMessages = new Set();
+const selectionBar = document.getElementById("selection-bar");
+const selectTitle = document.getElementById("select-title");
+
+// load your own profile pic & name
+selectTitle.textContent = account.email || "You";
+document.getElementById("select-pic").src =
+  account.profile_pic || "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiPjwvc3ZnPg==";
+
+// back button exits select mode
+document.getElementById("select-back").onclick = exitSelectMode;
 let holdTimer = null;
 
 function enableMultiSelect() {
@@ -349,6 +408,10 @@ function enableMultiSelect() {
 function enterSelectMode(msg) {
   selectMode = true;
   document.getElementById("chat-body").classList.add("select-mode");
+
+  // show selection bar
+  selectionBar.classList.add("active");
+
   toggleSelection(msg);
 }
 
@@ -369,9 +432,14 @@ function toggleSelection(msg) {
 
 function exitSelectMode() {
   selectMode = false;
+
   selectedMessages.forEach(m => m.classList.remove("selected"));
   selectedMessages.clear();
+
   document.getElementById("chat-body").classList.remove("select-mode");
+
+  // hide selection bar
+  selectionBar.classList.remove("active");
 }
 
 /* ---------- RENDER MESSAGES ---------- */
