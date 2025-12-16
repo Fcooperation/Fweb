@@ -186,6 +186,28 @@ body {
     box-shadow: none;
   }
 }
+/* ---------- MULTI SELECT MODE (WhatsApp style) ---------- */
+
+/* Dim entire chat when selecting */
+#chat-body.select-mode {
+  background: rgba(0,0,0,0.08);
+}
+
+/* Selected message */
+.message.selected {
+  background: #cce4ff !important; /* WhatsApp blue */
+  box-shadow: 0 0 0 2px #1e88e5 inset;
+}
+
+/* Make non-selected messages dim */
+#chat-body.select-mode .message:not(.selected) {
+  opacity: 0.5;
+}
+
+/* Prevent text selection popup */
+.message {
+  user-select: none;
+}
 </style>
 </head>
 <body>
@@ -282,6 +304,75 @@ function formatMessageTime(sentAt) {
 
   return `${dayMonth} ${time}`;
 }
+/* ---------- MULTI SELECT LOGIC ---------- */
+
+let selectMode = false;
+let selectedMessages = new Set();
+let holdTimer = null;
+
+function enableMultiSelect() {
+  const chatBody = document.getElementById("chat-body");
+
+  chatBody.querySelectorAll(".message").forEach(msg => {
+
+    // PRESS & HOLD
+    msg.addEventListener("touchstart", e => {
+      holdTimer = setTimeout(() => {
+        enterSelectMode(msg);
+      }, 500);
+    });
+
+    msg.addEventListener("touchend", () => {
+      clearTimeout(holdTimer);
+    });
+
+    msg.addEventListener("touchmove", () => {
+      clearTimeout(holdTimer);
+    });
+
+    // TAP WHILE IN SELECT MODE
+    msg.addEventListener("click", e => {
+      if (!selectMode) return;
+      toggleSelection(msg);
+      e.stopPropagation();
+    });
+  });
+
+  // Tap empty space to exit select mode
+  chatBody.addEventListener("click", e => {
+    if (selectMode && !e.target.closest(".message")) {
+      exitSelectMode();
+    }
+  });
+}
+
+function enterSelectMode(msg) {
+  selectMode = true;
+  document.getElementById("chat-body").classList.add("select-mode");
+  toggleSelection(msg);
+}
+
+function toggleSelection(msg) {
+  if (selectedMessages.has(msg)) {
+    msg.classList.remove("selected");
+    selectedMessages.delete(msg);
+  } else {
+    msg.classList.add("selected");
+    selectedMessages.add(msg);
+  }
+
+  // Exit if none selected
+  if (selectedMessages.size === 0) {
+    exitSelectMode();
+  }
+}
+
+function exitSelectMode() {
+  selectMode = false;
+  selectedMessages.forEach(m => m.classList.remove("selected"));
+  selectedMessages.clear();
+  document.getElementById("chat-body").classList.remove("select-mode");
+}
 
 /* ---------- RENDER MESSAGES ---------- */
 function renderMessages() {
@@ -343,13 +434,15 @@ if (msg.type === "sent") {
   box.appendChild(div);
 });
   scrollToBottom();
-  enableMessageTap();
+enableMessageTap();
+enableMultiSelect(); // ✅ ADD THIS
 }
 function enableMessageTap() {
   const allMessages = document.querySelectorAll(".message");
 
   allMessages.forEach(msgEl => {
     msgEl.onclick = () => {
+      if (selectMode) return; // 🚫 disable jump while selecting
       const msgId = msgEl.dataset.id;
       const msgData = messages.find(m => m.id == msgId);
 
