@@ -139,6 +139,28 @@ body {
 #cancel-reply:active {
   background: #ccc;
 }
+/* ---------- MESSAGE STATUS ---------- */
+.status-text {
+  font-size: 11px;
+  margin-top: 4px;
+  text-align: right;
+  opacity: 0.85;
+}
+
+.status-sending {
+  color: grey;
+}
+
+.status-pending {
+  color: orange;
+}
+
+.status-sent {
+  color: #1e88e5; /* WhatsApp-like blue */
+}
+.pending {
+  opacity: 0.6;
+}
 </style>
 </head>
 <body>
@@ -231,6 +253,27 @@ function renderMessages() {
 const textNode = document.createElement("div");
 textNode.textContent = msg.text;
 div.appendChild(textNode);
+
+/* ---------- STATUS TEXT (only for sent messages) ---------- */
+if (msg.type === "sent") {
+  const status = document.createElement("div");
+  status.classList.add("status-text");
+
+  if (msg.status === "sending") {
+    status.textContent = "Sending…";
+    status.classList.add("status-sending");
+  } 
+  else if (msg.status === "pending") {
+    status.textContent = "Pending";
+    status.classList.add("status-pending");
+  } 
+  else if (msg.status === "sent") {
+    status.textContent = "Sent";
+    status.classList.add("status-sent");
+  }
+
+  div.appendChild(status);
+}
 
   // 🔑 link DOM to message data
   div.dataset.id = msg.id;
