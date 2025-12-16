@@ -167,6 +167,16 @@ body {
   font-style: italic;
   margin-right: 6px;
 }
+/* Highlight animation for replied message */
+.message.highlight {
+  animation: highlight-msg 2s ease forwards;
+}
+
+@keyframes highlight-msg {
+  0% { background-color: #fff59d; } /* light yellow */
+  50% { background-color: #fff176; } 
+  100% { background-color: inherit; } /* return to original */
+}
 </style>
 </head>
 <body>
@@ -269,28 +279,80 @@ function renderMessages() {
   const box = document.getElementById("chat-body");
   box.innerHTML = "";
   messages.forEach(msg => {
-  const div = document.createElement("div");
-  div.className = "message " + msg.type + (msg.status==="pending"?" pending":"");
-  
-  if (msg.replyTo) {
-  const replyBox = document.createElement("div");
-  replyBox.style.borderLeft = "3px solid #007bff";
-  replyBox.style.padding = "4px 8px";
-  replyBox.style.marginBottom = "6px";
-  replyBox.style.fontSize = "12px";
-  replyBox.style.opacity = "0.8";
+    const div = document.createElement("div");
+    div.className = "message " + msg.type + (msg.status==="pending"?" pending":"");
+    
+    if (msg.replyTo) {
+      const replyBox = document.createElement("div");
+      replyBox.style.borderLeft = "3px solid #007bff";
+      replyBox.style.padding = "4px 8px";
+      replyBox.style.marginBottom = "6px";
+      replyBox.style.fontSize = "12px";
+      replyBox.style.opacity = "0.8";
 
-  replyBox.innerHTML = `
-    <strong>${msg.replyTo.sender}</strong><br>
-    ${msg.replyTo.text}
-  `;
+      replyBox.innerHTML = `
+        <strong>${msg.replyTo.sender}</strong><br>
+        ${msg.replyTo.text}
+      `;
+      div.appendChild(replyBox);
+    }
 
-  div.appendChild(replyBox);
+    const textNode = document.createElement("div");
+    textNode.textContent = msg.text;
+    div.appendChild(textNode);
+
+    if (msg.type === "sent") {
+      const status = document.createElement("div");
+      status.classList.add("status-text");
+      const timeSpan = document.createElement("span");
+      timeSpan.classList.add("message-time");
+      timeSpan.textContent = formatMessageTime(msg.sent_at);
+      status.appendChild(timeSpan);
+
+      if (msg.status === "sending") {
+        status.append("Sending…");
+        status.classList.add("status-sending");
+      } else if (msg.status === "pending") {
+        status.append("Pending");
+        status.classList.add("status-pending");
+      } else if (msg.status === "sent") {
+        status.append("Sent");
+        status.classList.add("status-sent");
+      }
+
+      div.appendChild(status);
+    }
+
+    div.dataset.id = msg.id;
+    box.appendChild(div);
+  });
+
+  scrollToBottom();
+  enableLinkedMessageJump(); // <-- add this
 }
 
-const textNode = document.createElement("div");
-textNode.textContent = msg.text;
-div.appendChild(textNode);
+// ---------- TAP LINKED MESSAGE ----------
+function enableLinkedMessageJump() {
+  const allMessages = document.querySelectorAll(".message");
+  allMessages.forEach(msgEl => {
+    msgEl.onclick = () => {
+      const msgId = msgEl.dataset.id;
+      const msgData = messages.find(m => m.id == msgId);
+
+      if (msgData && msgData.linked && msgData.linked_message_id) {
+        // Find the linked message element
+        const linkedEl = document.querySelector(`.message[data-id='${msgData.linked_message_id}']`);
+        if (linkedEl) {
+          linkedEl.scrollIntoView({ behavior: "smooth", block: "center" });
+          // Add highlight class
+          linkedEl.classList.add("highlight");
+          // Remove highlight after animation
+          setTimeout(() => linkedEl.classList.remove("highlight"), 2000);
+        }
+      }
+    };
+  });
+}
 
 /* ---------- STATUS TEXT (only for sent messages) ---------- */
 if (msg.type === "sent") {
