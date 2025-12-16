@@ -119,6 +119,26 @@ body {
 #reply-preview {
   border-top: 1px solid #ddd;
 }
+#reply-preview {
+  display: flex;
+}
+#cancel-reply {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: #e0e0e0;
+  color: #333;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#cancel-reply:active {
+  background: #ccc;
+}
 </style>
 </head>
 <body>
@@ -136,14 +156,13 @@ body {
 <div id="chat-body"></div>
 
 <!-- ---------- REPLY PREVIEW ---------- -->
-<div id="reply-preview" style="display:none; padding:8px 16px; background:#f1f1f1; border-left:4px solid #007bff; display:flex; justify-content:space-between; align-items:center; gap:10px;">
+<div id="reply-preview" style="display:none; padding:8px 16px; background:#f1f1f1; border-left:4px solid #007bff; justify-content:space-between; align-items:center; gap:10px;">
   
   <div>
     <div id="reply-sender" style="font-weight:bold; font-size:12px;"></div>
     <div id="reply-text" style="font-size:14px; color:#555;"></div>
   </div>
-
-  <button id="cancel-reply" style="border:none; background:none; font-size:18px; cursor:pointer;">✕</button>
+<button id="cancel-reply" aria-label="Cancel reply">✕</button>
 </div>
 
 <!-- ---------- INPUT ---------- -->
@@ -231,6 +250,10 @@ document.getElementById("cancel-reply").onclick = () => {
 function getReplySenderName(msg) {
   return msg.type === "sent" ? "You" : chatWith.username;
 }
+function scrollToInput() {
+  const inputBar = document.getElementById("chat-input");
+  inputBar.scrollIntoView({ behavior: "smooth", block: "end" });
+}
 
 document.getElementById("chat-body").addEventListener("touchstart", e => {
   const msg = e.target.closest(".message");
@@ -268,12 +291,19 @@ document.getElementById("chat-body").addEventListener("touchend", e => {
   const msgData = messages.find(m => m.id == msgId);
 
   if (msgData) {
-    replyingMessage = msgData;
+  replyingMessage = msgData;
 
-    document.getElementById("reply-sender").textContent = getReplySenderName(msgData);
-    document.getElementById("reply-text").textContent = msgData.text;
+  document.getElementById("reply-sender").textContent = getReplySenderName(msgData);
+  document.getElementById("reply-text").textContent = msgData.text;
 
-    document.getElementById("reply-preview").style.display = "block";
+  document.getElementById("reply-preview").style.display = "block";
+
+  scrollToInput();
+
+  const input = document.getElementById("message-input");
+  setTimeout(() => input.focus(), 150);
+
+    
   }
 }
 
