@@ -186,6 +186,12 @@ body {
     box-shadow: none;
   }
 }
+/* WhatsApp-like selected/dimmed */
+.message.multi-selected {
+  background-color: rgba(30,136,229,0.2); /* light blue */
+  border: 2px solid #1e88e5;
+  opacity: 0.6; /* dim */
+}
 </style>
 </head>
 <body>
@@ -549,35 +555,64 @@ document.getElementById("send-btn").onclick = sendMessage;
 document.getElementById("message-input").addEventListener("keydown", e => {
   if(e.key === "Enter") sendMessage();
 });
-function enableGlowOnHold() {
+let multiSelectMode = false;
+let selectedMessages = [];
+
+function enableMultiSelectMode() {
   const allMessages = document.querySelectorAll(".message");
   allMessages.forEach(msg => {
     let holdTimer;
 
+    // LONG PRESS TO START SELECTION
     msg.addEventListener("touchstart", () => {
-      // start timer for 500ms hold
       holdTimer = setTimeout(() => {
-        msg.classList.add("highlight");
-
-        // remove highlight after animation (2s)
-        setTimeout(() => {
-          msg.classList.remove("highlight");
-        }, 2000);
+        multiSelectMode = true;
+        toggleMessageSelection(msg);
       }, 500);
     });
 
     msg.addEventListener("touchend", () => {
-      clearTimeout(holdTimer); // cancel if released early
+      clearTimeout(holdTimer);
+      // If already in multi-select, tap selects/deselects
+      if(multiSelectMode){
+        toggleMessageSelection(msg);
+      }
     });
 
     msg.addEventListener("touchmove", () => {
-      clearTimeout(holdTimer); // cancel if user scrolls
+      clearTimeout(holdTimer); // cancel if scrolling
+    });
+
+    // DESKTOP / MOUSE
+    msg.addEventListener("dblclick", () => {
+      if(!multiSelectMode){
+        multiSelectMode = true;
+        toggleMessageSelection(msg);
+      }
+    });
+
+    msg.addEventListener("click", () => {
+      if(multiSelectMode){
+        toggleMessageSelection(msg);
+      }
     });
   });
 }
 
-// call this after messages render
-enableGlowOnHold();
+// TOGGLE SELECTION
+function toggleMessageSelection(msg){
+  if(selectedMessages.includes(msg)){
+    msg.classList.remove("multi-selected");
+    selectedMessages = selectedMessages.filter(m=>m!==msg);
+    if(selectedMessages.length === 0) multiSelectMode = false; // exit if nothing selected
+  } else {
+    msg.classList.add("multi-selected");
+    selectedMessages.push(msg);
+  }
+}
+
+// Call after rendering messages
+enableMultiSelectMode();
 </script>
 
 </body>
