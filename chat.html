@@ -161,6 +161,12 @@ body {
 .pending {
   opacity: 0.6;
 }
+/* ---------- MESSAGE TIME ---------- */
+.message-time {
+  font-weight: bold;
+  font-style: italic;
+  margin-right: 6px;
+}
 </style>
 </head>
 <body>
@@ -226,6 +232,38 @@ header.onclick = () => {
 const STORAGE_KEY = "chat_messages_" + chatWith.id;
 let messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
 
+function formatMessageTime(sentAt) {
+  if (!sentAt) return "";
+
+  const date = new Date(sentAt);
+  const now = new Date();
+
+  const isToday =
+    date.toDateString() === now.toDateString();
+
+  const yesterday = new Date();
+  yesterday.setDate(now.getDate() - 1);
+
+  const isYesterday =
+    date.toDateString() === yesterday.toDateString();
+
+  const time = date.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+
+  if (isToday) {
+    return time;
+  }
+
+  const dayMonth = date.toLocaleDateString([], {
+    day: "2-digit",
+    month: "short"
+  });
+
+  return `${dayMonth} ${time}`;
+}
+
 /* ---------- RENDER MESSAGES ---------- */
 function renderMessages() {
   const box = document.getElementById("chat-body");
@@ -259,22 +297,27 @@ if (msg.type === "sent") {
   const status = document.createElement("div");
   status.classList.add("status-text");
 
+  const timeSpan = document.createElement("span");
+  timeSpan.classList.add("message-time");
+  timeSpan.textContent = formatMessageTime(msg.sent_at);
+
+  status.appendChild(timeSpan);
+
   if (msg.status === "sending") {
-    status.textContent = "Sending…";
+    status.append("Sending…");
     status.classList.add("status-sending");
   } 
   else if (msg.status === "pending") {
-    status.textContent = "Pending";
+    status.append("Pending");
     status.classList.add("status-pending");
   } 
   else if (msg.status === "sent") {
-    status.textContent = "Sent";
+    status.append("Sent");
     status.classList.add("status-sent");
   }
 
   div.appendChild(status);
 }
-
   // 🔑 link DOM to message data
   div.dataset.id = msg.id;
 
@@ -402,6 +445,7 @@ function sendMessage() {
   id: Date.now(),
   type: "sent",
   text,
+  sent_at: new Date().toISOString(),
   status: navigator.onLine ? "sending" : "pending",
   replyTo: replyingMessage
     ? {
