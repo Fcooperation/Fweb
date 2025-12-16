@@ -167,6 +167,9 @@ body {
   font-style: italic;
   margin-right: 6px;
 }
+.message:active {
+  opacity: 0.7;
+}
 </style>
 </head>
 <body>
@@ -324,6 +327,25 @@ if (msg.type === "sent") {
   box.appendChild(div);
 });
   scrollToBottom();
+  enableMessageTap();
+}
+function enableMessageTap() {
+  const allMessages = document.querySelectorAll(".message");
+
+  allMessages.forEach(msgEl => {
+    msgEl.onclick = () => {
+      const msgId = msgEl.dataset.id;
+      const msgData = messages.find(m => m.id == msgId);
+
+      if (!msgData) return;
+
+      if (msgData.linked) {
+        alert("linked");
+      } else {
+        alert("not linked");
+      }
+    };
+  });
 }
 let startX = 0;
 let currentMsg = null;
