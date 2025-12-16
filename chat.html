@@ -116,6 +116,9 @@ body {
   font-size: 14px;
   cursor: pointer;
 }
+#reply-preview {
+  border-top: 1px solid #ddd;
+}
 </style>
 </head>
 <body>
@@ -189,7 +192,26 @@ function renderMessages() {
   messages.forEach(msg => {
   const div = document.createElement("div");
   div.className = "message " + msg.type + (msg.status==="pending"?" pending":"");
-  div.textContent = msg.text;
+  
+  if (msg.replyTo) {
+  const replyBox = document.createElement("div");
+  replyBox.style.borderLeft = "3px solid #007bff";
+  replyBox.style.padding = "4px 8px";
+  replyBox.style.marginBottom = "6px";
+  replyBox.style.fontSize = "12px";
+  replyBox.style.opacity = "0.8";
+
+  replyBox.innerHTML = `
+    <strong>${msg.replyTo.sender}</strong><br>
+    ${msg.replyTo.text}
+  `;
+
+  div.appendChild(replyBox);
+}
+
+const textNode = document.createElement("div");
+textNode.textContent = msg.text;
+div.appendChild(textNode);
 
   // 🔑 link DOM to message data
   div.dataset.id = msg.id;
@@ -201,6 +223,14 @@ function renderMessages() {
 let startX = 0;
 let currentMsg = null;
 let replyingMessage = null;
+document.getElementById("cancel-reply").onclick = () => {
+  replyingMessage = null;
+  document.getElementById("reply-preview").style.display = "none";
+};
+
+function getReplySenderName(msg) {
+  return msg.type === "sent" ? "You" : chatWith.username;
+}
 
 document.getElementById("chat-body").addEventListener("touchstart", e => {
   const msg = e.target.closest(".message");
@@ -227,16 +257,11 @@ document.getElementById("chat-body").addEventListener("touchend", e => {
 
   const endX = e.changedTouches[0].clientX;
   const diffX = endX - startX;
-document.getElementById("cancel-reply").onclick = () => {
-  replyingMessage = null;
-  document.getElementById("reply-preview").style.display = "none";
-};
+
   // Reset position
   currentMsg.style.transform = "translateX(0)";
   
-  function getReplySenderName(msg) {
-  return msg.type === "sent" ? "You" : chatWith.username;
-}
+  
 
   if (diffX > 50) {
   const msgId = currentMsg.dataset.id;
@@ -301,15 +326,25 @@ function sendMessage() {
   if(!text) return;
 
   const msgObj = {
-    id: Date.now(), // unique message id
-    type: "sent",
-    text,
-    status: navigator.onLine ? "sending" : "pending"
-  };
+  id: Date.now(),
+  type: "sent",
+  text,
+  status: navigator.onLine ? "sending" : "pending",
+  replyTo: replyingMessage
+    ? {
+        id: replyingMessage.id,
+        text: replyingMessage.text,
+        sender: getReplySenderName(replyingMessage)
+      }
+    : null
+};
   messages.push(msgObj);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   input.value = "";
   renderMessages();
+  
+  replyingMessage = null;
+document.getElementById("reply-preview").style.display = "none";
 
   if(navigator.onLine){
     sendToBackend(msgObj);
