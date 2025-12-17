@@ -208,23 +208,6 @@ body {
 .message {
   user-select: none;
 }
-.message.deleted {
-  font-style: italic;
-  color: #888;
-  background: #f1f1f1 !important;
-  pointer-events: none; /* can't swipe, but can be selected */
-}
-
-.message.deleted .status-text,
-.message.deleted .message-time {
-  display: none; /* hide time/status */
-}
-
-#selection-bar button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 </style>
 </head>
 <body>
@@ -235,30 +218,22 @@ body {
     top: 0;
     left: 0;
     right: 0;
-    height: 64px;
+    height: 64px; /* same as header */
     background: white;
     z-index: 1000;
     display: flex;
     align-items: center;
     padding: 0 16px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    gap: 16px;
 ">
     <button id="select-back" style="
         border: none;
         background: none;
         font-size: 18px;
         cursor: pointer;
-    ">← </button>
-
-    <button id="delete-btn" style="
-        border: none;
-        background: none;
-        cursor: pointer;
-        font-size: 22px;
-        color: #d32f2f;
-    " title="Delete selected messages">🗑️</button>
+    ">← Back</button>
 </div>
+
 <!-- ---------- HEADER ---------- -->
 <div id="chat-header">
   <img id="chat-pic" src="">
@@ -432,7 +407,8 @@ function renderMessages() {
   const box = document.getElementById("chat-body");
   box.innerHTML = "";
   messages.forEach(msg => {
-  div.className = "message " + (msg.type === "deleted" ? "deleted" : msg.type) + (msg.status==="pending"?" pending":"");
+  const div = document.createElement("div");
+  div.className = "message " + msg.type + (msg.status==="pending"?" pending":"");
   
   if (msg.replyTo) {
   const replyBox = document.createElement("div");
@@ -451,14 +427,7 @@ function renderMessages() {
 }
 
 const textNode = document.createElement("div");
-
-if(msg.deleted) {
-  textNode.textContent = "This message was deleted by you";
-  textNode.classList.add("deleted");
-} else {
-  textNode.textContent = msg.text;
-}
-
+textNode.textContent = msg.text;
 div.appendChild(textNode);
 
 /* ---------- STATUS TEXT (only for sent messages) ---------- */
@@ -693,69 +662,6 @@ async function retryPending() {
 
 window.addEventListener("online", retryPending);
 
-const deleteBtn = document.getElementById("delete-btn");
-
-deleteBtn.onclick = () => {
-  if(selectedMessages.size === 0) return;
-
-  const msgs = Array.from(selectedMessages).map(msgEl => {
-    const msgData = messages.find(m => m.id == msgEl.dataset.id);
-    return msgData;
-  }).filter(Boolean);
-
-  if(msgs.length === 0) return;
-
-  // Check if any selected message is seen (simulate with msg.seen)
-  const anySeen = msgs.some(m => m.seen);
-
-  // Show options
-  let choice = null;
-  if(anySeen) {
-    choice = confirm("Some messages have been seen. Delete for me only?");
-  } else {
-    choice = confirm("Delete messages?\nOK: Delete for everyone\nCancel: Delete for me");
-  }
-
-  msgs.forEach(m => {
-    const msgEl = document.querySelector(`.message[data-id='${m.id}']`);
-    if(choice) {
-      // Delete for everyone
-      m.text = "This message was deleted by you";
-      m.deleted = true;
-      m.type = "deleted";
-      // send backend request
-      sendDeleteToBackend(m.id);
-    } else {
-      // Delete for me
-      messages = messages.filter(x => x.id !== m.id);
-    }
-  });
-
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-  renderMessages();
-  exitSelectMode();
-};
-
-// Send delete request to backend
-async function sendDeleteToBackend(ids) {
-  if(!Array.isArray(ids)) ids = [ids];
-  const payload = {
-    action: "delete_messages",
-    id: ids.join(","),
-    email: account.email,
-    receiver_id: chatWith.id
-  };
-  try {
-    await fetch(API_URL, {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify(payload)
-    });
-  } catch(e){
-    console.warn("Failed to delete on server", e);
-  }
-}
-
 /* ---------- INIT ---------- */
 renderMessages();
 
@@ -766,4 +672,4 @@ document.getElementById("message-input").addEventListener("keydown", e => {
 </script>
 
 </body>
-</html>
+  </html>
