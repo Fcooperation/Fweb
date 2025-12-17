@@ -403,19 +403,12 @@ const deleteMenu = document.getElementById("delete-menu");
 // Back button closes selection mode
 document.getElementById("select-back").onclick = exitSelectMode;
 deleteBtn.onclick = () => {
-  
   if (selectedMessages.size === 0) return;
 
   const deleteForEveryoneOption =
     deleteMenu.querySelector('[data-action="everyone"]');
 
   let canDeleteForEveryone = true;
-  
-  selectedMessages.forEach(el => {
-  if (el.classList.contains("deleted")) {
-    canDeleteForEveryone = false;
-  }
-});
 
   selectedMessages.forEach(el => {
     const msgId = el.dataset.id;
@@ -644,7 +637,6 @@ function enableMessageTap() {
 
   allMessages.forEach(msgEl => {
     msgEl.onclick = () => {
-      if (msgEl.classList.contains("deleted")) return;
       if (selectMode) return; // 🚫 disable jump while selecting
       const msgId = msgEl.dataset.id;
       const msgData = messages.find(m => m.id == msgId);
@@ -698,8 +690,6 @@ function scrollToInput() {
 document.getElementById("chat-body").addEventListener("touchstart", e => {
   const msg = e.target.closest(".message");
   if (!msg) return;
-
-  if (msg.classList.contains("deleted")) return; // 🚫 disable swipe
 
   startX = e.touches[0].clientX;
   currentMsg = msg;
@@ -761,8 +751,6 @@ function scrollToBottom() {
 /* ---------- SEND TO BACKEND ---------- */
 async function sendToBackend(msgObj) {
   try {
-    msgObj.lastTry = Date.now();
-localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
     const payload = {  
   action: "send_messages",  
   email: account.email,  
@@ -805,7 +793,6 @@ function sendMessage() {
   text,
   sent_at: new Date().toISOString(),
   status: navigator.onLine ? "sending" : "pending",
-  lastTry: Date.now(), // ✅ ADD THIS
   replyTo: replyingMessage
     ? {
         id: replyingMessage.id,
@@ -830,38 +817,25 @@ document.getElementById("reply-preview").style.display = "none";
 }
 
 /* ---------- RETRY PENDING MESSAGES ---------- */
-async function retryStuckMessages() {
-  if (!navigator.onLine) return;
-
-  const now = Date.now();
+async function retryPending() {
+  if (!navigator.onLine) return; // 🚫 no internet → do nothing
 
   for (const msg of messages) {
+    if (msg.status === "pending") {
+      msg.status = "sending"; // ✅ ONLY when online
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+      renderMessages();
 
-    // Only retry messages that are NOT confirmed sent
-    if (msg.status !== "pending" && msg.status !== "sending") continue;
-
-    // ⏳ wait at least 3 seconds between retries
-    if (msg.lastTry && now - msg.lastTry < 3000) continue;
-
-    msg.status = "sending";
-    msg.lastTry = now;
-
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-    renderMessages();
-
-    await sendToBackend(msg);
-
-    // ⛔ retry ONE message per cycle (important)
-    break;
+      await sendToBackend(msg);
+    }
   }
 }
 
 window.addEventListener("online", retryPending);
-window.addEventListener("online", retryStuckMessages);
 
 setInterval(() => {
-  retryStuckMessages();
-}, 1000);// 🔁 every 1 second
+  retryPending();
+}, 1000); // 🔁 every 1 second
 
 /* ---------- INIT ---------- */
 renderMessages();
