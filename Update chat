@@ -218,10 +218,9 @@ body {
     top: 0;
     left: 0;
     right: 0;
-    height: 64px; /* same as header */
+    height: 64px;
     background: white;
     z-index: 1000;
-    display: flex;
     align-items: center;
     padding: 0 16px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -672,4 +671,4 @@ document.getElementById("message-input").addEventListener("keydown", e => {
 </script>
 
 </body>
-</html>
+  </html>
