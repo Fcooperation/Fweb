@@ -237,11 +237,6 @@ body {
   color: #666;
   font-style: italic;
 }
-.message.deleted.sent {
-  background: #e0e0e0 !important;
-  color: #666;
-  font-style: italic;
-}
 </style>
 </head>
 <body>
@@ -547,29 +542,18 @@ function deleteForMe() {
 }
 
 function deleteForEveryone() {
-  const ids = [];
-
   selectedMessages.forEach(el => {
     const msgId = el.dataset.id;
     const msg = messages.find(m => String(m.id) === msgId);
-
-    if (!msg) return;
-
-    ids.push(msg.id);
-
-    msg.text = "This message was deleted by you";
-    msg.deleted_for_everyone = true;
-    msg.status = navigator.onLine ? "deleting" : "pending";
-    msg.type = "sent";
+    if (msg) {
+      msg.text = "This message was deleted";
+      msg.type = "deleted";
+    }
   });
 
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   exitSelectMode();
   renderMessages();
-
-  if (navigator.onLine) {
-    sendDeleteForEveryone(ids);
-  }
 }
 /* ---------- RENDER MESSAGES ---------- */
 function renderMessages() {
@@ -597,9 +581,9 @@ function renderMessages() {
 
 const textNode = document.createElement("div");
 
-if (msg.deleted_for_everyone) {
-  textNode.textContent = "This message was deleted by you";
-  div.classList.add("deleted");
+if (msg.type === "deleted") {
+  textNode.textContent = "This message was deleted";
+  textNode.classList.add("deleted");
 } else {
   textNode.textContent = msg.text;
 }
@@ -608,10 +592,6 @@ div.appendChild(textNode);
 
 /* ---------- STATUS TEXT (only for sent messages) ---------- */
 if (msg.type === "sent") {
-  else if (msg.status === "deleting") {
-  status.append("Deleting…");
-  status.classList.add("status-pending");
-}
   const status = document.createElement("div");
   status.classList.add("status-text");
 
@@ -793,41 +773,6 @@ async function sendToBackend(msgObj) {
     renderMessages();
   }
 }
-
-async function sendDeleteForEveryone(ids) {
-  try {
-    const payload = {
-      action: "delete_messages",
-      ids,
-      sender_id: account.email,
-      receiver_id: chatWith.id
-    };
-
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-
-    const data = await res.json();
-
-    if (data.success) {
-      // ✅ Mark as fully deleted
-      messages.forEach(msg => {
-        if (ids.includes(msg.id)) {
-          msg.status = "deleted";
-        }
-      });
-
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-      renderMessages();
-    }
-
-  } catch (e) {
-    console.warn("Delete failed, staying pending");
-  }
-}
-
 
 /* ---------- SEND MESSAGE ---------- */
 function sendMessage() {
