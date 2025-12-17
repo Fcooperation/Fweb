@@ -715,13 +715,12 @@ function sendMessage() {
   text,
   sent_at: new Date().toISOString(),
   status: navigator.onLine ? "sending" : "pending",
-  replyTo: replyingMessage
-    ? {
-        id: replyingMessage.id,
-        text: replyingMessage.text,
-        sender: getReplySenderName(replyingMessage)
-      }
-    : null,
+  sending_since: navigator.onLine ? Date.now() : null, // 👈 ADD THIS
+  replyTo: replyingMessage ? {
+    id: replyingMessage.id,
+    text: replyingMessage.text,
+    sender: getReplySenderName(replyingMessage)
+  } : null,
   linked: replyingMessage ? true : false,
   linked_message_id: replyingMessage ? replyingMessage.id : null
 };
@@ -744,7 +743,8 @@ async function retryPending() {
 
   for (const msg of messages) {
     if (msg.status === "pending") {
-      msg.status = "sending"; // ✅ ONLY when online
+      msg.status = "sending";
+msg.sending_since = Date.now(); // 👈 ADD THIS
       localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
       renderMessages();
 
@@ -752,12 +752,34 @@ async function retryPending() {
     }
   }
 }
+function checkStuckSendingMessages() {
+  const now = Date.now();
+  let changed = false;
+
+  messages.forEach(msg => {
+    if (
+      msg.status === "sending" &&
+      msg.sending_since &&
+      now - msg.sending_since > 30000 // ⏱ 30 seconds
+    ) {
+      msg.status = "pending";
+      msg.sending_since = null;
+      changed = true;
+    }
+  });
+
+  if (changed) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+    renderMessages();
+  }
+}
 
 window.addEventListener("online", retryPending);
 
 setInterval(() => {
   retryPending();
-}, 1000); // 🔁 every 1 second
+  checkStuckSendingMessages(); // 👈 ADD THIS
+}, 1000);
 
 /* ---------- INIT ---------- */
 renderMessages();
