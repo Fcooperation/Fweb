@@ -237,6 +237,10 @@ body {
   color: #666;
   font-style: italic;
 }
+.message.sent.deleted {
+  background: #e0e0e0;
+  color: #666;
+}
 </style>
 </head>
 <body>
@@ -545,9 +549,12 @@ function deleteForEveryone() {
   selectedMessages.forEach(el => {
     const msgId = el.dataset.id;
     const msg = messages.find(m => String(m.id) === msgId);
+
     if (msg) {
-      msg.text = "This message was deleted";
-      msg.type = "deleted";
+      msg.deleted = true;              // ✅ flag
+      msg.text = "This message was deleted by you";
+      msg.type = "sent";               // ✅ KEEP AS SENT
+      msg.status = "sent";             // for now
     }
   });
 
@@ -581,9 +588,9 @@ function renderMessages() {
 
 const textNode = document.createElement("div");
 
-if (msg.type === "deleted") {
-  textNode.textContent = "This message was deleted";
-  textNode.classList.add("deleted");
+if (msg.deleted) {
+  textNode.textContent = msg.text;
+  div.classList.add("deleted"); // applies grey bubble
 } else {
   textNode.textContent = msg.text;
 }
