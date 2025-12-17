@@ -211,6 +211,28 @@ body {
 </style>
 </head>
 <body>
+  <!-- ---------- SELECTION BOARD ---------- -->
+<div id="selection-bar" style="
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 64px; /* same as header */
+    background: white;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+">
+    <button id="select-back" style="
+        border: none;
+        background: none;
+        font-size: 18px;
+        cursor: pointer;
+    ">← Back</button>
+</div>
 
 <!-- ---------- HEADER ---------- -->
 <div id="chat-header">
@@ -308,6 +330,10 @@ function formatMessageTime(sentAt) {
 
 let selectMode = false;
 let selectedMessages = new Set();
+const selectionBar = document.getElementById("selection-bar");
+
+// Back button closes selection mode
+document.getElementById("select-back").onclick = exitSelectMode;
 let holdTimer = null;
 
 function enableMultiSelect() {
@@ -349,6 +375,7 @@ function enableMultiSelect() {
 function enterSelectMode(msg) {
   selectMode = true;
   document.getElementById("chat-body").classList.add("select-mode");
+  selectionBar.style.display = "flex"; // ← show selection bar
   toggleSelection(msg);
 }
 
@@ -372,6 +399,7 @@ function exitSelectMode() {
   selectedMessages.forEach(m => m.classList.remove("selected"));
   selectedMessages.clear();
   document.getElementById("chat-body").classList.remove("select-mode");
+  selectionBar.style.display = "none"; // ← hide selection bar
 }
 
 /* ---------- RENDER MESSAGES ---------- */
