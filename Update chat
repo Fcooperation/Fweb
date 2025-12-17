@@ -681,4 +681,8 @@ setInterval(() => {
 }, 1000);
 /* ---------- INIT ---------- */
 renderMessages();
-document.getElemen
+document.getElementById("send-btn").onclick = sendMessage;
+document.getElementById("message-input").addEventListener("keydown", e => {
+  if(e.key === "Enter") sendMessage();
+});
+</script></body></html>
