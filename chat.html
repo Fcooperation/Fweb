@@ -216,52 +216,42 @@ body {
     Cancel
   </div>
 </div>
-<!-- ---------- HEADER ---------- -->
-<div id="chat-header">
+<!-- ---------- HEADER ---------- --><div id="chat-header">
   <img id="chat-pic" src="">
   <div class="info">
     <div class="username" id="chat-username">Loading...</div>
     <div class="status" id="chat-status">Status...</div>
   </div>
 </div>
-
 <!-- ---------- MESSAGES ---------- -->
 <div id="chat-body"></div>
-
 <!-- ---------- REPLY PREVIEW ---------- -->
 <div id="reply-preview" style="display:none; padding:8px 16px; background:#f1f1f1; border-left:4px solid #007bff; justify-content:space-between; align-items:center; gap:10px;">
-  
   <div>
     <div id="reply-sender" style="font-weight:bold; font-size:12px;"></div>
     <div id="reply-text" style="font-size:14px; color:#555;"></div>
   </div>
 <button id="cancel-reply" aria-label="Cancel reply">✕</button>
 </div>
-
 <!-- ---------- INPUT ---------- -->
 <div id="chat-input">
   <input type="text" id="message-input" placeholder="Type a message…">
   <button id="send-btn">Send</button>
 </div>
-
 <script>
 const API_URL = "https://fweb-backend.onrender.com/fchat";
-
 /* ---------- LOAD CHAT TARGET ---------- */
 const chatWith = JSON.parse(localStorage.getItem("chatting_with")) || null;
 const account = JSON.parse(localStorage.getItem("faccount")) || {email:"", password:""};
-
 if (!chatWith || !chatWith.id) {
   alert("No chat selected");
   window.location.href = "fchat.html";
 }
-
 /* ---------- HEADER DATA ---------- */
 const header = document.getElementById("chat-header");
 document.getElementById("chat-username").textContent = chatWith.username || "Unknown";
 document.getElementById("chat-status").textContent = chatWith.status || "";
 document.getElementById("chat-pic").src = chatWith.profile_pic || "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCI+PC9zdmc+";
-
 /* ---------- HEADER CLICK TO DASHBOARD ---------- */
 header.onclick = () => {
   localStorage.setItem("chat_viewing", JSON.stringify({
@@ -272,44 +262,33 @@ header.onclick = () => {
   }));
   window.location.href = "chatdashboard.html";
 };
-
 /* ---------- MESSAGE STORAGE ---------- */
 const STORAGE_KEY = "chat_messages_" + chatWith.id;
 let messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-
 function formatMessageTime(sentAt) {
   if (!sentAt) return "";
-
-  const date = new Date(sentAt);
+const date = new Date(sentAt);
   const now = new Date();
-
-  const isToday =
+const isToday =
     date.toDateString() === now.toDateString();
-
-  const yesterday = new Date();
+const yesterday = new Date();
   yesterday.setDate(now.getDate() - 1);
-
-  const isYesterday =
+const isYesterday =
     date.toDateString() === yesterday.toDateString();
-
-  const time = date.toLocaleTimeString([], {
+const time = date.toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit"
   });
-
-  if (isToday) {
+if (isToday) {
     return time;
   }
-
-  const dayMonth = date.toLocaleDateString([], {
+const dayMonth = date.toLocaleDateString([], {
     day: "2-digit",
     month: "short"
   });
-
-  return `${dayMonth} ${time}`;
+return `${dayMonth} ${time}`;
 }
 /* ---------- MULTI SELECT LOGIC ---------- */
-
 let selectMode = false;
 let selectedMessages = new Set();
 const selectionBar = document.getElementById("selection-bar");
@@ -319,22 +298,18 @@ const deleteMenu = document.getElementById("delete-menu");
 document.getElementById("select-back").onclick = exitSelectMode;
 deleteBtn.onclick = () => {
   if (selectedMessages.size === 0) return;
-
-  const deleteForEveryoneOption =
+const deleteForEveryoneOption =
     deleteMenu.querySelector('[data-action="everyone"]');
-
-  let canDeleteForEveryone = true;
+let canDeleteForEveryone = true;
   selectedMessages.forEach(el => {
   if (el.classList.contains("deleted")) {
     canDeleteForEveryone = false;
   }
 });
-
-  selectedMessages.forEach(el => {
+selectedMessages.forEach(el => {
     const msgId = el.dataset.id;
     const msg = messages.find(m => String(m.id) === msgId);
-
-    // ❌ Any condition that blocks "delete for everyone"
+// ❌ Any condition that blocks "delete for everyone"
     if (
       !msg ||
       msg.type !== "sent" ||           // received messages
@@ -344,79 +319,64 @@ deleteBtn.onclick = () => {
       canDeleteForEveryone = false;
     }
   });
-
-  // ✅ Show / hide option
+// ✅ Show / hide option
   if (canDeleteForEveryone) {
     deleteForEveryoneOption.style.display = "block";
   } else {
     deleteForEveryoneOption.style.display = "none";
   }
-
-  deleteMenu.style.display = "block";
+deleteMenu.style.display = "block";
 };
 deleteMenu.addEventListener("click", e => {
   const option = e.target.closest(".delete-option");
   if (!option) return;
-
-  if (option.classList.contains("cancel")) {
+if (option.classList.contains("cancel")) {
     closeDeleteMenu();
     return;
   }
-
-  const action = option.dataset.action;
-
-  if (action === "me") deleteForMe();
+const action = option.dataset.action;
+if (action === "me") deleteForMe();
   if (action === "everyone") deleteForEveryone();
 
   closeDeleteMenu();
 });
 let holdTimer = null;
-
 function enableMultiSelect() {
   const chatBody = document.getElementById("chat-body");
-
-  chatBody.querySelectorAll(".message").forEach(msg => {
-
-    // PRESS & HOLD
+chatBody.querySelectorAll(".message").forEach(msg => {
+// PRESS & HOLD
     msg.addEventListener("touchstart", e => {
   if (selectMode) return;
-
-  holdTimer = setTimeout(() => {
+holdTimer = setTimeout(() => {
     enterSelectMode(msg);
   }, 500);
 });
-
-    msg.addEventListener("touchend", () => {
+msg.addEventListener("touchend", () => {
       clearTimeout(holdTimer);
     });
-
-    msg.addEventListener("touchmove", () => {
+msg.addEventListener("touchmove", () => {
       clearTimeout(holdTimer);
     });
-
-    // TAP WHILE IN SELECT MODE
+// TAP WHILE IN SELECT MODE
     msg.addEventListener("click", e => {
       if (!selectMode) return;
       toggleSelection(msg);
       e.stopPropagation();
     });
   });
-
-  // Tap empty space to exit select mode
+// Tap empty space to exit select mode
   chatBody.addEventListener("click", e => {
     if (selectMode && !e.target.closest(".message")) {
       exitSelectMode();
     }
   });
 }
-
 function enterSelectMode(msg) {
   selectMode = true;
   document.getElementById("chat-body").classList.add("select-mode");
   selectionBar.style.display = "flex"; // ← show selection bar
   toggleSelection(msg);
 }
-
 function toggleSelection(msg) {
   if (selectedMessages.has(msg)) {
     msg.classList.remove("selected");
@@ -425,20 +385,16 @@ function toggleSelection(msg) {
     msg.classList.add("selected");
     selectedMessages.add(msg);
   }
-
-  // Exit if none selected
+// Exit if none selected
   if (selectedMessages.size === 0) {
     exitSelectMode();
   }
 }
-
 function exitSelectMode() {
   selectMode = false;
-
-  selectedMessages.forEach(m => m.classList.remove("selected"));
+selectedMessages.forEach(m => m.classList.remove("selected"));
   selectedMessages.clear();
-
-  document.getElementById("chat-body").classList.remove("select-mode");
+document.getElementById("chat-body").classList.remove("select-mode");
   selectionBar.style.display = "none";
 
   closeDeleteMenu(); // ✅ FORCE CLOSE DELETE MENU
@@ -454,31 +410,26 @@ document.addEventListener("click", e => {
     }
   }
 });
-
 function deleteForMe() {
   const idsToDelete = [...selectedMessages].map(el => el.dataset.id);
-
-  messages = messages.filter(msg => !idsToDelete.includes(String(msg.id)));
+messages = messages.filter(msg => !idsToDelete.includes(String(msg.id)));
 
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   exitSelectMode();
   renderMessages();
 }
-
 function deleteForEveryone() {
   selectedMessages.forEach(el => {
     const msgId = el.dataset.id;
     const msg = messages.find(m => String(m.id) === msgId);
-
-    if (msg) {
+if (msg) {
       msg.deleted = true;              // ✅ flag
       msg.text = "This message was deleted by you";
       msg.type = "sent";               // ✅ KEEP AS SENT
       msg.status = "sent";             // for now
     }
   });
-
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   exitSelectMode();
   renderMessages();
 }
@@ -489,7 +440,6 @@ function renderMessages() {
   messages.forEach(msg => {
   const div = document.createElement("div");
   div.className = "message " + msg.type + (msg.status==="pending"?" pending":"");
-  
   if (msg.replyTo) {
   const replyBox = document.createElement("div");
   replyBox.style.borderLeft = "3px solid #007bff";
@@ -497,38 +447,29 @@ function renderMessages() {
   replyBox.style.marginBottom = "6px";
   replyBox.style.fontSize = "12px";
   replyBox.style.opacity = "0.8";
-
-  replyBox.innerHTML = `
+replyBox.innerHTML = `
     <strong>${msg.replyTo.sender}</strong><br>
     ${msg.replyTo.text}
   `;
-
-  div.appendChild(replyBox);
+div.appendChild(replyBox);
 }
-
 const textNode = document.createElement("div");
-
 if (msg.deleted) {
   textNode.textContent = msg.text;
   div.classList.add("deleted"); // applies grey bubble
 } else {
   textNode.textContent = msg.text;
 }
-
 div.appendChild(textNode);
-
 /* ---------- STATUS TEXT (only for sent messages) ---------- */
 if (msg.type === "sent") {
   const status = document.createElement("div");
   status.classList.add("status-text");
-
-  const timeSpan = document.createElement("span");
+const timeSpan = document.createElement("span");
   timeSpan.classList.add("message-time");
   timeSpan.textContent = formatMessageTime(msg.sent_at);
-
-  status.appendChild(timeSpan);
-
-  if (msg.status === "sending") {
+status.appendChild(timeSpan);
+if (msg.status === "sending") {
     status.append("Sending…");
     status.classList.add("status-sending");
   } 
@@ -540,8 +481,7 @@ if (msg.type === "sent") {
     status.append("Sent");
     status.classList.add("status-sent");
   }
-
-  div.appendChild(status);
+div.appendChild(status);
 }
   // 🔑 link DOM to message data
   div.dataset.id = msg.id;
@@ -554,40 +494,31 @@ enableMultiSelect(); // ✅ ADD THIS
 }
 function enableMessageTap() {
   const allMessages = document.querySelectorAll(".message");
-
-  allMessages.forEach(msgEl => {
+allMessages.forEach(msgEl => {
     msgEl.onclick = () => {
       if (selectMode) return; // 🚫 disable jump while selecting
       if (msgEl.classList.contains("deleted")) return;
       const msgId = msgEl.dataset.id;
       const msgData = messages.find(m => m.id == msgId);
-
-      if (!msgData) return;
-
-      // ❌ Not linked → do nothing
+if (!msgData) return;
+// ❌ Not linked → do nothing
       if (!msgData.linked || !msgData.linked_message_id) return;
-
-      // ✅ Linked → find original message
+// ✅ Linked → find original message
       const linkedEl = document.querySelector(
         `.message[data-id='${msgData.linked_message_id}']`
       );
-
-      if (!linkedEl) return;
-
-      // Scroll to original
+if (!linkedEl) return;
+// Scroll to original
       linkedEl.scrollIntoView({
   behavior: "smooth",
   block: "center"
 });
-
 // wait for scroll to settle before glowing
 setTimeout(() => {
   linkedEl.classList.add("highlight");
-
-  setTimeout(() => {
+setTimeout(() => {
     linkedEl.classList.remove("highlight");
   }, 2000);
-
 }, 350); // ← delay controls when glow starts
     };
   });
@@ -599,7 +530,6 @@ document.getElementById("cancel-reply").onclick = () => {
   replyingMessage = null;
   document.getElementById("reply-preview").style.display = "none";
 };
-
 function getReplySenderName(msg) {
   return msg.type === "sent" ? "You" : chatWith.username;
 }
@@ -607,69 +537,48 @@ function scrollToInput() {
   const inputBar = document.getElementById("chat-input");
   inputBar.scrollIntoView({ behavior: "smooth", block: "end" });
 }
-
 document.getElementById("chat-body").addEventListener("touchstart", e => {
   const msg = e.target.closest(".message");
   if (!msg) return;
   if (msg.classList.contains("deleted")) return;
-
-  startX = e.touches[0].clientX;
+startX = e.touches[0].clientX;
   currentMsg = msg;
 });
-
 document.getElementById("chat-body").addEventListener("touchmove", e => {
   if (!currentMsg) return;
-
-  const moveX = e.touches[0].clientX;
+const moveX = e.touches[0].clientX;
   const diffX = moveX - startX;
-
-  // Move message slightly with finger
+// Move message slightly with finger
   if (diffX > 0 && diffX < 80) {
     currentMsg.style.transform = `translateX(${diffX}px)`;
   }
 });
-
 document.getElementById("chat-body").addEventListener("touchend", e => {
   if (!currentMsg) return;
-
-  const endX = e.changedTouches[0].clientX;
+const endX = e.changedTouches[0].clientX;
   const diffX = endX - startX;
-
-  // Reset position
+// Reset position
   currentMsg.style.transform = "translateX(0)";
-  
-  
-
   if (diffX > 50) {
   const msgId = currentMsg.dataset.id;
   const msgData = messages.find(m => m.id == msgId);
-
-  if (msgData) {
+if (msgData) {
   replyingMessage = msgData;
-
-  document.getElementById("reply-sender").textContent = getReplySenderName(msgData);
+document.getElementById("reply-sender").textContent = getReplySenderName(msgData);
   document.getElementById("reply-text").textContent = msgData.text;
-
-  document.getElementById("reply-preview").style.display = "block";
-
-  scrollToInput();
-
-  const input = document.getElementById("message-input");
+document.getElementById("reply-preview").style.display = "block";
+scrollToInput();
+const input = document.getElementById("message-input");
   setTimeout(() => input.focus(), 150);
-
-    
-  }
+   }
 }
-
-  currentMsg = null;
+currentMsg = null;
 });
-
 /* ---------- SCROLL ---------- */
 function scrollToBottom() {
   const box = document.getElementById("chat-body");
   box.scrollTop = box.scrollHeight;
 }
-
 /* ---------- SEND TO BACKEND ---------- */
 async function sendToBackend(msgObj) {
   try {
@@ -702,14 +611,12 @@ async function sendToBackend(msgObj) {
     renderMessages();
   }
 }
-
 /* ---------- SEND MESSAGE ---------- */
 function sendMessage() {
   const input = document.getElementById("message-input");
   const text = input.value.trim();
   if(!text) return;
-
-  const msgObj = {
+const msgObj = {
   id: Date.now(),
   type: "sent",
   text,
@@ -728,20 +635,16 @@ function sendMessage() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   input.value = "";
   renderMessages();
-  
   replyingMessage = null;
 document.getElementById("reply-preview").style.display = "none";
-
-  if(navigator.onLine){
+if(navigator.onLine){
     sendToBackend(msgObj);
   }
 }
-
 /* ---------- RETRY PENDING MESSAGES ---------- */
 async function retryPending() {
   if (!navigator.onLine) return; // 🚫 no internet → do nothing
-
-  for (const msg of messages) {
+for (const msg of messages) {
     if (msg.status === "pending") {
       msg.status = "sending";
 msg.sending_since = Date.now(); // 👈 ADD THIS
@@ -755,8 +658,7 @@ msg.sending_since = Date.now(); // 👈 ADD THIS
 function checkStuckSendingMessages() {
   const now = Date.now();
   let changed = false;
-
-  messages.forEach(msg => {
+messages.forEach(msg => {
     if (
       msg.status === "sending" &&
       msg.sending_since &&
@@ -767,28 +669,20 @@ function checkStuckSendingMessages() {
       changed = true;
     }
   });
-
-  if (changed) {
+if (changed) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
     renderMessages();
   }
 }
-
 window.addEventListener("online", retryPending);
-
 setInterval(() => {
   retryPending();
   checkStuckSendingMessages(); // 👈 ADD THIS
 }, 1000);
-
 /* ---------- INIT ---------- */
 renderMessages();
-
 document.getElementById("send-btn").onclick = sendMessage;
 document.getElementById("message-input").addEventListener("keydown", e => {
   if(e.key === "Enter") sendMessage();
 });
-</script>
-
-</body>
-  </html>
+</script></body></html>
