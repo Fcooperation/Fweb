@@ -400,6 +400,34 @@ const deleteMenu = document.getElementById("delete-menu");
 document.getElementById("select-back").onclick = exitSelectMode;
 deleteBtn.onclick = () => {
   if (selectedMessages.size === 0) return;
+
+  const deleteForEveryoneOption =
+    deleteMenu.querySelector('[data-action="everyone"]');
+
+  let canDeleteForEveryone = true;
+
+  selectedMessages.forEach(el => {
+    const msgId = el.dataset.id;
+    const msg = messages.find(m => String(m.id) === msgId);
+
+    // ❌ Any condition that blocks "delete for everyone"
+    if (
+      !msg ||
+      msg.type !== "sent" ||           // received messages
+      msg.status === "seen" ||          // already seen
+      msg.status === "pending"          // pending
+    ) {
+      canDeleteForEveryone = false;
+    }
+  });
+
+  // ✅ Show / hide option
+  if (canDeleteForEveryone) {
+    deleteForEveryoneOption.style.display = "block";
+  } else {
+    deleteForEveryoneOption.style.display = "none";
+  }
+
   deleteMenu.style.display = "block";
 };
 deleteMenu.addEventListener("click", e => {
