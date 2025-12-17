@@ -799,16 +799,24 @@ document.getElementById("reply-preview").style.display = "none";
 
 /* ---------- RETRY PENDING MESSAGES ---------- */
 async function retryPending() {
-  if(!navigator.onLine) return;
-  for(const msg of messages){
-    if(msg.status === "pending" || msg.status==="sending"){
-      msg.status = "sending";
+  if (!navigator.onLine) return; // 🚫 no internet → do nothing
+
+  for (const msg of messages) {
+    if (msg.status === "pending") {
+      msg.status = "sending"; // ✅ ONLY when online
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+      renderMessages();
+
       await sendToBackend(msg);
     }
   }
 }
 
 window.addEventListener("online", retryPending);
+
+setInterval(() => {
+  retryPending();
+}, 1000); // 🔁 every 1 second
 
 /* ---------- INIT ---------- */
 renderMessages();
