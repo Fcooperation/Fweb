@@ -761,6 +761,8 @@ function scrollToBottom() {
 /* ---------- SEND TO BACKEND ---------- */
 async function sendToBackend(msgObj) {
   try {
+    msgObj.lastTry = Date.now();
+localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
     const payload = {  
   action: "send_messages",  
   email: account.email,  
@@ -803,6 +805,7 @@ function sendMessage() {
   text,
   sent_at: new Date().toISOString(),
   status: navigator.onLine ? "sending" : "pending",
+  lastTry: Date.now(), // ✅ ADD THIS
   replyTo: replyingMessage
     ? {
         id: replyingMessage.id,
@@ -827,25 +830,38 @@ document.getElementById("reply-preview").style.display = "none";
 }
 
 /* ---------- RETRY PENDING MESSAGES ---------- */
-async function retryPending() {
-  if (!navigator.onLine) return; // 🚫 no internet → do nothing
+async function retryStuckMessages() {
+  if (!navigator.onLine) return;
+
+  const now = Date.now();
 
   for (const msg of messages) {
-    if (msg.status === "pending") {
-      msg.status = "sending"; // ✅ ONLY when online
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-      renderMessages();
 
-      await sendToBackend(msg);
-    }
+    // Only retry messages that are NOT confirmed sent
+    if (msg.status !== "pending" && msg.status !== "sending") continue;
+
+    // ⏳ wait at least 3 seconds between retries
+    if (msg.lastTry && now - msg.lastTry < 3000) continue;
+
+    msg.status = "sending";
+    msg.lastTry = now;
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+    renderMessages();
+
+    await sendToBackend(msg);
+
+    // ⛔ retry ONE message per cycle (important)
+    break;
   }
 }
 
 window.addEventListener("online", retryPending);
+window.addEventListener("online", retryStuckMessages);
 
 setInterval(() => {
-  retryPending();
-}, 1000); // 🔁 every 1 second
+  retryStuckMessages();
+}, 1000);// 🔁 every 1 second
 
 /* ---------- INIT ---------- */
 renderMessages();
