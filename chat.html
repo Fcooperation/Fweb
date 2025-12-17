@@ -243,7 +243,7 @@ body {
   <!-- ---------- SELECTION BOARD ---------- -->
 <div id="selection-bar" style="
     display: none;
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
     right: 0;
@@ -406,15 +406,15 @@ deleteMenu.addEventListener("click", e => {
   const option = e.target.closest(".delete-option");
   if (!option) return;
 
+  if (option.classList.contains("cancel")) {
+    closeDeleteMenu();
+    return;
+  }
+
   const action = option.dataset.action;
 
-  if (action === "me") {
-    deleteForMe();
-  }
-
-  if (action === "everyone") {
-    deleteForEveryone();
-  }
+  if (action === "me") deleteForMe();
+  if (action === "everyone") deleteForEveryone();
 
   closeDeleteMenu();
 });
@@ -427,10 +427,12 @@ function enableMultiSelect() {
 
     // PRESS & HOLD
     msg.addEventListener("touchstart", e => {
-      holdTimer = setTimeout(() => {
-        enterSelectMode(msg);
-      }, 500);
-    });
+  if (selectMode) return;
+
+  holdTimer = setTimeout(() => {
+    enterSelectMode(msg);
+  }, 500);
+});
 
     msg.addEventListener("touchend", () => {
       clearTimeout(holdTimer);
@@ -538,7 +540,14 @@ function renderMessages() {
 }
 
 const textNode = document.createElement("div");
-textNode.textContent = msg.text;
+
+if (msg.type === "deleted") {
+  textNode.textContent = "This message was deleted";
+  textNode.classList.add("deleted");
+} else {
+  textNode.textContent = msg.text;
+}
+
 div.appendChild(textNode);
 
 /* ---------- STATUS TEXT (only for sent messages) ---------- */
