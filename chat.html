@@ -418,20 +418,33 @@ messages = messages.filter(msg => !idsToDelete.includes(String(msg.id)));
   exitSelectMode();
   renderMessages();
 }
-function deleteForEveryone() {
+async function deleteForEveryone() {
+  const ids = [...selectedMessages].map(el => Number(el.dataset.id));
+
+  // 🔁 Optimistic UI update (WhatsApp style)
   selectedMessages.forEach(el => {
     const msgId = el.dataset.id;
     const msg = messages.find(m => String(m.id) === msgId);
-if (msg) {
-      msg.deleted = true;              // ✅ flag
+
+    if (msg) {
+      msg.deleted = true;
       msg.text = "This message was deleted by you";
-      msg.type = "sent";               // ✅ KEEP AS SENT
-      msg.status = "sent";             // for now
+      msg.status = "sent";
+      msg.type = "sent";
     }
   });
-localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-  exitSelectMode();
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   renderMessages();
+  exitSelectMode();
+
+  // 🌐 Send delete request to backend
+  const success = await deleteForEveryoneBackend(ids);
+
+  if (!success) {
+    console.warn("Backend delete failed — keeping local delete");
+    // (Optional) You can show a toast later if you want
+  }
 }
 /* ---------- RENDER MESSAGES ---------- */
 function renderMessages() {
@@ -679,6 +692,27 @@ setInterval(() => {
   retryPending();
   checkStuckSendingMessages(); // 👈 ADD THIS
 }, 1000);
+async function deleteForEveryoneBackend(ids) {
+  try {
+    const payload = {
+      action: "delete_messages",
+      email: account.email,
+      ids // array of message IDs
+    };
+
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    return data.success === true;
+  } catch (e) {
+    console.warn("Delete for everyone failed", e);
+    return false;
+  }
+}
 /* ---------- INIT ---------- */
 renderMessages();
 document.getElementById("send-btn").onclick = sendMessage;
