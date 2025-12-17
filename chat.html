@@ -728,17 +728,6 @@ function scrollToBottom() {
   const box = document.getElementById("chat-body");
   box.scrollTop = box.scrollHeight;
 }
-function markAsPendingIfStillSending(msgId) {
-  setTimeout(() => {
-    const msg = messages.find(m => m.id === msgId);
-
-    if (msg && msg.status === "sending") {
-      msg.status = "pending";
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-      renderMessages();
-    }
-  }, 8000); // 8 seconds timeout
-}
 
 /* ---------- SEND TO BACKEND ---------- */
 async function sendToBackend(msgObj) {
@@ -759,15 +748,12 @@ async function sendToBackend(msgObj) {
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify(payload)
     });
-    const data = await res.json();if (data.success) {
-  const msg = messages.find(m => m.id === msgObj.id);
-  if (msg) {
-    msg.status = "sent";
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-    renderMessages();
-  }
-}
-    
+    const data = await res.json();
+    if(data.success){
+      msgObj.status = "sent";
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+      renderMessages();
+    }
   } catch(e) {
     console.warn("Failed to send, message pending");
     msgObj.status = "pending";
@@ -799,14 +785,9 @@ function sendMessage() {
   linked_message_id: replyingMessage ? replyingMessage.id : null
 };
   messages.push(msgObj);
-localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-input.value = "";
-renderMessages();
-
-// ⏱ start safety timeout
-if (msgObj.status === "sending") {
-  markAsPendingIfStillSending(msgObj.id);
-}
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+  input.value = "";
+  renderMessages();
   
   replyingMessage = null;
 document.getElementById("reply-preview").style.display = "none";
