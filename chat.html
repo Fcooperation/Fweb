@@ -510,14 +510,26 @@ function toggleSelection(msg) {
 
 function exitSelectMode() {
   selectMode = false;
+
   selectedMessages.forEach(m => m.classList.remove("selected"));
   selectedMessages.clear();
+
   document.getElementById("chat-body").classList.remove("select-mode");
-  selectionBar.style.display = "none"; // ← hide selection bar
+  selectionBar.style.display = "none";
+
+  closeDeleteMenu(); // ✅ FORCE CLOSE DELETE MENU
 }
 function closeDeleteMenu() {
   deleteMenu.style.display = "none";
 }
+document.addEventListener("click", e => {
+  if (deleteMenu.style.display === "block") {
+    if (!e.target.closest("#delete-menu") &&
+        !e.target.closest("#select-delete")) {
+      closeDeleteMenu();
+    }
+  }
+});
 
 function deleteForMe() {
   const idsToDelete = [...selectedMessages].map(el => el.dataset.id);
