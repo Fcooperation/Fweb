@@ -403,12 +403,19 @@ const deleteMenu = document.getElementById("delete-menu");
 // Back button closes selection mode
 document.getElementById("select-back").onclick = exitSelectMode;
 deleteBtn.onclick = () => {
+  
   if (selectedMessages.size === 0) return;
 
   const deleteForEveryoneOption =
     deleteMenu.querySelector('[data-action="everyone"]');
 
   let canDeleteForEveryone = true;
+  
+  selectedMessages.forEach(el => {
+  if (el.classList.contains("deleted")) {
+    canDeleteForEveryone = false;
+  }
+});
 
   selectedMessages.forEach(el => {
     const msgId = el.dataset.id;
@@ -637,6 +644,7 @@ function enableMessageTap() {
 
   allMessages.forEach(msgEl => {
     msgEl.onclick = () => {
+      if (msgEl.classList.contains("deleted")) return;
       if (selectMode) return; // 🚫 disable jump while selecting
       const msgId = msgEl.dataset.id;
       const msgData = messages.find(m => m.id == msgId);
@@ -690,6 +698,8 @@ function scrollToInput() {
 document.getElementById("chat-body").addEventListener("touchstart", e => {
   const msg = e.target.closest(".message");
   if (!msg) return;
+
+  if (msg.classList.contains("deleted")) return; // 🚫 disable swipe
 
   startX = e.touches[0].clientX;
   currentMsg = msg;
