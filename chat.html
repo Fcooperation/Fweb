@@ -184,53 +184,56 @@ body {
 .message.sent.deleted {
   background: #e0e0e0;
   color: #666;
-}.chat-card.received {
-  background-color: #e0e0e0; /* grey */
-  color: #000;
-  padding: 8px 12px;
-  border-radius: 12px;
-  margin: 4px 0;
-  max-width: 70%;
-  align-self: flex-start; /* left side */
+}
+/* Chat container */
+#chat-container {
+  max-width: 500px;
+  margin: auto;
+  background: #fff;
+  padding: 10px;
+  border-radius: 8px;
+  height: 400px;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
 }
 
+/* Message card */
+.chat-card {
+  margin: 8px 0;
+  padding: 10px;
+  border-radius: 6px;
+  max-width: 80%;
+  position: relative;
+  word-wrap: break-word;
+}
+
+/* Received messages (grey cards) */
+.received {
+  background: #e0e0e0;
+  align-self: flex-start;
+}
+
+/* Time label inside card */
 .chat-time {
-  font-size: 0.7rem;
+  font-size: 0.75em;
   color: #555;
-  margin-top: 2px;
-  align-self: flex-end;
+  position: absolute;
+  bottom: 4px;
+  right: 8px;
 }
-/* ---------- RECEIVING STATUS BAR ---------- */
+
+/* Status display above chat */
 #receive-status {
-  position: fixed;
-  top: 64px; /* under header */
-  left: 0;
-  right: 0;
-  padding: 6px 12px;
-  font-size: 12px;
   text-align: center;
-  background: #f5f5f5;
-  color: #555;
-  z-index: 900;
-  display: none;
+  margin-bottom: 10px;
+  font-weight: bold;
 }
 
-#receive-status.loading {
-  display: block;
-  color: #777;
-}
-
-#receive-status.success {
-  display: block;
-  color: #1e88e5;
-}
-
-#receive-status.offline {
-  display: block;
-  color: orange;
-}
+/* Status colors */
+.loading { color: blue; }
+.success { color: green; }
+.offline { color: red; }
 </style>
 </head>
 <body>
@@ -802,48 +805,50 @@ document.getElementById("message-input").addEventListener("keydown", e => {
 
 /* ---------- RECEIVE MESSAGES ---------- */
 const receiveStatus = document.getElementById("receive-status");
+const chatContainer = document.getElementById("chat-container");
 
+// Set receive status
 function setReceiveStatus(type, text) {
   receiveStatus.className = "";
   receiveStatus.classList.add(type);
   receiveStatus.textContent = text;
 }
 
-// Render a single received message card
+// Render a single received message as a grey FCHAT card
 function renderReceivedMessage(msg) {
-  const chatContainer = document.getElementById("chat-container"); // your chat wrapper
   const card = document.createElement("div");
-  card.classList.add("chat-card", "received"); // 'received' for grey styling
+  card.classList.add("chat-card", "received");
 
   // Message text
   const textEl = document.createElement("p");
-  textEl.textContent = msg.text;
+  textEl.textContent = msg.text || "";
   card.appendChild(textEl);
 
   // Sent time
   const timeEl = document.createElement("span");
-  const date = new Date(msg.sent_at);
+  const date = new Date(msg.sent_at || Date.now());
   timeEl.textContent = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   timeEl.classList.add("chat-time");
   card.appendChild(timeEl);
 
   chatContainer.appendChild(card);
-  chatContainer.scrollTop = chatContainer.scrollHeight; // scroll to bottom
+  chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
+// Receive messages from backend
 async function receiveMessages() {
   if (!navigator.onLine) {
-    setReceiveStatus("offline", "Offline — messages will sync later");
+    setReceiveStatus("offline", "Offline — cannot fetch messages");
     return;
   }
 
-  setReceiveStatus("loading", "Updating…");
+  setReceiveStatus("loading", "Fetching messages…");
 
   try {
     const payload = {
       action: "receive_messages",
-      email: account.email,
-      chatWithId: chatWith.id // matches backend snippet
+      email: account.email,    // logged-in user email
+      chatWithId: chatWith.id  // id of the person you're chatting with
     };
 
     const res = await fetch(API_URL, {
@@ -854,40 +859,24 @@ async function receiveMessages() {
 
     const data = await res.json();
 
-    if (!Array.isArray(data.data)) { // backend returns { data: [messages] }
-      setReceiveStatus("success", "Updated");
+    if (!Array.isArray(data.data) || data.data.length === 0) {
+      setReceiveStatus("success", "No new messages");
       return;
     }
 
-    let added = false;
+    // Render all received messages as FCHAT cards
+    data.data.forEach(msg => renderReceivedMessage(msg));
 
-    data.data.forEach(incoming => {
-      const exists = messages.some(m => m.id === incoming.id);
-      if (!exists) {
-        // Push to messages array
-        messages.push({
-          ...incoming,
-          type: "received",
-          status: "sent"
-        });
-        added = true;
-
-        // Render immediately
-        renderReceivedMessage(incoming);
-      }
-    });
-
-    if (added) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-    }
-
-    setReceiveStatus("success", "Updated");
+    setReceiveStatus("success", "Messages received");
 
   } catch (e) {
-    console.warn("Receive failed", e);
-    setReceiveStatus("offline", "Connection issue — retrying…");
+    console.error("Error fetching messages:", e);
+    setReceiveStatus("offline", "Failed to fetch messages");
   }
 }
+
+// Optional: auto-refresh every 5 seconds
+// setInterval(receiveMessages, 5000);
 </script>
 
 </body></html>
