@@ -185,6 +185,35 @@ body {
   background: #e0e0e0;
   color: #666;
 }
+/* ---------- RECEIVING STATUS BAR ---------- */
+#receive-status {
+  position: fixed;
+  top: 64px; /* under header */
+  left: 0;
+  right: 0;
+  padding: 6px 12px;
+  font-size: 12px;
+  text-align: center;
+  background: #f5f5f5;
+  color: #555;
+  z-index: 900;
+  display: none;
+}
+
+#receive-status.loading {
+  display: block;
+  color: #777;
+}
+
+#receive-status.success {
+  display: block;
+  color: #1e88e5;
+}
+
+#receive-status.offline {
+  display: block;
+  color: orange;
+}
 </style>
 </head>
 <body>
@@ -223,6 +252,7 @@ body {
     <div class="status" id="chat-status">Status...</div>
   </div>
 </div>
+<div id="receive-status">Updating…</div>
 <!-- ---------- MESSAGES ---------- -->
 <div id="chat-body"></div>
 <!-- ---------- REPLY PREVIEW ---------- -->
@@ -715,6 +745,13 @@ setInterval(() => {
   retryPending();
   checkStuckSendingMessages(); // 👈 ADD THIS
 }, 1000);
+// Receive messages every 4 seconds
+setInterval(() => {
+  receiveMessages();
+}, 4000);
+
+// Also receive immediately when coming online
+window.addEventListener("online", receiveMessages);
 async function deleteForEveryoneBackend(ids) {
   try {
     const payload = {
@@ -742,4 +779,70 @@ document.getElementById("send-btn").onclick = sendMessage;
 document.getElementById("message-input").addEventListener("keydown", e => {
   if(e.key === "Enter") sendMessage();
 });
-</script></body></html>
+
+/* ---------- RECEIVE MESSAGES ---------- */
+const receiveStatus = document.getElementById("receive-status");
+
+function setReceiveStatus(type, text) {
+  receiveStatus.className = "";
+  receiveStatus.classList.add(type);
+  receiveStatus.textContent = text;
+}
+
+async function receiveMessages() {
+  if (!navigator.onLine) {
+    setReceiveStatus("offline", "Offline — messages will sync later");
+    return;
+  }
+
+  setReceiveStatus("loading", "Updating…");
+
+  try {
+    const payload = {
+      action: "receive_messages",
+      email: account.email,
+      chatting_with: chatWith.id
+    };
+
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+
+    if (!data.success || !Array.isArray(data.messages)) {
+      setReceiveStatus("success", "Updated");
+      return;
+    }
+
+    let added = false;
+
+    data.messages.forEach(incoming => {
+      const exists = messages.some(m => m.id === incoming.id);
+      if (!exists) {
+        messages.push({
+          ...incoming,
+          type: "received",
+          status: "sent"
+        });
+        added = true;
+      }
+    });
+
+    if (added) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+      renderMessages();
+    }
+
+    setReceiveStatus("success", "Updated");
+
+  } catch (e) {
+    console.warn("Receive failed", e);
+    setReceiveStatus("offline", "Connection issue — retrying…");
+  }
+}
+</script>
+
+</body></html>
