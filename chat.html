@@ -184,35 +184,23 @@ body {
 .message.sent.deleted {
   background: #e0e0e0;
   color: #666;
+}.chat-card.received {
+  background-color: #e0e0e0; /* grey */
+  color: #000;
+  padding: 8px 12px;
+  border-radius: 12px;
+  margin: 4px 0;
+  max-width: 70%;
+  align-self: flex-start; /* left side */
+  display: flex;
+  flex-direction: column;
 }
-/* ---------- RECEIVING STATUS BAR ---------- */
-#receive-status {
-  position: fixed;
-  top: 64px; /* under header */
-  left: 0;
-  right: 0;
-  padding: 6px 12px;
-  font-size: 12px;
-  text-align: center;
-  background: #f5f5f5;
+
+.chat-time {
+  font-size: 0.7rem;
   color: #555;
-  z-index: 900;
-  display: none;
-}
-
-#receive-status.loading {
-  display: block;
-  color: #777;
-}
-
-#receive-status.success {
-  display: block;
-  color: #1e88e5;
-}
-
-#receive-status.offline {
-  display: block;
-  color: orange;
+  margin-top: 2px;
+  align-self: flex-end;
 }
 </style>
 </head>
@@ -791,6 +779,28 @@ function setReceiveStatus(type, text) {
   receiveStatus.textContent = text;
 }
 
+// Render a single received message card
+function renderReceivedMessage(msg) {
+  const chatContainer = document.getElementById("chat-container"); // your chat wrapper
+  const card = document.createElement("div");
+  card.classList.add("chat-card", "received"); // 'received' for grey styling
+
+  // Message text
+  const textEl = document.createElement("p");
+  textEl.textContent = msg.text;
+  card.appendChild(textEl);
+
+  // Sent time
+  const timeEl = document.createElement("span");
+  const date = new Date(msg.sent_at);
+  timeEl.textContent = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  timeEl.classList.add("chat-time");
+  card.appendChild(timeEl);
+
+  chatContainer.appendChild(card);
+  chatContainer.scrollTop = chatContainer.scrollHeight; // scroll to bottom
+}
+
 async function receiveMessages() {
   if (!navigator.onLine) {
     setReceiveStatus("offline", "Offline — messages will sync later");
@@ -803,7 +813,7 @@ async function receiveMessages() {
     const payload = {
       action: "receive_messages",
       email: account.email,
-      chatting_with: chatWith.id
+      chatWithId: chatWith.id // matches backend snippet
     };
 
     const res = await fetch(API_URL, {
@@ -814,28 +824,31 @@ async function receiveMessages() {
 
     const data = await res.json();
 
-    if (!data.success || !Array.isArray(data.messages)) {
+    if (!Array.isArray(data.data)) { // backend returns { data: [messages] }
       setReceiveStatus("success", "Updated");
       return;
     }
 
     let added = false;
 
-    data.messages.forEach(incoming => {
+    data.data.forEach(incoming => {
       const exists = messages.some(m => m.id === incoming.id);
       if (!exists) {
+        // Push to messages array
         messages.push({
           ...incoming,
           type: "received",
           status: "sent"
         });
         added = true;
+
+        // Render immediately
+        renderReceivedMessage(incoming);
       }
     });
 
     if (added) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-      renderMessages();
     }
 
     setReceiveStatus("success", "Updated");
