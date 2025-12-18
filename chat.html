@@ -803,7 +803,18 @@ document.getElementById("message-input").addEventListener("keydown", e => {
   if(e.key === "Enter") sendMessage();
 });
 
-/* ---------- RECEIVE MESSAGES ---------- */
+
+</script>
+<!-- HTML part (same as before) -->
+<div id="receive-status">Waiting to update…</div>
+<div id="chat-container"></div>
+<button id="refreshBtn">Receive Messages</button>
+
+<script>
+const API_URL = "https://fweb-backend.onrender.com/fchat"; // Backend URL
+const email = "try2@gmail.com"; // Hardcoded logged-in email
+const chatWithId = "435582362134190"; // Hardcoded chatWith ID
+
 const receiveStatus = document.getElementById("receive-status");
 const chatContainer = document.getElementById("chat-container");
 
@@ -835,7 +846,7 @@ function renderReceivedMessage(msg) {
   chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
-// Receive messages from backend
+// Fetch and render messages from backend
 async function receiveMessages() {
   if (!navigator.onLine) {
     setReceiveStatus("offline", "Offline — cannot fetch messages");
@@ -847,8 +858,8 @@ async function receiveMessages() {
   try {
     const payload = {
       action: "receive_messages",
-      email: account.email,    // logged-in user email
-      chatWithId: chatWith.id  // id of the person you're chatting with
+      email,       // Hardcoded email
+      chatWithId   // Hardcoded chatWith ID
     };
 
     const res = await fetch(API_URL, {
@@ -864,19 +875,26 @@ async function receiveMessages() {
       return;
     }
 
-    // Render all received messages as FCHAT cards
+    // Clear container first (optional, avoids duplicates)
+    chatContainer.innerHTML = "";
+
+    // Render all received messages
     data.data.forEach(msg => renderReceivedMessage(msg));
 
     setReceiveStatus("success", "Messages received");
-
   } catch (e) {
     console.error("Error fetching messages:", e);
     setReceiveStatus("offline", "Failed to fetch messages");
   }
 }
 
+// Button to manually refresh
+document.getElementById("refreshBtn").addEventListener("click", receiveMessages);
+
 // Optional: auto-refresh every 5 seconds
 // setInterval(receiveMessages, 5000);
-</script>
 
+// Initial fetch on page load
+receiveMessages();
+</script>
 </body></html>
