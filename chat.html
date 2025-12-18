@@ -294,7 +294,10 @@ header.onclick = () => {
 };
 /* ---------- MESSAGE STORAGE ---------- */
 const STORAGE_KEY = "chat_messages_" + chatWith.id;
-let messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+const loggedInUserId = account.email; // or account.id if you use a numeric ID
+
+let messages = (JSON.parse(localStorage.getItem(STORAGE_KEY)) || [])
+    .filter(msg => msg.sender_id === loggedInUserId || msg.receiver_id === loggedInUserId);
 function formatMessageTime(sentAt) {
   if (!sentAt) return "";
 const date = new Date(sentAt);
