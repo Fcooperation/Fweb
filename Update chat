@@ -683,4 +683,63 @@ async function retryPending() {
 for (const msg of messages) {
     if (msg.status === "pending") {
       msg.status = "sending";
-msg.sendi
+msg.sending_since = Date.now(); // 👈 ADD THIS
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+      renderMessages();
+
+      await sendToBackend(msg);
+    }
+  }
+}
+function checkStuckSendingMessages() {
+  const now = Date.now();
+  let changed = false;
+messages.forEach(msg => {
+    if (
+      msg.status === "sending" &&
+      msg.sending_since &&
+      now - msg.sending_since > 30000 // ⏱ 30 seconds
+    ) {
+      msg.status = "pending";
+      msg.sending_since = null;
+      changed = true;
+    }
+  });
+if (changed) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+    renderMessages();
+  }
+}
+window.addEventListener("online", retryPending);
+setInterval(() => {
+  retryPending();
+  checkStuckSendingMessages(); // 👈 ADD THIS
+}, 1000);
+async function deleteForEveryoneBackend(ids) {
+  try {
+    const payload = {
+      action: "delete_messages",
+      email: account.email,
+      ids // array of message IDs
+    };
+
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    return data.success === true;
+  } catch (e) {
+    console.warn("Delete for everyone failed", e);
+    return false;
+  }
+}
+/* ---------- INIT ---------- */
+renderMessages();
+document.getElementById("send-btn").onclick = sendMessage;
+document.getElementById("message-input").addEventListener("keydown", e => {
+  if(e.key === "Enter") sendMessage();
+});
+</script></body></html>
