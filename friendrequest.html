@@ -222,6 +222,9 @@ function addRequestCard(user) {
   acceptBtn.disabled = true;
   rejectBtn.disabled = true;
 
+  const account = JSON.parse(localStorage.getItem("faccount")) || {};
+  const myId = account.id; // <-- your ID
+
   // 1️⃣ Load current fchat messages list
   let chats = JSON.parse(localStorage.getItem("fchat_messages")) || [];
 
@@ -240,8 +243,8 @@ function addRequestCard(user) {
   // 3️⃣ Save back into localStorage
   localStorage.setItem("fchat_messages", JSON.stringify(chats));
 
-  // 4️⃣ Backend: confirm acceptance
-  await callBackend("accept", { user_id: user.id });
+  // 4️⃣ Backend: confirm acceptance (send your ID too)
+  await callBackend("accept", { user_id: user.id, my_id: myId });
 
   // 5️⃣ UI effect
   fadeOutCard(card);
@@ -249,7 +252,6 @@ function addRequestCard(user) {
   updateLog(`Accepted user ${user.username}`);
   resumeUpdates();
 };
-
   const rejectBtn = document.createElement("button");
   rejectBtn.className = "reject-btn";
   rejectBtn.textContent = "Reject";
