@@ -595,33 +595,56 @@ function scrollToBottom() {
 /* ---------- SEND TO BACKEND ---------- */
 async function sendToBackend(msgObj) {
   try {
-    const payload = {  
-  action: "send_messages",  
-  email: account.email,  
-  id: msgObj.id,  
-  sender_id: account.email,  
-  receiver_id: chatWith.id,  
-  linked: msgObj.linked,
-  linked_message_id: msgObj.linked_message_id,
-  sent_at: msgObj.sent_at,
-  text: msgObj.text  
-};
+    const payload = {    
+      action: "send_messages",    
+      email: account.email,    
+      id: msgObj.id,    
+      sender_id: account.email,    
+      receiver_id: chatWith.id,    
+      linked: msgObj.linked,  
+      linked_message_id: msgObj.linked_message_id,  
+      sent_at: msgObj.sent_at,  
+      text: msgObj.text    
+    };
+    
     const res = await fetch(API_URL, {
       method: "POST",
-      headers: {"Content-Type": "application/json"},
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
+
     const data = await res.json();
-    if(data.success){
+
+    if (data.success) {
       msgObj.status = "sent";
+      msgObj.sending_since = null;
+    } else {
+      msgObj.status = "pending"; // keep pending
+    }
+
+  } catch(e) {
+    msgObj.status = "pending"; // keep pending
+    msgObj.sending_since = null;
+    console.warn("Failed to send, message pending", e);
+  }
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+  renderMessages();
+}
+
+async function retryPending() {
+  if (!navigator.onLine) return;
+
+  // retry one by one to avoid overwriting
+  for (const msg of messages) {
+    if (msg.status === "pending") {
+      msg.status = "sending";
+      msg.sending_since = Date.now();
       localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
       renderMessages();
+
+      await sendToBackend(msg); // wait for backend confirmation
     }
-  } catch(e) {
-    console.warn("Failed to send, message pending");
-    msgObj.status = "pending";
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-    renderMessages();
   }
 }
 /* ---------- SEND MESSAGE ---------- */
