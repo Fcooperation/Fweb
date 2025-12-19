@@ -350,8 +350,7 @@ body {
 const API_URL = "https://fweb-backend.onrender.com/fchat";
 /* ---------- LOAD CHAT TARGET ---------- */
 const chatWith = JSON.parse(localStorage.getItem("chatting_with")) || null;
-const account = JSON.parse(localStorage.getItem("faccount")) || {email:"", password:""};
-const input = document.getElementById("message-input");
+const account = JSON.parse(localStorage.getItem("faccount")) || {email:"", password:""};const input = document.getElementById("message-input");
 
 // Auto-grow / shrink as user types
 input.addEventListener("input", () => {
@@ -359,11 +358,53 @@ input.addEventListener("input", () => {
   input.style.height = input.scrollHeight + "px"; // grow/shrink to fit content
 });
 
-// After sending a message, reset
+// Reset input after sending
 function resetInput() {
   input.value = "";            // clear input
   input.style.height = "auto"; // reset to single line
 }
+
+/* ---------- SEND BUTTON ---------- */
+const sendBtn = document.getElementById("send-btn");
+sendBtn.addEventListener("click", async () => {
+  const text = input.value.trim();
+  if (!text) return;
+
+  // Your existing send message logic
+  const payload = {
+    action: "send_messages",
+    text,
+    receiver_id: chatWith.id,
+    sender_id: account.id,
+    id: Date.now().toString(), // unique id for the message
+    sent_at: new Date().toISOString()
+  };
+
+  try {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      // ✅ Call resetInput AFTER the message is successfully sent
+      resetInput();
+
+      // Optionally, also add the message to local messages array
+      messages.push({
+        id: payload.id,
+        text: payload.text,
+        type: "sent",
+        sent_at: payload.sent_at
+      });
+      renderMessages();
+    }
+  } catch (err) {
+    console.warn("Send failed:", err);
+  }
+});
 if (!chatWith || !chatWith.id) {
   alert("No chat selected");
   window.location.href = "fchat.html";
