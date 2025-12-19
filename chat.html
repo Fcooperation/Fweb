@@ -352,10 +352,18 @@ const API_URL = "https://fweb-backend.onrender.com/fchat";
 const chatWith = JSON.parse(localStorage.getItem("chatting_with")) || null;
 const account = JSON.parse(localStorage.getItem("faccount")) || {email:"", password:""};
 const input = document.getElementById("message-input");
+
+// Auto-grow / shrink as user types
 input.addEventListener("input", () => {
-  input.style.height = "auto";           // reset height
-  input.style.height = input.scrollHeight + "px"; // expand
+  input.style.height = "auto";                   // reset height first
+  input.style.height = input.scrollHeight + "px"; // grow/shrink to fit content
 });
+
+// After sending a message, reset
+function resetInput() {
+  input.value = "";            // clear input
+  input.style.height = "auto"; // reset to single line
+}
 if (!chatWith || !chatWith.id) {
   alert("No chat selected");
   window.location.href = "fchat.html";
