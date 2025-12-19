@@ -54,13 +54,17 @@ body {
   padding: 10px 16px;
   border-top: 1px solid #ddd;
 }
-#chat-input input {
+#chat-input textarea {
   flex: 1;
   padding: 10px 14px;
   border-radius: 20px;
   border: 1px solid #ccc;
   font-size: 14px;
   outline: none;
+  resize: none;       /* prevent manual resizing */
+  overflow-y: auto;   /* show scrollbar if too long */
+  min-height: 36px;   /* initial height */
+  max-height: 120px;  /* max height before scroll */
 }
 #chat-input button {
   padding: 10px 18px;
@@ -339,7 +343,7 @@ body {
 </div>
 <!-- ---------- INPUT ---------- -->
 <div id="chat-input">
-  <input type="text" id="message-input" placeholder="Type a message…">
+<textarea id="message-input" placeholder="Type a message…"></textarea>
   <button id="send-btn">Send</button>
 </div>
 <script>
@@ -347,6 +351,11 @@ const API_URL = "https://fweb-backend.onrender.com/fchat";
 /* ---------- LOAD CHAT TARGET ---------- */
 const chatWith = JSON.parse(localStorage.getItem("chatting_with")) || null;
 const account = JSON.parse(localStorage.getItem("faccount")) || {email:"", password:""};
+const input = document.getElementById("message-input");
+input.addEventListener("input", () => {
+  input.style.height = "auto";           // reset height
+  input.style.height = input.scrollHeight + "px"; // expand
+});
 if (!chatWith || !chatWith.id) {
   alert("No chat selected");
   window.location.href = "fchat.html";
