@@ -292,9 +292,7 @@ body {
     <div class="username" id="chat-username">Loading...</div>
     <div class="status" id="chat-status">Status...</div>
   </div>
-  <div id="receive-status">Updating…</div>
 </div>
-
 <!-- ---------- MESSAGES ---------- -->
 <div id="chat-body"></div>
 <!-- ---------- REPLY PREVIEW ---------- -->
@@ -335,7 +333,7 @@ header.onclick = () => {
   window.location.href = "chatdashboard.html";
 };
 /* ---------- MESSAGE STORAGE ---------- */
-const STORAGE_KEY = `chat_${account.email}_${chatWith.id}`;
+const STORAGE_KEY = "chat_messages_" + chatWith.id;
 let messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
 function formatMessageTime(sentAt) {
   if (!sentAt) return "";
@@ -490,33 +488,20 @@ messages = messages.filter(msg => !idsToDelete.includes(String(msg.id)));
   exitSelectMode();
   renderMessages();
 }
-async function deleteForEveryone() {
-  const ids = [...selectedMessages].map(el => Number(el.dataset.id));
-
-  // 🔁 Optimistic UI update (WhatsApp style)
+function deleteForEveryone() {
   selectedMessages.forEach(el => {
     const msgId = el.dataset.id;
     const msg = messages.find(m => String(m.id) === msgId);
-
-    if (msg) {
-      msg.deleted = true;
+if (msg) {
+      msg.deleted = true;              // ✅ flag
       msg.text = "This message was deleted by you";
-      msg.status = "sent";
-      msg.type = "sent";
+      msg.type = "sent";               // ✅ KEEP AS SENT
+      msg.status = "sent";             // for now
     }
   });
-
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-  renderMessages();
+localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   exitSelectMode();
-
-  // 🌐 Send delete request to backend
-  const success = await deleteForEveryoneBackend(ids);
-
-  if (!success) {
-    console.warn("Backend delete failed — keeping local delete");
-    // (Optional) You can show a toast later if you want
-  }
+  renderMessages();
 }
 /* ---------- RENDER MESSAGES ---------- */
 function renderMessages() {
@@ -539,28 +524,6 @@ replyBox.innerHTML = `
 div.appendChild(replyBox);
 }
 const textNode = document.createElement("div");
-// 🔗 Render linked / reply preview
-if (msg.linked_message === "yes" && msg.linked_message_id) {
-  const linked = messages.find(m => String(m.id) === String(msg.linked_message_id));
-
-  if (linked) {
-    const replyBox = document.createElement("div");
-    replyBox.className = "linked-preview";
-
-    replyBox.textContent = linked.text.slice(0, 80) || "Message";
-
-    replyBox.onclick = () => {
-      const target = document.querySelector(`[data-msg-id="${linked.id}"]`);
-      if (target) {
-        target.scrollIntoView({ behavior: "smooth", block: "center" });
-        target.classList.add("highlight");
-        setTimeout(() => target.classList.remove("highlight"), 1200);
-      }
-    };
-
-    card.appendChild(replyBox);
-  }
-}
 if (msg.deleted) {
   textNode.textContent = msg.text;
   div.classList.add("deleted"); // applies grey bubble
@@ -689,56 +652,33 @@ function scrollToBottom() {
 /* ---------- SEND TO BACKEND ---------- */
 async function sendToBackend(msgObj) {
   try {
-    const payload = {    
-      action: "send_messages",    
-      email: account.email,    
-      id: msgObj.id,    
-      sender_id: account.email,    
-      receiver_id: chatWith.id,    
-      linked: msgObj.linked,  
-      linked_message_id: msgObj.linked_message_id,  
-      sent_at: msgObj.sent_at,  
-      text: msgObj.text    
-    };
-    
+    const payload = {  
+  action: "send_messages",  
+  email: account.email,  
+  id: msgObj.id,  
+  sender_id: account.email,  
+  receiver_id: chatWith.id,  
+  linked: msgObj.linked,
+  linked_message_id: msgObj.linked_message_id,
+  sent_at: msgObj.sent_at,
+  text: msgObj.text  
+};
     const res = await fetch(API_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {"Content-Type": "application/json"},
       body: JSON.stringify(payload)
     });
-
     const data = await res.json();
-
-    if (data.success) {
+    if(data.success){
       msgObj.status = "sent";
-      msgObj.sending_since = null;
-    } else {
-      msgObj.status = "pending"; // keep pending
-    }
-
-  } catch(e) {
-    msgObj.status = "pending"; // keep pending
-    msgObj.sending_since = null;
-    console.warn("Failed to send, message pending", e);
-  }
-
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-  renderMessages();
-}
-
-async function retryPending() {
-  if (!navigator.onLine) return;
-
-  // retry one by one to avoid overwriting
-  for (const msg of messages) {
-    if (msg.status === "pending") {
-      msg.status = "sending";
-      msg.sending_since = Date.now();
       localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
       renderMessages();
-
-      await sendToBackend(msg); // wait for backend confirmation
     }
+  } catch(e) {
+    console.warn("Failed to send, message pending");
+    msgObj.status = "pending";
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+    renderMessages();
   }
 }
 /* ---------- SEND MESSAGE ---------- */
@@ -752,16 +692,14 @@ const msgObj = {
   text,
   sent_at: new Date().toISOString(),
   status: navigator.onLine ? "sending" : "pending",
-  sending_since: navigator.onLine ? Date.now() : null,
+  sending_since: navigator.onLine ? Date.now() : null, // 👈 ADD THIS
   replyTo: replyingMessage ? {
     id: replyingMessage.id,
     text: replyingMessage.text,
     sender: getReplySenderName(replyingMessage)
   } : null,
   linked: replyingMessage ? true : false,
-  linked_message_id: replyingMessage ? replyingMessage.id : null,
-  sender_id: account.email,         // <--- add this
-  receiver_id: chatWith.id          // <--- and this
+  linked_message_id: replyingMessage ? replyingMessage.id : null
 };
   messages.push(msgObj);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
@@ -811,34 +749,6 @@ setInterval(() => {
   retryPending();
   checkStuckSendingMessages(); // 👈 ADD THIS
 }, 1000);
-// Receive messages every 4 seconds
-setInterval(() => {
-  receiveMessages();
-}, 4000);
-
-// Also receive immediately when coming online
-window.addEventListener("online", receiveMessages);
-async function deleteForEveryoneBackend(ids) {
-  try {
-    const payload = {
-      action: "delete_messages",
-      email: account.email,
-      ids // array of message IDs
-    };
-
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-
-    const data = await res.json();
-    return data.success === true;
-  } catch (e) {
-    console.warn("Delete for everyone failed", e);
-    return false;
-  }
-}
 /* ---------- INIT ---------- */
 renderMessages();
 document.getElementById("send-btn").onclick = sendMessage;
@@ -906,5 +816,4 @@ setInterval(receiveMessages, 4000);
 
 // fetch immediately when internet comes back
 window.addEventListener("online", receiveMessages);
-</script></script>
-</body></html>
+</script></body></html>
