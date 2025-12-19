@@ -234,6 +234,27 @@ body {
 .loading { color: blue; }
 .success { color: green; }
 .offline { color: red; }
+/* 🔗 Linked / Reply preview */
+.linked-preview {
+  font-size: 12px;
+  padding: 6px 8px;
+  margin-bottom: 6px;
+  border-left: 3px solid #4f8cff;
+  background: rgba(79, 140, 255, 0.1);
+  color: #333;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+/* Highlight original message when jumped to */
+.chat-card.highlight {
+  animation: flash 1.2s ease;
+}
+
+@keyframes flash {
+  0% { background-color: #fff3cd; }
+  100% { background-color: inherit; }
+}
 </style>
 </head>
 <body>
@@ -518,6 +539,28 @@ replyBox.innerHTML = `
 div.appendChild(replyBox);
 }
 const textNode = document.createElement("div");
+// 🔗 Render linked / reply preview
+if (msg.linked_message === "yes" && msg.linked_message_id) {
+  const linked = messages.find(m => String(m.id) === String(msg.linked_message_id));
+
+  if (linked) {
+    const replyBox = document.createElement("div");
+    replyBox.className = "linked-preview";
+
+    replyBox.textContent = linked.text.slice(0, 80) || "Message";
+
+    replyBox.onclick = () => {
+      const target = document.querySelector(`[data-msg-id="${linked.id}"]`);
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "center" });
+        target.classList.add("highlight");
+        setTimeout(() => target.classList.remove("highlight"), 1200);
+      }
+    };
+
+    card.appendChild(replyBox);
+  }
+}
 if (msg.deleted) {
   textNode.textContent = msg.text;
   div.classList.add("deleted"); // applies grey bubble
@@ -834,16 +877,19 @@ async function receiveMessages() {
       const exists = messages.some(m => String(m.id) === String(msg.id));
       if (exists) return;
 
-      messages.push({
-        id: msg.id,
-        type: "received",                 // 👈 important for CSS
-        text: msg.text || "",
-        sent_at: msg.sent_at || new Date().toISOString(),
-        status: "sent",
-        sender_id: msg.sender_id || chatWith.id,
-        receiver_id: account.email
-      });
+messages.push({
+  id: msg.id,
+  type: "received",
+  text: msg.text || "",
+  sent_at: msg.sent_at || new Date().toISOString(),
+  status: "sent",
+  sender_id: msg.sender_id || chatWith.id,
+  receiver_id: account.email,
 
+  // 🔗 LINKED MESSAGE SUPPORT
+  linked_message: msg.linked_message === "yes" ? "yes" : "no",
+  linked_message_id: msg.linked_message_id || null
+});
       changed = true;
     });
 
