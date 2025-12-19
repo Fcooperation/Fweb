@@ -841,6 +841,13 @@ function sendMessage() {
   const text = input.value.trim();
   if (!text) return;
 
+  // 🔹 truncate reply preview before sending
+  let truncatedReply = null;
+  if (replyingMessage) {
+    truncatedReply = replyingMessage.text;
+    if (truncatedReply.length > 80) truncatedReply = truncatedReply.slice(0, 80) + "…";
+  }
+
   const msgObj = {
     id: Date.now(),
     type: "sent",
@@ -851,7 +858,7 @@ function sendMessage() {
     replyTo: replyingMessage
       ? {
           id: replyingMessage.id,
-          text: replyingMessage.text,
+          text: truncatedReply,   // <-- store truncated text here
           sender: getReplySenderName(replyingMessage),
         }
       : null,
@@ -864,25 +871,20 @@ function sendMessage() {
   messages.push(msgObj);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   input.value = "";
-  resetInput(); // shrink input back after sending
-  renderMessages();
+  resetInput();
 
-  // 🔹 truncate reply preview to 80 characters
-  if (replyingMessage) {
+  // Show the reply preview with truncated text
+  if (truncatedReply) {
     const previewEl = document.getElementById("reply-text");
-    if (previewEl) {
-      let preview = replyingMessage.text || "";
-      if (preview.length > 80) preview = preview.slice(0, 80) + "…";
-      previewEl.textContent = preview;
-    }
+    if (previewEl) previewEl.textContent = truncatedReply;
   }
+
+  renderMessages(); // now render messages AFTER preview is set
 
   replyingMessage = null;
   document.getElementById("reply-preview").style.display = "none";
 
-  if (navigator.onLine) {
-    sendToBackend(msgObj);
-  }
+  if (navigator.onLine) sendToBackend(msgObj);
 }
 /* ---------- RETRY PENDING MESSAGES ---------- */
 async function retryPending() {
