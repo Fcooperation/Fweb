@@ -71,6 +71,8 @@ body {
   position: relative; /* ensure child absolute positioning works */
   color: white;
   align-self: flex-end;
+  min-width: 100px;    /* minimum bubble width for very short messages */
+  max-width: 80%;     /* prevents very long messages from stretching too far */
 }
 .message.received {
   align-self: flex-start;
@@ -80,7 +82,7 @@ body {
   padding: 12px 18px 22px 18px;   /* top, sides, bottom */
   position: relative;
 
-  min-width: 60px;    /* minimum bubble width for very short messages */
+  min-width: 100px;    /* minimum bubble width for very short messages */
   max-width: 80%;     /* prevents very long messages from stretching too far */
   display: inline-block;
   word-wrap: break-word;  /* wrap long text */
