@@ -841,12 +841,12 @@ function sendMessage() {
   const text = input.value.trim();
   if (!text) return;
 
-  // 🔹 truncate reply preview before sending
-  let truncatedReply = null;
-  if (replyingMessage) {
-    truncatedReply = replyingMessage.text;
-    if (truncatedReply.length > 80) truncatedReply = truncatedReply.slice(0, 80) + "…";
-  }
+// 🔹 truncate & sanitize reply preview before sending
+let truncatedReply = null;
+if (replyingMessage) {
+  truncatedReply = replyingMessage.text.replace(/\s+/g, ' ').trim();
+  if (truncatedReply.length > 80) truncatedReply = truncatedReply.slice(0, 80) + "…";
+}
 
   const msgObj = {
     id: Date.now(),
