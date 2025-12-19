@@ -53,17 +53,23 @@ body {
 }
 /* ---------- MESSAGE BUBBLES ---------- */
 .message {
-  max-width: 90%;          /* wider bubbles */
-  padding: 12px 18px 22px 18px;  /* bottom padding for time */
-  touch-action: pan-y;     
+  max-width: 90%;                  /* wider bubbles */
+  padding: 12px 18px 22px 18px;    /* bottom padding for time */
+  touch-action: pan-y;
   border-radius: 14px;
   font-size: 14px;
   line-height: 1.4;
-  position: relative;      
+  position: relative;
   transition: transform 0.2s ease;
-  word-wrap: break-word;   /* wrap text inside bubble */
-  display: inline-block;   
-  user-select: none;       /* your previous rule */
+  word-wrap: break-word;
+  display: inline-block;
+  user-select: none;               /* prevent text selection */
+}
+
+.message.sent {
+  background: black;
+  color: white;
+  align-self: flex-end;
 }
 
 .message.received {
@@ -72,29 +78,27 @@ body {
   color: black;
   border-bottom-left-radius: 4px;
 }
-.message.received .msg-time {
-  display: block;             /* ensure below the text */
-  float: none;                /* remove float if any */
-  text-align: right;          /* align to the right */
-  margin-top: 4px;            /* spacing from text */
-}
-
-.message.sent {
-  background: black;
-  color: white;
-  align-self: flex-end;
-}
-.message.sent .msg-time {
-  display: inline-block;      /* inline with status text */
-  float: right;               /* right side inside bubble */
-  margin-left: 6px;           /* small spacing from status */
-}
-.status-text.sent {
-  display: inline-block;      /* keep inline with time */
-}
 
 .pending {
   opacity: 0.6;
+}
+
+/* ---------- SENT MESSAGE TIME & STATUS INLINE ---------- */
+.message.sent .msg-time {
+  display: inline-block;   /* inline with status text */
+  float: right;            /* right side inside bubble */
+  margin-left: 6px;        /* spacing from status */
+}
+.status-text.sent {
+  display: inline-block;   /* keep inline with time */
+}
+
+/* ---------- RECEIVED MESSAGE TIME UNDER TEXT ---------- */
+.message.received .msg-time {
+  display: block;          /* below text */
+  float: none;
+  text-align: right;       /* align to right */
+  margin-top: 4px;         /* spacing from text */
 }
 
 /* ---------- INPUT BAR ---------- */
@@ -111,10 +115,10 @@ body {
   border: 1px solid #ccc;
   font-size: 14px;
   outline: none;
-  resize: none;       
-  overflow-y: auto;   
-  min-height: 36px;   
-  max-height: 120px;  
+  resize: none;
+  overflow-y: auto;
+  min-height: 36px;
+  max-height: 120px;
 }
 #chat-input button {
   padding: 10px 18px;
@@ -143,9 +147,7 @@ body {
   align-items: center;
   justify-content: center;
 }
-#cancel-reply:active {
-  background: #ccc;
-}
+#cancel-reply:active { background: #ccc; }
 
 /* ---------- MESSAGE STATUS ---------- */
 .status-text {
@@ -163,8 +165,8 @@ body {
 .message-time {
   font-weight: bold;
   font-style: italic;
-  margin-top: 4px;       /* push to bottom */
-  display: block;         /* keep inside bubble */
+  margin-top: 4px;
+  display: block;
   text-align: right;
   font-size: 11px;
   opacity: 0.6;
@@ -187,16 +189,13 @@ body {
   100% { box-shadow: none; }
 }
 
-/* ---------- MULTI SELECT MODE (WhatsApp style) ---------- */
+/* ---------- MULTI SELECT MODE ---------- */
 #chat-body.select-mode { background: rgba(0,0,0,0.08); }
 .message.selected {
   background: #cce4ff !important;
   box-shadow: 0 0 0 2px #1e88e5 inset;
 }
 #chat-body.select-mode .message:not(.selected) { opacity: 0.5; }
-
-/* Prevent text selection popup */
-.message { user-select: none; }
 
 /* ---------- DELETE OPTIONS ---------- */
 .delete-option {
@@ -269,9 +268,7 @@ body {
 }
 
 /* Highlight original message when jumped to */
-.chat-card.highlight {
-  animation: flash 1.2s ease;
-}
+.chat-card.highlight { animation: flash 1.2s ease; }
 @keyframes flash {
   0% { background-color: #fff3cd; }
   100% { background-color: inherit; }
@@ -291,7 +288,7 @@ body {
 }
 
 .msg-time {
-  position: relative;       /* stay inside bubble */
+  position: relative;
   bottom: auto;
   right: auto;
   margin-top: 4px;
@@ -299,6 +296,7 @@ body {
   font-size: 11px;
   opacity: 0.6;
 }
+</style>
 </style>
 </head>
 <body>
