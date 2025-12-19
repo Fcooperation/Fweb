@@ -839,44 +839,50 @@ async function retryPending() {
 function sendMessage() {
   const input = document.getElementById("message-input");
   const text = input.value.trim();
-  if(!text) return;
-const msgObj = {
-  id: Date.now(),
-  type: "sent",
-  text,
-  sent_at: new Date().toISOString(),
-  status: navigator.onLine ? "sending" : "pending",
-  sending_since: navigator.onLine ? Date.now() : null,
-  replyTo: replyingMessage ? {
-    id: replyingMessage.id,
-    text: replyingMessage.text,
-    sender: getReplySenderName(replyingMessage)
-  } : null,
-  linked: replyingMessage ? true : false,
-  linked_message_id: replyingMessage ? replyingMessage.id : null,
-  sender_id: account.id,         // <--- add this
-  receiver_id: chatWith.id          // <--- and this
-};
+  if (!text) return;
+
+  const msgObj = {
+    id: Date.now(),
+    type: "sent",
+    text,
+    sent_at: new Date().toISOString(),
+    status: navigator.onLine ? "sending" : "pending",
+    sending_since: navigator.onLine ? Date.now() : null,
+    replyTo: replyingMessage
+      ? {
+          id: replyingMessage.id,
+          text: replyingMessage.text,
+          sender: getReplySenderName(replyingMessage),
+        }
+      : null,
+    linked: replyingMessage ? true : false,
+    linked_message_id: replyingMessage ? replyingMessage.id : null,
+    sender_id: account.id,
+    receiver_id: chatWith.id,
+  };
+
   messages.push(msgObj);
-localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-input.value = "";
-resetInput();       // <-- shrink input back after sending
-renderMessages();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+  input.value = "";
+  resetInput(); // shrink input back after sending
+  renderMessages();
 
-// truncate preview for display
-const previewEl = document.getElementById("reply-text");
-if (previewEl) {
-  let preview = msgObj.replyTo?.text || "";
-  if (preview.length > 80) preview = preview.slice(0, 80) + "…";
-  previewEl.textContent = preview;
-}
+  // 🔹 truncate reply preview to 80 characters
+  if (replyingMessage) {
+    const previewEl = document.getElementById("reply-text");
+    if (previewEl) {
+      let preview = replyingMessage.text || "";
+      if (preview.length > 80) preview = preview.slice(0, 80) + "…";
+      previewEl.textContent = preview;
+    }
+  }
 
-replyingMessage = null;
-document.getElementById("reply-preview").style.display = "none";
+  replyingMessage = null;
+  document.getElementById("reply-preview").style.display = "none";
 
-if(navigator.onLine){
+  if (navigator.onLine) {
     sendToBackend(msgObj);
-}
+  }
 }
 /* ---------- RETRY PENDING MESSAGES ---------- */
 async function retryPending() {
