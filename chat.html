@@ -72,11 +72,25 @@ body {
   color: black;
   border-bottom-left-radius: 4px;
 }
+.message.received .msg-time {
+  display: block;             /* ensure below the text */
+  float: none;                /* remove float if any */
+  text-align: right;          /* align to the right */
+  margin-top: 4px;            /* spacing from text */
+}
 
 .message.sent {
   background: black;
   color: white;
   align-self: flex-end;
+}
+.message.sent .msg-time {
+  display: inline-block;      /* inline with status text */
+  float: right;               /* right side inside bubble */
+  margin-left: 6px;           /* small spacing from status */
+}
+.status-text.sent {
+  display: inline-block;      /* keep inline with time */
 }
 
 .pending {
