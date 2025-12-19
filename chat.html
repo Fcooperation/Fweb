@@ -847,60 +847,57 @@ document.getElementById("message-input").addEventListener("keydown", e => {
 });
 /* ---------- RECEIVE MESSAGES (DROP-IN) ---------- */
 async function receiveMessages() {
-  if (!navigator.onLine) return;
+if (!navigator.onLine) return;
 
-  try {
-    // Safety checks
-    if (!account?.email || !chatWith?.id) return;
+try {
+// Safety checks
+if (!account?.email || !chatWith?.id) return;
 
-    const payload = {
-      action: "receive_messages",
-      email: account.email,      // from localStorage
-      chatWithId: chatWith.id    // from localStorage
-    };
+const payload = {  
+  action: "receive_messages",  
+  email: account.email,      // from localStorage  
+  chatWithId: chatWith.id    // from localStorage  
+};  
 
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
+const res = await fetch(API_URL, {  
+  method: "POST",  
+  headers: { "Content-Type": "application/json" },  
+  body: JSON.stringify(payload)  
+});  
 
-    const data = await res.json();
+const data = await res.json();  
 
-    // Backend returns { data: [...] }
-    if (!Array.isArray(data.data)) return;
+// Backend returns { data: [...] }  
+if (!Array.isArray(data.data)) return;  
 
-    let changed = false;
+let changed = false;  
 
-    data.data.forEach(msg => {
-      // Avoid duplicates
-      const exists = messages.some(m => String(m.id) === String(msg.id));
-      if (exists) return;
+data.data.forEach(msg => {  
+  // Avoid duplicates  
+  const exists = messages.some(m => String(m.id) === String(msg.id));  
+  if (exists) return;  
 
-messages.push({
-  id: msg.id,
-  type: "received",
-  text: msg.text || "",
-  sent_at: msg.sent_at || new Date().toISOString(),
-  status: "sent",
-  sender_id: msg.sender_id || chatWith.id,
-  receiver_id: account.email,
+  messages.push({  
+    id: msg.id,  
+    type: "received",                 // 👈 important for CSS  
+    text: msg.text || "",  
+    sent_at: msg.sent_at || new Date().toISOString(),  
+    status: "sent",  
+    sender_id: msg.sender_id || chatWith.id,  
+    receiver_id: account.email  
+  });  
 
-  // 🔗 LINKED MESSAGE SUPPORT
-  linked_message: msg.linked_message === "yes" ? "yes" : "no",
-  linked_message_id: msg.linked_message_id || null
-});
-      changed = true;
-    });
+  changed = true;  
+});  
 
-    if (changed) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-      renderMessages(); // 👈 your existing renderer + CSS
-    }
+if (changed) {  
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));  
+  renderMessages(); // 👈 your existing renderer + CSS  
+}
 
-  } catch (err) {
-    console.warn("Receive messages failed:", err);
-  }
+} catch (err) {
+console.warn("Receive messages failed:", err);
+}
 }
 
 /* ---------- AUTO RECEIVE ---------- */
