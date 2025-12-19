@@ -764,7 +764,9 @@ const endX = e.changedTouches[0].clientX;
 if (msgData) {
   replyingMessage = msgData;
 document.getElementById("reply-sender").textContent = getReplySenderName(msgData);
-  document.getElementById("reply-text").textContent = msgData.text;
+  let preview = msgData.text;
+if (preview.length > 40) preview = preview.slice(0, 40) + "…";
+document.getElementById("reply-text").textContent = preview;
 document.getElementById("reply-preview").style.display = "block";
 scrollToInput();
 const input = document.getElementById("message-input");
