@@ -697,7 +697,7 @@ async function sendToBackend(msgObj) {
       action: "send_messages",    
       email: account.email,    
       id: msgObj.id,    
-      sender_id: account.email,    
+      sender_id: account.id,    
       receiver_id: chatWith.id,    
       linked: msgObj.linked,  
       linked_message_id: msgObj.linked_message_id,  
@@ -764,7 +764,7 @@ const msgObj = {
   } : null,
   linked: replyingMessage ? true : false,
   linked_message_id: replyingMessage ? replyingMessage.id : null,
-  sender_id: account.email,         // <--- add this
+  sender_id: account.id,         // <--- add this
   receiver_id: chatWith.id          // <--- and this
 };
   messages.push(msgObj);
