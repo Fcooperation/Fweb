@@ -921,6 +921,8 @@ document.getElementById("message-input").addEventListener("keydown", e => {
 async function receiveMessages() {
   if (!navigator.onLine) return;
 
+  const statusEl = document.getElementById("receive-status"); // 🔹 grab status element
+
   try {
     if (!account?.email || !chatWith?.id) return;
 
@@ -969,15 +971,18 @@ async function receiveMessages() {
     if (changed) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
       renderMessages();
+
+      // 🔹 update status to "Updated" after successful receive
+      if (statusEl) statusEl.textContent = "Updated";
     }
 
   } catch (err) {
     console.warn("Receive messages failed:", err);
+    if (statusEl) statusEl.textContent = "Error";
   }
 }
-
 /* ---------- AUTO RECEIVE ---------- */
-setInterval(receiveMessages, 4000);
+setInterval(receiveMessages, 1000);
 window.addEventListener("online", receiveMessages);
 
 </script></script>
