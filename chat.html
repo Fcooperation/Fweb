@@ -277,6 +277,10 @@ body {
   color: #333;
   cursor: pointer;
   border-radius: 6px;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;   /* ensures single line with ellipsis */
 }
 
 /* Highlight original message when jumped to */
