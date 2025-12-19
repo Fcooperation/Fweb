@@ -559,25 +559,6 @@ function renderMessages() {
   const box = document.getElementById("chat-body");
   box.innerHTML = "";
   messages.forEach(msg => {
-    // Header (username)
-if (msg.type === "received") {
-  const header = document.createElement("div");
-  header.className = "msg-username";
-  header.textContent = msg.sender_username || "Unknown";
-  div.appendChild(header);
-}
-
-// Message text
-const textDiv = document.createElement("div");
-textDiv.className = "msg-text";
-textDiv.textContent = msg.text;
-div.appendChild(textDiv);
-
-// Time
-const timeDiv = document.createElement("div");
-timeDiv.className = "msg-time";
-timeDiv.textContent = formatMessageTime(msg.sent_at);
-div.appendChild(timeDiv);
   const div = document.createElement("div");
   div.className = "message " + msg.type + (msg.status==="pending"?" pending":"");
   if (msg.replyTo) {
