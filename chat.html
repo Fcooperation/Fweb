@@ -255,6 +255,42 @@ body {
   0% { background-color: #fff3cd; }
   100% { background-color: inherit; }
 }
+.message {
+  max-width: 75%;
+  padding: 8px 10px;
+  margin: 6px 0;
+  border-radius: 8px;
+  position: relative;
+}
+
+.message.received {
+  background: #e9e9e9;
+  align-self: flex-start;
+}
+
+.message.sent {
+  background: #007bff;
+  color: white;
+  align-self: flex-end;
+}
+
+.msg-username {
+  font-size: 12px;
+  font-weight: bold;
+  margin-bottom: 3px;
+  opacity: 0.8;
+}
+
+.msg-text {
+  font-size: 14px;
+}
+
+.msg-time {
+  font-size: 11px;
+  opacity: 0.6;
+  margin-top: 4px;
+  text-align: right;
+}
 </style>
 </head>
 <body>
@@ -523,6 +559,25 @@ function renderMessages() {
   const box = document.getElementById("chat-body");
   box.innerHTML = "";
   messages.forEach(msg => {
+    // Header (username)
+if (msg.type === "received") {
+  const header = document.createElement("div");
+  header.className = "msg-username";
+  header.textContent = msg.sender_username || "Unknown";
+  div.appendChild(header);
+}
+
+// Message text
+const textDiv = document.createElement("div");
+textDiv.className = "msg-text";
+textDiv.textContent = msg.text;
+div.appendChild(textDiv);
+
+// Time
+const timeDiv = document.createElement("div");
+timeDiv.className = "msg-time";
+timeDiv.textContent = formatMessageTime(msg.sent_at);
+div.appendChild(timeDiv);
   const div = document.createElement("div");
   div.className = "message " + msg.type + (msg.status==="pending"?" pending":"");
   if (msg.replyTo) {
@@ -849,70 +904,69 @@ document.getElementById("send-btn").onclick = sendMessage;
 document.getElementById("message-input").addEventListener("keydown", e => {
   if(e.key === "Enter") sendMessage();
 });
-/* ---------- RECEIVE MESSAGES (DROP-IN) ---------- */
+
+/* ---------- RECEIVE MESSAGES (UPDATED) ---------- */
 async function receiveMessages() {
-if (!navigator.onLine) return;
+  if (!navigator.onLine) return;
 
-try {
-// Safety checks
-if (!account?.email || !chatWith?.id) return;
+  try {
+    if (!account?.email || !chatWith?.id) return;
 
-const payload = {  
-  action: "receive_messages",  
-  email: account.email,      // from localStorage  
-  chatWithId: chatWith.id    // from localStorage  
-};  
+    const payload = {
+      action: "receive_messages",
+      email: account.email,
+      chatWithId: chatWith.id
+    };
 
-const res = await fetch(API_URL, {  
-  method: "POST",  
-  headers: { "Content-Type": "application/json" },  
-  body: JSON.stringify(payload)  
-});  
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
 
-const data = await res.json();  
+    const data = await res.json();
+    if (!Array.isArray(data.data)) return;
 
-// Backend returns { data: [...] }  
-if (!Array.isArray(data.data)) return;  
+    const chatUsername = data.chatWith?.username || "Unknown";
 
-let changed = false;  
+    let changed = false;
 
-data.data.forEach(msg => {  
-  // Avoid duplicates  
-  const exists = messages.some(m => String(m.id) === String(msg.id));  
-  if (exists) return;  
+    data.data.forEach(msg => {
+      const exists = messages.some(m => String(m.id) === String(msg.id));
+      if (exists) return;
 
-  messages.push({
-  id: msg.id,
-  type: "received",
-  text: msg.text || "",
-  sent_at: msg.sent_at || new Date().toISOString(),
-  status: "sent",
-  sender_id: msg.sender_id || chatWith.id,
-  receiver_id: account.email,
+      messages.push({
+        id: msg.id,
+        type: "received",
+        text: msg.text || "",
+        sent_at: msg.sent_at || new Date().toISOString(),
+        status: "sent",
 
-  // 🔗 LINKED MESSAGE SUPPORT
-  linked_message: msg.linked_message === "yes" ? "yes" : "no",
-  linked_message_id: msg.linked_message_id || null
-});
+        sender_id: msg.sender_id,
+        receiver_id: account.id,
 
-  changed = true;  
-});  
+        sender_username: chatUsername, // 👈 IMPORTANT
 
-if (changed) {  
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));  
-  renderMessages(); // 👈 your existing renderer + CSS  
-}
+        linked_message: msg.linked === true ? "yes" : "no",
+        linked_message_id: msg.linked_message_id || null
+      });
 
-} catch (err) {
-console.warn("Receive messages failed:", err);
-}
+      changed = true;
+    });
+
+    if (changed) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+      renderMessages();
+    }
+
+  } catch (err) {
+    console.warn("Receive messages failed:", err);
+  }
 }
 
 /* ---------- AUTO RECEIVE ---------- */
-// fetch every 4 seconds
 setInterval(receiveMessages, 4000);
-
-// fetch immediately when internet comes back
 window.addEventListener("online", receiveMessages);
+
 </script></script>
 </body></html>
