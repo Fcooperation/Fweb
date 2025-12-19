@@ -858,15 +858,25 @@ const msgObj = {
   receiver_id: chatWith.id          // <--- and this
 };
   messages.push(msgObj);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-  input.value = "";
+localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+input.value = "";
 resetInput();       // <-- shrink input back after sending
 renderMessages();
-  replyingMessage = null;
+
+// truncate preview for display
+const previewEl = document.getElementById("reply-text");
+if (previewEl) {
+  let preview = msgObj.replyTo?.text || "";
+  if (preview.length > 80) preview = preview.slice(0, 80) + "…";
+  previewEl.textContent = preview;
+}
+
+replyingMessage = null;
 document.getElementById("reply-preview").style.display = "none";
+
 if(navigator.onLine){
     sendToBackend(msgObj);
-  }
+}
 }
 /* ---------- RETRY PENDING MESSAGES ---------- */
 async function retryPending() {
