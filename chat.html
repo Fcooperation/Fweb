@@ -333,7 +333,7 @@ header.onclick = () => {
   window.location.href = "chatdashboard.html";
 };
 /* ---------- MESSAGE STORAGE ---------- */
-const STORAGE_KEY = "chat_messages_" + chatWith.id;
+const STORAGE_KEY = `chat_${account.email}_${chatWith.id}`;
 let messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
 function formatMessageTime(sentAt) {
   if (!sentAt) return "";
