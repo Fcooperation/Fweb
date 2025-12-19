@@ -544,13 +544,15 @@ if (msg.linked_message === "yes" && msg.linked_message_id) {
   const linked = messages.find(m => String(m.id) === String(msg.linked_message_id));
 
   if (linked) {
-    const replyBox = document.createElement("div");
-    replyBox.className = "linked-preview";
+    const linkedBox = document.createElement("div");
+    linkedBox.className = "linked-preview";
 
-    replyBox.textContent = linked.text.slice(0, 80) || "Message";
+    const senderName = linked.type === "sent" ? "You" : chatWith.username;
 
-    replyBox.onclick = () => {
-      const target = document.querySelector(`[data-msg-id="${linked.id}"]`);
+    linkedBox.innerHTML = `<strong>${senderName}</strong><br>${linked.text.slice(0, 80) || "Message"}`;
+
+    linkedBox.onclick = () => {
+      const target = document.querySelector(`[data-id='${linked.id}']`);
       if (target) {
         target.scrollIntoView({ behavior: "smooth", block: "center" });
         target.classList.add("highlight");
@@ -558,7 +560,8 @@ if (msg.linked_message === "yes" && msg.linked_message_id) {
       }
     };
 
-    card.appendChild(replyBox);
+    // append BEFORE the message text
+    div.appendChild(linkedBox);
   }
 }
 const textNode = document.createElement("div");
