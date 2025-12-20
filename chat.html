@@ -628,6 +628,23 @@ async function deleteForEveryone() {
     // (Optional) You can show a toast later if you want
   }
 }
+async function deleteForEveryoneBackend(ids) {
+  const res = await fetch("/api/chat", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      action: "delete_messages",
+      email: currentUser.email, // 🔐 auth (logged-in user)
+      user_id: chatWith.id,     // 🎯 target chat user
+      ids: ids                  // 🧹 message IDs
+    })
+  });
+
+  const data = await res.json();
+  return data.success === true;
+}
 /* ---------- RENDER MESSAGES ---------- */
 function renderMessages() {
   const box = document.getElementById("chat-body");
