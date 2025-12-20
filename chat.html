@@ -696,8 +696,8 @@ function renderMessages() {
       requestAnimationFrame(() => {
         const lineHeight = parseFloat(getComputedStyle(textNode).lineHeight);
 
-        const INITIAL_LINES = 5;
-        const STEP_LINES = 15;
+        const INITIAL_LINES = 10;
+        const STEP_LINES = 25;
         let currentLines = INITIAL_LINES;
 
         const applyClamp = () => {
@@ -721,21 +721,26 @@ function renderMessages() {
           readMore.textContent = "Read more";
 
           readMore.onclick = () => {
-            currentLines += STEP_LINES;
+  const totalLines = Math.ceil(textNode.scrollHeight / lineHeight);
 
-            if (textNode.scrollHeight <= lineHeight * currentLines) {
-              removeClamp();
-              readMore.textContent = "Read less";
+  if (currentLines >= totalLines) {
+    // READ LESS
+    currentLines = INITIAL_LINES;
+    applyClamp();
+    readMore.textContent = "Read more";
+  } else {
+    // READ MORE
+    currentLines += STEP_LINES;
 
-              readMore.onclick = () => {
-                currentLines = INITIAL_LINES;
-                applyClamp();
-                readMore.textContent = "Read more";
-              };
-            } else {
-              applyClamp();
-            }
-          };
+    if (currentLines >= totalLines) {
+      removeClamp();
+      readMore.textContent = "Read less";
+    } else {
+      applyClamp();
+      readMore.textContent = "Read more";
+    }
+  }
+};
 
           div.appendChild(readMore);
         }
