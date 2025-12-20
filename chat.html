@@ -639,7 +639,9 @@ if (msg.linked_message === "yes" && msg.linked_message_id) {
 
     linkedBox.innerHTML = `<strong>${senderName}</strong><br>${linked.text.slice(0, 80) || "Message"}`;
 
-    linkedBox.onclick = () => {
+    linkedBox.onclick = (e) => {
+  if (selectMode) return; // 🚫 BLOCK scroll in select mode
+  e.stopPropagation();   // 🚫 prevent parent message click
       const target = document.querySelector(`[data-id='${linked.id}']`);
       if (target) {
         target.scrollIntoView({ behavior: "smooth", block: "center" });
