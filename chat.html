@@ -738,22 +738,6 @@ if (msg.deleted) {
     div.appendChild(readMore);
   }
 });
-
-    if (textNode.scrollHeight > maxHeight) {
-      textNode.classList.add("collapsed");
-
-      const readMore = document.createElement("div");
-      readMore.className = "read-more";
-      readMore.textContent = "Read more";
-
-      readMore.onclick = () => {
-        const expanded = !textNode.classList.contains("collapsed");
-        textNode.classList.toggle("collapsed");
-        readMore.textContent = expanded ? "Read more" : "Read less";
-      };
-
-      div.appendChild(readMore);
-    }
   });
 }
 /* ---------- STATUS TEXT (only for sent messages) ---------- */
