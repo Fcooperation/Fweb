@@ -617,159 +617,162 @@ async function deleteForEveryone() {
 function renderMessages() {
   const box = document.getElementById("chat-body");
   box.innerHTML = "";
+
   messages.forEach(msg => {
-  const div = document.createElement("div");
-  div.className = "message " + msg.type + (msg.status==="pending"?" pending":"");
-// Header (username) – only for received messages
-if (msg.type === "received") {
-  const header = document.createElement("div");
-  header.className = "msg-username";
-  header.textContent = msg.sender_username || "Unknown";
-  div.appendChild(header);
-}
+    const div = document.createElement("div");
+    div.className = "message " + msg.type + (msg.status === "pending" ? " pending" : "");
 
-// Time – ONLY for received messages, and at the bottom
-if (msg.type === "received") {
-  const timeDiv = document.createElement("div");
-  timeDiv.className = "msg-time";
-  timeDiv.textContent = formatMessageTime(msg.sent_at);
-  div.appendChild(timeDiv); // 👈 LAST → bottom of card
-}
-  if (msg.replyTo) {
-  const replyBox = document.createElement("div");
-  replyBox.style.borderLeft = "3px solid #007bff";
-  replyBox.style.padding = "4px 8px";
-  replyBox.style.marginBottom = "6px";
-  replyBox.style.fontSize = "12px";
-  replyBox.style.opacity = "0.8";
-replyBox.innerHTML = `
-    <strong>${msg.replyTo.sender}</strong><br>
-    ${msg.replyTo.text}
-  `;
-div.appendChild(replyBox);
-}
+    // Header (username) – only for received messages
+    if (msg.type === "received") {
+      const header = document.createElement("div");
+      header.className = "msg-username";
+      header.textContent = msg.sender_username || "Unknown";
+      div.appendChild(header);
+    }
 
-// 🔗 Render linked / reply preview
-if (msg.linked_message === "yes" && msg.linked_message_id) {
-  const linked = messages.find(m => String(m.id) === String(msg.linked_message_id));
+    // Time – ONLY for received messages
+    if (msg.type === "received") {
+      const timeDiv = document.createElement("div");
+      timeDiv.className = "msg-time";
+      timeDiv.textContent = formatMessageTime(msg.sent_at);
+      div.appendChild(timeDiv);
+    }
 
-  if (linked) {
-    const linkedBox = document.createElement("div");
-    linkedBox.className = "linked-preview";
+    // Reply preview
+    if (msg.replyTo) {
+      const replyBox = document.createElement("div");
+      replyBox.style.borderLeft = "3px solid #007bff";
+      replyBox.style.padding = "4px 8px";
+      replyBox.style.marginBottom = "6px";
+      replyBox.style.fontSize = "12px";
+      replyBox.style.opacity = "0.8";
+      replyBox.innerHTML = `
+        <strong>${msg.replyTo.sender}</strong><br>
+        ${msg.replyTo.text}
+      `;
+      div.appendChild(replyBox);
+    }
 
-    const senderName = linked.type === "sent" ? "You" : chatWith.username;
+    // Linked message preview
+    if (msg.linked_message === "yes" && msg.linked_message_id) {
+      const linked = messages.find(m => String(m.id) === String(msg.linked_message_id));
 
-    linkedBox.innerHTML = `<strong>${senderName}</strong><br>${linked.text.slice(0, 80) || "Message"}`;
+      if (linked) {
+        const linkedBox = document.createElement("div");
+        linkedBox.className = "linked-preview";
 
-    linkedBox.onclick = (e) => {
-  if (selectMode) return; // 🚫 BLOCK scroll in select mode
-  e.stopPropagation();   // 🚫 prevent parent message click
-      const target = document.querySelector(`[data-id='${linked.id}']`);
-      if (target) {
-        target.scrollIntoView({ behavior: "smooth", block: "center" });
-        target.classList.add("highlight");
-        setTimeout(() => target.classList.remove("highlight"), 1200);
-      }
-    };
+        const senderName = linked.type === "sent" ? "You" : chatWith.username;
+        linkedBox.innerHTML = `<strong>${senderName}</strong><br>${linked.text.slice(0, 80) || "Message"}`;
 
-    // append BEFORE the message text
-    div.appendChild(linkedBox);
-  }
-}
-const textNode = document.createElement("div");
-textNode.className = "msg-text";
+        linkedBox.onclick = (e) => {
+          if (selectMode) return;
+          e.stopPropagation();
 
-if (msg.deleted) {
-  textNode.textContent = msg.text;
-  div.classList.add("deleted");
-  div.appendChild(textNode);
-} else {
-  textNode.textContent = msg.text;
-  div.appendChild(textNode);
-
-  // ⬇️ AFTER append, check line overflow
-  requestAnimationFrame(() => {
-  const lineHeight = parseFloat(getComputedStyle(textNode).lineHeight);
-
-  const INITIAL_LINES = 5;
-  const STEP_LINES = 10;
-
-  let currentLines = INITIAL_LINES;
-
-  const applyClamp = () => {
-    textNode.style.display = "-webkit-box";
-    textNode.style.webkitBoxOrient = "vertical";
-    textNode.style.webkitLineClamp = currentLines;
-    textNode.style.overflow = "hidden";
-  };
-
-  const removeClamp = () => {
-    textNode.style.webkitLineClamp = "unset";
-    textNode.style.display = "block";
-    textNode.style.overflow = "visible";
-  };
-
-  // Check if message exceeds initial limit
-  if (textNode.scrollHeight > lineHeight * INITIAL_LINES) {
-    applyClamp();
-
-    const readMore = document.createElement("div");
-    readMore.className = "read-more";
-    readMore.textContent = "Read more";
-
-    readMore.onclick = () => {
-      currentLines += STEP_LINES;
-
-      // If all text is visible → fully expand
-      if (textNode.scrollHeight <= lineHeight * currentLines) {
-        removeClamp();
-        readMore.textContent = "Read less";
-
-        readMore.onclick = () => {
-          currentLines = INITIAL_LINES;
-          applyClamp();
-          readMore.textContent = "Read more";
+          const target = document.querySelector(`[data-id='${linked.id}']`);
+          if (target) {
+            target.scrollIntoView({ behavior: "smooth", block: "center" });
+            target.classList.add("highlight");
+            setTimeout(() => target.classList.remove("highlight"), 1200);
+          }
         };
-      } else {
-        applyClamp();
+
+        div.appendChild(linkedBox);
       }
-    };
+    }
 
-    div.appendChild(readMore);
-  }
-});
+    // Message text
+    const textNode = document.createElement("div");
+    textNode.className = "msg-text";
+
+    if (msg.deleted) {
+      textNode.textContent = msg.text;
+      div.classList.add("deleted");
+      div.appendChild(textNode);
+    } else {
+      textNode.textContent = msg.text;
+      div.appendChild(textNode);
+
+      // READ MORE logic
+      requestAnimationFrame(() => {
+        const lineHeight = parseFloat(getComputedStyle(textNode).lineHeight);
+
+        const INITIAL_LINES = 5;
+        const STEP_LINES = 10;
+        let currentLines = INITIAL_LINES;
+
+        const applyClamp = () => {
+          textNode.style.display = "-webkit-box";
+          textNode.style.webkitBoxOrient = "vertical";
+          textNode.style.webkitLineClamp = currentLines;
+          textNode.style.overflow = "hidden";
+        };
+
+        const removeClamp = () => {
+          textNode.style.webkitLineClamp = "unset";
+          textNode.style.display = "block";
+          textNode.style.overflow = "visible";
+        };
+
+        if (textNode.scrollHeight > lineHeight * INITIAL_LINES) {
+          applyClamp();
+
+          const readMore = document.createElement("div");
+          readMore.className = "read-more";
+          readMore.textContent = "Read more";
+
+          readMore.onclick = () => {
+            currentLines += STEP_LINES;
+
+            if (textNode.scrollHeight <= lineHeight * currentLines) {
+              removeClamp();
+              readMore.textContent = "Read less";
+
+              readMore.onclick = () => {
+                currentLines = INITIAL_LINES;
+                applyClamp();
+                readMore.textContent = "Read more";
+              };
+            } else {
+              applyClamp();
+            }
+          };
+
+          div.appendChild(readMore);
+        }
+      });
+    }
+
+    // Status (sent messages only)
+    if (msg.type === "sent") {
+      const status = document.createElement("div");
+      status.classList.add("status-text");
+
+      const timeSpan = document.createElement("span");
+      timeSpan.classList.add("message-time");
+      timeSpan.textContent = formatMessageTime(msg.sent_at);
+      status.appendChild(timeSpan);
+
+      if (msg.status === "sending") {
+        status.append("Sending…");
+        status.classList.add("status-sending");
+      } else if (msg.status === "pending") {
+        status.append("Pending");
+        status.classList.add("status-pending");
+      } else if (msg.status === "sent") {
+        status.append("Sent");
+        status.classList.add("status-sent");
+      }
+
+      div.appendChild(status);
+    }
+
+    div.dataset.id = msg.id;
+    box.appendChild(div);
   });
-}
-/* ---------- STATUS TEXT (only for sent messages) ---------- */
-if (msg.type === "sent") {
-  const status = document.createElement("div");
-  status.classList.add("status-text");
-const timeSpan = document.createElement("span");
-  timeSpan.classList.add("message-time");
-  timeSpan.textContent = formatMessageTime(msg.sent_at);
-status.appendChild(timeSpan);
-if (msg.status === "sending") {
-    status.append("Sending…");
-    status.classList.add("status-sending");
-  } 
-  else if (msg.status === "pending") {
-    status.append("Pending");
-    status.classList.add("status-pending");
-  } 
-  else if (msg.status === "sent") {
-    status.append("Sent");
-    status.classList.add("status-sent");
-  }
-div.appendChild(status);
-}
-  // 🔑 link DOM to message data
-  div.dataset.id = msg.id;
 
-  box.appendChild(div);
-});
   scrollToBottom();
-enableMessageTap();
-enableMultiSelect(); // ✅ ADD THIS
+  enableMessageTap();
+  enableMultiSelect();
 }
 function enableMessageTap() {
   const allMessages = document.querySelectorAll(".message");
