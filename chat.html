@@ -22,6 +22,10 @@ body {
   padding: 12px 16px;
   border-bottom: 1px solid #ddd;
   cursor:pointer;
+  position: sticky;    /* stays in place */
+  top: 0;              /* stick to top */
+  z-index: 100;        /* stays above messages */
+  background: white;   /* ensures it doesn’t blend with messages when scrolling */
 }
 #chat-header img {
   width: 50px;
