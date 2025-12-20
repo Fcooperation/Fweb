@@ -312,6 +312,28 @@ body {
   font-size: 11px;
   opacity: 0.6;
 }
+/* ---------- READ MORE ---------- */
+.msg-text {
+  font-size: 14px;
+  line-height: 1.4em;
+  white-space: pre-wrap;
+}
+
+.msg-text.collapsed {
+  display: -webkit-box;
+  -webkit-line-clamp: 5;      /* 👈 MAX LINES */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.read-more {
+  color: #007bff;
+  font-size: 13px;
+  font-weight: 600;   /* 👈 ADD THIS */
+  cursor: pointer;
+  margin-top: 4px;
+  user-select: none;
+}
 </style>
 </style>
 </head>
@@ -595,101 +617,167 @@ async function deleteForEveryone() {
 function renderMessages() {
   const box = document.getElementById("chat-body");
   box.innerHTML = "";
+
   messages.forEach(msg => {
-  const div = document.createElement("div");
-  div.className = "message " + msg.type + (msg.status==="pending"?" pending":"");
-// Header (username) – only for received messages
-if (msg.type === "received") {
-  const header = document.createElement("div");
-  header.className = "msg-username";
-  header.textContent = msg.sender_username || "Unknown";
-  div.appendChild(header);
-}
+    const div = document.createElement("div");
+    div.className = "message " + msg.type + (msg.status === "pending" ? " pending" : "");
 
-// Time – ONLY for received messages, and at the bottom
-if (msg.type === "received") {
-  const timeDiv = document.createElement("div");
-  timeDiv.className = "msg-time";
-  timeDiv.textContent = formatMessageTime(msg.sent_at);
-  div.appendChild(timeDiv); // 👈 LAST → bottom of card
-}
-  if (msg.replyTo) {
-  const replyBox = document.createElement("div");
-  replyBox.style.borderLeft = "3px solid #007bff";
-  replyBox.style.padding = "4px 8px";
-  replyBox.style.marginBottom = "6px";
-  replyBox.style.fontSize = "12px";
-  replyBox.style.opacity = "0.8";
-replyBox.innerHTML = `
-    <strong>${msg.replyTo.sender}</strong><br>
-    ${msg.replyTo.text}
-  `;
-div.appendChild(replyBox);
-}
+    // Header (username) – only for received messages
+    if (msg.type === "received") {
+      const header = document.createElement("div");
+      header.className = "msg-username";
+      header.textContent = msg.sender_username || "Unknown";
+      div.appendChild(header);
+    }
 
-// 🔗 Render linked / reply preview
-if (msg.linked_message === "yes" && msg.linked_message_id) {
-  const linked = messages.find(m => String(m.id) === String(msg.linked_message_id));
+    // Time – ONLY for received messages
+    if (msg.type === "received") {
+      const timeDiv = document.createElement("div");
+      timeDiv.className = "msg-time";
+      timeDiv.textContent = formatMessageTime(msg.sent_at);
+      div.appendChild(timeDiv);
+    }
 
-  if (linked) {
-    const linkedBox = document.createElement("div");
-    linkedBox.className = "linked-preview";
+    // Reply preview
+    if (msg.replyTo) {
+      const replyBox = document.createElement("div");
+      replyBox.style.borderLeft = "3px solid #007bff";
+      replyBox.style.padding = "4px 8px";
+      replyBox.style.marginBottom = "6px";
+      replyBox.style.fontSize = "12px";
+      replyBox.style.opacity = "0.8";
+      replyBox.innerHTML = `
+        <strong>${msg.replyTo.sender}</strong><br>
+        ${msg.replyTo.text}
+      `;
+      div.appendChild(replyBox);
+    }
 
-    const senderName = linked.type === "sent" ? "You" : chatWith.username;
+    // Linked message preview
+    if (msg.linked_message === "yes" && msg.linked_message_id) {
+      const linked = messages.find(m => String(m.id) === String(msg.linked_message_id));
 
-    linkedBox.innerHTML = `<strong>${senderName}</strong><br>${linked.text.slice(0, 80) || "Message"}`;
+      if (linked) {
+        const linkedBox = document.createElement("div");
+        linkedBox.className = "linked-preview";
 
-    linkedBox.onclick = () => {
-      const target = document.querySelector(`[data-id='${linked.id}']`);
-      if (target) {
-        target.scrollIntoView({ behavior: "smooth", block: "center" });
-        target.classList.add("highlight");
-        setTimeout(() => target.classList.remove("highlight"), 1200);
+        const senderName = linked.type === "sent" ? "You" : chatWith.username;
+        linkedBox.innerHTML = `<strong>${senderName}</strong><br>${linked.text.slice(0, 80) || "Message"}`;
+
+        linkedBox.onclick = (e) => {
+          if (selectMode) return;
+          e.stopPropagation();
+
+          const target = document.querySelector(`[data-id='${linked.id}']`);
+          if (target) {
+            target.scrollIntoView({ behavior: "smooth", block: "center" });
+            target.classList.add("highlight");
+            setTimeout(() => target.classList.remove("highlight"), 1200);
+          }
+        };
+
+        div.appendChild(linkedBox);
       }
-    };
+    }
 
-    // append BEFORE the message text
-    div.appendChild(linkedBox);
-  }
-}
-const textNode = document.createElement("div");
-if (msg.deleted) {
-  textNode.textContent = msg.text;
-  div.classList.add("deleted"); // applies grey bubble
-} else {
-  textNode.textContent = msg.text;
-}
-div.appendChild(textNode);
-/* ---------- STATUS TEXT (only for sent messages) ---------- */
-if (msg.type === "sent") {
-  const status = document.createElement("div");
-  status.classList.add("status-text");
-const timeSpan = document.createElement("span");
-  timeSpan.classList.add("message-time");
-  timeSpan.textContent = formatMessageTime(msg.sent_at);
-status.appendChild(timeSpan);
-if (msg.status === "sending") {
-    status.append("Sending…");
-    status.classList.add("status-sending");
-  } 
-  else if (msg.status === "pending") {
-    status.append("Pending");
-    status.classList.add("status-pending");
-  } 
-  else if (msg.status === "sent") {
-    status.append("Sent");
-    status.classList.add("status-sent");
-  }
-div.appendChild(status);
-}
-  // 🔑 link DOM to message data
-  div.dataset.id = msg.id;
+    // Message text
+    const textNode = document.createElement("div");
+    textNode.className = "msg-text";
 
-  box.appendChild(div);
-});
+    if (msg.deleted) {
+      textNode.textContent = msg.text;
+      div.classList.add("deleted");
+      div.appendChild(textNode);
+    } else {
+      textNode.textContent = msg.text;
+      div.appendChild(textNode);
+
+      // READ MORE logic
+      requestAnimationFrame(() => {
+        const lineHeight = parseFloat(getComputedStyle(textNode).lineHeight);
+
+        const INITIAL_LINES = 10;
+        const STEP_LINES = 25;
+        let currentLines = INITIAL_LINES;
+
+        const applyClamp = () => {
+          textNode.style.display = "-webkit-box";
+          textNode.style.webkitBoxOrient = "vertical";
+          textNode.style.webkitLineClamp = currentLines;
+          textNode.style.overflow = "hidden";
+        };
+
+        const removeClamp = () => {
+          textNode.style.webkitLineClamp = "unset";
+          textNode.style.display = "block";
+          textNode.style.overflow = "visible";
+        };
+
+        if (textNode.scrollHeight > lineHeight * INITIAL_LINES) {
+          applyClamp();
+
+          const readMore = document.createElement("div");
+          readMore.className = "read-more";
+          readMore.textContent = "Read more";
+
+          readMore.onclick = () => {
+  const totalLines = Math.ceil(textNode.scrollHeight / lineHeight);
+
+  if (currentLines >= totalLines) {
+    // READ LESS
+    currentLines = INITIAL_LINES;
+    applyClamp();
+    readMore.textContent = "Read more";
+  } else {
+    // READ MORE
+    currentLines += STEP_LINES;
+
+    if (currentLines >= totalLines) {
+      removeClamp();
+      readMore.textContent = "Read less";
+    } else {
+      applyClamp();
+      readMore.textContent = "Read more";
+    }
+  }
+};
+
+          div.appendChild(readMore);
+        }
+      });
+    }
+
+    // Status (sent messages only)
+    if (msg.type === "sent") {
+      const status = document.createElement("div");
+      status.classList.add("status-text");
+
+      const timeSpan = document.createElement("span");
+      timeSpan.classList.add("message-time");
+      timeSpan.textContent = formatMessageTime(msg.sent_at);
+      status.appendChild(timeSpan);
+
+      if (msg.status === "sending") {
+        status.append("Sending…");
+        status.classList.add("status-sending");
+      } else if (msg.status === "pending") {
+        status.append("Pending");
+        status.classList.add("status-pending");
+      } else if (msg.status === "sent") {
+        status.append("Sent");
+        status.classList.add("status-sent");
+      }
+
+      div.appendChild(status);
+    }
+
+    div.dataset.id = msg.id;
+    box.appendChild(div);
+  });
+
   scrollToBottom();
-enableMessageTap();
-enableMultiSelect(); // ✅ ADD THIS
+  enableMessageTap();
+  enableMultiSelect();
 }
 function enableMessageTap() {
   const allMessages = document.querySelectorAll(".message");
