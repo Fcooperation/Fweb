@@ -13,6 +13,8 @@ body {
   display: flex;
   flex-direction: column;
   background: white;
+  height: 100%;
+  overflow: hidden; /* 🚫 prevents page scroll */
 }
 /* ---------- TOP BAR ---------- */
 #chat-header {
@@ -231,12 +233,9 @@ body {
   max-width: 500px;
   margin: auto;
   background: #fff;
-  padding: 10px;
-  border-radius: 8px;
-  height: 400px;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
+  height: 100vh;   /* 👈 full screen */
 }
 
 /* Message card */
