@@ -312,6 +312,27 @@ body {
   font-size: 11px;
   opacity: 0.6;
 }
+/* ---------- READ MORE ---------- */
+.msg-text {
+  font-size: 14px;
+  line-height: 1.4em;
+  white-space: pre-wrap;
+}
+
+.msg-text.collapsed {
+  display: -webkit-box;
+  -webkit-line-clamp: 5;      /* 👈 MAX LINES */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.read-more {
+  color: #007bff;
+  font-size: 13px;
+  cursor: pointer;
+  margin-top: 4px;
+  user-select: none;
+}
 </style>
 </style>
 </head>
@@ -655,13 +676,38 @@ if (msg.linked_message === "yes" && msg.linked_message_id) {
   }
 }
 const textNode = document.createElement("div");
+textNode.className = "msg-text";
+
 if (msg.deleted) {
   textNode.textContent = msg.text;
-  div.classList.add("deleted"); // applies grey bubble
+  div.classList.add("deleted");
+  div.appendChild(textNode);
 } else {
   textNode.textContent = msg.text;
+  div.appendChild(textNode);
+
+  // ⬇️ AFTER append, check line overflow
+  requestAnimationFrame(() => {
+    const lineHeight = parseFloat(getComputedStyle(textNode).lineHeight);
+    const maxHeight = lineHeight * 5; // 👈 5 lines
+
+    if (textNode.scrollHeight > maxHeight) {
+      textNode.classList.add("collapsed");
+
+      const readMore = document.createElement("div");
+      readMore.className = "read-more";
+      readMore.textContent = "Read more";
+
+      readMore.onclick = () => {
+        const expanded = !textNode.classList.contains("collapsed");
+        textNode.classList.toggle("collapsed");
+        readMore.textContent = expanded ? "Read more" : "Read less";
+      };
+
+      div.appendChild(readMore);
+    }
+  });
 }
-div.appendChild(textNode);
 /* ---------- STATUS TEXT (only for sent messages) ---------- */
 if (msg.type === "sent") {
   const status = document.createElement("div");
