@@ -1052,7 +1052,8 @@ async function deleteForEveryoneBackend(ids) {
     const payload = {
       action: "delete_messages",
       email: account.email,
-      ids // array of message IDs
+      user_id: chatWith.id,  // ✅ include the chat target
+      ids                  // array of message IDs
     };
 
     const res = await fetch(API_URL, {
