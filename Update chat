@@ -8,49 +8,111 @@
 * { box-sizing: border-box; margin:0; padding:0; }
 /* ---------- BODY ---------- */
 body {
-  font-family: Arial, sans-serif;height: 100vh;display: flex;flex-direction: column;background: white;
+  font-family: Arial, sans-serif;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: white;
 }
 /* ---------- TOP BAR ---------- */
-#chat-header {display: flex;align-items: center;gap: 12px;padding: 12px 16px;border-bottom: 1px solid #ddd;cursor:pointer;
-}#chat-header img {
+#chat-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #ddd;
+  cursor:pointer;
+}
+#chat-header img {
   width: 50px;
   height: 50px;
   border-radius: 50%;
   object-fit: cover;
   background: black;
-}#chat-header .info {
+}
+#chat-header .info {
   display: flex;
   flex-direction: column;
 }
-#chat-header .username {font-size: 16px;font-weight: bold;
-}#chat-header .status {font-size: 12px;
+#chat-header .username {
+  font-size: 16px;
+  font-weight: bold;
+}
+#chat-header .status {
+  font-size: 12px;
   color: #555;
-}/* ---------- CHAT BODY ---------- */
-#chat-body {flex: 1;padding: 16px;overflow-y: auto;display: flex;flex-direction: column;gap: 10px;
-}/* ---------- MESSAGE BUBBLES ---------- */.message {
-  max-width: 85%;          /* longer like WhatsApp */
-  padding: 12px 18px;      /* bigger touch area */
-  touch-action: pan-y;     /* allows horizontal swipe */
+}
+/* ---------- CHAT BODY ---------- */
+#chat-body {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+/* ---------- MESSAGE BUBBLES ---------- */
+.message {
+  max-width: 90%;                  /* wider bubbles */
+  padding: 12px 18px 22px 18px;    /* bottom padding for time */
+  touch-action: pan-y;
   border-radius: 14px;
   font-size: 14px;
   line-height: 1.4;
   position: relative;
   transition: transform 0.2s ease;
-}.sent {
-  align-self: flex-end;
-  background: black;
-  color: white;
-  border-bottom-right-radius: 4px;
-}.received {
-  align-self: flex-start;
-  background: #f1f1f1;
-  color: black;
-  border-bottom-left-radius: 4px;
+  word-wrap: break-word;
+  display: inline-block;
+  user-select: none;               /* prevent text selection */
 }
 
+.message.sent {
+  background: black;
+  position: relative; /* ensure child absolute positioning works */
+  color: white;
+  align-self: flex-end;
+  min-width: 100px;    /* minimum bubble width for very short messages */
+  max-width: 80%;     /* prevents very long messages from stretching too far */
+}
+.message.received {
+  align-self: flex-start;
+  background: #e9e9e9;
+  color: black;
+  border-bottom-left-radius: 4px;
+  padding: 12px 18px 22px 18px;   /* top, sides, bottom */
+  position: relative;
+
+  min-width: 100px;    /* minimum bubble width for very short messages */
+  max-width: 80%;     /* prevents very long messages from stretching too far */
+  display: inline-block;
+  word-wrap: break-word;  /* wrap long text */
+}
 .pending {
   opacity: 0.6;
 }
+
+/* ---------- SENT MESSAGE TIME & STATUS INLINE ---------- */
+.message.sent .msg-time {
+  display: inline-block;   /* inline with status text */
+  float: right;            /* right side inside bubble */
+  margin-left: 6px;        /* spacing from status */
+}
+.status-text.sent {
+  display: inline-block;   /* keep inline with time */
+}
+
+/* ---------- RECEIVED MESSAGE TIME UNDER TEXT ---------- */
+
+.message.received .msg-time {
+  position: absolute;  /* position relative to bubble */
+  bottom: 4px;         /* distance from bottom of bubble */
+  right: 8px;          /* right aligned inside bubble */
+  display: block;
+  text-align: right;
+  font-size: 11px;
+  opacity: 0.6;
+}
+
 /* ---------- INPUT BAR ---------- */
 #chat-input {
   display: flex;
@@ -58,13 +120,17 @@ body {
   padding: 10px 16px;
   border-top: 1px solid #ddd;
 }
-#chat-input input {
+#chat-input textarea {
   flex: 1;
   padding: 10px 14px;
   border-radius: 20px;
   border: 1px solid #ccc;
   font-size: 14px;
   outline: none;
+  resize: none;
+  overflow-y: auto;
+  min-height: 36px;
+  max-height: 120px;
 }
 #chat-input button {
   padding: 10px 18px;
@@ -75,9 +141,9 @@ body {
   font-size: 14px;
   cursor: pointer;
 }
+
 #reply-preview {
   border-top: 1px solid #ddd;
-}#reply-preview {
   display: flex;
 }
 #cancel-reply {
@@ -93,9 +159,8 @@ body {
   align-items: center;
   justify-content: center;
 }
-#cancel-reply:active {
-  background: #ccc;
-}
+#cancel-reply:active { background: #ccc; }
+
 /* ---------- MESSAGE STATUS ---------- */
 .status-text {
   font-size: 11px;
@@ -103,29 +168,28 @@ body {
   text-align: right;
   opacity: 0.85;
 }
-.status-sending {
-  color: grey;
-}
-.status-pending {
-  color: orange;
-}
-.status-sent {
-  color: #1e88e5; /* WhatsApp-like blue */
-}.pending {
-  opacity: 0.6;
-}
+.status-sending { color: grey; }
+.status-pending { color: orange; }
+.status-sent { color: #1e88e5; }
+.pending { opacity: 0.6; }
+
 /* ---------- MESSAGE TIME ---------- */
 .message-time {
   font-weight: bold;
   font-style: italic;
-  margin-right: 6px;
+  margin-top: 4px;
+  display: block;
+  text-align: right;
+  font-size: 11px;
+  opacity: 0.6;
 }
-.message:active {
-  opacity: 0.7;
-}
+
+.message:active { opacity: 0.7; }
+
 .message.highlight {
   animation: megaGlow 2s ease-out 1;
 }
+
 @keyframes megaGlow {
   0% {
     box-shadow:
@@ -134,28 +198,18 @@ body {
       0 0 50px 18px rgba(30,136,229,0.9),
       0 0 80px 30px rgba(30,136,229,0.7);
   }
-  100% {
-    box-shadow: none;
-  }
+  100% { box-shadow: none; }
 }
-/* ---------- MULTI SELECT MODE (WhatsApp style) ---------- */
-/* Dim entire chat when selecting */
-#chat-body.select-mode {
-  background: rgba(0,0,0,0.08);
-}
-/* Selected message */
+
+/* ---------- MULTI SELECT MODE ---------- */
+#chat-body.select-mode { background: rgba(0,0,0,0.08); }
 .message.selected {
-  background: #cce4ff !important; /* WhatsApp blue */
+  background: #cce4ff !important;
   box-shadow: 0 0 0 2px #1e88e5 inset;
 }
-/* Make non-selected messages dim */
-#chat-body.select-mode .message:not(.selected) {
-  opacity: 0.5;
-}
-/* Prevent text selection popup */
-.message {
-  user-select: none;
-}
+#chat-body.select-mode .message:not(.selected) { opacity: 0.5; }
+
+/* ---------- DELETE OPTIONS ---------- */
 .delete-option {
   padding: 14px;
   text-align: center;
@@ -163,28 +217,102 @@ body {
   border-bottom: 1px solid #eee;
   cursor: pointer;
 }
-.delete-option:last-child {
-  border-bottom: none;
+.delete-option:last-child { border-bottom: none; }
+.delete-option:active { background: #f1f1f1; }
+.delete-option[data-action="everyone"] { color: red; font-weight: bold; }
+.delete-option.cancel { color: #555; }
+
+.message.deleted { background: #e0e0e0 !important; color: #666; font-style: italic; }
+.message.sent.deleted { background: #e0e0e0; color: #666; }
+
+/* Chat container */
+#chat-container {
+  max-width: 500px;
+  margin: auto;
+  background: #fff;
+  padding: 10px;
+  border-radius: 8px;
+  height: 400px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
-.delete-option:active {
-  background: #f1f1f1;
+
+/* Message card */
+.chat-card {
+  margin: 8px 0;
+  padding: 10px;
+  border-radius: 6px;
+  max-width: 80%;
+  position: relative;
+  word-wrap: break-word;
 }
-.delete-option[data-action="everyone"] {
-  color: red;
+
+/* Time label inside card */
+.chat-time {
+  font-size: 0.75em;
+  color: #555;
+  position: absolute;
+  bottom: 4px;
+  right: 8px;
+}
+
+/* Status display above chat */
+#receive-status {
+  text-align: center;
+  margin-bottom: 10px;
   font-weight: bold;
 }
-.delete-option.cancel {
-  color: #555;
+.loading { color: blue; }
+.success { color: green; }
+.offline { color: red; }
+
+/* 🔗 Linked / Reply preview */
+.linked-preview {
+  font-size: 12px;
+  padding: 6px 8px;
+  margin-bottom: 6px;
+  border-left: 3px solid #4f8cff;
+  background: rgba(79, 140, 255, 0.1);
+  color: #333;
+  cursor: pointer;
+  border-radius: 6px;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;   /* ensures single line with ellipsis */
 }
-.message.deleted {
-  background: #e0e0e0 !important;
-  color: #666;
-  font-style: italic;
+
+/* Highlight original message when jumped to */
+.chat-card.highlight { animation: flash 1.2s ease; }
+@keyframes flash {
+  0% { background-color: #fff3cd; }
+  100% { background-color: inherit; }
 }
-.message.sent.deleted {
-  background: #e0e0e0;
-  color: #666;
+
+.msg-username {
+  font-size: 12px;
+  font-weight: bold;
+  margin-bottom: 3px;
+  opacity: 0.8;
 }
+
+.msg-text {
+  font-size: 14px;
+  display: block;
+  word-wrap: break-word;
+}
+
+.msg-time {
+  position: relative;
+  bottom: auto;
+  right: auto;
+  margin-top: 4px;
+  text-align: right;
+  font-size: 11px;
+  opacity: 0.6;
+}
+</style>
 </style>
 </head>
 <body>
@@ -223,6 +351,8 @@ body {
     <div class="status" id="chat-status">Status...</div>
   </div>
 </div>
+<div id="receive-status">Updating…</div>
+
 <!-- ---------- MESSAGES ---------- -->
 <div id="chat-body"></div>
 <!-- ---------- REPLY PREVIEW ---------- -->
@@ -235,7 +365,7 @@ body {
 </div>
 <!-- ---------- INPUT ---------- -->
 <div id="chat-input">
-  <input type="text" id="message-input" placeholder="Type a message…">
+<textarea id="message-input" placeholder="Type a message…"></textarea>
   <button id="send-btn">Send</button>
 </div>
 <script>
@@ -243,6 +373,21 @@ const API_URL = "https://fweb-backend.onrender.com/fchat";
 /* ---------- LOAD CHAT TARGET ---------- */
 const chatWith = JSON.parse(localStorage.getItem("chatting_with")) || null;
 const account = JSON.parse(localStorage.getItem("faccount")) || {email:"", password:""};
+const input = document.getElementById("message-input");
+
+// Auto-grow / shrink as user types
+input.addEventListener("input", () => {
+  input.style.height = "auto";                   // reset height first
+  input.style.height = input.scrollHeight + "px"; // grow/shrink to fit content
+});
+
+// Function to reset input after sending
+function resetInput() {
+  input.value = "";            // clear input text
+  input.style.height = "auto"; // shrink back to one line
+}
+
+// Call this inside your sendMessage() at the end (before or after renderMessages)
 if (!chatWith || !chatWith.id) {
   alert("No chat selected");
   window.location.href = "fchat.html";
@@ -263,7 +408,7 @@ header.onclick = () => {
   window.location.href = "chatdashboard.html";
 };
 /* ---------- MESSAGE STORAGE ---------- */
-const STORAGE_KEY = "chat_messages_" + chatWith.id;
+const STORAGE_KEY = `chat_${account.email}_${chatWith.id}`;
 let messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
 function formatMessageTime(sentAt) {
   if (!sentAt) return "";
@@ -453,6 +598,21 @@ function renderMessages() {
   messages.forEach(msg => {
   const div = document.createElement("div");
   div.className = "message " + msg.type + (msg.status==="pending"?" pending":"");
+// Header (username) – only for received messages
+if (msg.type === "received") {
+  const header = document.createElement("div");
+  header.className = "msg-username";
+  header.textContent = msg.sender_username || "Unknown";
+  div.appendChild(header);
+}
+
+// Time – ONLY for received messages, and at the bottom
+if (msg.type === "received") {
+  const timeDiv = document.createElement("div");
+  timeDiv.className = "msg-time";
+  timeDiv.textContent = formatMessageTime(msg.sent_at);
+  div.appendChild(timeDiv); // 👈 LAST → bottom of card
+}
   if (msg.replyTo) {
   const replyBox = document.createElement("div");
   replyBox.style.borderLeft = "3px solid #007bff";
@@ -465,6 +625,32 @@ replyBox.innerHTML = `
     ${msg.replyTo.text}
   `;
 div.appendChild(replyBox);
+}
+
+// 🔗 Render linked / reply preview
+if (msg.linked_message === "yes" && msg.linked_message_id) {
+  const linked = messages.find(m => String(m.id) === String(msg.linked_message_id));
+
+  if (linked) {
+    const linkedBox = document.createElement("div");
+    linkedBox.className = "linked-preview";
+
+    const senderName = linked.type === "sent" ? "You" : chatWith.username;
+
+    linkedBox.innerHTML = `<strong>${senderName}</strong><br>${linked.text.slice(0, 80) || "Message"}`;
+
+    linkedBox.onclick = () => {
+      const target = document.querySelector(`[data-id='${linked.id}']`);
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "center" });
+        target.classList.add("highlight");
+        setTimeout(() => target.classList.remove("highlight"), 1200);
+      }
+    };
+
+    // append BEFORE the message text
+    div.appendChild(linkedBox);
+  }
 }
 const textNode = document.createElement("div");
 if (msg.deleted) {
@@ -578,7 +764,9 @@ const endX = e.changedTouches[0].clientX;
 if (msgData) {
   replyingMessage = msgData;
 document.getElementById("reply-sender").textContent = getReplySenderName(msgData);
-  document.getElementById("reply-text").textContent = msgData.text;
+  let preview = msgData.text;
+if (preview.length > 40) preview = preview.slice(0, 40) + "…";
+document.getElementById("reply-text").textContent = preview;
 document.getElementById("reply-preview").style.display = "block";
 scrollToInput();
 const input = document.getElementById("message-input");
@@ -599,7 +787,7 @@ async function sendToBackend(msgObj) {
       action: "send_messages",    
       email: account.email,    
       id: msgObj.id,    
-      sender_id: account.email,    
+      sender_id: account.id,    
       receiver_id: chatWith.id,    
       linked: msgObj.linked,  
       linked_message_id: msgObj.linked_message_id,  
@@ -651,31 +839,52 @@ async function retryPending() {
 function sendMessage() {
   const input = document.getElementById("message-input");
   const text = input.value.trim();
-  if(!text) return;
-const msgObj = {
-  id: Date.now(),
-  type: "sent",
-  text,
-  sent_at: new Date().toISOString(),
-  status: navigator.onLine ? "sending" : "pending",
-  sending_since: navigator.onLine ? Date.now() : null, // 👈 ADD THIS
-  replyTo: replyingMessage ? {
-    id: replyingMessage.id,
-    text: replyingMessage.text,
-    sender: getReplySenderName(replyingMessage)
-  } : null,
-  linked: replyingMessage ? true : false,
-  linked_message_id: replyingMessage ? replyingMessage.id : null
-};
+  if (!text) return;
+
+// 🔹 truncate & sanitize reply preview before sending
+let truncatedReply = null;
+if (replyingMessage) {
+  truncatedReply = replyingMessage.text.replace(/\s+/g, ' ').trim();
+  if (truncatedReply.length > 80) truncatedReply = truncatedReply.slice(0, 80) + "…";
+}
+
+  const msgObj = {
+    id: Date.now(),
+    type: "sent",
+    text,
+    sent_at: new Date().toISOString(),
+    status: navigator.onLine ? "sending" : "pending",
+    sending_since: navigator.onLine ? Date.now() : null,
+    replyTo: replyingMessage
+      ? {
+          id: replyingMessage.id,
+          text: truncatedReply,   // <-- store truncated text here
+          sender: getReplySenderName(replyingMessage),
+        }
+      : null,
+    linked: replyingMessage ? true : false,
+    linked_message_id: replyingMessage ? replyingMessage.id : null,
+    sender_id: account.id,
+    receiver_id: chatWith.id,
+  };
+
   messages.push(msgObj);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   input.value = "";
-  renderMessages();
-  replyingMessage = null;
-document.getElementById("reply-preview").style.display = "none";
-if(navigator.onLine){
-    sendToBackend(msgObj);
+  resetInput();
+
+  // Show the reply preview with truncated text
+  if (truncatedReply) {
+    const previewEl = document.getElementById("reply-text");
+    if (previewEl) previewEl.textContent = truncatedReply;
   }
+
+  renderMessages(); // now render messages AFTER preview is set
+
+  replyingMessage = null;
+  document.getElementById("reply-preview").style.display = "none";
+
+  if (navigator.onLine) sendToBackend(msgObj);
 }
 /* ---------- RETRY PENDING MESSAGES ---------- */
 async function retryPending() {
@@ -715,6 +924,13 @@ setInterval(() => {
   retryPending();
   checkStuckSendingMessages(); // 👈 ADD THIS
 }, 1000);
+// Receive messages every 4 seconds
+setInterval(() => {
+  receiveMessages();
+}, 4000);
+
+// Also receive immediately when coming online
+window.addEventListener("online", receiveMessages);
 async function deleteForEveryoneBackend(ids) {
   try {
     const payload = {
@@ -742,4 +958,74 @@ document.getElementById("send-btn").onclick = sendMessage;
 document.getElementById("message-input").addEventListener("keydown", e => {
   if(e.key === "Enter") sendMessage();
 });
-</script></body></html>
+
+/* ---------- RECEIVE MESSAGES (UPDATED) ---------- */
+async function receiveMessages() {
+  if (!navigator.onLine) return;
+
+  const statusEl = document.getElementById("receive-status"); // 🔹 grab status element
+
+  try {
+    if (!account?.email || !chatWith?.id) return;
+
+    const payload = {
+      action: "receive_messages",
+      email: account.email,
+      chatWithId: chatWith.id
+    };
+
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    if (!Array.isArray(data.data)) return;
+
+    const chatUsername = data.chatWith?.username || "Unknown";
+
+    let changed = false;
+
+    data.data.forEach(msg => {
+      const exists = messages.some(m => String(m.id) === String(msg.id));
+      if (exists) return;
+
+      messages.push({
+        id: msg.id,
+        type: "received",
+        text: msg.text || "",
+        sent_at: msg.sent_at || new Date().toISOString(),
+        status: "sent",
+
+        sender_id: msg.sender_id,
+        receiver_id: account.id,
+
+        sender_username: chatUsername, // 👈 IMPORTANT
+
+        linked_message: msg.linked === true ? "yes" : "no",
+        linked_message_id: msg.linked_message_id || null
+      });
+
+      changed = true;
+    });
+
+    if (changed) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+      renderMessages();
+
+      // 🔹 update status to "Updated" after successful receive
+      if (statusEl) statusEl.textContent = "Updated";
+    }
+
+  } catch (err) {
+    console.warn("Receive messages failed:", err);
+    if (statusEl) statusEl.textContent = "Error";
+  }
+}
+/* ---------- AUTO RECEIVE ---------- */
+setInterval(receiveMessages, 1000);
+window.addEventListener("online", receiveMessages);
+
+</script></script>
+</body></html>
