@@ -13,8 +13,6 @@ body {
   display: flex;
   flex-direction: column;
   background: white;
-  height: 100%;
-  overflow: hidden; /* 🚫 prevents page scroll */
 }
 /* ---------- TOP BAR ---------- */
 #chat-header {
@@ -25,7 +23,6 @@ body {
   border-bottom: 1px solid #ddd;
   cursor:pointer;
 }
-
 #chat-header img {
   width: 50px;
   height: 50px;
@@ -50,11 +47,9 @@ body {
   flex: 1;
   padding: 16px;
   overflow-y: auto;
-  overflow-x: hidden;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  overscroll-behavior: contain; /* 👈 prevents rubber-band scroll */
 }
 /* ---------- MESSAGE BUBBLES ---------- */
 .message {
@@ -120,12 +115,10 @@ body {
 
 /* ---------- INPUT BAR ---------- */
 #chat-input {
-  flex-shrink: 0;
   display: flex;
   gap: 10px;
   padding: 10px 16px;
   border-top: 1px solid #ddd;
-  background: white;
 }
 #chat-input textarea {
   flex: 1;
@@ -231,6 +224,20 @@ body {
 
 .message.deleted { background: #e0e0e0 !important; color: #666; font-style: italic; }
 .message.sent.deleted { background: #e0e0e0; color: #666; }
+
+/* Chat container */
+#chat-container {
+  max-width: 500px;
+  margin: auto;
+  background: #fff;
+  padding: 10px;
+  border-radius: 8px;
+  height: 400px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
 /* Message card */
 .chat-card {
   margin: 8px 0;
@@ -327,7 +334,6 @@ body {
   margin-top: 4px;
   user-select: none;
 }
-</style>
 </style>
 </head>
 <body>
