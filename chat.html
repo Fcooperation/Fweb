@@ -329,6 +329,7 @@ body {
 .read-more {
   color: #007bff;
   font-size: 13px;
+  font-weight: 600;   /* 👈 ADD THIS */
   cursor: pointer;
   margin-top: 4px;
   user-select: none;
@@ -688,8 +689,55 @@ if (msg.deleted) {
 
   // ⬇️ AFTER append, check line overflow
   requestAnimationFrame(() => {
-    const lineHeight = parseFloat(getComputedStyle(textNode).lineHeight);
-    const maxHeight = lineHeight * 5; // 👈 5 lines
+  const lineHeight = parseFloat(getComputedStyle(textNode).lineHeight);
+
+  const INITIAL_LINES = 5;
+  const STEP_LINES = 10;
+
+  let currentLines = INITIAL_LINES;
+
+  const applyClamp = () => {
+    textNode.style.display = "-webkit-box";
+    textNode.style.webkitBoxOrient = "vertical";
+    textNode.style.webkitLineClamp = currentLines;
+    textNode.style.overflow = "hidden";
+  };
+
+  const removeClamp = () => {
+    textNode.style.webkitLineClamp = "unset";
+    textNode.style.display = "block";
+    textNode.style.overflow = "visible";
+  };
+
+  // Check if message exceeds initial limit
+  if (textNode.scrollHeight > lineHeight * INITIAL_LINES) {
+    applyClamp();
+
+    const readMore = document.createElement("div");
+    readMore.className = "read-more";
+    readMore.textContent = "Read more";
+
+    readMore.onclick = () => {
+      currentLines += STEP_LINES;
+
+      // If all text is visible → fully expand
+      if (textNode.scrollHeight <= lineHeight * currentLines) {
+        removeClamp();
+        readMore.textContent = "Read less";
+
+        readMore.onclick = () => {
+          currentLines = INITIAL_LINES;
+          applyClamp();
+          readMore.textContent = "Read more";
+        };
+      } else {
+        applyClamp();
+      }
+    };
+
+    div.appendChild(readMore);
+  }
+});
 
     if (textNode.scrollHeight > maxHeight) {
       textNode.classList.add("collapsed");
