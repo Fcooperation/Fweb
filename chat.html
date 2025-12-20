@@ -1140,7 +1140,9 @@ async function receiveMessages() {
     if (statusEl) statusEl.textContent = "Error";
   }
 }
-
+/* ---------- AUTO RECEIVE ---------- */
+setInterval(receiveMessages, 1000);
+window.addEventListener("online", receiveMessages);
 
 </script></script>
 </body></html>
