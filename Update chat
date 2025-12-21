@@ -22,6 +22,10 @@ body {
   padding: 12px 16px;
   border-bottom: 1px solid #ddd;
   cursor:pointer;
+  position: sticky;    /* stays in place */
+  top: 0;              /* stick to top */
+  z-index: 100;        /* stays above messages */
+  background: white;   /* ensures it doesn’t blend with messages when scrolling */
 }
 #chat-header img {
   width: 50px;
@@ -119,6 +123,11 @@ body {
   gap: 10px;
   padding: 10px 16px;
   border-top: 1px solid #ddd;
+
+  position: sticky;   /* stays in place while messages scroll */
+  bottom: 0;          /* stick to bottom of chat body */
+  z-index: 100;       /* stays above messages */
+  background: white;  /* ensures it doesn’t blend with messages */
 }
 #chat-input textarea {
   flex: 1;
@@ -335,7 +344,6 @@ body {
   user-select: none;
 }
 </style>
-</style>
 </head>
 <body>
   <!-- ---------- SELECTION BOARD ---------- -->
@@ -396,6 +404,13 @@ const API_URL = "https://fweb-backend.onrender.com/fchat";
 const chatWith = JSON.parse(localStorage.getItem("chatting_with")) || null;
 const account = JSON.parse(localStorage.getItem("faccount")) || {email:"", password:""};
 const input = document.getElementById("message-input");
+const chatHeader = document.getElementById("chat-header");
+const chatBody = document.getElementById("chat-body");
+
+chatBody.addEventListener("scroll", () => {
+  // Make sure header is always visible
+  chatHeader.style.transform = "translateY(0)";
+});
 
 // Auto-grow / shrink as user types
 input.addEventListener("input", () => {
@@ -461,89 +476,84 @@ let selectedMessages = new Set();
 const selectionBar = document.getElementById("selection-bar");
 const deleteBtn = document.getElementById("select-delete");
 const deleteMenu = document.getElementById("delete-menu");
+
 // Back button closes selection mode
 document.getElementById("select-back").onclick = exitSelectMode;
+
 deleteBtn.onclick = () => {
   if (selectedMessages.size === 0) return;
-const deleteForEveryoneOption =
-    deleteMenu.querySelector('[data-action="everyone"]');
-let canDeleteForEveryone = true;
+  const deleteForEveryoneOption = deleteMenu.querySelector('[data-action="everyone"]');
+  let canDeleteForEveryone = true;
+
+  // Check if any message is already deleted
   selectedMessages.forEach(el => {
-  if (el.classList.contains("deleted")) {
-    canDeleteForEveryone = false;
-  }
-});
-selectedMessages.forEach(el => {
+    if (el.classList.contains("deleted")) canDeleteForEveryone = false;
+  });
+
+  // Check if messages are eligible for "delete for everyone"
+  selectedMessages.forEach(el => {
     const msgId = el.dataset.id;
     const msg = messages.find(m => String(m.id) === msgId);
-// ❌ Any condition that blocks "delete for everyone"
-    if (
-      !msg ||
-      msg.type !== "sent" ||           // received messages
-      msg.status === "seen" ||          // already seen
-      msg.status === "pending"          // pending
-    ) {
+    if (!msg || msg.type !== "sent" || msg.status === "seen" || msg.status === "pending") {
       canDeleteForEveryone = false;
     }
   });
-// ✅ Show / hide option
-  if (canDeleteForEveryone) {
-    deleteForEveryoneOption.style.display = "block";
-  } else {
-    deleteForEveryoneOption.style.display = "none";
-  }
-deleteMenu.style.display = "block";
+
+  // Show / hide option
+  deleteForEveryoneOption.style.display = canDeleteForEveryone ? "block" : "none";
+  deleteMenu.style.display = "block";
 };
+
+// Delete menu click
 deleteMenu.addEventListener("click", e => {
   const option = e.target.closest(".delete-option");
   if (!option) return;
-if (option.classList.contains("cancel")) {
+  if (option.classList.contains("cancel")) {
     closeDeleteMenu();
     return;
   }
-const action = option.dataset.action;
-if (action === "me") deleteForMe();
+
+  const action = option.dataset.action;
+  if (action === "me") deleteForMe();
   if (action === "everyone") deleteForEveryone();
 
   closeDeleteMenu();
 });
+
+// Press & hold / multi-select setup
 let holdTimer = null;
 function enableMultiSelect() {
   const chatBody = document.getElementById("chat-body");
-chatBody.querySelectorAll(".message").forEach(msg => {
-// PRESS & HOLD
+  chatBody.querySelectorAll(".message").forEach(msg => {
+    // PRESS & HOLD
     msg.addEventListener("touchstart", e => {
-  if (selectMode) return;
-holdTimer = setTimeout(() => {
-    enterSelectMode(msg);
-  }, 500);
-});
-msg.addEventListener("touchend", () => {
-      clearTimeout(holdTimer);
+      if (selectMode) return;
+      holdTimer = setTimeout(() => enterSelectMode(msg), 500);
     });
-msg.addEventListener("touchmove", () => {
-      clearTimeout(holdTimer);
-    });
-// TAP WHILE IN SELECT MODE
+    msg.addEventListener("touchend", () => clearTimeout(holdTimer));
+    msg.addEventListener("touchmove", () => clearTimeout(holdTimer));
+
+    // TAP WHILE IN SELECT MODE
     msg.addEventListener("click", e => {
       if (!selectMode) return;
       toggleSelection(msg);
       e.stopPropagation();
     });
   });
-// Tap empty space to exit select mode
+
+  // Tap empty space to exit select mode
   chatBody.addEventListener("click", e => {
-    if (selectMode && !e.target.closest(".message")) {
-      exitSelectMode();
-    }
+    if (selectMode && !e.target.closest(".message")) exitSelectMode();
   });
 }
+
 function enterSelectMode(msg) {
   selectMode = true;
   document.getElementById("chat-body").classList.add("select-mode");
-  selectionBar.style.display = "flex"; // ← show selection bar
+  selectionBar.style.display = "flex";
   toggleSelection(msg);
 }
+
 function toggleSelection(msg) {
   if (selectedMessages.has(msg)) {
     msg.classList.remove("selected");
@@ -552,47 +562,48 @@ function toggleSelection(msg) {
     msg.classList.add("selected");
     selectedMessages.add(msg);
   }
-// Exit if none selected
-  if (selectedMessages.size === 0) {
-    exitSelectMode();
-  }
+
+  if (selectedMessages.size === 0) exitSelectMode();
 }
+
 function exitSelectMode() {
   selectMode = false;
-selectedMessages.forEach(m => m.classList.remove("selected"));
+  selectedMessages.forEach(m => m.classList.remove("selected"));
   selectedMessages.clear();
-document.getElementById("chat-body").classList.remove("select-mode");
+  document.getElementById("chat-body").classList.remove("select-mode");
   selectionBar.style.display = "none";
-
-  closeDeleteMenu(); // ✅ FORCE CLOSE DELETE MENU
+  closeDeleteMenu();
 }
+
 function closeDeleteMenu() {
   deleteMenu.style.display = "none";
 }
+
 document.addEventListener("click", e => {
   if (deleteMenu.style.display === "block") {
-    if (!e.target.closest("#delete-menu") &&
-        !e.target.closest("#select-delete")) {
+    if (!e.target.closest("#delete-menu") && !e.target.closest("#select-delete")) {
       closeDeleteMenu();
     }
   }
 });
+
+// Delete for me
 function deleteForMe() {
   const idsToDelete = [...selectedMessages].map(el => el.dataset.id);
-messages = messages.filter(msg => !idsToDelete.includes(String(msg.id)));
-
+  messages = messages.filter(msg => !idsToDelete.includes(String(msg.id)));
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   exitSelectMode();
   renderMessages();
 }
+
+// Delete for everyone
 async function deleteForEveryone() {
   const ids = [...selectedMessages].map(el => Number(el.dataset.id));
 
-  // 🔁 Optimistic UI update (WhatsApp style)
+  // Optimistic UI update
   selectedMessages.forEach(el => {
     const msgId = el.dataset.id;
     const msg = messages.find(m => String(m.id) === msgId);
-
     if (msg) {
       msg.deleted = true;
       msg.text = "This message was deleted by you";
@@ -605,13 +616,30 @@ async function deleteForEveryone() {
   renderMessages();
   exitSelectMode();
 
-  // 🌐 Send delete request to backend
-  const success = await deleteForEveryoneBackend(ids);
-
-  if (!success) {
-    console.warn("Backend delete failed — keeping local delete");
-    // (Optional) You can show a toast later if you want
+  // Send delete request to backend with email & user_id
+  try {
+    const success = await deleteForEveryoneBackend(ids);
+    if (!success) console.warn("Backend delete failed — keeping local delete");
+  } catch (err) {
+    console.error("Error deleting messages for everyone:", err);
   }
+}
+
+// Backend call
+async function deleteForEveryoneBackend(ids) {
+  const res = await fetch("/api/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      action: "delete_messages",
+      email: account.email,   // 🔐 auth (logged-in user)
+      user_id: chatWith.id,   // 🎯 target chat user
+      ids: ids                // 🧹 message IDs
+    })
+  });
+
+  const data = await res.json();
+  return data.success === true;
 }
 /* ---------- RENDER MESSAGES ---------- */
 function renderMessages() {
@@ -1024,7 +1052,8 @@ async function deleteForEveryoneBackend(ids) {
     const payload = {
       action: "delete_messages",
       email: account.email,
-      ids // array of message IDs
+      user_id: chatWith.id,  // ✅ include the chat target
+      ids                  // array of message IDs
     };
 
     const res = await fetch(API_URL, {
