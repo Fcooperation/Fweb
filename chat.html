@@ -477,6 +477,17 @@ body {
 <script>
 const API_URL = "https://fweb-backend.onrender.com/fchat";
 /* ---------- LOAD CHAT TARGET ---------- */
+const chatWith = JSON.parse(localStorage.getItem("chatting_with")) || null;
+const account = JSON.parse(localStorage.getItem("faccount")) || {email:"", password:""};
+const input = document.getElementById("message-input");
+const chatHeader = document.getElementById("chat-header");
+const chatBody = document.getElementById("chat-body");
+
+chatBody.addEventListener("scroll", () => {
+  // Make sure header is always visible
+  chatHeader.style.transform = "translateY(0)";
+});
+
 const addBtn = document.getElementById("add-btn");
 const backBtn = document.getElementById("back-btn");
 const attachPanel = document.getElementById("attach-panel");
@@ -492,16 +503,6 @@ addBtn.onclick = () => {
 backBtn.onclick = () => {
   attachPanel.classList.remove("active");
 };
-const chatWith = JSON.parse(localStorage.getItem("chatting_with")) || null;
-const account = JSON.parse(localStorage.getItem("faccount")) || {email:"", password:""};
-const input = document.getElementById("message-input");
-const chatHeader = document.getElementById("chat-header");
-const chatBody = document.getElementById("chat-body");
-
-chatBody.addEventListener("scroll", () => {
-  // Make sure header is always visible
-  chatHeader.style.transform = "translateY(0)";
-});
 
 // Auto-grow / shrink as user types
 input.addEventListener("input", () => {
