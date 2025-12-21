@@ -617,6 +617,20 @@ async function deleteForEveryone() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   renderMessages();
   exitSelectMode();
+  
+  // Check network and mark as pending if offline
+if (!navigator.onLine) {
+  selectedMessages.forEach(el => {
+    const msgId = el.dataset.id;
+    const msg = messages.find(m => String(m.id) === msgId);
+    if (msg && msg.status === "deleting") {
+      msg.status = "pending";
+    }
+  });
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+  renderMessages();
+}
 
   // Send delete request to backend with email & user_id
   try {
