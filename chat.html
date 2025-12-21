@@ -343,10 +343,6 @@ body {
   margin-top: 4px;
   user-select: none;
 }
-/* ---------- DELETE STATUS COLORS ---------- */
-.status-deleting { color: grey; }
-.status-delete-pending { color: yellow; }
-.status-deleted { color: red; }
 </style>
 </head>
 <body>
@@ -604,15 +600,15 @@ function deleteForMe() {
 async function deleteForEveryone() {
   const ids = [...selectedMessages].map(el => Number(el.dataset.id));
 
-  // Optimistic UI update — mark as "deleting" immediately
+  // Optimistic UI update
   selectedMessages.forEach(el => {
     const msgId = el.dataset.id;
     const msg = messages.find(m => String(m.id) === msgId);
     if (msg) {
-      msg.text = "This message was deleted by you"; // immediately show text
-      msg.status = "deleting";                      // in-progress status
+      msg.deleted = true;
+      msg.text = "This message was deleted by you";
+      msg.status = "sent";
       msg.type = "sent";
-      msg.deleted = false;                          // only mark fully deleted after success
     }
   });
 
@@ -620,42 +616,30 @@ async function deleteForEveryone() {
   renderMessages();
   exitSelectMode();
 
-  // Send delete request to backend
+  // Send delete request to backend with email & user_id
   try {
     const success = await deleteForEveryoneBackend(ids);
-
-    // Update status based on backend result
-    selectedMessages.forEach(el => {
-      const msgId = el.dataset.id;
-      const msg = messages.find(m => String(m.id) === msgId);
-      if (!msg) return;
-
-      if (success) {
-        msg.deleted = true;      // mark fully deleted
-        msg.status = "deleted";  // red styling
-      } else {
-        msg.status = "delete-pending"; // yellow styling
-      }
-    });
-
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-    renderMessages();
-
+    if (!success) console.warn("Backend delete failed — keeping local delete");
   } catch (err) {
     console.error("Error deleting messages for everyone:", err);
-
-    // Network failed → mark as pending
-    selectedMessages.forEach(el => {
-      const msgId = el.dataset.id;
-      const msg = messages.find(m => String(m.id) === msgId);
-      if (!msg) return;
-
-      msg.status = "delete-pending"; // yellow
-    });
-
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-    renderMessages();
   }
+}
+
+// Backend call
+async function deleteForEveryoneBackend(ids) {
+  const res = await fetch("/api/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      action: "delete_messages",
+      email: account.email,   // 🔐 auth (logged-in user)
+      user_id: chatWith.id,   // 🎯 target chat user
+      ids: ids                // 🧹 message IDs
+    })
+  });
+
+  const data = await res.json();
+  return data.success === true;
 }
 /* ---------- RENDER MESSAGES ---------- */
 function renderMessages() {
@@ -791,39 +775,29 @@ function renderMessages() {
       });
     }
 
-// Status (sent messages only)
-if (msg.type === "sent") {
-  const status = document.createElement("div");
-  status.classList.add("status-text");
+    // Status (sent messages only)
+    if (msg.type === "sent") {
+      const status = document.createElement("div");
+      status.classList.add("status-text");
 
-  const timeSpan = document.createElement("span");
-  timeSpan.classList.add("message-time");
-  timeSpan.textContent = formatMessageTime(msg.sent_at);
-  status.appendChild(timeSpan);
+      const timeSpan = document.createElement("span");
+      timeSpan.classList.add("message-time");
+      timeSpan.textContent = formatMessageTime(msg.sent_at);
+      status.appendChild(timeSpan);
 
-  // ✅ Updated status mapping
-  if (msg.status === "sending") {
-    status.append("Sending…");
-    status.classList.add("status-sending");
-  } else if (msg.status === "pending") {
-    status.append("Pending");
-    status.classList.add("status-pending");
-  } else if (msg.status === "sent") {
-    status.append("Sent");
-    status.classList.add("status-sent");
-  } else if (msg.status === "deleting") {
-    status.append("Deleting…");
-    status.classList.add("status-deleting"); // grey
-  } else if (msg.status === "delete-pending") {
-    status.append("Pending Delete");
-    status.classList.add("status-delete-pending"); // yellow
-  } else if (msg.status === "deleted") {
-    status.append("Deleted");
-    status.classList.add("status-deleted"); // red
-  }
+      if (msg.status === "sending") {
+        status.append("Sending…");
+        status.classList.add("status-sending");
+      } else if (msg.status === "pending") {
+        status.append("Pending");
+        status.classList.add("status-pending");
+      } else if (msg.status === "sent") {
+        status.append("Sent");
+        status.classList.add("status-sent");
+      }
 
-  div.appendChild(status);
-}
+      div.appendChild(status);
+    }
 
     div.dataset.id = msg.id;
     box.appendChild(div);
