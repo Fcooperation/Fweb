@@ -488,22 +488,6 @@ chatBody.addEventListener("scroll", () => {
   chatHeader.style.transform = "translateY(0)";
 });
 
-const addBtn = document.getElementById("add-btn");
-const backBtn = document.getElementById("back-btn");
-const attachPanel = document.getElementById("attach-panel");
-const input = document.getElementById("message-input");
-
-// Open panel
-addBtn.onclick = () => {
-  input.focus(); // 📱 force keyboard open
-  attachPanel.classList.add("active");
-};
-
-// Close panel
-backBtn.onclick = () => {
-  attachPanel.classList.remove("active");
-};
-
 // Auto-grow / shrink as user types
 input.addEventListener("input", () => {
   input.style.height = "auto";                   // reset height first
