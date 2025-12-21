@@ -180,7 +180,11 @@ body {
 .status-sending { color: grey; }
 .status-pending { color: orange; }
 .status-sent { color: #1e88e5; }
+.status-deleted { color: red; }
+.status-deleting { color: grey; }
+.status-scheduled { color: orange; }
 .pending { opacity: 0.6; }
+.scheduled { opacity: 0.6; }
 
 /* ---------- MESSAGE TIME ---------- */
 .message-time {
@@ -600,31 +604,44 @@ function deleteForMe() {
 async function deleteForEveryone() {
   const ids = [...selectedMessages].map(el => Number(el.dataset.id));
 
-  // Optimistic UI update
-  selectedMessages.forEach(el => {
-    const msgId = el.dataset.id;
-    const msg = messages.find(m => String(m.id) === msgId);
-    if (msg) {
-      msg.deleted = true;
-      msg.text = "This message was deleted by you";
-      msg.status = "sent";
-      msg.type = "sent";
-    }
-  });
+// Optimistic UI update with offline check
+selectedMessages.forEach(el => {
+  const msgId = el.dataset.id;
+  const msg = messages.find(m => String(m.id) === msgId);
+  if (msg) {
+    msg.deleted = true;
+    msg.text = "This message was deleted by you";
 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-  renderMessages();
-  exitSelectMode();
+    // If offline, mark as pending; otherwise mark as deleting
+    msg.status = navigator.onLine ? "deleting" : "scheduled";
 
+    msg.type = "sent";
+  }
+});
+
+localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+renderMessages();
+exitSelectMode();
   // Send delete request to backend with email & user_id
   try {
-    const success = await deleteForEveryoneBackend(ids);
-    if (!success) console.warn("Backend delete failed — keeping local delete");
-  } catch (err) {
-    console.error("Error deleting messages for everyone:", err);
-  }
-}
+  const success = await deleteForEveryoneBackend(ids);
 
+  if (success) {
+    // ✅ Mark messages as fully deleted
+    ids.forEach(id => {
+      const msg = messages.find(m => m.id === id);
+      if (msg) msg.status = "deleted";
+    });
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+    renderMessages();
+  } else {
+    console.warn("Backend delete failed — keeping local delete");
+  }
+} catch (err) {
+  console.error("Error deleting messages for everyone:", err);
+}
+}
 // Backend call
 async function deleteForEveryoneBackend(ids) {
   const res = await fetch("/api/chat", {
@@ -794,11 +811,19 @@ function renderMessages() {
       } else if (msg.status === "sent") {
         status.append("Sent");
         status.classList.add("status-sent");
-      }
+      } else if (msg.status === "deleting") {
+  status.append("Deleting…");
+  status.classList.add("status-deleting");
+} else if (msg.status === "deleted") {
+  status.append("Deleted");
+  status.classList.add("status-deleted");
+}else if (msg.status === "scheduled") {
+  status.append("Scheduled");
+  status.classList.add("status-scheduled");
+} 
 
       div.appendChild(status);
     }
-
     div.dataset.id = msg.id;
     box.appendChild(div);
   });
@@ -1002,6 +1027,37 @@ if (replyingMessage) {
 
   if (navigator.onLine) sendToBackend(msgObj);
 }
+
+/*----------RETRY SCHEDULED DELETION----------*/
+async function retryScheduledDeletes() {
+  if (!navigator.onLine) return;
+
+  for (const msg of messages) {
+    if (msg.status === "scheduled") {
+      // show deleting…
+      msg.status = "deleting";
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+      renderMessages();
+
+      try {
+        const success = await deleteForEveryoneBackend([msg.id]);
+
+        if (success) {
+          msg.status = "deleted"; // ✅ confirmed
+        } else {
+          msg.status = "pending"; // ❌ backend failed
+        }
+      } catch (err) {
+        console.error("Retry delete failed:", err);
+        msg.status = "pending"; // ❌ network / error
+      }
+
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+      renderMessages();
+    }
+  }
+}
+
 /* ---------- RETRY PENDING MESSAGES ---------- */
 async function retryPending() {
   if (!navigator.onLine) return; // 🚫 no internet → do nothing
@@ -1044,6 +1100,12 @@ setInterval(() => {
 setInterval(() => {
   receiveMessages();
 }, 4000);
+//Run retryScheduledDeletes
+window.addEventListener("online", retryScheduledDeletes);
+
+setInterval(() => {
+  retryScheduledDeletes();
+}, 2000); // 2s is enough
 
 // Also receive immediately when coming online
 window.addEventListener("online", receiveMessages);
