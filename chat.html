@@ -637,6 +637,7 @@ async function deleteForEveryone() {
 } catch (err) {
   console.error("Error deleting messages for everyone:", err);
 }
+}
 // Backend call
 async function deleteForEveryoneBackend(ids) {
   const res = await fetch("/api/chat", {
