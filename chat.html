@@ -602,36 +602,24 @@ function deleteForMe() {
 async function deleteForEveryone() {
   const ids = [...selectedMessages].map(el => Number(el.dataset.id));
 
-  // Optimistic UI update
-  selectedMessages.forEach(el => {
-    const msgId = el.dataset.id;
-    const msg = messages.find(m => String(m.id) === msgId);
-    if (msg) {
-      msg.deleted = true;
-      msg.text = "This message was deleted by you";
-      msg.status = "deleting";
-      msg.type = "sent";
-    }
-  });
+// Optimistic UI update with offline check
+selectedMessages.forEach(el => {
+  const msgId = el.dataset.id;
+  const msg = messages.find(m => String(m.id) === msgId);
+  if (msg) {
+    msg.deleted = true;
+    msg.text = "This message was deleted by you";
 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-  renderMessages();
-  exitSelectMode();
-  
-  // Check network and mark as pending if offline
-if (!navigator.onLine) {
-  selectedMessages.forEach(el => {
-    const msgId = el.dataset.id;
-    const msg = messages.find(m => String(m.id) === msgId);
-    if (msg && msg.status === "deleting") {
-      msg.status = "pending";
-    }
-  });
+    // If offline, mark as pending; otherwise mark as deleting
+    msg.status = navigator.onLine ? "deleting" : "pending";
 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-  renderMessages();
-}
+    msg.type = "sent";
+  }
+});
 
+localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+renderMessages();
+exitSelectMode();
   // Send delete request to backend with email & user_id
   try {
   const success = await deleteForEveryoneBackend(ids);
