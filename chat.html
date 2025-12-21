@@ -600,46 +600,48 @@ function deleteForMe() {
 async function deleteForEveryone() {
   const ids = [...selectedMessages].map(el => Number(el.dataset.id));
 
-  // Optimistic UI update
+  // 1️⃣ Optimistic UI update (PENDING / SENDING)
   selectedMessages.forEach(el => {
-    const msgId = el.dataset.id;
-    const msg = messages.find(m => String(m.id) === msgId);
-    if (msg) {
-      msg.deleted = true;
-      msg.text = "This message was deleted by you";
-      msg.status = "sent";
-      msg.type = "sent";
-    }
+    const msg = messages.find(m => String(m.id) === el.dataset.id);
+    if (!msg) return;
+
+    msg.delete_action = true;                 // 👈 mark as delete request
+    msg.text = "This message was deleted by you";
+    msg.status = navigator.onLine ? "sending" : "pending";
+    msg.delete_since = navigator.onLine ? Date.now() : null;
   });
 
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   renderMessages();
   exitSelectMode();
 
-  // Send delete request to backend with email & user_id
-  try {
-    const success = await deleteForEveryoneBackend(ids);
-    if (!success) console.warn("Backend delete failed — keeping local delete");
-  } catch (err) {
-    console.error("Error deleting messages for everyone:", err);
-  }
-}
+  // 2️⃣ If offline → stop here (will retry later)
+  if (!navigator.onLine) return;
 
-// Backend call
-async function deleteForEveryoneBackend(ids) {
-  const res = await fetch("/api/chat", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      action: "delete_messages",
-      email: account.email,   // 🔐 auth (logged-in user)
-      user_id: chatWith.id,   // 🎯 target chat user
-      ids: ids                // 🧹 message IDs
-    })
+  // 3️⃣ Send to backend
+  let success = false;
+  try {
+    success = await deleteForEveryoneBackend(ids);
+  } catch (err) {
+    console.error("Delete request failed:", err);
+  }
+
+  // 4️⃣ Backend result handling
+  messages.forEach(msg => {
+    if (!ids.includes(msg.id)) return;
+
+    if (success) {
+      msg.deleted = true;
+      msg.status = "sent";
+    } else {
+      msg.status = "pending";
+    }
+
+    msg.delete_since = null;
   });
 
-  const data = await res.json();
-  return data.success === true;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+  renderMessages();
 }
 /* ---------- RENDER MESSAGES ---------- */
 function renderMessages() {
@@ -1002,6 +1004,7 @@ if (replyingMessage) {
 
   if (navigator.onLine) sendToBackend(msgObj);
 }
+window.addEventListener("online", retryPendingDeletes);
 /* ---------- RETRY PENDING MESSAGES ---------- */
 async function retryPending() {
   if (!navigator.onLine) return; // 🚫 no internet → do nothing
