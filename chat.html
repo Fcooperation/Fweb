@@ -477,6 +477,21 @@ body {
 <script>
 const API_URL = "https://fweb-backend.onrender.com/fchat";
 /* ---------- LOAD CHAT TARGET ---------- */
+const addBtn = document.getElementById("add-btn");
+const backBtn = document.getElementById("back-btn");
+const attachPanel = document.getElementById("attach-panel");
+const input = document.getElementById("message-input");
+
+// Open panel
+addBtn.onclick = () => {
+  input.focus(); // 📱 force keyboard open
+  attachPanel.classList.add("active");
+};
+
+// Close panel
+backBtn.onclick = () => {
+  attachPanel.classList.remove("active");
+};
 const chatWith = JSON.parse(localStorage.getItem("chatting_with")) || null;
 const account = JSON.parse(localStorage.getItem("faccount")) || {email:"", password:""};
 const input = document.getElementById("message-input");
@@ -1278,22 +1293,5 @@ async function receiveMessages() {
 setInterval(receiveMessages, 1000);
 window.addEventListener("online", receiveMessages);
 
-</script>
-<script>
-const addBtn = document.getElementById("add-btn");
-const backBtn = document.getElementById("back-btn");
-const attachPanel = document.getElementById("attach-panel");
-const input = document.getElementById("message-input");
-
-// Open panel
-addBtn.onclick = () => {
-  input.focus(); // 📱 force keyboard open
-  attachPanel.classList.add("active");
-};
-
-// Close panel
-backBtn.onclick = () => {
-  attachPanel.classList.remove("active");
-};
 </script>
 </body></html>
