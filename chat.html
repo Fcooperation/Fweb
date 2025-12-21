@@ -609,7 +609,7 @@ async function deleteForEveryone() {
     if (msg) {
       msg.deleted = true;
       msg.text = "This message was deleted by you";
-      msg.status = "deleted";
+      msg.status = "deleting";
       msg.type = "sent";
     }
   });
@@ -620,11 +620,22 @@ async function deleteForEveryone() {
 
   // Send delete request to backend with email & user_id
   try {
-    const success = await deleteForEveryoneBackend(ids);
-    if (!success) console.warn("Backend delete failed — keeping local delete");
-  } catch (err) {
-    console.error("Error deleting messages for everyone:", err);
+  const success = await deleteForEveryoneBackend(ids);
+
+  if (success) {
+    // ✅ Mark messages as fully deleted
+    ids.forEach(id => {
+      const msg = messages.find(m => m.id === id);
+      if (msg) msg.status = "deleted";
+    });
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+    renderMessages();
+  } else {
+    console.warn("Backend delete failed — keeping local delete");
   }
+} catch (err) {
+  console.error("Error deleting messages for everyone:", err);
 }
 // Backend call
 async function deleteForEveryoneBackend(ids) {
