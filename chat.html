@@ -607,7 +607,7 @@ async function deleteForEveryone() {
     if (msg) {
       msg.deleted = true;
       msg.text = "This message was deleted by you";
-      msg.status = "sent";
+      msg.status = "deleting";
       msg.type = "sent";
     }
   });
