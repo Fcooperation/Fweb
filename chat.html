@@ -182,7 +182,9 @@ body {
 .status-sent { color: #1e88e5; }
 .status-deleted { color: red; }
 .status-deleting { color: grey; }
+.status-Pending { color: orange; }
 .pending { opacity: 0.6; }
+.Pending { opacity: 0.6; }
 
 /* ---------- MESSAGE TIME ---------- */
 .message-time {
@@ -611,7 +613,7 @@ selectedMessages.forEach(el => {
     msg.text = "This message was deleted by you";
 
     // If offline, mark as pending; otherwise mark as deleting
-    msg.status = navigator.onLine ? "deleting" : "pending";
+    msg.status = navigator.onLine ? "deleting" : "Pending";
 
     msg.type = "sent";
   }
@@ -815,7 +817,9 @@ function renderMessages() {
 } else if (msg.status === "deleted") {
   status.append("Deleted");
   status.classList.add("status-deleted");
-}
+} else if (msg.status === "Pending") {
+  status.append("Pending");
+  status.classList.add("status-Pending");
 
       div.appendChild(status);
     }
