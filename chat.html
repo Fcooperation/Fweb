@@ -487,7 +487,6 @@ chatBody.addEventListener("scroll", () => {
   // Make sure header is always visible
   chatHeader.style.transform = "translateY(0)";
 });
-
 // Auto-grow / shrink as user types
 input.addEventListener("input", () => {
   input.style.height = "auto";                   // reset height first
@@ -1277,6 +1276,22 @@ async function receiveMessages() {
 /* ---------- AUTO RECEIVE ---------- */
 setInterval(receiveMessages, 1000);
 window.addEventListener("online", receiveMessages);
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const addBtn = document.getElementById("add-btn");
+  const backBtn = document.getElementById("back-btn");
+  const attachPanel = document.getElementById("attach-panel");
+  const input = document.getElementById("message-input");
 
+  addBtn.onclick = () => {
+    input.focus();
+    attachPanel.classList.add("active");
+  };
+
+  backBtn.onclick = () => {
+    attachPanel.classList.remove("active");
+  };
+});
 </script>
 </body></html>
