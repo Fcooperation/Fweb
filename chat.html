@@ -794,7 +794,13 @@ function renderMessages() {
       } else if (msg.status === "sent") {
         status.append("Sent");
         status.classList.add("status-sent");
-      }
+      } else if (msg.status === "deleting") {
+  status.append("Deleting…");
+  status.classList.add("status-deleting");
+} else if (msg.status === "deleted") {
+  status.append("Deleted");
+  status.classList.add("status-deleted");
+}
 
       div.appendChild(status);
     }
