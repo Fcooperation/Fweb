@@ -361,6 +361,9 @@ body {
   color: #aa8800;
   font-style: italic;
 }
+.status-deleting { color: grey; }
+.status-delete-pending { color: yellow; }
+.status-deleted { color: red; }
 </style>
 </head>
 <body>
@@ -805,29 +808,39 @@ function renderMessages() {
       });
     }
 
-    // Status (sent messages only)
-    if (msg.type === "sent") {
-      const status = document.createElement("div");
-      status.classList.add("status-text");
+// Status (sent messages only)
+if (msg.type === "sent") {
+  const status = document.createElement("div");
+  status.classList.add("status-text");
 
-      const timeSpan = document.createElement("span");
-      timeSpan.classList.add("message-time");
-      timeSpan.textContent = formatMessageTime(msg.sent_at);
-      status.appendChild(timeSpan);
+  const timeSpan = document.createElement("span");
+  timeSpan.classList.add("message-time");
+  timeSpan.textContent = formatMessageTime(msg.sent_at);
+  status.appendChild(timeSpan);
 
-      if (msg.status === "sending") {
-        status.append("Sending…");
-        status.classList.add("status-sending");
-      } else if (msg.status === "pending") {
-        status.append("Pending");
-        status.classList.add("status-pending");
-      } else if (msg.status === "sent") {
-        status.append("Sent");
-        status.classList.add("status-sent");
-      }
+  // ✅ Updated status mapping
+  if (msg.status === "sending") {
+    status.append("Sending…");
+    status.classList.add("status-sending");
+  } else if (msg.status === "pending") {
+    status.append("Pending");
+    status.classList.add("status-pending");
+  } else if (msg.status === "sent") {
+    status.append("Sent");
+    status.classList.add("status-sent");
+  } else if (msg.status === "deleting") {
+    status.append("Deleting…");
+    status.classList.add("status-deleting"); // grey
+  } else if (msg.status === "delete-pending") {
+    status.append("Pending Delete");
+    status.classList.add("status-delete-pending"); // yellow
+  } else if (msg.status === "deleted") {
+    status.append("Deleted");
+    status.classList.add("status-deleted"); // red
+  }
 
-      div.appendChild(status);
-    }
+  div.appendChild(status);
+}
 
     div.dataset.id = msg.id;
     box.appendChild(div);
