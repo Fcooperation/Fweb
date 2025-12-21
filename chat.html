@@ -602,53 +602,30 @@ function deleteForMe() {
 async function deleteForEveryone() {
   const ids = [...selectedMessages].map(el => Number(el.dataset.id));
 
-// Optimistic UI update
-selectedMessages.forEach(el => {
-  const msgId = el.dataset.id;
-  const msg = messages.find(m => String(m.id) === msgId);
-  if (msg) {
-    msg.deleted = true;                       // mark it as deleted visually
-    msg.text = "This message was deleted by you";
-    msg.status = "deleting";                  // show deleting while waiting for backend
-    msg.type = "sent";
-  }
-});
-
-localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-renderMessages();
-exitSelectMode();
-
-let success = false;
-
-// Send delete request to backend
-try {
-  success = await deleteForEveryoneBackend(ids);
-
-  if (success) {
-    // only now mark as fully deleted
-    ids.forEach(id => {
-      const msg = messages.find(m => m.id === id);
-      if (msg) msg.status = "deleted";
-    });
-  } else {
-    // backend failed, mark as pending for retry
-    ids.forEach(id => {
-      const msg = messages.find(m => m.id === id);
-      if (msg) msg.status = "pending";
-    });
-  }
-} catch (err) {
-  console.error("Error deleting messages for everyone:", err);
-  // network error, mark as pending for retry
-  ids.forEach(id => {
-    const msg = messages.find(m => m.id === id);
-    if (msg) msg.status = "pending";
+  // Optimistic UI update
+  selectedMessages.forEach(el => {
+    const msgId = el.dataset.id;
+    const msg = messages.find(m => String(m.id) === msgId);
+    if (msg) {
+      msg.deleted = true;
+      msg.text = "This message was deleted by you";
+      msg.status = "deleted";
+      msg.type = "sent";
+    }
   });
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+  renderMessages();
+  exitSelectMode();
+
+  // Send delete request to backend with email & user_id
+  try {
+    const success = await deleteForEveryoneBackend(ids);
+    if (!success) console.warn("Backend delete failed — keeping local delete");
+  } catch (err) {
+    console.error("Error deleting messages for everyone:", err);
+  }
 }
-
-localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-renderMessages();
-
 // Backend call
 async function deleteForEveryoneBackend(ids) {
   const res = await fetch("/api/chat", {
