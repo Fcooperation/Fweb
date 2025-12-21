@@ -1027,6 +1027,37 @@ if (replyingMessage) {
 
   if (navigator.onLine) sendToBackend(msgObj);
 }
+
+/*----------RETRY SCHEDULED DELETION----------*/
+async function retryScheduledDeletes() {
+  if (!navigator.onLine) return;
+
+  for (const msg of messages) {
+    if (msg.status === "scheduled") {
+      // show deleting…
+      msg.status = "deleting";
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+      renderMessages();
+
+      try {
+        const success = await deleteForEveryoneBackend([msg.id]);
+
+        if (success) {
+          msg.status = "deleted"; // ✅ confirmed
+        } else {
+          msg.status = "pending"; // ❌ backend failed
+        }
+      } catch (err) {
+        console.error("Retry delete failed:", err);
+        msg.status = "pending"; // ❌ network / error
+      }
+
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+      renderMessages();
+    }
+  }
+}
+
 /* ---------- RETRY PENDING MESSAGES ---------- */
 async function retryPending() {
   if (!navigator.onLine) return; // 🚫 no internet → do nothing
@@ -1069,6 +1100,12 @@ setInterval(() => {
 setInterval(() => {
   receiveMessages();
 }, 4000);
+//Run retryScheduledDeletes
+window.addEventListener("online", retryScheduledDeletes);
+
+setInterval(() => {
+  retryScheduledDeletes();
+}, 2000); // 2s is enough
 
 // Also receive immediately when coming online
 window.addEventListener("online", receiveMessages);
