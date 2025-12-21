@@ -817,13 +817,10 @@ function renderMessages() {
 } else if (msg.status === "deleted") {
   status.append("Deleted");
   status.classList.add("status-deleted");
-} else if (msg.status === "scheduled") {
-  status.append("scheduled");
-  status.classList.add("status-scheduled");
 }
 
       div.appendChild(status);
-
+    }
     div.dataset.id = msg.id;
     box.appendChild(div);
   });
