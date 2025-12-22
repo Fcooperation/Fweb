@@ -405,130 +405,6 @@ body {
 #receive-status.offline { color: orange; }
 #receive-status.error { color: red; }
 #receive-status.updated { color: green; }
-/* ---------- POLLS PAGE ---------- */
-#polls-page {
-  position: fixed;
-  top: 0;
-  left: 100%;
-  width: 100%;
-  height: 100%;
-  background: #fff;
-  z-index: 2000;
-  transition: left 0.35s ease;
-  padding: 16px;
-}
-
-#polls-page.active {
-  left: 0;
-}
-
-/* Header */
-.polls-header {
-  text-align: center;
-  margin-bottom: 20px;
-}
-
-.polls-app {
-  font-size: 12px;
-  letter-spacing: 1px;
-  color: #777;
-}
-
-.polls-title {
-  font-size: 20px;
-  font-weight: bold;
-  color: black;
-}
-
-/* Question */
-#poll-question {
-  width: 100%;
-  border: none;
-  border-bottom: 2px solid #ddd;
-  padding: 12px 6px;
-  font-size: 16px;
-  outline: none;
-  margin-bottom: 30px;
-}
-
-/* Options */
-#poll-options {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.poll-option {
-  width: 100%;
-  padding: 12px;
-  border-radius: 10px;
-  border: 1px solid #ccc;
-  font-size: 15px;
-  outline: none;
-}
-
-/* Footer */
-.poll-footer {
-  position: absolute;
-  bottom: 20px;
-  left: 16px;
-  right: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-/* Toggle */
-.poll-toggle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-}
-
-.poll-toggle input {
-  display: none;
-}
-
-.slider {
-  width: 36px;
-  height: 18px;
-  background: #ccc;
-  border-radius: 20px;
-  position: relative;
-  cursor: pointer;
-}
-
-.slider::before {
-  content: "";
-  width: 14px;
-  height: 14px;
-  background: white;
-  border-radius: 50%;
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  transition: 0.3s;
-}
-
-.poll-toggle input:checked + .slider {
-  background: #25d366;
-}
-
-.poll-toggle input:checked + .slider::before {
-  transform: translateX(18px);
-}
-
-/* Send */
-#poll-send {
-  padding: 10px 18px;
-  border-radius: 20px;
-  border: none;
-  background: black;
-  color: white;
-  font-size: 14px;
-  cursor: pointer;
-}
 </style>
 </head>
 <body>
@@ -590,41 +466,9 @@ body {
 <div id="attach-panel">
 
   <div class="attach-content">
-    <div class="attach-item" onclick="openPolls()">📊 Polls</div>
+    <div class="attach-item">📊 Poll</div>
     <!-- later: media, docs, etc -->
   </div>
-  <!-- ---------- POLLS PAGE ---------- -->
-<div id="polls-page">
-  <!-- Header -->
-  <div class="polls-header">
-    <div class="polls-app">FCOOPERATION_CHAT</div>
-    <div class="polls-title">POLLS</div>
-  </div>
-
-  <!-- Poll Question -->
-  <input
-    type="text"
-    id="poll-question"
-    placeholder="Ask a question"
-  />
-
-  <!-- Poll Options -->
-  <div id="poll-options">
-    <input class="poll-option" placeholder="Option 1" />
-    <input class="poll-option" placeholder="Option 2" />
-  </div>
-
-  <!-- Bottom row -->
-  <div class="poll-footer">
-    <label class="poll-toggle">
-      <span>Allow multiple answers</span>
-      <input type="checkbox" id="poll-multi" />
-      <span class="slider"></span>
-    </label>
-
-    <button id="poll-send">Send</button>
-  </div>
-</div>
 </div>
 <script>
 const API_URL = "https://fweb-backend.onrender.com/fchat";
@@ -1481,34 +1325,6 @@ document.addEventListener("click", (e) => {
     }, 150); // match your animation time
   }
 });
-});
-</script>
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-  const attachPanel = document.getElementById("attach-panel");
-  const pollsPage = document.getElementById("polls-page");
-  const pollOptions = document.getElementById("poll-options");
-
-  // OPEN POLLS (call this when clicking "Polls")
-  window.openPolls = () => {
-    attachPanel.classList.remove("active");
-    setTimeout(() => {
-      pollsPage.classList.add("active");
-    }, 200);
-  };
-
-  // AUTO ADD OPTIONS LIKE WHATSAPP
-  pollOptions.addEventListener("input", () => {
-    const options = [...pollOptions.querySelectorAll(".poll-option")];
-    const last = options[options.length - 1];
-
-    if (last.value.trim() !== "") {
-      const input = document.createElement("input");
-      input.className = "poll-option";
-      input.placeholder = `Option ${options.length + 1}`;
-      pollOptions.appendChild(input);
-    }
-  });
 });
 </script>
 </body></html>
