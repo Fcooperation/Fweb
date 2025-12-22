@@ -374,37 +374,21 @@ body {
   100% { transform: translateY(0); }
 }
 
-#chat-input-wrapper {
-  position: relative;
-  width: 100%;
-}
-
-#chat-input {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 10px;
-  border-top: 1px solid #ccc;
-  background: #fff;
-  z-index: 10;
-}
 #attach-panel {
-  position: absolute;
-  bottom: 60px; /* just above input initially */
+  position: fixed;
+  bottom: 0;
   left: 0;
-  width: 100%;
+  right: 0;
   height: 250px;
-  background: #f8f8f8;
-  border-top: 1px solid #ccc;
+  background: #fff;
   transform: translateY(100%);
-  transition: transform 0.5s cubic-bezier(.68,-0.55,.27,1.55); /* bounce effect */
-  z-index: 9;
-  padding: 20px;
-  box-sizing: border-box;
+  transition: transform 0.3s ease;
+  z-index: 1000;
 }
 
+/* When active, trigger bounce */
 #attach-panel.active {
-  transform: translateY(0); /* slides up */
+  animation: panel-bounce 0.5s ease forwards;
 }
 /* ---------- SLIDE PANEL ---------- 
 /* Content */
@@ -471,17 +455,12 @@ body {
 <button id="cancel-reply" aria-label="Cancel reply">✕</button>
 </div>
 <!-- ---------- INPUT ---------- -->
-<div id="chat-input-wrapper">
-  <div id="chat-input">
-    <textarea id="message-input" placeholder="Type a message…"></textarea>
-    <button id="send-btn">Send</button>
-    <button id="add-btn">+</button>
-  </div>
+<div id="chat-input">
+  <button id="add-btn">＋</button>
 
-  <!-- Sliding panel -->
-  <div id="attach-panel">
-    <p>Polls go here</p>
-  </div>
+  <textarea id="message-input" placeholder="Type a message…"></textarea>
+
+  <button id="send-btn">Send</button>
 </div>
 <!-- ---------- ATTACH / POLLS PANEL ---------- -->
 <div id="attach-panel">
@@ -1296,25 +1275,23 @@ window.addEventListener("online", receiveMessages);
 </script>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  const addBtn = document.getElementById("add-btn");
-  const attachPanel = document.getElementById("attach-panel");
-  const input = document.getElementById("message-input");
+const addBtn = document.getElementById("add-btn");
+const attachPanel = document.getElementById("attach-panel");
+const input = document.getElementById("message-input");
 
-  // Open panel with bounce
-  addBtn.addEventListener("click", (e) => {
-    e.stopPropagation(); // prevent document click
-    input.blur(); // close keyboard first
-    setTimeout(() => {
-      attachPanel.classList.add("active");
-    }, 150);
-  });
+addBtn.onclick = () => {
+input.blur(); // close keyboard first
+setTimeout(() => {
+attachPanel.classList.add("active");
+}, 150);
+};
 
-  // Close panel when clicking outside
-  document.addEventListener("click", (e) => {
-    if (attachPanel.classList.contains("active") && !attachPanel.contains(e.target) && e.target !== addBtn) {
-      attachPanel.classList.remove("active");
-    }
-  });
+// Close panel when tapping outside of it
+document.addEventListener("click", (e) => {
+if (attachPanel.classList.contains("active") && !attachPanel.contains(e.target) && e.target !== addBtn) {
+attachPanel.classList.remove("active");
+}
+});
 });
 </script>
 </body></html>
