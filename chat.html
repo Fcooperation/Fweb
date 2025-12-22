@@ -417,13 +417,15 @@ body {
 .message.sent .poll-message {
   margin-left: auto; /* right side */
 }
-
+/* ---------- POLL QUESTION ---------- */
 .poll-question {
-  height: 16px;
-  background: rgba(255,255,255,0.15);
-  border-radius: 6px;
-  margin-bottom: 12px;
+  font-weight: bold;
+  font-size: 15px;
+  margin-bottom: 14px;
+  line-height: 1.4;
+  color: #fff;
 }
+
 
 .poll-placeholder {
   height: 60px;
@@ -834,13 +836,15 @@ function renderMessages() {
       }
     }
     
-    // ---------- POLL MESSAGE ----------
+// ---------- POLL MESSAGE ----------
 if (msg.isPoll) {
   const pollBox = document.createElement("div");
   pollBox.className = "poll-message";
 
   pollBox.innerHTML = `
-    <div class="poll-question"></div>
+    <div class="poll-question">
+      ${msg.pollData?.question || "Poll"}
+    </div>
     <div class="poll-placeholder"></div>
   `;
 
