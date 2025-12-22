@@ -1207,8 +1207,10 @@ document.getElementById("message-input").addEventListener("keydown", e => {
 
 /* ---------- RECEIVE MESSAGES (UPDATED) ---------- */
 async function receiveMessages() {
+  const statusEl = document.getElementById("receive-status");
+
+  // 🔴 Offline state
   if (!navigator.onLine) {
-    const statusEl = document.getElementById("receive-status");
     if (statusEl) {
       statusEl.textContent = "Offline · Retrying when online";
       statusEl.className = "offline";
@@ -1216,10 +1218,14 @@ async function receiveMessages() {
     return;
   }
 
-  const statusEl = document.getElementById("receive-status");
-
   try {
     if (!account?.email || !chatWith?.id) return;
+
+    // 🔵 Show updating ONLY if not already updated
+    if (statusEl && statusEl.textContent !== "Updated") {
+      statusEl.textContent = "Updating…";
+      statusEl.className = "loading";
+    }
 
     const payload = {
       action: "receive_messages",
@@ -1234,7 +1240,7 @@ async function receiveMessages() {
     });
 
     const data = await res.json();
-    if (!Array.isArray(data.data)) return; // 👈 empty is OK
+    if (!Array.isArray(data.data)) return;
 
     const chatUsername = data.chatWith?.username || "Unknown";
     let changed = false;
@@ -1259,44 +1265,33 @@ async function receiveMessages() {
       changed = true;
     });
 
+    // ✅ ONLY mark Updated if something arrived
     if (changed) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
       renderMessages();
-    }
 
-    // ✅ SUCCESS PATH (even if no messages)
-    if (statusEl && statusEl.textContent !== "Updated") {
-      statusEl.textContent = "Updated";
-      statusEl.className = "ok";
+      if (statusEl) {
+        statusEl.textContent = "Updated";
+        statusEl.className = "ok";
+      }
     }
 
   } catch (err) {
-    // ❌ Only show error if ONLINE
-    if (navigator.onLine) {
+    if (navigator.onLine && statusEl) {
       console.warn("Receive messages failed:", err);
-      if (statusEl) {
-        statusEl.textContent = "Error";
-        statusEl.className = "error";
-      }
+      statusEl.textContent = "Error";
+      statusEl.className = "error";
     }
   }
 }
 // Retry receiving messages automatically when back online
 window.addEventListener("online", () => {
   const statusEl = document.getElementById("receive-status");
-  if (!statusEl) return;
-
-  statusEl.textContent = "Back online · Updating…";
-  statusEl.className = "success";
-
+  if (statusEl) {
+    statusEl.textContent = "Back online · Updating…";
+    statusEl.className = "loading";
+  }
   receiveMessages();
-
-  setTimeout(() => {
-    if (navigator.onLine && statusEl.textContent !== "Error") {
-      statusEl.textContent = "Updated";
-      statusEl.className = "ok";
-    }
-  }, 2000);
 });
 /* ---------- AUTO RECEIVE ---------- */
 setInterval(receiveMessages, 1000);
