@@ -395,6 +395,15 @@ body {
   cursor: pointer;
   margin-bottom: 12px;
 }
+.offline {
+  color: orange;
+  font-weight: bold;
+}
+
+.error {
+  color: red;
+  font-weight: bold;
+}
 </style>
 </head>
 <body>
@@ -1164,6 +1173,11 @@ setInterval(() => {
   retryScheduledDeletes();
 }, 2000); // 2s is enough
 
+window.addEventListener("online", () => {
+  console.log("Back online — retrying receive");
+  receiveMessages(); // or whatever your receive function is called
+});
+
 // Also receive immediately when coming online
 window.addEventListener("online", receiveMessages);
 async function deleteForEveryoneBackend(ids) {
@@ -1255,8 +1269,20 @@ async function receiveMessages() {
     }
 
   } catch (err) {
+  if (!navigator.onLine) {
+    console.warn("Offline — will retry when online");
+
+    if (statusEl) {
+      statusEl.textContent = "Offline · Retrying when online";
+      statusEl.className = "offline";
+    }
+  } else {
     console.warn("Receive messages failed:", err);
-    if (statusEl) statusEl.textContent = "Error";
+
+    if (statusEl) {
+      statusEl.textContent = "Error";
+      statusEl.className = "error";
+    }
   }
 }
 /* ---------- AUTO RECEIVE ---------- */
