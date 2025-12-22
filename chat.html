@@ -891,8 +891,9 @@ function renderMessages() {
 // ---------- POLL MESSAGE ----------
 if (msg.isPoll) {
   const pollBox = document.createElement("div");
-  pollBox.className = "poll-message";
+  pollBox.className = "poll-message"; // styling handled entirely by .poll-message
 
+  // Options HTML
   const optionsHtml = (msg.pollData?.options || []).map((opt, index) => `
     <div class="poll-option" data-index="${index}">
       <span class="poll-radio"></span>
@@ -906,8 +907,9 @@ if (msg.isPoll) {
     <div class="poll-options">${optionsHtml}</div>
   `;
 
-  div.appendChild(pollBox);
-  box.appendChild(div);
+  // Append **directly** to chat body, bypassing the outer .message div
+  const box = document.getElementById("chat-body");
+  box.appendChild(pollBox);
 
   // ---------- POLL INTERACTION ----------
   const allowMultiple = msg.pollData?.allowMultiple;
