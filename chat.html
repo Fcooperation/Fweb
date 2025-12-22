@@ -1282,9 +1282,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const input = document.getElementById("message-input");
 
   addBtn.onclick = () => {
-    input.focus(); // open keyboard
+  input.blur(); // 👈 CLOSE keyboard first
+
+  // small delay so keyboard closes before animation
+  setTimeout(() => {
     attachPanel.classList.add("active");
-  };
+  }, 150);
+};
 
   backBtn.onclick = () => {
     attachPanel.classList.remove("active");
