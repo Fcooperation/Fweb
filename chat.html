@@ -405,6 +405,31 @@ body {
 #receive-status.offline { color: orange; }
 #receive-status.error { color: red; }
 #receive-status.updated { color: green; }
+/* ---------- POLL MESSAGE (BLANK FOR NOW) ---------- */
+.poll-message {
+  background: #000;
+  color: #fff;
+  padding: 14px;
+  border-radius: 14px;
+  width: 80%;
+}
+
+.message.sent .poll-message {
+  margin-left: auto; /* right side */
+}
+
+.poll-question {
+  height: 16px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+
+.poll-placeholder {
+  height: 60px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 8px;
+}
 </style>
 </head>
 <body>
@@ -723,6 +748,25 @@ async function deleteForEveryoneBackend(ids) {
   const data = await res.json();
   return data.success === true;
 }
+// ---------- LOAD PENDING POLL ----------
+const pendingPoll = localStorage.getItem("pendingPoll");
+
+if (pendingPoll) {
+  const pollData = JSON.parse(pendingPoll);
+
+  messages.push({
+    id: pollData.id,
+    type: "sent",              // 👈 sent message (right)
+    status: "sent",
+    sent_at: new Date().toISOString(),
+
+    isPoll: true,              // 👈 flag
+    pollData: pollData
+  });
+
+  localStorage.removeItem("pendingPoll"); // clean up
+}
+
 /* ---------- RENDER MESSAGES ---------- */
 function renderMessages() {
   const box = document.getElementById("chat-body");
@@ -789,6 +833,21 @@ function renderMessages() {
         div.appendChild(linkedBox);
       }
     }
+    
+    // ---------- POLL MESSAGE ----------
+if (msg.isPoll) {
+  const pollBox = document.createElement("div");
+  pollBox.className = "poll-message";
+
+  pollBox.innerHTML = `
+    <div class="poll-question"></div>
+    <div class="poll-placeholder"></div>
+  `;
+
+  div.appendChild(pollBox);
+  box.appendChild(div);
+  return; // 🚫 skip normal message rendering
+}
 
     // Message text
     const textNode = document.createElement("div");
