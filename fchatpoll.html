@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FCOOPERATION_CHAT - Poll</title>
+<style>
+  body { font-family: Arial; background: #f9f9f9; margin: 0; padding: 20px; }
+  h1 { text-align: center; font-size: 20px; font-weight: bold; background: #1e88e5; color: white; padding: 10px; border-radius: 6px; }
+  .form-group { margin-bottom: 20px; }
+  input[type="text"] { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px; }
+  .option { display: flex; gap: 10px; margin-bottom: 10px; }
+  .option input { flex: 1; }
+  .switch-container { display: flex; align-items: center; justify-content: space-between; margin-top: 20px; }
+  .switch-label { font-size: 14px; }
+  .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; border-radius: 20px; transition: .4s; }
+  .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px; background-color: white; border-radius: 50%; transition: .4s; }
+  input:checked + .slider { background-color: #1e88e5; }
+  input:checked + .slider:before { transform: translateX(20px); }
+  #send-btn { padding: 10px 16px; background: #1e88e5; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
+</style>
+</head>
+<body>
+
+<h1>FCOOPERATION_CHAT - POLL</h1>
+
+<div class="form-group">
+  <input type="text" id="poll-question" placeholder="Enter your question…" />
+</div>
+
+<div id="options-container">
+  <div class="option"><input type="text" class="poll-option" placeholder="Option 1" /></div>
+  <div class="option"><input type="text" class="poll-option" placeholder="Option 2" /></div>
+</div>
+
+<div class="switch-container">
+  <label class="switch-label">Allow multiple selection</label>
+  <label class="switch">
+    <input type="checkbox" id="allow-multiple" />
+    <span class="slider"></span>
+  </label>
+  <button id="send-btn">Send</button>
+</div>
+
+<script>
+  const optionsContainer = document.getElementById("options-container");
+
+  // Auto-add new option when last input is typed in
+  optionsContainer.addEventListener("input", (e) => {
+    if (!e.target.classList.contains("poll-option")) return;
+
+    const optionInputs = Array.from(optionsContainer.querySelectorAll(".poll-option"));
+    const lastInput = optionInputs[optionInputs.length - 1];
+
+    if (lastInput.value.trim() !== "") {
+      const newOption = document.createElement("div");
+      newOption.className = "option";
+      newOption.innerHTML = `<input type="text" class="poll-option" placeholder="Option ${optionInputs.length + 1}" />`;
+      optionsContainer.appendChild(newOption);
+    }
+  });
+
+  document.getElementById("send-btn").addEventListener("click", () => {
+    const question = document.getElementById("poll-question").value.trim();
+    const options = Array.from(document.querySelectorAll(".poll-option"))
+      .map(o => o.value.trim())
+      .filter(o => o !== "");
+
+    const allowMultiple = document.getElementById("allow-multiple").checked;
+
+    if (!question || options.length < 2) {
+      alert("Please enter a question and at least two options.");
+      return;
+    }
+
+    // Create poll JSON
+    const poll = {
+      action: "send_polls",
+      id: Date.now(),
+      email: localStorage.getItem("loggedInEmail"), // your login storage
+      chatWithId: localStorage.getItem("chattingId"), // your current chat target
+      question: question,
+      options: options,
+      allowMultiple: allowMultiple
+    };
+
+    // Save to localStorage temporarily
+    localStorage.setItem("pendingPoll", JSON.stringify(poll));
+
+    // Redirect back to chat
+    window.location.href = "chat.html";
+  });
+</script>
+
+</body>
+</html>
