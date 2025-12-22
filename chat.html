@@ -1284,12 +1284,23 @@ async function receiveMessages() {
 // Retry receiving messages automatically when back online
 window.addEventListener("online", () => {
   const statusEl = document.getElementById("receive-status");
-  if (statusEl) {
-    statusEl.textContent = "Back online · Updating…";
-    statusEl.className = "success";
-  }
+  if (!statusEl) return;
 
-  receiveMessages(); // retry immediately
+  // Step 1: show back online
+  statusEl.textContent = "Back online · Updating…";
+  statusEl.className = "success";
+
+  // Step 2: retry receive immediately
+  receiveMessages();
+
+  // Step 3: after 2s, mark as updated (even if no messages)
+  setTimeout(() => {
+    // Only update if we're still online
+    if (navigator.onLine) {
+      statusEl.textContent = "Updated";
+      statusEl.className = "ok";
+    }
+  }, 2000);
 });
 /* ---------- AUTO RECEIVE ---------- */
 setInterval(receiveMessages, 1000);
