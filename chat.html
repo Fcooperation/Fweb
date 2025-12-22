@@ -366,32 +366,31 @@ body {
   background: #eee;
   cursor: pointer;
 }
+/* Panel bounce animation */
+@keyframes panel-bounce {
+  0% { transform: translateY(100%); }
+  60% { transform: translateY(-10%); }
+  80% { transform: translateY(5%); }
+  100% { transform: translateY(0); }
+}
 
-/* ---------- SLIDE PANEL ---------- */#attach-panel {
+#attach-panel {
   position: fixed;
-  bottom: 60px; /* height of input bar */
+  bottom: 0;
   left: 0;
-  width: 100%;
-  height: 40%;
+  right: 0;
+  height: 250px;
   background: #fff;
   transform: translateY(100%);
-  transition: transform 0.25s ease;
-  z-index: 20;
+  transition: transform 0.3s ease;
+  z-index: 1000;
 }
 
+/* When active, trigger bounce */
 #attach-panel.active {
-  transform: translateY(0);
+  animation: panel-bounce 0.5s ease forwards;
 }
-
-/* Back button */
-#back-btn {
-  font-size: 18px;
-  border: none;
-  background: none;
-  cursor: pointer;
-  margin-bottom: 10px;
-}
-
+/* ---------- SLIDE PANEL ---------- 
 /* Content */
 .attach-content {
   display: flex;
@@ -464,7 +463,6 @@ body {
 </div>
 <!-- ---------- ATTACH / POLLS PANEL ---------- -->
 <div id="attach-panel">
-  <button id="back-btn">←</button>
 
   <div class="attach-content">
     <div class="attach-item">📊 Poll</div>
@@ -1277,22 +1275,22 @@ window.addEventListener("online", receiveMessages);
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   const addBtn = document.getElementById("add-btn");
-  const backBtn = document.getElementById("back-btn");
   const attachPanel = document.getElementById("attach-panel");
   const input = document.getElementById("message-input");
 
   addBtn.onclick = () => {
-  input.blur(); // 👈 CLOSE keyboard first
-
-  // small delay so keyboard closes before animation
-  setTimeout(() => {
-    attachPanel.classList.add("active");
-  }, 150);
-};
-
-  backBtn.onclick = () => {
-    attachPanel.classList.remove("active");
+    input.blur(); // close keyboard first
+    setTimeout(() => {
+      attachPanel.classList.add("active");
+    }, 150);
   };
+
+  // Close panel when tapping outside of it
+  document.addEventListener("click", (e) => {
+    if (attachPanel.classList.contains("active") && !attachPanel.contains(e.target) && e.target !== addBtn) {
+      attachPanel.classList.remove("active");
+    }
+  });
 });
 </script>
 </body></html>
