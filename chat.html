@@ -464,10 +464,8 @@ body {
 </div>
 <!-- ---------- ATTACH / POLLS PANEL ---------- -->
 <div id="attach-panel">
-
   <div class="attach-content">
-    <div class="attach-item">📊 Poll</div>
-    <!-- later: media, docs, etc -->
+    <div class="attach-item" id="poll-btn">📊 Poll</div>
   </div>
 </div>
 <script>
@@ -1299,32 +1297,40 @@ window.addEventListener("online", receiveMessages);
 </script>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-const addBtn = document.getElementById("add-btn");
-const attachPanel = document.getElementById("attach-panel");
-const input = document.getElementById("message-input");
+  const addBtn = document.getElementById("add-btn");
+  const attachPanel = document.getElementById("attach-panel");
+  const input = document.getElementById("message-input");
+  const pollBtn = document.getElementById("poll-btn");
 
-addBtn.onclick = () => {
-input.blur(); // close keyboard first
-setTimeout(() => {
-attachPanel.classList.add("active");
-}, 150);
-};
-
-// Close panel when tapping outside of it
-document.addEventListener("click", (e) => {
-  if (
-    attachPanel.classList.contains("active") &&
-    !attachPanel.contains(e.target) &&
-    e.target !== addBtn
-  ) {
-    attachPanel.classList.remove("active");
-
-    // 👇 reopen keyboard AFTER panel closes
+  // Open attach panel
+  addBtn.onclick = () => {
+    input.blur(); // close keyboard first
     setTimeout(() => {
-      input.focus();
-    }, 150); // match your animation time
-  }
-});
+      attachPanel.classList.add("active");
+    }, 150);
+  };
+
+  // 👉 CLICK POLL → GO TO POLL PAGE
+  pollBtn.onclick = (e) => {
+    e.stopPropagation(); // prevent panel auto-close
+    window.location.href = "fchatpolls.html";
+  };
+
+  // Close panel when tapping outside
+  document.addEventListener("click", (e) => {
+    if (
+      attachPanel.classList.contains("active") &&
+      !attachPanel.contains(e.target) &&
+      e.target !== addBtn
+    ) {
+      attachPanel.classList.remove("active");
+
+      // reopen keyboard after close
+      setTimeout(() => {
+        input.focus();
+      }, 150);
+    }
+  });
 });
 </script>
 </body></html>
