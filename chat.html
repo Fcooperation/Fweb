@@ -1278,9 +1278,18 @@ attachPanel.classList.add("active");
 
 // Close panel when tapping outside of it
 document.addEventListener("click", (e) => {
-if (attachPanel.classList.contains("active") && !attachPanel.contains(e.target) && e.target !== addBtn) {
-attachPanel.classList.remove("active");
-}
+  if (
+    attachPanel.classList.contains("active") &&
+    !attachPanel.contains(e.target) &&
+    e.target !== addBtn
+  ) {
+    attachPanel.classList.remove("active");
+
+    // 👇 reopen keyboard AFTER panel closes
+    setTimeout(() => {
+      input.focus();
+    }, 150); // match your animation time
+  }
 });
 });
 </script>
