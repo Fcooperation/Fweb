@@ -405,24 +405,55 @@ body {
 #receive-status.offline { color: orange; }
 #receive-status.error { color: red; }
 #receive-status.updated { color: green; }
+/* Poll message styling */
 .poll-message {
-  background: #000 !important;   /* black */
-  color: #fff;
+  background: #000 !important;    /* black background */
+  color: #fff;                     /* white text */
   padding: 10px;
-  border-radius: 14px;           /* match sent message */
+  border-radius: 14px;
   margin: 10px 0;
-  align-self: flex-end;          /* sent message on right */
+  align-self: flex-end !important; /* force right side */
+  max-width: 80%;                  /* width 80% of chat */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Poll options styling */
+.poll-option-bar {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: #333;               /* dark grey background for options */
+  transition: background 0.2s;
 }
 
 .poll-option-bar:hover {
   background: rgba(30, 136, 229, 0.1);
-  border-radius: 6px;
-  transition: background 0.2s;
+}
+
+/* Circle selection with loading effect */
+.poll-circle {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #1e88e5;
+  border-radius: 50%;
+  margin-right: 10px;
+  position: relative;
+  flex-shrink: 0;
 }
 
 .poll-fill {
+  width: 0%;
+  height: 100%;
+  background: #1e88e5;            /* blue loading bar */
+  position: absolute;
+  left: 0;
+  top: 0;
+  border-radius: 50%;
   transition: width 0.3s ease;
-  background: #1e88e5 !important; /* blue loading bar */
 }
 </style>
 </head>
@@ -900,17 +931,14 @@ function renderMessages() {
     // ✅ Poll message
 if (msg.type === "poll") {
   const pollBox = document.createElement("div");
-  pollBox.className = "message sent poll-message"; // <-- treat like sent
-  if (msg.status === "pending") pollBox.classList.add("pending");
+  pollBox.className = "message poll-message"; // no received/sent
+  pollBox.dataset.id = msg.id;
 
-  // Question highlighted
+  // Question
   const questionDiv = document.createElement("div");
   questionDiv.textContent = msg.question;
   questionDiv.style.fontWeight = "bold";
-  questionDiv.style.background = "#000"; // black background
-  questionDiv.style.color = "#fff";      // white text
   questionDiv.style.padding = "8px";
-  questionDiv.style.borderRadius = "6px";
   questionDiv.style.marginBottom = "10px";
   pollBox.appendChild(questionDiv);
 
@@ -918,44 +946,25 @@ if (msg.type === "poll") {
   msg.options.forEach((opt, idx) => {
     const optionDiv = document.createElement("div");
     optionDiv.className = "poll-option-bar";
-    optionDiv.dataset.idx = idx;
-    optionDiv.style.display = "flex";
-    optionDiv.style.alignItems = "center";
-    optionDiv.style.marginBottom = "6px";
-    optionDiv.style.cursor = "pointer";
 
     const circle = document.createElement("div");
     circle.className = "poll-circle";
-    circle.style.width = "18px";
-    circle.style.height = "18px";
-    circle.style.border = "2px solid #1e88e5";
-    circle.style.borderRadius = "50%";
-    circle.style.marginRight = "10px";
-    circle.style.position = "relative";
 
     const fill = document.createElement("div");
     fill.className = "poll-fill";
-    fill.style.width = "0%";
-    fill.style.height = "100%";
-    fill.style.background = "#1e88e5"; // blue loading
-    fill.style.position = "absolute";
-    fill.style.left = "0";
-    fill.style.top = "0";
-    fill.style.borderRadius = "50%";
     circle.appendChild(fill);
 
     const label = document.createElement("span");
     label.textContent = opt.text;
-    label.style.color = "#fff"; // white text
+    label.style.color = "#fff";
 
     optionDiv.appendChild(circle);
     optionDiv.appendChild(label);
-
     pollBox.appendChild(optionDiv);
 
     optionDiv.onclick = () => {
       if (!msg.allowMultiple) {
-        // remove previous selections
+        // remove previous selection
         msg.options.forEach((o, i) => {
           o.selected = false;
           const f = pollBox.querySelectorAll(".poll-fill")[i];
