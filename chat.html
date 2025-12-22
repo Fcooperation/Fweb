@@ -395,6 +395,16 @@ body {
   cursor: pointer;
   margin-bottom: 12px;
 }
+#receive-status {
+  text-align: center;
+  font-weight: bold;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+#receive-status.offline { color: orange; }
+#receive-status.error { color: red; }
+#receive-status.updated { color: green; }
 </style>
 </head>
 <body>
@@ -1196,10 +1206,17 @@ document.getElementById("message-input").addEventListener("keydown", e => {
 });
 
 /* ---------- RECEIVE MESSAGES (UPDATED) ---------- */
+/* ---------- RECEIVE MESSAGES (UPDATED) ---------- */
 async function receiveMessages() {
-  if (!navigator.onLine) return;
-
   const statusEl = document.getElementById("receive-status"); // 🔹 grab status element
+
+  if (!navigator.onLine) {
+    if (statusEl) {
+      statusEl.textContent = "Offline · Retrying when online";
+      statusEl.className = "offline";
+    }
+    return;
+  }
 
   try {
     if (!account?.email || !chatWith?.id) return;
@@ -1250,13 +1267,18 @@ async function receiveMessages() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
       renderMessages();
 
-      // 🔹 update status to "Updated" after successful receive
-      if (statusEl) statusEl.textContent = "Updated";
+      if (statusEl) {
+        statusEl.textContent = "Updated";
+        statusEl.className = "updated";
+      }
     }
 
   } catch (err) {
     console.warn("Receive messages failed:", err);
-    if (statusEl) statusEl.textContent = "Error";
+    if (statusEl) {
+      statusEl.textContent = "Error";
+      statusEl.className = "error";
+    }
   }
 }
 /* ---------- AUTO RECEIVE ---------- */
