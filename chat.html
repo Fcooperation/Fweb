@@ -1281,6 +1281,11 @@ async function receiveMessages() {
     }
   }
 }
+// Retry receiving messages automatically when back online
+window.addEventListener("online", () => {
+  console.log("Back online — retrying receiveMessages");
+  receiveMessages();
+});
 /* ---------- AUTO RECEIVE ---------- */
 setInterval(receiveMessages, 1000);
 window.addEventListener("online", receiveMessages);
