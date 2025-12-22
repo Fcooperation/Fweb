@@ -425,13 +425,6 @@ body {
   line-height: 1.4;
   color: #fff;
 }
-
-
-.poll-placeholder {
-  height: 60px;
-  background: rgba(255,255,255,0.08);
-  border-radius: 8px;
-}
 /* ---------- POLL OPTIONS ---------- */
 .poll-options {
   display: flex;
@@ -891,7 +884,7 @@ if (msg.isPoll) {
 
   div.appendChild(pollBox);
   box.appendChild(div);
-  return; // 🚫 skip normal message rendering
+  return;
 }
     // Message text
     const textNode = document.createElement("div");
