@@ -1283,8 +1283,13 @@ async function receiveMessages() {
 }
 // Retry receiving messages automatically when back online
 window.addEventListener("online", () => {
-  console.log("Back online — retrying receiveMessages");
-  receiveMessages();
+  const statusEl = document.getElementById("receive-status");
+  if (statusEl) {
+    statusEl.textContent = "Back online · Updating…";
+    statusEl.className = "success";
+  }
+
+  receiveMessages(); // retry immediately
 });
 /* ---------- AUTO RECEIVE ---------- */
 setInterval(receiveMessages, 1000);
