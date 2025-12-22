@@ -367,23 +367,20 @@ body {
   cursor: pointer;
 }
 
-/* ---------- SLIDE PANEL ---------- */
-#attach-panel {
+/* ---------- SLIDE PANEL ---------- */#attach-panel {
   position: fixed;
-  bottom: 0;
-  left: 100%;
+  bottom: 60px; /* height of input bar */
+  left: 0;
   width: 100%;
-  height: 50%;
+  height: 40%;
   background: #fff;
-  border-top: 1px solid #ddd;
-  transition: left 0.3s ease;
+  transform: translateY(100%);
+  transition: transform 0.25s ease;
   z-index: 20;
-  padding: 10px;
 }
 
-/* Active (slid in) */
 #attach-panel.active {
-  left: 0;
+  transform: translateY(0);
 }
 
 /* Back button */
@@ -1285,7 +1282,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const input = document.getElementById("message-input");
 
   addBtn.onclick = () => {
-    input.focus();
+    input.focus(); // open keyboard
     attachPanel.classList.add("active");
   };
 
