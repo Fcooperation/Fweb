@@ -408,10 +408,19 @@ body {
 #receive-status.updated { color: green; }
 /* ---------- POLL MESSAGE (BLANK FOR NOW) ---------- */
 
+.poll-message {
+  background: #000;
+  color: #fff;
+  padding: 14px;
+  border-radius: 14px;
+  width: 80%;
+}
+
 .message.sent .poll-message {
   margin-left: auto; /* right side */
 }
-/* ---------- POLL QUESTION ---------- */
+
+/* Poll question */
 .poll-question {
   font-weight: bold;
   font-size: 15px;
@@ -419,23 +428,28 @@ body {
   line-height: 1.4;
   color: #fff;
 }
-/* ---------- POLL OPTIONS ---------- */
+
+/* Poll options container */
 .poll-options {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
+/* Single option */
 .poll-option {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 10px;
   border-radius: 10px;
   cursor: pointer;
+  overflow: hidden;
+  background: rgba(255,255,255,0.05);
 }
 
-/* circular checkbox */
+/* Circular checkbox */
 .poll-radio {
   width: 18px;
   height: 18px;
@@ -444,11 +458,31 @@ body {
   flex-shrink: 0;
 }
 
-/* option text */
+/* Checked state */
+.poll-radio.selected {
+  border-color: #1e88e5;
+  background: #1e88e5;
+}
+
+/* Option text */
 .poll-option-text {
   font-size: 14px;
   color: #fff;
   line-height: 1.4;
+  z-index: 2;
+}
+
+/* Fill bar under each option */
+.poll-fill {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  width: 0%;
+  background: #1e88e5;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+  z-index: 1;
 }
 </style>
 </head>
@@ -859,26 +893,46 @@ if (msg.isPoll) {
   const pollBox = document.createElement("div");
   pollBox.className = "poll-message";
 
-  const optionsHtml = (msg.pollData?.options || []).map(opt => `
-    <div class="poll-option">
+  const optionsHtml = (msg.pollData?.options || []).map((opt, index) => `
+    <div class="poll-option" data-index="${index}">
       <span class="poll-radio"></span>
       <span class="poll-option-text">${opt}</span>
+      <div class="poll-fill"></div>
     </div>
   `).join("");
 
   pollBox.innerHTML = `
-    <div class="poll-question">
-      ${msg.pollData?.question || "Poll"}
-    </div>
-
-    <div class="poll-options">
-      ${optionsHtml}
-    </div>
+    <div class="poll-question">${msg.pollData?.question || "Poll"}</div>
+    <div class="poll-options">${optionsHtml}</div>
   `;
 
   div.appendChild(pollBox);
   box.appendChild(div);
-  return;
+
+  // ---------- POLL INTERACTION ----------
+  const allowMultiple = msg.pollData?.allowMultiple;
+
+  const optionEls = pollBox.querySelectorAll(".poll-option");
+  optionEls.forEach(optEl => {
+    const radio = optEl.querySelector(".poll-radio");
+    const fill = optEl.querySelector(".poll-fill");
+
+    optEl.onclick = () => {
+      if (!allowMultiple) {
+        // Deselect all others
+        optionEls.forEach(o => {
+          o.querySelector(".poll-radio").classList.remove("selected");
+          o.querySelector(".poll-fill").style.width = "0%";
+        });
+      }
+
+      // Toggle this one
+      const selected = radio.classList.toggle("selected");
+      fill.style.width = selected ? "100%" : "0%";
+    };
+  });
+
+  return; // 🚫 skip normal message rendering
 }
     // Message text
     const textNode = document.createElement("div");
