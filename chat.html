@@ -551,7 +551,7 @@ body {
   </div>
 </div>
 <script>
-const API_URL = "";
+const API_URL = "https://fweb-backend.onrender.com/fchat";
 /* ---------- LOAD CHAT TARGET ---------- */
 const chatWith = JSON.parse(localStorage.getItem("chatting_with")) || null;
 const account = JSON.parse(localStorage.getItem("faccount")) || {email:"", password:""};
@@ -922,6 +922,7 @@ if (msg.isPoll) {
     <div class="poll-question">${msg.pollData?.question || "Poll"}</div>
     <div class="poll-options">${optionsHtml}</div>
   `;
+  
 
   // ---------- STATUS ----------
   const statusDiv = document.createElement("div");
@@ -960,7 +961,6 @@ if (msg.isPoll) {
       fill.style.width = selected ? "100%" : "0%";
     };
   });
-
   return;
 }
     // Message text
@@ -1159,6 +1159,36 @@ function scrollToBottom() {
   const box = document.getElementById("chat-body");
   box.scrollTop = box.scrollHeight;
 }
+  // ---------- SAVE POLL MESSAGE ----------
+const savedPolls = JSON.parse(localStorage.getItem("savedPolls") || "[]");
+
+// store minimal but complete poll message
+const pollToSave = {
+  isPoll: true,
+  pollData: msg.pollData,
+  senderId: msg.senderId,
+  email: msg.email,
+  chatWithId: msg.chatWithId,
+  time: msg.time || Date.now()
+};
+
+// prevent duplicate save
+if (!savedPolls.some(p => p.pollData?.id === msg.pollData?.id)) {
+  savedPolls.push(pollToSave);
+  localStorage.setItem("savedPolls", JSON.stringify(savedPolls));
+}
+
+/*----------LOAD POLLS ON PAGE LOAD ---------- */
+document.addEventListener("DOMContentLoaded", () => {
+  const savedPolls = JSON.parse(localStorage.getItem("savedPolls") || "[]");
+
+  savedPolls.forEach(msg => {
+    // reuse the SAME renderer
+    if (msg.isPoll) {
+      renderMessage(msg);
+    }
+  });
+});
 /* ---------- SEND TO BACKEND ---------- */
 async function sendToBackend(msgObj) {
   try {
