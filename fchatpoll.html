@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FCOOPERATION_CHAT - Poll</title>
+
 <style>
   body { font-family: Arial; background: #f9f9f9; margin: 0; padding: 20px; }
   h1 { text-align: center; font-size: 20px; font-weight: bold; background: black; color: white; padding: 10px; border-radius: 6px; }
@@ -15,13 +16,14 @@
   .switch-label { font-size: 14px; }
   .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
   .switch input { opacity: 0; width: 0; height: 0; }
-  .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; border-radius: 20px; transition: .4s; }
-  .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px; background-color: white; border-radius: 50%; transition: .4s; }
+  .slider { position: absolute; cursor: pointer; inset: 0; background-color: #ccc; border-radius: 20px; transition: .4s; }
+  .slider:before { content: ""; position: absolute; height: 16px; width: 16px; left: 2px; bottom: 2px; background-color: white; border-radius: 50%; transition: .4s; }
   input:checked + .slider { background-color: black; }
   input:checked + .slider:before { transform: translateX(20px); }
   #send-btn { padding: 10px 16px; background: black; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
 </style>
 </head>
+
 <body>
 
 <h1>FCOOPERATION_CHAT - POLL</h1>
@@ -45,53 +47,70 @@
 </div>
 
 <script>
-  const optionsContainer = document.getElementById("options-container");
+const optionsContainer = document.getElementById("options-container");
 
-  // Auto-add new option when last input is typed in
-  optionsContainer.addEventListener("input", (e) => {
-    if (!e.target.classList.contains("poll-option")) return;
+optionsContainer.addEventListener("input", (e) => {
+  if (!e.target.classList.contains("poll-option")) return;
 
-    const optionInputs = Array.from(optionsContainer.querySelectorAll(".poll-option"));
-    const lastInput = optionInputs[optionInputs.length - 1];
+  const inputs = optionsContainer.querySelectorAll(".poll-option");
+  const last = inputs[inputs.length - 1];
 
-    if (lastInput.value.trim() !== "") {
-      const newOption = document.createElement("div");
-      newOption.className = "option";
-      newOption.innerHTML = `<input type="text" class="poll-option" placeholder="Option ${optionInputs.length + 1}" />`;
-      optionsContainer.appendChild(newOption);
-    }
-  });
+  if (last.value.trim() !== "") {
+    const div = document.createElement("div");
+    div.className = "option";
+    div.innerHTML = `<input type="text" class="poll-option" placeholder="Option ${inputs.length + 1}" />`;
+    optionsContainer.appendChild(div);
+  }
+});
 
-  document.getElementById("send-btn").addEventListener("click", () => {
-    const question = document.getElementById("poll-question").value.trim();
-    const options = Array.from(document.querySelectorAll(".poll-option"))
-      .map(o => o.value.trim())
-      .filter(o => o !== "");
+document.getElementById("send-btn").addEventListener("click", async () => {
+  const question = document.getElementById("poll-question").value.trim();
+  const options = [...document.querySelectorAll(".poll-option")]
+    .map(o => o.value.trim())
+    .filter(Boolean);
 
-    const allowMultiple = document.getElementById("allow-multiple").checked;
+  const allowMultiple = document.getElementById("allow-multiple").checked;
 
-    if (!question || options.length < 2) {
-      alert("Please enter a question and at least two options.");
-      return;
-    }
+  if (!question || options.length < 2) {
+    alert("Please enter a question and at least two options.");
+    return;
+  }
 
-    // Create poll JSON
-    const poll = {
-      action: "send_polls",
-      id: Date.now(),
-      email: localStorage.getItem("loggedInEmail"), // your login storage
-      chatWithId: localStorage.getItem("chattingId"), // your current chat target
-      question: question,
-      options: options,
-      allowMultiple: allowMultiple
-    };
+  const poll = {
+    action: "send_polls",
+    id: Date.now(),
+    email: localStorage.getItem("loggedInEmail"),
+    chatWithId: localStorage.getItem("chattingId"),
+    question,
+    options,
+    allowMultiple
+  };
 
-    // Save to localStorage temporarily
-    localStorage.setItem("pendingPoll", JSON.stringify(poll));
+  // Save raw poll
+  localStorage.setItem("pendingPoll", JSON.stringify(poll));
 
-    // Redirect back to chat
-    window.location.href = "chat.html";
-  });
+  let status = "pending";
+
+  try {
+    const res = await fetch("https://fweb-backend.onrender.com/fchat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(poll)
+    });
+
+    if (res.ok) status = "sent";
+  } catch (err) {
+    console.warn("Poll send failed, saved as pending");
+  }
+
+  // Save poll status separately
+  localStorage.setItem("pollStatus", JSON.stringify({
+    pollId: poll.id,
+    status
+  }));
+
+  window.location.href = "chat.html";
+});
 </script>
 
 </body>
