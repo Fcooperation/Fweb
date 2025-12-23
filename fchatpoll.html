@@ -114,6 +114,19 @@ document.getElementById("send-btn").addEventListener("click", async () => {
     pollId: poll.id,
     status
   }));
+  
+  // ---------- SAVE TO ALL POLLS (PERMANENT) ----------
+const allPolls = JSON.parse(localStorage.getItem("allPolls") || "[]");
+
+// prevent duplicate ids (safety)
+if (!allPolls.some(p => p.id === poll.id)) {
+  allPolls.push({
+    ...poll,
+    createdAt: Date.now()
+  });
+
+  localStorage.setItem("allPolls", JSON.stringify(allPolls));
+}
 
   // Redirect back to chat
   window.location.href = "chat.html";
