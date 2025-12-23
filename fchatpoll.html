@@ -49,6 +49,7 @@
 <script>
 const optionsContainer = document.getElementById("options-container");
 
+// Auto-add new option when last input is typed in
 optionsContainer.addEventListener("input", (e) => {
   if (!e.target.classList.contains("poll-option")) return;
 
@@ -76,11 +77,16 @@ document.getElementById("send-btn").addEventListener("click", async () => {
     return;
   }
 
+  // Get chat target and account info from localStorage
+  const chatWith = JSON.parse(localStorage.getItem("chatting_with")) || {};
+  const account = JSON.parse(localStorage.getItem("faccount")) || { email: "", id: "" };
+
   const poll = {
     action: "send_polls",
     id: Date.now(),
-    email: localStorage.getItem("loggedInEmail"),
-    chatWithId: localStorage.getItem("chattingId"),
+    senderId: account.id || "",          // sender's id
+    email: account.email || "",          // sender's email
+    chatWithId: chatWith.id || "",       // target chat id
     question,
     options,
     allowMultiple
@@ -109,6 +115,7 @@ document.getElementById("send-btn").addEventListener("click", async () => {
     status
   }));
 
+  // Redirect back to chat
   window.location.href = "chat.html";
 });
 </script>
