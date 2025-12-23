@@ -1481,5 +1481,34 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+// ---------- SEND PENDING POLL TO BACKEND ----------
+(async function sendPendingPoll() {
+  const pollData = localStorage.getItem("pendingPoll");
+  if (!pollData) return; // nothing to send
+
+  try {
+    const poll = JSON.parse(pollData);
+
+    const res = await fetch("https://fweb-backend.onrender.com/fchat2.js", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(poll)
+    });
+
+    if (!res.ok) {
+      console.error("Poll send failed");
+      return;
+    }
+
+    // ✅ success → clear localStorage
+    localStorage.removeItem("pendingPoll");
+    console.log("Poll sent successfully");
+
+  } catch (err) {
+    console.error("Error sending poll:", err);
+  }
+})();
 </script>
 </body></html>
