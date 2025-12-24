@@ -902,7 +902,18 @@ if (msg.isPoll) {
   pollBox.className = "poll-message";
 
   // ---------- READ POLL STATUS FROM LOCALSTORAGE ----------
-  const pollStatus = msg.status || "sent";
+  const POLL_STATUS_KEY = `pollStatus_${account.email}_${chatWith.id}_${msg.pollData?.id}`;
+  let pollStatus = "sent"; // default fallback
+
+  const pollStatusRaw = localStorage.getItem(POLL_STATUS_KEY);
+  if (pollStatusRaw) {
+    try {
+      const parsed = JSON.parse(pollStatusRaw);
+      if (parsed.pollId === msg.pollData?.id) {
+        pollStatus = parsed.status; // "pending" or "sent"
+      }
+    } catch {}
+  }
 
   // ---------- OPTIONS ----------
   const optionsHtml = (msg.pollData?.options || []).map((opt, index) => `
@@ -920,18 +931,19 @@ if (msg.isPoll) {
 
   // ---------- STATUS ----------
   const statusDiv = document.createElement("div");
-statusDiv.className = "status-text";
+  statusDiv.className = "status-text";
 
-if (pollStatus === "pending") {
-  statusDiv.textContent = "Pending";
-  statusDiv.classList.add("status-pending");
-} else if (pollStatus === "sending") {
-  statusDiv.textContent = "Sending…";
-  statusDiv.classList.add("status-sending");
-} else {
-  statusDiv.textContent = "Sent";
-  statusDiv.classList.add("status-sent");
-}
+  if (pollStatus === "pending") {
+    statusDiv.textContent = "Pending";
+    statusDiv.classList.add("status-pending");
+  } else {
+    statusDiv.textContent = "Sent";
+    statusDiv.classList.add("status-sent");
+  }
+
+  pollBox.appendChild(statusDiv);
+
+  document.getElementById("chat-body").appendChild(pollBox);
 
   // ---------- INTERACTION ----------
   const allowMultiple = msg.pollData?.allowMultiple;
@@ -1289,30 +1301,7 @@ async function retryScheduledDeletes() {
     }
   }
 }
-/*---------- RETRY PENDING POLLS ---------- */
-async function retryPendingPolls() {
-  if (!navigator.onLine) return; // 🚫 offline → do nothing
 
-  const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
-  let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
-
-  let updated = false;
-
-  for (const poll of polls) {
-    if (poll.status === "pending") {
-      poll.status = "sending";      // mark as sending
-      updated = true;
-    }
-  }
-
-  if (updated) {
-    localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
-    renderMessages();               // update UI
-  }
-}
-
-// Optional: trigger automatically when going online
-window.addEventListener("online", retryPendingPolls);
 /* ---------- RETRY PENDING MESSAGES ---------- */
 async function retryPending() {
   if (!navigator.onLine) return; // 🚫 no internet → do nothing
