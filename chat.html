@@ -812,27 +812,12 @@ async function deleteForEveryoneBackend(ids) {
   const data = await res.json();
   return data.success === true;
 }
-// ---------- LOAD PENDING POLL ----------
-const pendingPoll = localStorage.getItem("pendingPoll");
-
-if (pendingPoll) {
-  const pollData = JSON.parse(pendingPoll);
-
-  messages.push({
-    id: pollData.id,
-    type: "sent",              // 👈 sent message (right)
-    status: "sent",
-    sent_at: new Date().toISOString(),
-
-    isPoll: true,              // 👈 flag
-    pollData: pollData
-  });
-
-  localStorage.removeItem("pendingPoll"); // clean up
-}
+// ---------- LOAD POLLS INTO TIMELINE ----------
 function getTimeline() {
-  const merged = [...messages];
+  // Merge messages and polls arrays
+  const merged = [...messages, ...polls];
 
+  // Sort by sent_at so they appear in correct order
   merged.sort((a, b) => {
     return new Date(a.sent_at) - new Date(b.sent_at);
   });
@@ -845,7 +830,8 @@ function renderMessages() {
   const box = document.getElementById("chat-body");
   box.innerHTML = "";
 
-  messages.forEach(msg => {
+  // Use timeline (merged messages + polls, sorted by sent_at)
+  getTimeline().forEach(msg => {
     const div = document.createElement("div");
     div.className = "message " + msg.type + (msg.status === "pending" ? " pending" : "");
 
@@ -864,6 +850,9 @@ function renderMessages() {
       timeDiv.textContent = formatMessageTime(msg.sent_at);
       div.appendChild(timeDiv);
     }
+
+    // ... rest of your existing render logic
+
 
     // Reply preview
     if (msg.replyTo) {
