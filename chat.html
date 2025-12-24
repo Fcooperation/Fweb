@@ -1500,6 +1500,47 @@ setInterval(receiveMessages, 1000);
 window.addEventListener("online", receiveMessages);
 </script>
 <script>
+// Function to sync pending polls when user goes online
+function syncPendingPolls() {
+  if (!navigator.onLine) return; // only run when online
+
+  const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
+  const polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+
+  polls.forEach(poll => {
+    // Only update polls that are currently pending
+    if (poll.status === "pending") {
+      // 1️⃣ Mark as sending first
+      poll.status = "sending";
+      poll.sending_since = Date.now();
+      updatePollStatus(poll.id, "sending");
+      console.log(`Poll ${poll.id} status set to sending`);
+
+      // 2️⃣ Optionally, keep it pending if user goes offline before sending
+      window.addEventListener("offline", () => {
+        if (poll.status === "sending") {
+          poll.status = "pending";
+          delete poll.sending_since;
+          updatePollStatus(poll.id, "pending");
+          console.log(`Poll ${poll.id} reverted to pending because offline`);
+        }
+      });
+
+      // The actual send to backend will be handled elsewhere
+    }
+  });
+
+  // Save updated polls locally
+  localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
+}
+
+// Listen for coming online
+window.addEventListener("online", syncPendingPolls);
+
+// Optional: run immediately if already online
+if (navigator.onLine) syncPendingPolls();
+</script>
+<script>
 document.addEventListener("DOMContentLoaded", () => {
   const addBtn = document.getElementById("add-btn");
   const attachPanel = document.getElementById("attach-panel");
