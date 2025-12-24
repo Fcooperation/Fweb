@@ -1500,26 +1500,58 @@ setInterval(receiveMessages, 1000);
 window.addEventListener("online", receiveMessages);
 </script>
 <script>
-// Function to sync pending polls when user goes online
-function syncPendingPolls() {
+// Function to resend pending polls
+async function resendPendingPolls() {
   if (!navigator.onLine) return; // only run when online
 
   const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
   const polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
 
-  polls.forEach(poll => {
-    if (poll.status === "pending") {
-      updatePollStatus(poll.id, "sent");
-      console.log(`Poll ${poll.id} updated to sent`);
+  // Filter pending polls
+  const pendingPolls = polls.filter(poll => poll.status === "pending");
+
+  for (const poll of pendingPolls) {
+    // Update locally to "sending"
+    updatePollStatus(poll.id, "sending");
+    console.log(`Poll ${poll.id} status set to sending`);
+
+    // Prepare payload for backend
+    const payload = {
+      action: "send_polls",
+      ...poll.pollData,
+      senderId: poll.senderId,
+      email: account.email,
+      chatWithId: chatWith.id
+    };
+
+    try {
+      const res = await fetch("https://fweb-backend.onrender.com/fchat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        // Success → update to "sent"
+        updatePollStatus(poll.id, "sent");
+        console.log(`Poll ${poll.id} successfully sent`);
+      } else {
+        // Failed → keep as "pending" or handle retry
+        updatePollStatus(poll.id, "pending");
+        console.warn(`Poll ${poll.id} failed to send`);
+      }
+    } catch (err) {
+      console.error(`Poll ${poll.id} send error:`, err);
+      updatePollStatus(poll.id, "pending"); // restore pending
     }
-  });
+  }
 }
 
 // Listen for coming online
-window.addEventListener("online", syncPendingPolls);
+window.addEventListener("online", resendPendingPolls);
 
 // Optional: run immediately if already online
-if (navigator.onLine) syncPendingPolls();
+if (navigator.onLine) resendPendingPolls();
 </script>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
