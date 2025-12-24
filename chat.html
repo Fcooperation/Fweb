@@ -1302,7 +1302,27 @@ async function retryScheduledDeletes() {
   }
 }
 /*---------- RETRY PENDING POLLS ---------- */
+async function retryPendingPolls() {
+  const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
+  let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
 
+  for (const poll of polls) {
+    if (poll.status === "pending") {
+      poll.status = "sending";
+      localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
+      
+      try {
+        await sendPollToBackend(poll);
+        poll.status = "sent";
+      } catch {
+        poll.status = "pending";
+      }
+
+      localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
+      renderMessages();
+    }
+  }
+}
 /* ---------- RETRY PENDING MESSAGES ---------- */
 async function retryPending() {
   if (!navigator.onLine) return; // 🚫 no internet → do nothing
