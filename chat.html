@@ -602,21 +602,6 @@ let messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
 // ---------- POLL STORAGE ----------
 const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
 let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
-//----------SYNC POLL STATUS--------
-function syncPollStatuses() {
-  const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
-  const storedPolls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
-
-  polls.forEach(poll => {
-    const saved = storedPolls.find(p => p.id === poll.id);
-
-    if (saved && saved.status) {
-      poll.status = saved.status;
-    } else {
-      poll.status = "sent"; // default fallback
-    }
-  });
-}
 
 // ---------- FORMAT TIME ----------
 function formatMessageTime(sentAt) {
@@ -842,11 +827,10 @@ function getTimeline() {
 
 /* ---------- RENDER MESSAGES ---------- */
 function renderMessages() {
-  syncPollStatuses(); // 👈 IMPORTANT
-
   const box = document.getElementById("chat-body");
   box.innerHTML = "";
 
+  // Use timeline (merged messages + polls, sorted by sent_at)
   getTimeline().forEach(msg => {
     const div = document.createElement("div");
     div.className = "message " + msg.type + (msg.status === "pending" ? " pending" : "");
@@ -918,16 +902,19 @@ if (msg.isPoll) {
   pollBox.className = "poll-message";
 
   // ---------- READ POLL STATUS FROM LOCALSTORAGE ----------
-  const statusDiv = document.createElement("div");
-statusDiv.className = "status-text";
+  const POLL_STATUS_KEY = `pollStatus_${account.email}_${chatWith.id}_${msg.pollData?.id}`;
+  let pollStatus = "sent"; // default fallback
 
-if (msg.status === "pending") {
-  statusDiv.textContent = "Pending";
-  statusDiv.classList.add("status-pending");
-} else {
-  statusDiv.textContent = "Sent";
-  statusDiv.classList.add("status-sent");
-}
+  const pollStatusRaw = localStorage.getItem(POLL_STATUS_KEY);
+  if (pollStatusRaw) {
+    try {
+      const parsed = JSON.parse(pollStatusRaw);
+      if (parsed.pollId === msg.pollData?.id) {
+        pollStatus = parsed.status; // "pending" or "sent"
+      }
+    } catch {}
+  }
+
   // ---------- OPTIONS ----------
   const optionsHtml = (msg.pollData?.options || []).map((opt, index) => `
     <div class="poll-option" data-index="${index}">
