@@ -101,9 +101,12 @@ document.getElementById("send-btn").addEventListener("click", async () => {
   // ---------- SAVE TO CHAT POLL STORAGE ----------
   const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
   const polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
-
   polls.push(pollMessage);
   localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
+
+  // ---------- SET POLL STATUS DEFAULT ----------
+  const POLL_STATUS_KEY = `pollStatus_${account.email}_${chatWith.id}_${pollId}`;
+  localStorage.setItem(POLL_STATUS_KEY, JSON.stringify({ pollId, status: "pending" }));
 
   // ---------- SEND TO SERVER ----------
   try {
@@ -120,11 +123,16 @@ document.getElementById("send-btn").addEventListener("click", async () => {
     });
 
     if (res.ok) {
+      // Update pollMessage status
       pollMessage.status = "sent";
       localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
+
+      // Update separate poll status JSON
+      localStorage.setItem(POLL_STATUS_KEY, JSON.stringify({ pollId, status: "sent" }));
     }
   } catch {
     console.warn("Poll send failed, kept as pending");
+    // Already pending, no change needed
   }
 
   // ---------- GO BACK ----------
