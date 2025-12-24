@@ -901,15 +901,16 @@ if (msg.isPoll) {
   const pollBox = document.createElement("div");
   pollBox.className = "poll-message";
 
-  // ---------- READ POLL STATUS ----------
-  const pollStatusRaw = localStorage.getItem("pollStatus");
-  let pollStatus = "sent";
+  // ---------- READ POLL STATUS FROM LOCALSTORAGE ----------
+  const POLL_STATUS_KEY = `pollStatus_${account.email}_${chatWith.id}_${msg.pollData?.id}`;
+  let pollStatus = "sent"; // default fallback
 
+  const pollStatusRaw = localStorage.getItem(POLL_STATUS_KEY);
   if (pollStatusRaw) {
     try {
       const parsed = JSON.parse(pollStatusRaw);
       if (parsed.pollId === msg.pollData?.id) {
-        pollStatus = parsed.status;
+        pollStatus = parsed.status; // "pending" or "sent"
       }
     } catch {}
   }
@@ -942,7 +943,6 @@ if (msg.isPoll) {
 
   pollBox.appendChild(statusDiv);
 
-  // ---------- APPEND ----------
   document.getElementById("chat-body").appendChild(pollBox);
 
   // ---------- INTERACTION ----------
@@ -966,7 +966,7 @@ if (msg.isPoll) {
     };
   });
 
-  return;
+  return; // exit early for poll message
 }
     // Message text
     const textNode = document.createElement("div");
