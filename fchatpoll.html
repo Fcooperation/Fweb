@@ -49,7 +49,7 @@
 <script>
 const optionsContainer = document.getElementById("options-container");
 
-// Auto-add new option when last input is typed in
+// Auto-add new option
 optionsContainer.addEventListener("input", (e) => {
   if (!e.target.classList.contains("poll-option")) return;
 
@@ -77,58 +77,57 @@ document.getElementById("send-btn").addEventListener("click", async () => {
     return;
   }
 
-  // Get chat target and account info from localStorage
   const chatWith = JSON.parse(localStorage.getItem("chatting_with")) || {};
-  const account = JSON.parse(localStorage.getItem("faccount")) || { email: "", id: "" };
+  const account = JSON.parse(localStorage.getItem("faccount")) || {};
 
-  const poll = {
-    action: "send_polls",
-    id: Date.now(),
-    senderId: account.id || "",          // sender's id
-    email: account.email || "",          // sender's email
-    chatWithId: chatWith.id || "",       // target chat id
-    question,
-    options,
-    allowMultiple
+  const pollId = Date.now();
+
+  // ---------- CHAT-SAFE POLL OBJECT ----------
+  const pollMessage = {
+    id: pollId,
+    type: "sent",
+    isPoll: true,
+    senderId: account.id,
+    sent_at: Date.now(),
+    status: "pending",
+    pollData: {
+      id: pollId,
+      question,
+      options,
+      allowMultiple
+    }
   };
 
-  // Save raw poll
-  localStorage.setItem("pendingPoll", JSON.stringify(poll));
+  // ---------- SAVE TO CHAT POLL STORAGE ----------
+  const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
+  const polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
 
-  let status = "pending";
+  polls.push(pollMessage);
+  localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
 
+  // ---------- SEND TO SERVER ----------
   try {
     const res = await fetch("https://fweb-backend.onrender.com/fchat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(poll)
+      body: JSON.stringify({
+        action: "send_polls",
+        ...pollMessage.pollData,
+        senderId: account.id,
+        email: account.email,
+        chatWithId: chatWith.id
+      })
     });
 
-    if (res.ok) status = "sent";
-  } catch (err) {
-    console.warn("Poll send failed, saved as pending");
+    if (res.ok) {
+      pollMessage.status = "sent";
+      localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
+    }
+  } catch {
+    console.warn("Poll send failed, kept as pending");
   }
 
-  // Save poll status separately
-  localStorage.setItem("pollStatus", JSON.stringify({
-    pollId: poll.id,
-    status
-  }));
-  
-  // ---------- SAVE TO ALL POLLS (PERMANENT) ----------
-const allPolls = JSON.parse(localStorage.getItem("allPolls") || "[]");
-
-// prevent duplicate ids (safety)
-if (!allPolls.some(p => p.id === poll.id)) {
-  allPolls.push({
-    ...poll,
-    createdAt: Date.now()
-  });
-
-  localStorage.setItem("allPolls", JSON.stringify(allPolls));
-}
-
-  // Redirect back to chat
+  // ---------- GO BACK ----------
   window.location.href = "chat.html";
 });
 </script>
