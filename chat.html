@@ -812,118 +812,99 @@ async function deleteForEveryoneBackend(ids) {
   const data = await res.json();
   return data.success === true;
 }
-// ---------- LOAD PENDING POLL ----------
-const pendingPoll = localStorage.getItem("pendingPoll");
-
-if (pendingPoll) {
-  const pollData = JSON.parse(pendingPoll);
-
-  messages.push({
-    id: pollData.id,
-    type: "sent",              // 👈 sent message (right)
-    status: "sent",
-    sent_at: new Date().toISOString(),
-
-    isPoll: true,              // 👈 flag
-    pollData: pollData
-  });
-
-  localStorage.removeItem("pendingPoll"); // clean up
-}
-
-/*----------RENDER POLLS ----------*/
-function renderPolls() {
-  const box = document.getElementById("chat-body");
-  if (!box) return;
-
-  polls.forEach(poll => {
-    const pollBox = document.createElement("div");
-    pollBox.className = "poll-message";
-    pollBox.dataset.id = poll.id;
-
-    // ----- QUESTION -----
-    const questionDiv = document.createElement("div");
-    questionDiv.className = "poll-question";
-    questionDiv.textContent = poll.pollData?.question || "Poll";
-    pollBox.appendChild(questionDiv);
-
-    // ----- OPTIONS -----
-    const optionsWrapper = document.createElement("div");
-    optionsWrapper.className = "poll-options";
-
-    const allowMultiple = poll.pollData?.allowMultiple;
-    const optionEls = [];
-
-    (poll.pollData?.options || []).forEach((opt, index) => {
-      const optDiv = document.createElement("div");
-      optDiv.className = "poll-option";
-      optDiv.dataset.index = index;
-
-      optDiv.innerHTML = `
-        <span class="poll-radio"></span>
-        <span class="poll-option-text">${opt}</span>
-        <div class="poll-fill"></div>
-      `;
-
-      const radio = optDiv.querySelector(".poll-radio");
-      const fill = optDiv.querySelector(".poll-fill");
-
-      optDiv.onclick = () => {
-        if (!allowMultiple) {
-          optionEls.forEach(o => {
-            o.querySelector(".poll-radio").classList.remove("selected");
-            o.querySelector(".poll-fill").style.width = "0%";
-          });
-        }
-
-        const selected = radio.classList.toggle("selected");
-        fill.style.width = selected ? "100%" : "0%";
-      };
-
-      optionEls.push(optDiv);
-      optionsWrapper.appendChild(optDiv);
-    });
-
-    pollBox.appendChild(optionsWrapper);
-
-    // ----- STATUS -----
-    const statusDiv = document.createElement("div");
-    statusDiv.className = "status-text";
-
-    if (poll.status === "pending") {
-      statusDiv.textContent = "Pending";
-      statusDiv.classList.add("status-pending");
-    } else {
-      statusDiv.textContent = "Sent";
-      statusDiv.classList.add("status-sent");
-    }
-
-    pollBox.appendChild(statusDiv);
-
-    // ----- APPEND -----
-    box.appendChild(pollBox);
-  });
-}
-
-/* ---------- RENDER MESSAGES ---------- */
+/*----------RENDER MESSAGES ----------*/
 function renderMessages() {
   const box = document.getElementById("chat-body");
   box.innerHTML = "";
 
-  messages.forEach(msg => {
+  const timeline = getTimeline();
+
+  timeline.forEach(msg => {
+
+    /* ================= POLL MESSAGE ================= */
+    if (msg.isPoll) {
+      const pollBox = document.createElement("div");
+      pollBox.className = "poll-message message sent";
+      pollBox.dataset.id = msg.id;
+
+      // ----- READ POLL STATUS -----
+      const pollStatusRaw = localStorage.getItem("pollStatus");
+      let pollStatus = msg.status || "sent";
+
+      if (pollStatusRaw) {
+        try {
+          const parsed = JSON.parse(pollStatusRaw);
+          if (parsed.pollId === msg.pollData?.id) {
+            pollStatus = parsed.status;
+          }
+        } catch {}
+      }
+
+      // ----- OPTIONS -----
+      const optionsHtml = (msg.pollData?.options || []).map((opt, index) => `
+        <div class="poll-option" data-index="${index}">
+          <span class="poll-radio"></span>
+          <span class="poll-option-text">${opt}</span>
+          <div class="poll-fill"></div>
+        </div>
+      `).join("");
+
+      pollBox.innerHTML = `
+        <div class="poll-question">${msg.pollData?.question || "Poll"}</div>
+        <div class="poll-options">${optionsHtml}</div>
+      `;
+
+      // ----- STATUS -----
+      const statusDiv = document.createElement("div");
+      statusDiv.className = "status-text";
+
+      if (pollStatus === "pending") {
+        statusDiv.textContent = "Pending";
+        statusDiv.classList.add("status-pending");
+      } else {
+        statusDiv.textContent = "Sent";
+        statusDiv.classList.add("status-sent");
+      }
+
+      pollBox.appendChild(statusDiv);
+
+      // ----- INTERACTION -----
+      const allowMultiple = msg.pollData?.allowMultiple;
+      const optionEls = pollBox.querySelectorAll(".poll-option");
+
+      optionEls.forEach(optEl => {
+        const radio = optEl.querySelector(".poll-radio");
+        const fill = optEl.querySelector(".poll-fill");
+
+        optEl.onclick = () => {
+          if (!allowMultiple) {
+            optionEls.forEach(o => {
+              o.querySelector(".poll-radio").classList.remove("selected");
+              o.querySelector(".poll-fill").style.width = "0%";
+            });
+          }
+
+          const selected = radio.classList.toggle("selected");
+          fill.style.width = selected ? "100%" : "0%";
+        };
+      });
+
+      box.appendChild(pollBox);
+      return;
+    }
+
+    /* ================= NORMAL MESSAGE ================= */
     const div = document.createElement("div");
     div.className = "message " + msg.type + (msg.status === "pending" ? " pending" : "");
+    div.dataset.id = msg.id;
 
-    // Header (username) – only for received messages
+    // Header (received only)
     if (msg.type === "received") {
       const header = document.createElement("div");
       header.className = "msg-username";
       header.textContent = msg.sender_username || "Unknown";
       div.appendChild(header);
-    }
 
-    // Time – ONLY for received messages
-    if (msg.type === "received") {
       const timeDiv = document.createElement("div");
       timeDiv.className = "msg-time";
       timeDiv.textContent = formatMessageTime(msg.sent_at);
@@ -938,220 +919,40 @@ function renderMessages() {
       replyBox.style.marginBottom = "6px";
       replyBox.style.fontSize = "12px";
       replyBox.style.opacity = "0.8";
-      replyBox.innerHTML = `
-        <strong>${msg.replyTo.sender}</strong><br>
-        ${msg.replyTo.text}
-      `;
+      replyBox.innerHTML = `<strong>${msg.replyTo.sender}</strong><br>${msg.replyTo.text}`;
       div.appendChild(replyBox);
     }
 
-    // Linked message preview
-    if (msg.linked_message === "yes" && msg.linked_message_id) {
-      const linked = messages.find(m => String(m.id) === String(msg.linked_message_id));
-
-      if (linked) {
-        const linkedBox = document.createElement("div");
-        linkedBox.className = "linked-preview";
-
-        const senderName = linked.type === "sent" ? "You" : chatWith.username;
-        linkedBox.innerHTML = `<strong>${senderName}</strong><br>${linked.text.slice(0, 80) || "Message"}`;
-
-        linkedBox.onclick = (e) => {
-          if (selectMode) return;
-          e.stopPropagation();
-
-          const target = document.querySelector(`[data-id='${linked.id}']`);
-          if (target) {
-            target.scrollIntoView({ behavior: "smooth", block: "center" });
-            target.classList.add("highlight");
-            setTimeout(() => target.classList.remove("highlight"), 1200);
-          }
-        };
-
-        div.appendChild(linkedBox);
-      }
-    }
-    
-// ---------- POLL MESSAGE ----------
-if (msg.isPoll) {
-  const pollBox = document.createElement("div");
-  pollBox.className = "poll-message";
-
-  // ---------- READ POLL STATUS ----------
-  const pollStatusRaw = localStorage.getItem("pollStatus");
-  let pollStatus = "sent";
-
-  if (pollStatusRaw) {
-    try {
-      const parsed = JSON.parse(pollStatusRaw);
-      if (parsed.pollId === msg.pollData?.id) {
-        pollStatus = parsed.status;
-      }
-    } catch {}
-  }
-
-  // ---------- OPTIONS ----------
-  const optionsHtml = (msg.pollData?.options || []).map((opt, index) => `
-    <div class="poll-option" data-index="${index}">
-      <span class="poll-radio"></span>
-      <span class="poll-option-text">${opt}</span>
-      <div class="poll-fill"></div>
-    </div>
-  `).join("");
-
-  pollBox.innerHTML = `
-    <div class="poll-question">${msg.pollData?.question || "Poll"}</div>
-    <div class="poll-options">${optionsHtml}</div>
-  `;
-
-  // ---------- STATUS ----------
-  const statusDiv = document.createElement("div");
-  statusDiv.className = "status-text";
-
-  if (pollStatus === "pending") {
-    statusDiv.textContent = "Pending";
-    statusDiv.classList.add("status-pending");
-  } else {
-    statusDiv.textContent = "Sent";
-    statusDiv.classList.add("status-sent");
-  }
-
-  pollBox.appendChild(statusDiv);
-
-  // ---------- APPEND ----------
-  document.getElementById("chat-body").appendChild(pollBox);
-
-  // ---------- INTERACTION ----------
-  const allowMultiple = msg.pollData?.allowMultiple;
-  const optionEls = pollBox.querySelectorAll(".poll-option");
-
-  optionEls.forEach(optEl => {
-    const radio = optEl.querySelector(".poll-radio");
-    const fill = optEl.querySelector(".poll-fill");
-
-    optEl.onclick = () => {
-      if (!allowMultiple) {
-        optionEls.forEach(o => {
-          o.querySelector(".poll-radio").classList.remove("selected");
-          o.querySelector(".poll-fill").style.width = "0%";
-        });
-      }
-
-      const selected = radio.classList.toggle("selected");
-      fill.style.width = selected ? "100%" : "0%";
-    };
-  });
-
-  return;
-}
     // Message text
     const textNode = document.createElement("div");
     textNode.className = "msg-text";
+    textNode.textContent = msg.text;
+    div.appendChild(textNode);
 
-    if (msg.deleted) {
-      textNode.textContent = msg.text;
-      div.classList.add("deleted");
-      div.appendChild(textNode);
-    } else {
-      textNode.textContent = msg.text;
-      div.appendChild(textNode);
-
-      // READ MORE logic
-      requestAnimationFrame(() => {
-        const lineHeight = parseFloat(getComputedStyle(textNode).lineHeight);
-
-        const INITIAL_LINES = 10;
-        const STEP_LINES = 25;
-        let currentLines = INITIAL_LINES;
-
-        const applyClamp = () => {
-          textNode.style.display = "-webkit-box";
-          textNode.style.webkitBoxOrient = "vertical";
-          textNode.style.webkitLineClamp = currentLines;
-          textNode.style.overflow = "hidden";
-        };
-
-        const removeClamp = () => {
-          textNode.style.webkitLineClamp = "unset";
-          textNode.style.display = "block";
-          textNode.style.overflow = "visible";
-        };
-
-        if (textNode.scrollHeight > lineHeight * INITIAL_LINES) {
-          applyClamp();
-
-          const readMore = document.createElement("div");
-          readMore.className = "read-more";
-          readMore.textContent = "Read more";
-
-          readMore.onclick = () => {
-  const totalLines = Math.ceil(textNode.scrollHeight / lineHeight);
-
-  if (currentLines >= totalLines) {
-    // READ LESS
-    currentLines = INITIAL_LINES;
-    applyClamp();
-    readMore.textContent = "Read more";
-  } else {
-    // READ MORE
-    currentLines += STEP_LINES;
-
-    if (currentLines >= totalLines) {
-      removeClamp();
-      readMore.textContent = "Read less";
-    } else {
-      applyClamp();
-      readMore.textContent = "Read more";
-    }
-  }
-};
-
-          div.appendChild(readMore);
-        }
-      });
-    }
-
-    // Status (sent messages only)
+    // Status (sent only)
     if (msg.type === "sent") {
       const status = document.createElement("div");
-      status.classList.add("status-text");
+      status.className = "status-text";
 
       const timeSpan = document.createElement("span");
-      timeSpan.classList.add("message-time");
+      timeSpan.className = "message-time";
       timeSpan.textContent = formatMessageTime(msg.sent_at);
       status.appendChild(timeSpan);
 
-      if (msg.status === "sending") {
-        status.append("Sending…");
-        status.classList.add("status-sending");
-      } else if (msg.status === "pending") {
-        status.append("Pending");
-        status.classList.add("status-pending");
-      } else if (msg.status === "sent") {
-        status.append("Sent");
-        status.classList.add("status-sent");
-      } else if (msg.status === "deleting") {
-  status.append("Deleting…");
-  status.classList.add("status-deleting");
-} else if (msg.status === "deleted") {
-  status.append("Deleted");
-  status.classList.add("status-deleted");
-}else if (msg.status === "scheduled") {
-  status.append("Scheduled");
-  status.classList.add("status-scheduled");
-} 
+      status.append(msg.status === "pending" ? "Pending" : "Sent");
+      status.classList.add(msg.status === "pending" ? "status-pending" : "status-sent");
 
       div.appendChild(status);
     }
-    div.dataset.id = msg.id;
+
     box.appendChild(div);
   });
 
   scrollToBottom();
-  renderPolls();
   enableMessageTap();
   enableMultiSelect();
 }
+
 function enableMessageTap() {
   const allMessages = document.querySelectorAll(".message");
 allMessages.forEach(msgEl => {
