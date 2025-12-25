@@ -513,32 +513,172 @@ header.onclick = () => {
   }));
   window.location.href = "chatdashboard.html";
 };
+
+document.getElementById("send-btn").addEventListener("click", async () => {
+  const question = document.getElementById("poll-question").value.trim();
+  const options = [...document.querySelectorAll(".poll-option")]
+    .map(o => o.value.trim())
+    .filter(Boolean);
+
+  const allowMultiple = document.getElementById("allow-multiple").checked;
+
+  if (!question || options.length < 2) {
+    alert("Please enter a question and at least two options.");
+    return;
+  }
+
+  const chatWith = JSON.parse(localStorage.getItem("chatting_with")) || {};
+  const account = JSON.parse(localStorage.getItem("faccount")) || {};
+
+  const pollId = Date.now();
+
+  // ---------- CHAT-SAFE POLL OBJECT ----------
+  const pollMessage = {
+    id: pollId,
+    type: "sent",
+    isPoll: true,
+    senderId: account.id,
+    sent_at: Date.now(),
+    status: "pending",
+    pollData: {
+      id: pollId,
+      question,
+      options,
+      allowMultiple
+    }
+  };
+
+  // ---------- SAVE TO CHAT MESSAGES ----------
+  const STORAGE_KEY = `chat_${account.email}_${chatWith.id}`;
+  let messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+  messages.push(pollMessage);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+
+  // ---------- ALSO SAVE TO POLL STORAGE (optional) ----------
+  const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
+  const polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+  polls.push(pollMessage);
+  localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
+
+  // ---------- SET POLL STATUS ----------
+  const POLL_STATUS_KEY = `pollStatus_${account.email}_${chatWith.id}_${pollId}`;
+  localStorage.setItem(POLL_STATUS_KEY, JSON.stringify({ pollId, status: "pending" }));
+
+  // ---------- SEND TO SERVER ----------
+  try {
+    const res = await fetch("https://fweb-backend.onrender.com/fchat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "send_polls",
+        ...pollMessage.pollData,
+        senderId: account.id,
+        email: account.email,
+        chatWithId: chatWith.id
+      })
+    });
+
+    if (res.ok) {
+      pollMessage.status = "sent";
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+      localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
+      localStorage.setItem(POLL_STATUS_KEY, JSON.stringify({ pollId, status: "sent" }));
+    }
+  } catch {
+    console.warn("Poll send failed, kept as pending");
+  }
+
+  window.location.href = "chat.html";
+});
 /* ---------- MESSAGE STORAGE ---------- */
 const STORAGE_KEY = `chat_${account.email}_${chatWith.id}`;
 let messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+
+/* ---------- FORMAT MESSAGE TIME ---------- */
 function formatMessageTime(sentAt) {
   if (!sentAt) return "";
-const date = new Date(sentAt);
+
+  const date = new Date(sentAt);
   const now = new Date();
-const isToday =
-    date.toDateString() === now.toDateString();
-const yesterday = new Date();
+
+  const isToday = date.toDateString() === now.toDateString();
+
+  const yesterday = new Date();
   yesterday.setDate(now.getDate() - 1);
-const isYesterday =
-    date.toDateString() === yesterday.toDateString();
-const time = date.toLocaleTimeString([], {
+  const isYesterday = date.toDateString() === yesterday.toDateString();
+
+  const time = date.toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit"
   });
-if (isToday) {
-    return time;
-  }
-const dayMonth = date.toLocaleDateString([], {
+
+  if (isToday) return time;
+
+  const dayMonth = date.toLocaleDateString([], {
     day: "2-digit",
     month: "short"
   });
-return `${dayMonth} ${time}`;
+
+  return `${dayMonth} ${time}`;
 }
+
+/* ---------- ADD NORMAL MESSAGE ---------- */
+function addMessage(text, senderId, type = "sent") {
+  const msgId = Date.now();
+
+  const msg = {
+    id: msgId,
+    type, // "sent" or "received"
+    senderId,
+    sent_at: msgId,
+    status: "pending",
+    content: text,
+    isPoll: false
+  };
+
+  messages.push(msg);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+
+  return msg;
+}
+
+/* ---------- ADD POLL MESSAGE ---------- */
+function addPollMessage(question, options, allowMultiple, senderId) {
+  const pollId = Date.now();
+
+  const pollMsg = {
+    id: pollId,
+    type: "sent", // or "received" if from other user
+    senderId,
+    sent_at: pollId,
+    status: "pending", // updated when sent to server
+    isPoll: true,
+    pollData: {
+      id: pollId,
+      question,
+      options,
+      allowMultiple
+    }
+  };
+
+  messages.push(pollMsg);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+
+  return pollMsg;
+}
+
+/* ---------- EXAMPLE USAGE ---------- */
+// Normal message
+// addMessage("Hello there!", account.id);
+
+// Poll message
+// addPollMessage(
+//   "Do you like pizza?",
+//   ["Yes", "No", "Maybe"],
+//   false,
+//   account.id
+// );
+
 /* ---------- MULTI SELECT LOGIC ---------- */
 let selectMode = false;
 let selectedMessages = new Set();
