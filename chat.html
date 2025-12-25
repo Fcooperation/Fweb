@@ -1475,6 +1475,41 @@ setInterval(receiveMessages, 1000);
 window.addEventListener("online", receiveMessages);
 </script>
 <script>
+const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
+
+// Function to update pending polls to sent
+function syncPendingPolls() {
+  if (!navigator.onLine) return; // only run when online
+
+  // Load polls from localStorage
+  let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+
+  let updated = false;
+
+  polls.forEach(poll => {
+    if (poll.status === "pending") {
+      poll.status = "sent";
+      updatePollStatus(poll.id, "sent"); // Update localStorage + UI
+      updated = true;
+      console.log(`Poll ${poll.id} status changed to sent`);
+    }
+  });
+
+  if (updated) {
+    // Save updated polls back to localStorage
+    localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
+    // Optionally re-render messages to update UI
+    renderMessages();
+  }
+}
+
+// Listen for when user comes online
+window.addEventListener("online", syncPendingPolls);
+
+// Run immediately if already online
+if (navigator.onLine) syncPendingPolls();
+</script>
+<script>
 document.addEventListener("DOMContentLoaded", () => {
   const addBtn = document.getElementById("add-btn");
   const attachPanel = document.getElementById("attach-panel");
