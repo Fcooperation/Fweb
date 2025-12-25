@@ -1244,7 +1244,9 @@ async function receiveMessages() {
 
     const chatUsername = data.chatWith?.username || "Unknown";
     let changed = false;
-    let newlyReceivedIds = []; // ✅ track new messages
+
+    // ✅ Collect received message IDs
+    const receivedIds = [];
 
     data.data.forEach(msg => {
       const exists = messages.some(m => String(m.id) === String(msg.id));
@@ -1263,7 +1265,7 @@ async function receiveMessages() {
         linked_message_id: msg.linked_message_id || null
       });
 
-      newlyReceivedIds.push(msg.id);
+      receivedIds.push(msg.id);
       changed = true;
     });
 
@@ -1278,8 +1280,9 @@ async function receiveMessages() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "received_messages",
+          ids: receivedIds,
           email: account.email,
-          ids: newlyReceivedIds
+          chatWithId: chatWith.id
         })
       });
 
