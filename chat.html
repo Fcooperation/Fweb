@@ -405,6 +405,87 @@ body {
 #receive-status.offline { color: orange; }
 #receive-status.error { color: red; }
 #receive-status.updated { color: green; }
+/* ---------- POLL MESSAGE (BLANK FOR NOW) ---------- */
+
+.poll-message {
+  background: #000;
+  color: #fff;
+  padding: 14px;
+  border-radius: 14px;
+  width: 80%;
+  margin-left: auto; /* pushes it to the right */
+  margin-right: 0;   /* optional, ensures spacing */
+  margin-bottom: 8px;
+}
+
+.message.sent .poll-message {
+  margin-left: auto; /* right side */
+}
+
+/* Poll question */
+.poll-question {
+  font-weight: bold;
+  font-size: 15px;
+  margin-bottom: 14px;
+  line-height: 1.4;
+  color: #fff;
+}
+
+/* Poll options container */
+.poll-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Single option */
+.poll-option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  overflow: hidden;
+  background: rgba(255,255,255,0.05);
+}
+
+/* Circular checkbox */
+.poll-radio {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #aaa;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Checked state */
+.poll-radio.selected {
+  border-color: #1e88e5;
+  background: #1e88e5;
+}
+
+/* Option text */
+.poll-option-text {
+  font-size: 14px;
+  color: #fff;
+  line-height: 1.4;
+  z-index: 2;
+}
+
+/* Fill bar under each option */
+.poll-fill {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  width: 0%;
+  background: #1e88e5;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+  z-index: 1;
+}
 </style>
 </head>
 <body>
