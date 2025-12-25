@@ -599,35 +599,19 @@ header.onclick = () => {
 const STORAGE_KEY = `chat_${account.email}_${chatWith.id}`;
 let messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
 
-// ---------- POLL STORAGE ----------
+/* ---------- POLL STORAGE ---------- */
 const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
 let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
 
-// ---------- FORMAT TIME ----------
-function formatMessageTime(sentAt) {
-  if (!sentAt) return "";
-  const date = new Date(sentAt);
-  const now = new Date();
-
-  const isToday = date.toDateString() === now.toDateString();
-  const yesterday = new Date();
-  yesterday.setDate(now.getDate() - 1);
-  const isYesterday = date.toDateString() === yesterday.toDateString();
-
-  const time = date.toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit"
-  });
-
-  if (isToday) return time;
-
-  const dayMonth = date.toLocaleDateString([], {
-    day: "2-digit",
-    month: "short"
-  });
-
-  return `${dayMonth} ${time}`;
-}
+/* ---------- NORMALIZE POLLS INTO MESSAGE FORMAT ---------- */
+const normalizedPolls = polls.map(poll => ({
+  id: poll.id,
+  type: "sent",
+  isPoll: true,
+  status: poll.status || "sent",
+  sent_at: poll.sent_at,
+  pollData: poll.pollData
+}));
 /* ---------- MULTI SELECT LOGIC ---------- */
 let selectMode = false;
 let selectedMessages = new Set();
