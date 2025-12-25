@@ -405,87 +405,6 @@ body {
 #receive-status.offline { color: orange; }
 #receive-status.error { color: red; }
 #receive-status.updated { color: green; }
-/* ---------- POLL MESSAGE (BLANK FOR NOW) ---------- */
-
-.poll-message {
-  background: #000;
-  color: #fff;
-  padding: 14px;
-  border-radius: 14px;
-  width: 80%;
-  margin-left: auto; /* pushes it to the right */
-  margin-right: 0;   /* optional, ensures spacing */
-  margin-bottom: 8px;
-}
-
-.message.sent .poll-message {
-  margin-left: auto; /* right side */
-}
-
-/* Poll question */
-.poll-question {
-  font-weight: bold;
-  font-size: 15px;
-  margin-bottom: 14px;
-  line-height: 1.4;
-  color: #fff;
-}
-
-/* Poll options container */
-.poll-options {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-/* Single option */
-.poll-option {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px;
-  border-radius: 10px;
-  cursor: pointer;
-  overflow: hidden;
-  background: rgba(255,255,255,0.05);
-}
-
-/* Circular checkbox */
-.poll-radio {
-  width: 18px;
-  height: 18px;
-  border: 2px solid #aaa;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-/* Checked state */
-.poll-radio.selected {
-  border-color: #1e88e5;
-  background: #1e88e5;
-}
-
-/* Option text */
-.poll-option-text {
-  font-size: 14px;
-  color: #fff;
-  line-height: 1.4;
-  z-index: 2;
-}
-
-/* Fill bar under each option */
-.poll-fill {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  height: 4px;
-  width: 0%;
-  background: #1e88e5;
-  border-radius: 4px;
-  transition: width 0.3s ease;
-  z-index: 1;
-}
 </style>
 </head>
 <body>
@@ -594,172 +513,32 @@ header.onclick = () => {
   }));
   window.location.href = "chatdashboard.html";
 };
-
-document.getElementById("send-btn").addEventListener("click", async () => {
-  const question = document.getElementById("poll-question").value.trim();
-  const options = [...document.querySelectorAll(".poll-option")]
-    .map(o => o.value.trim())
-    .filter(Boolean);
-
-  const allowMultiple = document.getElementById("allow-multiple").checked;
-
-  if (!question || options.length < 2) {
-    alert("Please enter a question and at least two options.");
-    return;
-  }
-
-  const chatWith = JSON.parse(localStorage.getItem("chatting_with")) || {};
-  const account = JSON.parse(localStorage.getItem("faccount")) || {};
-
-  const pollId = Date.now();
-
-  // ---------- CHAT-SAFE POLL OBJECT ----------
-  const pollMessage = {
-    id: pollId,
-    type: "sent",
-    isPoll: true,
-    senderId: account.id,
-    sent_at: Date.now(),
-    status: "pending",
-    pollData: {
-      id: pollId,
-      question,
-      options,
-      allowMultiple
-    }
-  };
-
-  // ---------- SAVE TO CHAT MESSAGES ----------
-  const STORAGE_KEY = `chat_${account.email}_${chatWith.id}`;
-  let messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-  messages.push(pollMessage);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-
-  // ---------- ALSO SAVE TO POLL STORAGE (optional) ----------
-  const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
-  const polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
-  polls.push(pollMessage);
-  localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
-
-  // ---------- SET POLL STATUS ----------
-  const POLL_STATUS_KEY = `pollStatus_${account.email}_${chatWith.id}_${pollId}`;
-  localStorage.setItem(POLL_STATUS_KEY, JSON.stringify({ pollId, status: "pending" }));
-
-  // ---------- SEND TO SERVER ----------
-  try {
-    const res = await fetch("https://fweb-backend.onrender.com/fchat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "send_polls",
-        ...pollMessage.pollData,
-        senderId: account.id,
-        email: account.email,
-        chatWithId: chatWith.id
-      })
-    });
-
-    if (res.ok) {
-      pollMessage.status = "sent";
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-      localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
-      localStorage.setItem(POLL_STATUS_KEY, JSON.stringify({ pollId, status: "sent" }));
-    }
-  } catch {
-    console.warn("Poll send failed, kept as pending");
-  }
-
-  window.location.href = "chat.html";
-});
 /* ---------- MESSAGE STORAGE ---------- */
 const STORAGE_KEY = `chat_${account.email}_${chatWith.id}`;
 let messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-
-/* ---------- FORMAT MESSAGE TIME ---------- */
 function formatMessageTime(sentAt) {
   if (!sentAt) return "";
-
-  const date = new Date(sentAt);
+const date = new Date(sentAt);
   const now = new Date();
-
-  const isToday = date.toDateString() === now.toDateString();
-
-  const yesterday = new Date();
+const isToday =
+    date.toDateString() === now.toDateString();
+const yesterday = new Date();
   yesterday.setDate(now.getDate() - 1);
-  const isYesterday = date.toDateString() === yesterday.toDateString();
-
-  const time = date.toLocaleTimeString([], {
+const isYesterday =
+    date.toDateString() === yesterday.toDateString();
+const time = date.toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit"
   });
-
-  if (isToday) return time;
-
-  const dayMonth = date.toLocaleDateString([], {
+if (isToday) {
+    return time;
+  }
+const dayMonth = date.toLocaleDateString([], {
     day: "2-digit",
     month: "short"
   });
-
-  return `${dayMonth} ${time}`;
+return `${dayMonth} ${time}`;
 }
-
-/* ---------- ADD NORMAL MESSAGE ---------- */
-function addMessage(text, senderId, type = "sent") {
-  const msgId = Date.now();
-
-  const msg = {
-    id: msgId,
-    type, // "sent" or "received"
-    senderId,
-    sent_at: msgId,
-    status: "pending",
-    content: text,
-    isPoll: false
-  };
-
-  messages.push(msg);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-
-  return msg;
-}
-
-/* ---------- ADD POLL MESSAGE ---------- */
-function addPollMessage(question, options, allowMultiple, senderId) {
-  const pollId = Date.now();
-
-  const pollMsg = {
-    id: pollId,
-    type: "sent", // or "received" if from other user
-    senderId,
-    sent_at: pollId,
-    status: "pending", // updated when sent to server
-    isPoll: true,
-    pollData: {
-      id: pollId,
-      question,
-      options,
-      allowMultiple
-    }
-  };
-
-  messages.push(pollMsg);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-
-  return pollMsg;
-}
-
-/* ---------- EXAMPLE USAGE ---------- */
-// Normal message
-// addMessage("Hello there!", account.id);
-
-// Poll message
-// addPollMessage(
-//   "Do you like pizza?",
-//   ["Yes", "No", "Maybe"],
-//   false,
-//   account.id
-// );
-
 /* ---------- MULTI SELECT LOGIC ---------- */
 let selectMode = false;
 let selectedMessages = new Set();
@@ -944,19 +723,6 @@ async function deleteForEveryoneBackend(ids) {
   const data = await res.json();
   return data.success === true;
 }
-// Load polls into messages array
-const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
-const storedPolls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
-
-// Avoid duplicates
-storedPolls.forEach(poll => {
-  if (!messages.find(m => m.id === poll.id)) {
-    messages.push(poll);
-  }
-});
-
-// Now render everything
-renderMessages();
 /* ---------- RENDER MESSAGES ---------- */
 function renderMessages() {
   const box = document.getElementById("chat-body");
@@ -1000,16 +766,18 @@ function renderMessages() {
     // Linked message preview
     if (msg.linked_message === "yes" && msg.linked_message_id) {
       const linked = messages.find(m => String(m.id) === String(msg.linked_message_id));
+
       if (linked) {
         const linkedBox = document.createElement("div");
         linkedBox.className = "linked-preview";
 
         const senderName = linked.type === "sent" ? "You" : chatWith.username;
-        linkedBox.innerHTML = `<strong>${senderName}</strong><br>${linked.text?.slice(0, 80) || "Message"}`;
+        linkedBox.innerHTML = `<strong>${senderName}</strong><br>${linked.text.slice(0, 80) || "Message"}`;
 
         linkedBox.onclick = (e) => {
           if (selectMode) return;
           e.stopPropagation();
+
           const target = document.querySelector(`[data-id='${linked.id}']`);
           if (target) {
             target.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -1022,105 +790,71 @@ function renderMessages() {
       }
     }
 
-    // Poll message rendering
-    if (msg.isPoll) {
-      const pollDiv = document.createElement("div");
-      pollDiv.className = "poll-message";
+    // Message text
+    const textNode = document.createElement("div");
+    textNode.className = "msg-text";
 
-      const questionDiv = document.createElement("div");
-      questionDiv.className = "poll-question";
-      questionDiv.textContent = msg.pollData.question;
-      pollDiv.appendChild(questionDiv);
-
-      const optionsDiv = document.createElement("div");
-      optionsDiv.className = "poll-options";
-
-      msg.pollData.options.forEach((opt, i) => {
-        const optionDiv = document.createElement("div");
-        optionDiv.className = "poll-option";
-
-        const radio = document.createElement("div");
-        radio.className = "poll-radio";
-        optionDiv.appendChild(radio);
-
-        const text = document.createElement("div");
-        text.className = "poll-option-text";
-        text.textContent = opt;
-        optionDiv.appendChild(text);
-
-        const fill = document.createElement("div");
-        fill.className = "poll-fill";
-        optionDiv.appendChild(fill);
-
-        optionsDiv.appendChild(optionDiv);
-      });
-
-      pollDiv.appendChild(optionsDiv);
-      div.appendChild(pollDiv);
+    if (msg.deleted) {
+      textNode.textContent = msg.text;
+      div.classList.add("deleted");
+      div.appendChild(textNode);
     } else {
-      // Normal message text
-      const textNode = document.createElement("div");
-      textNode.className = "msg-text";
+      textNode.textContent = msg.text;
+      div.appendChild(textNode);
 
-      if (msg.deleted) {
-        textNode.textContent = msg.text;
-        div.classList.add("deleted");
-        div.appendChild(textNode);
-      } else {
-        textNode.textContent = msg.text;
-        div.appendChild(textNode);
+      // READ MORE logic
+      requestAnimationFrame(() => {
+        const lineHeight = parseFloat(getComputedStyle(textNode).lineHeight);
 
-        // READ MORE logic
-        requestAnimationFrame(() => {
-          const lineHeight = parseFloat(getComputedStyle(textNode).lineHeight);
-          const INITIAL_LINES = 10;
-          const STEP_LINES = 25;
-          let currentLines = INITIAL_LINES;
+        const INITIAL_LINES = 10;
+        const STEP_LINES = 25;
+        let currentLines = INITIAL_LINES;
 
-          const applyClamp = () => {
-            textNode.style.display = "-webkit-box";
-            textNode.style.webkitBoxOrient = "vertical";
-            textNode.style.webkitLineClamp = currentLines;
-            textNode.style.overflow = "hidden";
-          };
+        const applyClamp = () => {
+          textNode.style.display = "-webkit-box";
+          textNode.style.webkitBoxOrient = "vertical";
+          textNode.style.webkitLineClamp = currentLines;
+          textNode.style.overflow = "hidden";
+        };
 
-          const removeClamp = () => {
-            textNode.style.webkitLineClamp = "unset";
-            textNode.style.display = "block";
-            textNode.style.overflow = "visible";
-          };
+        const removeClamp = () => {
+          textNode.style.webkitLineClamp = "unset";
+          textNode.style.display = "block";
+          textNode.style.overflow = "visible";
+        };
 
-          if (textNode.scrollHeight > lineHeight * INITIAL_LINES) {
-            applyClamp();
+        if (textNode.scrollHeight > lineHeight * INITIAL_LINES) {
+          applyClamp();
 
-            const readMore = document.createElement("div");
-            readMore.className = "read-more";
-            readMore.textContent = "Read more";
+          const readMore = document.createElement("div");
+          readMore.className = "read-more";
+          readMore.textContent = "Read more";
 
-            readMore.onclick = () => {
-              const totalLines = Math.ceil(textNode.scrollHeight / lineHeight);
+          readMore.onclick = () => {
+  const totalLines = Math.ceil(textNode.scrollHeight / lineHeight);
 
-              if (currentLines >= totalLines) {
-                currentLines = INITIAL_LINES;
-                applyClamp();
-                readMore.textContent = "Read more";
-              } else {
-                currentLines += STEP_LINES;
+  if (currentLines >= totalLines) {
+    // READ LESS
+    currentLines = INITIAL_LINES;
+    applyClamp();
+    readMore.textContent = "Read more";
+  } else {
+    // READ MORE
+    currentLines += STEP_LINES;
 
-                if (currentLines >= totalLines) {
-                  removeClamp();
-                  readMore.textContent = "Read less";
-                } else {
-                  applyClamp();
-                  readMore.textContent = "Read more";
-                }
-              }
-            };
+    if (currentLines >= totalLines) {
+      removeClamp();
+      readMore.textContent = "Read less";
+    } else {
+      applyClamp();
+      readMore.textContent = "Read more";
+    }
+  }
+};
 
-            div.appendChild(readMore);
-          }
-        });
-      }
+          div.appendChild(readMore);
+        }
+      });
     }
 
     // Status (sent messages only)
@@ -1143,19 +877,18 @@ function renderMessages() {
         status.append("Sent");
         status.classList.add("status-sent");
       } else if (msg.status === "deleting") {
-        status.append("Deleting…");
-        status.classList.add("status-deleting");
-      } else if (msg.status === "deleted") {
-        status.append("Deleted");
-        status.classList.add("status-deleted");
-      } else if (msg.status === "scheduled") {
-        status.append("Scheduled");
-        status.classList.add("status-scheduled");
-      }
+  status.append("Deleting…");
+  status.classList.add("status-deleting");
+} else if (msg.status === "deleted") {
+  status.append("Deleted");
+  status.classList.add("status-deleted");
+}else if (msg.status === "scheduled") {
+  status.append("Scheduled");
+  status.classList.add("status-scheduled");
+} 
 
       div.appendChild(status);
     }
-
     div.dataset.id = msg.id;
     box.appendChild(div);
   });
@@ -1561,6 +1294,36 @@ window.addEventListener("online", () => {
 /* ---------- AUTO RECEIVE ---------- */
 setInterval(receiveMessages, 1000);
 window.addEventListener("online", receiveMessages);
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+const addBtn = document.getElementById("add-btn");
+const attachPanel = document.getElementById("attach-panel");
+const input = document.getElementById("message-input");
+
+addBtn.onclick = () => {
+input.blur(); // close keyboard first
+setTimeout(() => {
+attachPanel.classList.add("active");
+}, 150);
+};
+
+// Close panel when tapping outside of it
+document.addEventListener("click", (e) => {
+  if (
+    attachPanel.classList.contains("active") &&
+    !attachPanel.contains(e.target) &&
+    e.target !== addBtn
+  ) {
+    attachPanel.classList.remove("active");
+
+    // 👇 reopen keyboard AFTER panel closes
+    setTimeout(() => {
+      input.focus();
+    }, 150); // match your animation time
+  }
+});
+});
 </script>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
