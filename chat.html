@@ -1327,4 +1327,34 @@ document.addEventListener("click", (e) => {
 });
 });
 </script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+const addBtn = document.getElementById("add-btn");
+const attachPanel = document.getElementById("attach-panel");
+const input = document.getElementById("message-input");
+
+addBtn.onclick = () => {
+input.blur(); // close keyboard first
+setTimeout(() => {
+attachPanel.classList.add("active");
+}, 150);
+};
+
+// Close panel when tapping outside of it
+document.addEventListener("click", (e) => {
+  if (
+    attachPanel.classList.contains("active") &&
+    !attachPanel.contains(e.target) &&
+    e.target !== addBtn
+  ) {
+    attachPanel.classList.remove("active");
+
+    // 👇 reopen keyboard AFTER panel closes
+    setTimeout(() => {
+      input.focus();
+    }, 150); // match your animation time
+  }
+});
+});
+</script>
 </body></html>
