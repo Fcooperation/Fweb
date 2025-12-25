@@ -1244,6 +1244,7 @@ async function receiveMessages() {
 
     const chatUsername = data.chatWith?.username || "Unknown";
     let changed = false;
+    let newlyReceivedIds = []; // ✅ track new messages
 
     data.data.forEach(msg => {
       const exists = messages.some(m => String(m.id) === String(msg.id));
@@ -1262,13 +1263,25 @@ async function receiveMessages() {
         linked_message_id: msg.linked_message_id || null
       });
 
+      newlyReceivedIds.push(msg.id);
       changed = true;
     });
 
-    // ✅ ONLY mark Updated if something arrived
+    // ✅ Save + render
     if (changed) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
       renderMessages();
+
+      // ✅ Notify backend that messages were received
+      await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "received_messages",
+          email: account.email,
+          ids: newlyReceivedIds
+        })
+      });
 
       if (statusEl) {
         statusEl.textContent = "Updated";
