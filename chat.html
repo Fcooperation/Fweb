@@ -568,28 +568,38 @@ header.onclick = () => {
 /* ---------- MESSAGE STORAGE ---------- */
 const STORAGE_KEY = `chat_${account.email}_${chatWith.id}`;
 let messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+
+/* ---------- POLL STORAGE ---------- */
+const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
+let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+
+/* ---------- TIME FORMATTER ---------- */
 function formatMessageTime(sentAt) {
   if (!sentAt) return "";
-const date = new Date(sentAt);
+
+  const date = new Date(sentAt);
   const now = new Date();
-const isToday =
-    date.toDateString() === now.toDateString();
-const yesterday = new Date();
+
+  const isToday = date.toDateString() === now.toDateString();
+
+  const yesterday = new Date();
   yesterday.setDate(now.getDate() - 1);
-const isYesterday =
-    date.toDateString() === yesterday.toDateString();
-const time = date.toLocaleTimeString([], {
+
+  const isYesterday = date.toDateString() === yesterday.toDateString();
+
+  const time = date.toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit"
   });
-if (isToday) {
-    return time;
-  }
-const dayMonth = date.toLocaleDateString([], {
+
+  if (isToday) return time;
+
+  const dayMonth = date.toLocaleDateString([], {
     day: "2-digit",
     month: "short"
   });
-return `${dayMonth} ${time}`;
+
+  return `${dayMonth} ${time}`;
 }
 /* ---------- MULTI SELECT LOGIC ---------- */
 let selectMode = false;
@@ -775,25 +785,6 @@ async function deleteForEveryoneBackend(ids) {
   const data = await res.json();
   return data.success === true;
 }
-// Check for pending poll in localStorage
-const pendingPollJSON = localStorage.getItem("pendingPoll");
-if (pendingPollJSON) {
-  const poll = JSON.parse(pendingPollJSON);
-
-  messages.push({
-    id: poll.id,
-    type: "poll",
-    status: "sent",
-    question: poll.question,
-    options: poll.options.map(opt => ({ text: opt, votes: 0 })),
-    allowMultiple: poll.allowMultiple,
-    sender_username: "You" // or chatWith.username if received
-  });
-
-  // Remove it from localStorage
-  localStorage.removeItem("pendingPoll");
-}
-
 /* ---------- RENDER MESSAGES ---------- */
 function renderMessages() {
   const box = document.getElementById("chat-body");
@@ -927,58 +918,7 @@ function renderMessages() {
         }
       });
     }
-    
-    // ✅ Poll message
-if (msg.type === "poll") {
-  const pollBox = document.createElement("div");
-  pollBox.className = "message poll-message"; // no received/sent
-  pollBox.dataset.id = msg.id;
 
-  // Question
-  const questionDiv = document.createElement("div");
-  questionDiv.textContent = msg.question;
-  questionDiv.style.fontWeight = "bold";
-  questionDiv.style.padding = "8px";
-  questionDiv.style.marginBottom = "10px";
-  pollBox.appendChild(questionDiv);
-
-  // Options
-  msg.options.forEach((opt, idx) => {
-    const optionDiv = document.createElement("div");
-    optionDiv.className = "poll-option-bar";
-
-    const circle = document.createElement("div");
-    circle.className = "poll-circle";
-
-    const fill = document.createElement("div");
-    fill.className = "poll-fill";
-    circle.appendChild(fill);
-
-    const label = document.createElement("span");
-    label.textContent = opt.text;
-    label.style.color = "#fff";
-
-    optionDiv.appendChild(circle);
-    optionDiv.appendChild(label);
-    pollBox.appendChild(optionDiv);
-
-    optionDiv.onclick = () => {
-      if (!msg.allowMultiple) {
-        // remove previous selection
-        msg.options.forEach((o, i) => {
-          o.selected = false;
-          const f = pollBox.querySelectorAll(".poll-fill")[i];
-          if (f) f.style.width = "0%";
-        });
-      }
-
-      opt.selected = !opt.selected;
-      fill.style.width = opt.selected ? "100%" : "0%";
-    };
-  });
-
-  div.appendChild(pollBox);
-}
     // Status (sent messages only)
     if (msg.type === "sent") {
       const status = document.createElement("div");
@@ -1419,38 +1359,32 @@ window.addEventListener("online", receiveMessages);
 </script>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  const addBtn = document.getElementById("add-btn");
-  const attachPanel = document.getElementById("attach-panel");
-  const input = document.getElementById("message-input");
+const addBtn = document.getElementById("add-btn");
+const attachPanel = document.getElementById("attach-panel");
+const input = document.getElementById("message-input");
 
-  addBtn.onclick = () => {
-    input.blur(); // close keyboard first
+addBtn.onclick = () => {
+input.blur(); // close keyboard first
+setTimeout(() => {
+attachPanel.classList.add("active");
+}, 150);
+};
+
+// Close panel when tapping outside of it
+document.addEventListener("click", (e) => {
+  if (
+    attachPanel.classList.contains("active") &&
+    !attachPanel.contains(e.target) &&
+    e.target !== addBtn
+  ) {
+    attachPanel.classList.remove("active");
+
+    // 👇 reopen keyboard AFTER panel closes
     setTimeout(() => {
-      attachPanel.classList.add("active");
-    }, 150);
-  };
-
-  // Close panel when tapping outside of it
-  document.addEventListener("click", (e) => {
-    if (
-      attachPanel.classList.contains("active") &&
-      !attachPanel.contains(e.target) &&
-      e.target !== addBtn
-    ) {
-      attachPanel.classList.remove("active");
-
-      // 👇 reopen keyboard AFTER panel closes
-      setTimeout(() => {
-        input.focus();
-      }, 150); // match your animation time
-    }
-  });
-
-  // ✅ New: Poll click redirects
-  const pollItem = document.querySelector(".attach-item"); // grab your poll div
-  pollItem.addEventListener("click", () => {
-    window.location.href = "fchatpoll.html";
-  });
+      input.focus();
+    }, 150); // match your animation time
+  }
+});
 });
 </script>
 </body></html>
