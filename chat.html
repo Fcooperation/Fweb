@@ -599,19 +599,35 @@ header.onclick = () => {
 const STORAGE_KEY = `chat_${account.email}_${chatWith.id}`;
 let messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
 
-/* ---------- POLL STORAGE ---------- */
+// ---------- POLL STORAGE ----------
 const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
 let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
 
-/* ---------- NORMALIZE POLLS INTO MESSAGE FORMAT ---------- */
-const normalizedPolls = polls.map(poll => ({
-  id: poll.id,
-  type: "sent",
-  isPoll: true,
-  status: poll.status || "sent",
-  sent_at: poll.sent_at,
-  pollData: poll.pollData
-}));
+// ---------- FORMAT TIME ----------
+function formatMessageTime(sentAt) {
+  if (!sentAt) return "";
+  const date = new Date(sentAt);
+  const now = new Date();
+
+  const isToday = date.toDateString() === now.toDateString();
+  const yesterday = new Date();
+  yesterday.setDate(now.getDate() - 1);
+  const isYesterday = date.toDateString() === yesterday.toDateString();
+
+  const time = date.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+
+  if (isToday) return time;
+
+  const dayMonth = date.toLocaleDateString([], {
+    day: "2-digit",
+    month: "short"
+  });
+
+  return `${dayMonth} ${time}`;
+}
 /* ---------- MULTI SELECT LOGIC ---------- */
 let selectMode = false;
 let selectedMessages = new Set();
@@ -808,43 +824,7 @@ function getTimeline() {
 
   return merged;
 }
-// ---------- GET POLL STATUS ----------
-function getPollStatus(pollId) {
-  const POLL_STATUS_KEY = `pollStatus_${account.email}_${chatWith.id}_${pollId}`;
-  const pollStatusRaw = localStorage.getItem(POLL_STATUS_KEY);
-  
-  if (pollStatusRaw) {
-    try {
-      const parsed = JSON.parse(pollStatusRaw);
-      if (parsed.pollId === pollId) {
-        return parsed.status; // "pending" or "sent"
-      }
-    } catch {}
-  }
-  
-  return "pending"; // default fallback
-}
 
-// ---------- UPDATE POLL STATUS ----------
-function updatePollStatus(pollId, newStatus) {
-  const POLL_STATUS_KEY = `pollStatus_${account.email}_${chatWith.id}_${pollId}`;
-  localStorage.setItem(POLL_STATUS_KEY, JSON.stringify({ pollId, status: newStatus }));
-
-  // Optional: also update the poll object in polls array
-  const polls = JSON.parse(localStorage.getItem(`polls_${account.email}_${chatWith.id}`)) || [];
-  const poll = polls.find(p => p.id === pollId);
-  if (poll) {
-    poll.status = newStatus;
-    localStorage.setItem(`polls_${account.email}_${chatWith.id}`, JSON.stringify(polls));
-  }
-
-  // Optional: refresh just this poll's display on the page
-  const pollEl = document.querySelector(`.poll-message[data-id='${pollId}'] .status-text`);
-  if (pollEl) {
-    pollEl.textContent = newStatus === "pending" ? "Pending" : "Sent";
-    pollEl.className = "status-text " + (newStatus === "pending" ? "status-pending" : "status-sent");
-  }
-}
 /* ---------- RENDER MESSAGES ---------- */
 function renderMessages() {
   const box = document.getElementById("chat-body");
@@ -921,8 +901,19 @@ if (msg.isPoll) {
   const pollBox = document.createElement("div");
   pollBox.className = "poll-message";
 
-// ---------- READ POLL STATUS ----------
-let pollStatus = getPollStatus(msg.pollData?.id);
+  // ---------- READ POLL STATUS FROM LOCALSTORAGE ----------
+  const POLL_STATUS_KEY = `pollStatus_${account.email}_${chatWith.id}_${msg.pollData?.id}`;
+  let pollStatus = "sent"; // default fallback
+
+  const pollStatusRaw = localStorage.getItem(POLL_STATUS_KEY);
+  if (pollStatusRaw) {
+    try {
+      const parsed = JSON.parse(pollStatusRaw);
+      if (parsed.pollId === msg.pollData?.id) {
+        pollStatus = parsed.status; // "pending" or "sent"
+      }
+    } catch {}
+  }
 
   // ---------- OPTIONS ----------
   const optionsHtml = (msg.pollData?.options || []).map((opt, index) => `
