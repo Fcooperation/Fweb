@@ -184,6 +184,17 @@ body {
 .status-scheduled { color: orange; }
 .pending { opacity: 0.6; }
 .scheduled { opacity: 0.6; }
+.status-seen {
+  color: #1e88e5;          /* blue color for seen */
+  font-weight: bold;        /* bold text */
+  position: relative;       /* needed for the blue dot */
+}
+
+/* Add the blue dot before the text */
+.status-seen::before {
+  content: "🔵";            /* the blue dot */
+  margin-right: 6px;        /* space between dot and text */
+}
 
 /* ---------- MESSAGE TIME ---------- */
 .message-time {
@@ -725,6 +736,45 @@ async function deleteForEveryoneBackend(ids) {
   const data = await res.json();
   return data.success === true;
 }
+// ---------- CHECK RECEIVED MESSAGES (SEEN STATUS) ----------
+async function checkReceivedMessages() {
+  if (!navigator.onLine) return;
+
+  try {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "get_received_messages",
+        email: account.email,
+        chatWithId: chatWith.id
+      })
+    });
+
+    const data = await res.json();
+    if (!data || !Array.isArray(data.ids)) return;
+
+    let updated = false;
+
+    data.ids.forEach(id => {
+      const msg = messages.find(m => String(m.id) === String(id));
+      if (msg && msg.status !== "seen") {
+        msg.status = "seen";
+        updated = true;
+      }
+    });
+
+    if (updated) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+      renderMessages();
+    }
+
+  } catch (err) {
+    console.warn("checkReceivedMessages failed:", err);
+  }
+}
+//Call it every second
+setInterval(checkReceivedMessages, 1000);
 /* ---------- RENDER MESSAGES ---------- */
 function renderMessages() {
   const box = document.getElementById("chat-body");
@@ -887,7 +937,10 @@ function renderMessages() {
 }else if (msg.status === "scheduled") {
   status.append("Scheduled");
   status.classList.add("status-scheduled");
-} 
+} else if (msg.status === "seen") {
+  status.append("Seen");
+  status.classList.add("status-seen");
+}
 
       div.appendChild(status);
     }
