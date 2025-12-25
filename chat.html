@@ -871,56 +871,6 @@ function renderMessages() {
   messages.forEach(msg => {
     const div = document.createElement("div");
     div.className = "message " + msg.type + (msg.status === "pending" ? " pending" : "");
-    div.dataset.id = msg.id;
-
-    // --------- POLL MESSAGE ----------
-    if (msg.isPoll && msg.pollData) {
-      div.classList.add("poll-message");
-
-      // Poll question
-      const questionDiv = document.createElement("div");
-      questionDiv.className = "poll-question";
-      questionDiv.textContent = msg.pollData.question;
-      div.appendChild(questionDiv);
-
-      // Poll options
-      const optionsDiv = document.createElement("div");
-      optionsDiv.className = "poll-options";
-
-      msg.pollData.options.forEach((optionText, idx) => {
-        const optionDiv = document.createElement("div");
-        optionDiv.className = "poll-option";
-
-        const radio = document.createElement("div");
-        radio.className = "poll-radio";
-        // Optional: mark selected if you store it
-        if (msg.pollData.selectedOptions && msg.pollData.selectedOptions.includes(idx)) {
-          radio.classList.add("selected");
-        }
-
-        const text = document.createElement("div");
-        text.className = "poll-option-text";
-        text.textContent = optionText;
-
-        const fill = document.createElement("div");
-        fill.className = "poll-fill";
-        // Optional: set width to show results if available
-        if (msg.pollData.optionPercentages && msg.pollData.optionPercentages[idx] !== undefined) {
-          fill.style.width = msg.pollData.optionPercentages[idx] + "%";
-        }
-
-        optionDiv.appendChild(radio);
-        optionDiv.appendChild(text);
-        optionDiv.appendChild(fill);
-        optionsDiv.appendChild(optionDiv);
-      });
-
-      div.appendChild(optionsDiv);
-      box.appendChild(div);
-      return; // skip normal message rendering
-    }
-
-    // --------- NORMAL MESSAGE ----------
 
     // Header (username) – only for received messages
     if (msg.type === "received") {
@@ -928,7 +878,10 @@ function renderMessages() {
       header.className = "msg-username";
       header.textContent = msg.sender_username || "Unknown";
       div.appendChild(header);
+    }
 
+    // Time – ONLY for received messages
+    if (msg.type === "received") {
       const timeDiv = document.createElement("div");
       timeDiv.className = "msg-time";
       timeDiv.textContent = formatMessageTime(msg.sent_at);
@@ -950,11 +903,131 @@ function renderMessages() {
       div.appendChild(replyBox);
     }
 
-    // Message text
-    const textNode = document.createElement("div");
-    textNode.className = "msg-text";
-    textNode.textContent = msg.text || "";
-    div.appendChild(textNode);
+    // Linked message preview
+    if (msg.linked_message === "yes" && msg.linked_message_id) {
+      const linked = messages.find(m => String(m.id) === String(msg.linked_message_id));
+      if (linked) {
+        const linkedBox = document.createElement("div");
+        linkedBox.className = "linked-preview";
+
+        const senderName = linked.type === "sent" ? "You" : chatWith.username;
+        linkedBox.innerHTML = `<strong>${senderName}</strong><br>${linked.text?.slice(0, 80) || "Message"}`;
+
+        linkedBox.onclick = (e) => {
+          if (selectMode) return;
+          e.stopPropagation();
+          const target = document.querySelector(`[data-id='${linked.id}']`);
+          if (target) {
+            target.scrollIntoView({ behavior: "smooth", block: "center" });
+            target.classList.add("highlight");
+            setTimeout(() => target.classList.remove("highlight"), 1200);
+          }
+        };
+
+        div.appendChild(linkedBox);
+      }
+    }
+
+    // Poll message rendering
+    if (msg.isPoll) {
+      const pollDiv = document.createElement("div");
+      pollDiv.className = "poll-message";
+
+      const questionDiv = document.createElement("div");
+      questionDiv.className = "poll-question";
+      questionDiv.textContent = msg.pollData.question;
+      pollDiv.appendChild(questionDiv);
+
+      const optionsDiv = document.createElement("div");
+      optionsDiv.className = "poll-options";
+
+      msg.pollData.options.forEach((opt, i) => {
+        const optionDiv = document.createElement("div");
+        optionDiv.className = "poll-option";
+
+        const radio = document.createElement("div");
+        radio.className = "poll-radio";
+        optionDiv.appendChild(radio);
+
+        const text = document.createElement("div");
+        text.className = "poll-option-text";
+        text.textContent = opt;
+        optionDiv.appendChild(text);
+
+        const fill = document.createElement("div");
+        fill.className = "poll-fill";
+        optionDiv.appendChild(fill);
+
+        optionsDiv.appendChild(optionDiv);
+      });
+
+      pollDiv.appendChild(optionsDiv);
+      div.appendChild(pollDiv);
+    } else {
+      // Normal message text
+      const textNode = document.createElement("div");
+      textNode.className = "msg-text";
+
+      if (msg.deleted) {
+        textNode.textContent = msg.text;
+        div.classList.add("deleted");
+        div.appendChild(textNode);
+      } else {
+        textNode.textContent = msg.text;
+        div.appendChild(textNode);
+
+        // READ MORE logic
+        requestAnimationFrame(() => {
+          const lineHeight = parseFloat(getComputedStyle(textNode).lineHeight);
+          const INITIAL_LINES = 10;
+          const STEP_LINES = 25;
+          let currentLines = INITIAL_LINES;
+
+          const applyClamp = () => {
+            textNode.style.display = "-webkit-box";
+            textNode.style.webkitBoxOrient = "vertical";
+            textNode.style.webkitLineClamp = currentLines;
+            textNode.style.overflow = "hidden";
+          };
+
+          const removeClamp = () => {
+            textNode.style.webkitLineClamp = "unset";
+            textNode.style.display = "block";
+            textNode.style.overflow = "visible";
+          };
+
+          if (textNode.scrollHeight > lineHeight * INITIAL_LINES) {
+            applyClamp();
+
+            const readMore = document.createElement("div");
+            readMore.className = "read-more";
+            readMore.textContent = "Read more";
+
+            readMore.onclick = () => {
+              const totalLines = Math.ceil(textNode.scrollHeight / lineHeight);
+
+              if (currentLines >= totalLines) {
+                currentLines = INITIAL_LINES;
+                applyClamp();
+                readMore.textContent = "Read more";
+              } else {
+                currentLines += STEP_LINES;
+
+                if (currentLines >= totalLines) {
+                  removeClamp();
+                  readMore.textContent = "Read less";
+                } else {
+                  applyClamp();
+                  readMore.textContent = "Read more";
+                }
+              }
+            };
+
+            div.appendChild(readMore);
+          }
+        });
+      }
+    }
 
     // Status (sent messages only)
     if (msg.type === "sent") {
@@ -966,14 +1039,30 @@ function renderMessages() {
       timeSpan.textContent = formatMessageTime(msg.sent_at);
       status.appendChild(timeSpan);
 
-      if (msg.status === "sending") status.append("Sending…");
-      else if (msg.status === "pending") status.append("Pending");
-      else if (msg.status === "sent") status.append("Sent");
-      else if (msg.status === "deleted") status.append("Deleted");
+      if (msg.status === "sending") {
+        status.append("Sending…");
+        status.classList.add("status-sending");
+      } else if (msg.status === "pending") {
+        status.append("Pending");
+        status.classList.add("status-pending");
+      } else if (msg.status === "sent") {
+        status.append("Sent");
+        status.classList.add("status-sent");
+      } else if (msg.status === "deleting") {
+        status.append("Deleting…");
+        status.classList.add("status-deleting");
+      } else if (msg.status === "deleted") {
+        status.append("Deleted");
+        status.classList.add("status-deleted");
+      } else if (msg.status === "scheduled") {
+        status.append("Scheduled");
+        status.classList.add("status-scheduled");
+      }
 
       div.appendChild(status);
     }
 
+    div.dataset.id = msg.id;
     box.appendChild(div);
   });
 
