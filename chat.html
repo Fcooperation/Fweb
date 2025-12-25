@@ -549,6 +549,7 @@ body {
     <div class="attach-item" id="poll-btn">📊 Poll</div>
   </div>
 </div>
+</div>
 <script>
 const API_URL = "https://fweb-backend.onrender.com/fchat";
 /* ---------- LOAD CHAT TARGET ---------- */
@@ -594,9 +595,32 @@ header.onclick = () => {
   }));
   window.location.href = "chatdashboard.html";
 };
-/* ---------- POLL STORAGE ---------- */
-const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
-let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+/* ---------- MESSAGE STORAGE ---------- */
+const STORAGE_KEY = `chat_${account.email}_${chatWith.id}`;
+let messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+function formatMessageTime(sentAt) {
+  if (!sentAt) return "";
+const date = new Date(sentAt);
+  const now = new Date();
+const isToday =
+    date.toDateString() === now.toDateString();
+const yesterday = new Date();
+  yesterday.setDate(now.getDate() - 1);
+const isYesterday =
+    date.toDateString() === yesterday.toDateString();
+const time = date.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+if (isToday) {
+    return time;
+  }
+const dayMonth = date.toLocaleDateString([], {
+    day: "2-digit",
+    month: "short"
+  });
+return `${dayMonth} ${time}`;
+}
 /* ---------- MULTI SELECT LOGIC ---------- */
 let selectMode = false;
 let selectedMessages = new Set();
