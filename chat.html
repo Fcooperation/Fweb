@@ -781,31 +781,6 @@ async function deleteForEveryoneBackend(ids) {
   const data = await res.json();
   return data.success === true;
 }
-/*---------- RENDER POLLS ---------- */
-function renderPolls() {
-  const pollContainer = document.getElementById("poll-container");
-  if (!pollContainer) return;
-
-  pollContainer.innerHTML = "";
-
-  polls.forEach(poll => {
-    const div = document.createElement("div");
-    div.className = "poll-message";
-
-    div.innerHTML = `
-      <div class="poll-question">${poll.pollData.question}</div>
-      <div class="poll-options">
-        ${poll.pollData.options.map(opt => `
-          <div class="poll-option">${opt}</div>
-        `).join("")}
-      </div>
-      <small>${formatMessageTime(poll.sent_at)}</small>
-    `;
-
-    pollContainer.appendChild(div);
-  });
-}
-
 /* ---------- RENDER MESSAGES ---------- */
 function renderMessages() {
   const box = document.getElementById("chat-body");
@@ -979,7 +954,6 @@ function renderMessages() {
   scrollToBottom();
   enableMessageTap();
   enableMultiSelect();
-  renderPolls();
 }
 function enableMessageTap() {
   const allMessages = document.querySelectorAll(".message");
