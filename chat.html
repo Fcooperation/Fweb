@@ -100,6 +100,7 @@ body {
   display: inline-block;   /* inline with status text */
   float: right;            /* right side inside bubble */
   margin-left: 6px;        /* spacing from status */
+  min-width: 60%;
 }
 .status-text.sent {
   display: inline-block;   /* keep inline with time */
@@ -549,7 +550,6 @@ body {
     <div class="attach-item" id="poll-btn">📊 Poll</div>
   </div>
 </div>
-</div>
 <script>
 const API_URL = "https://fweb-backend.onrender.com/fchat";
 /* ---------- LOAD CHAT TARGET ---------- */
@@ -598,28 +598,35 @@ header.onclick = () => {
 /* ---------- MESSAGE STORAGE ---------- */
 const STORAGE_KEY = `chat_${account.email}_${chatWith.id}`;
 let messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+
+// ---------- POLL STORAGE ----------
+const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
+let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+
+// ---------- FORMAT TIME ----------
 function formatMessageTime(sentAt) {
   if (!sentAt) return "";
-const date = new Date(sentAt);
+  const date = new Date(sentAt);
   const now = new Date();
-const isToday =
-    date.toDateString() === now.toDateString();
-const yesterday = new Date();
+
+  const isToday = date.toDateString() === now.toDateString();
+  const yesterday = new Date();
   yesterday.setDate(now.getDate() - 1);
-const isYesterday =
-    date.toDateString() === yesterday.toDateString();
-const time = date.toLocaleTimeString([], {
+  const isYesterday = date.toDateString() === yesterday.toDateString();
+
+  const time = date.toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit"
   });
-if (isToday) {
-    return time;
-  }
-const dayMonth = date.toLocaleDateString([], {
+
+  if (isToday) return time;
+
+  const dayMonth = date.toLocaleDateString([], {
     day: "2-digit",
     month: "short"
   });
-return `${dayMonth} ${time}`;
+
+  return `${dayMonth} ${time}`;
 }
 /* ---------- MULTI SELECT LOGIC ---------- */
 let selectMode = false;
@@ -805,12 +812,26 @@ async function deleteForEveryoneBackend(ids) {
   const data = await res.json();
   return data.success === true;
 }
+// ---------- LOAD POLLS INTO TIMELINE ----------
+function getTimeline() {
+  // Merge messages and polls arrays
+  const merged = [...messages, ...polls];
+
+  // Sort by sent_at so they appear in correct order
+  merged.sort((a, b) => {
+    return new Date(a.sent_at) - new Date(b.sent_at);
+  });
+
+  return merged;
+}
+
 /* ---------- RENDER MESSAGES ---------- */
 function renderMessages() {
   const box = document.getElementById("chat-body");
   box.innerHTML = "";
 
-  messages.forEach(msg => {
+  // Use timeline (merged messages + polls, sorted by sent_at)
+  getTimeline().forEach(msg => {
     const div = document.createElement("div");
     div.className = "message " + msg.type + (msg.status === "pending" ? " pending" : "");
 
@@ -829,6 +850,9 @@ function renderMessages() {
       timeDiv.textContent = formatMessageTime(msg.sent_at);
       div.appendChild(timeDiv);
     }
+
+    // ... rest of your existing render logic
+
 
     // Reply preview
     if (msg.replyTo) {
@@ -871,7 +895,79 @@ function renderMessages() {
         div.appendChild(linkedBox);
       }
     }
+    
+// ---------- POLL MESSAGE ----------
+if (msg.isPoll) {
+  const pollBox = document.createElement("div");
+  pollBox.className = "poll-message";
 
+  // ---------- READ POLL STATUS FROM LOCALSTORAGE ----------
+  const POLL_STATUS_KEY = `pollStatus_${account.email}_${chatWith.id}_${msg.pollData?.id}`;
+  let pollStatus = "sent"; // default fallback
+
+  const pollStatusRaw = localStorage.getItem(POLL_STATUS_KEY);
+  if (pollStatusRaw) {
+    try {
+      const parsed = JSON.parse(pollStatusRaw);
+      if (parsed.pollId === msg.pollData?.id) {
+        pollStatus = parsed.status; // "pending" or "sent"
+      }
+    } catch {}
+  }
+
+  // ---------- OPTIONS ----------
+  const optionsHtml = (msg.pollData?.options || []).map((opt, index) => `
+    <div class="poll-option" data-index="${index}">
+      <span class="poll-radio"></span>
+      <span class="poll-option-text">${opt}</span>
+      <div class="poll-fill"></div>
+    </div>
+  `).join("");
+
+  pollBox.innerHTML = `
+    <div class="poll-question">${msg.pollData?.question || "Poll"}</div>
+    <div class="poll-options">${optionsHtml}</div>
+  `;
+
+  // ---------- STATUS ----------
+  const statusDiv = document.createElement("div");
+  statusDiv.className = "status-text";
+
+  if (pollStatus === "pending") {
+    statusDiv.textContent = "Pending";
+    statusDiv.classList.add("status-pending");
+  } else {
+    statusDiv.textContent = "Sent";
+    statusDiv.classList.add("status-sent");
+  }
+
+  pollBox.appendChild(statusDiv);
+
+  document.getElementById("chat-body").appendChild(pollBox);
+
+  // ---------- INTERACTION ----------
+  const allowMultiple = msg.pollData?.allowMultiple;
+  const optionEls = pollBox.querySelectorAll(".poll-option");
+
+  optionEls.forEach(optEl => {
+    const radio = optEl.querySelector(".poll-radio");
+    const fill = optEl.querySelector(".poll-fill");
+
+    optEl.onclick = () => {
+      if (!allowMultiple) {
+        optionEls.forEach(o => {
+          o.querySelector(".poll-radio").classList.remove("selected");
+          o.querySelector(".poll-fill").style.width = "0%";
+        });
+      }
+
+      const selected = radio.classList.toggle("selected");
+      fill.style.width = selected ? "100%" : "0%";
+    };
+  });
+
+  return; // exit early for poll message
+}
     // Message text
     const textNode = document.createElement("div");
     textNode.className = "msg-text";
@@ -979,6 +1075,7 @@ function renderMessages() {
   enableMessageTap();
   enableMultiSelect();
 }
+
 function enableMessageTap() {
   const allMessages = document.querySelectorAll(".message");
 allMessages.forEach(msgEl => {
@@ -1376,36 +1473,6 @@ window.addEventListener("online", () => {
 /* ---------- AUTO RECEIVE ---------- */
 setInterval(receiveMessages, 1000);
 window.addEventListener("online", receiveMessages);
-</script>
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-const addBtn = document.getElementById("add-btn");
-const attachPanel = document.getElementById("attach-panel");
-const input = document.getElementById("message-input");
-
-addBtn.onclick = () => {
-input.blur(); // close keyboard first
-setTimeout(() => {
-attachPanel.classList.add("active");
-}, 150);
-};
-
-// Close panel when tapping outside of it
-document.addEventListener("click", (e) => {
-  if (
-    attachPanel.classList.contains("active") &&
-    !attachPanel.contains(e.target) &&
-    e.target !== addBtn
-  ) {
-    attachPanel.classList.remove("active");
-
-    // 👇 reopen keyboard AFTER panel closes
-    setTimeout(() => {
-      input.focus();
-    }, 150); // match your animation time
-  }
-});
-});
 </script>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
