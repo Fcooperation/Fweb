@@ -944,6 +944,19 @@ async function deleteForEveryoneBackend(ids) {
   const data = await res.json();
   return data.success === true;
 }
+// Load polls into messages array
+const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
+const storedPolls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+
+// Avoid duplicates
+storedPolls.forEach(poll => {
+  if (!messages.find(m => m.id === poll.id)) {
+    messages.push(poll);
+  }
+});
+
+// Now render everything
+renderMessages();
 /* ---------- RENDER MESSAGES ---------- */
 function renderMessages() {
   const box = document.getElementById("chat-body");
