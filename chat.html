@@ -100,7 +100,6 @@ body {
   display: inline-block;   /* inline with status text */
   float: right;            /* right side inside bubble */
   margin-left: 6px;        /* spacing from status */
-  min-width: 60%;
 }
 .status-text.sent {
   display: inline-block;   /* keep inline with time */
@@ -406,86 +405,55 @@ body {
 #receive-status.offline { color: orange; }
 #receive-status.error { color: red; }
 #receive-status.updated { color: green; }
-/* ---------- POLL MESSAGE (BLANK FOR NOW) ---------- */
-
+/* Poll message styling */
 .poll-message {
-  background: #000;
-  color: #fff;
-  padding: 14px;
+  background: #000 !important;    /* black background */
+  color: #fff;                     /* white text */
+  padding: 10px;
   border-radius: 14px;
-  width: 80%;
-  margin-left: auto; /* pushes it to the right */
-  margin-right: 0;   /* optional, ensures spacing */
-  margin-bottom: 8px;
-}
-
-.message.sent .poll-message {
-  margin-left: auto; /* right side */
-}
-
-/* Poll question */
-.poll-question {
-  font-weight: bold;
-  font-size: 15px;
-  margin-bottom: 14px;
-  line-height: 1.4;
-  color: #fff;
-}
-
-/* Poll options container */
-.poll-options {
+  margin: 10px 0;
+  align-self: flex-end !important; /* force right side */
+  max-width: 80%;                  /* width 80% of chat */
   display: flex;
   flex-direction: column;
-  gap: 12px;
 }
 
-/* Single option */
-.poll-option {
-  position: relative;
+/* Poll options styling */
+.poll-option-bar {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px;
-  border-radius: 10px;
+  margin-bottom: 6px;
   cursor: pointer;
-  overflow: hidden;
-  background: rgba(255,255,255,0.05);
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: #333;               /* dark grey background for options */
+  transition: background 0.2s;
 }
 
-/* Circular checkbox */
-.poll-radio {
+.poll-option-bar:hover {
+  background: rgba(30, 136, 229, 0.1);
+}
+
+/* Circle selection with loading effect */
+.poll-circle {
   width: 18px;
   height: 18px;
-  border: 2px solid #aaa;
+  border: 2px solid #1e88e5;
   border-radius: 50%;
+  margin-right: 10px;
+  position: relative;
   flex-shrink: 0;
 }
 
-/* Checked state */
-.poll-radio.selected {
-  border-color: #1e88e5;
-  background: #1e88e5;
-}
-
-/* Option text */
-.poll-option-text {
-  font-size: 14px;
-  color: #fff;
-  line-height: 1.4;
-  z-index: 2;
-}
-
-/* Fill bar under each option */
 .poll-fill {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  height: 4px;
   width: 0%;
-  background: #1e88e5;
-  border-radius: 4px;
+  height: 100%;
+  background: #1e88e5;            /* blue loading bar */
+  position: absolute;
+  left: 0;
+  top: 0;
+  border-radius: 50%;
   transition: width 0.3s ease;
-  z-index: 1;
 }
 </style>
 </head>
@@ -546,8 +514,10 @@ body {
 </div>
 <!-- ---------- ATTACH / POLLS PANEL ---------- -->
 <div id="attach-panel">
+
   <div class="attach-content">
-    <div class="attach-item" id="poll-btn">📊 Poll</div>
+    <div class="attach-item">📊 Poll</div>
+    <!-- later: media, docs, etc -->
   </div>
 </div>
 <script>
@@ -598,35 +568,28 @@ header.onclick = () => {
 /* ---------- MESSAGE STORAGE ---------- */
 const STORAGE_KEY = `chat_${account.email}_${chatWith.id}`;
 let messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-
-// ---------- POLL STORAGE ----------
-const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
-let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
-
-// ---------- FORMAT TIME ----------
 function formatMessageTime(sentAt) {
   if (!sentAt) return "";
-  const date = new Date(sentAt);
+const date = new Date(sentAt);
   const now = new Date();
-
-  const isToday = date.toDateString() === now.toDateString();
-  const yesterday = new Date();
+const isToday =
+    date.toDateString() === now.toDateString();
+const yesterday = new Date();
   yesterday.setDate(now.getDate() - 1);
-  const isYesterday = date.toDateString() === yesterday.toDateString();
-
-  const time = date.toLocaleTimeString([], {
+const isYesterday =
+    date.toDateString() === yesterday.toDateString();
+const time = date.toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit"
   });
-
-  if (isToday) return time;
-
-  const dayMonth = date.toLocaleDateString([], {
+if (isToday) {
+    return time;
+  }
+const dayMonth = date.toLocaleDateString([], {
     day: "2-digit",
     month: "short"
   });
-
-  return `${dayMonth} ${time}`;
+return `${dayMonth} ${time}`;
 }
 /* ---------- MULTI SELECT LOGIC ---------- */
 let selectMode = false;
@@ -812,17 +775,23 @@ async function deleteForEveryoneBackend(ids) {
   const data = await res.json();
   return data.success === true;
 }
-// ---------- LOAD POLLS INTO TIMELINE ----------
-function getTimeline() {
-  // Merge messages and polls arrays
-  const merged = [...messages, ...polls];
+// Check for pending poll in localStorage
+const pendingPollJSON = localStorage.getItem("pendingPoll");
+if (pendingPollJSON) {
+  const poll = JSON.parse(pendingPollJSON);
 
-  // Sort by sent_at so they appear in correct order
-  merged.sort((a, b) => {
-    return new Date(a.sent_at) - new Date(b.sent_at);
+  messages.push({
+    id: poll.id,
+    type: "poll",
+    status: "sent",
+    question: poll.question,
+    options: poll.options.map(opt => ({ text: opt, votes: 0 })),
+    allowMultiple: poll.allowMultiple,
+    sender_username: "You" // or chatWith.username if received
   });
 
-  return merged;
+  // Remove it from localStorage
+  localStorage.removeItem("pendingPoll");
 }
 
 /* ---------- RENDER MESSAGES ---------- */
@@ -830,8 +799,7 @@ function renderMessages() {
   const box = document.getElementById("chat-body");
   box.innerHTML = "";
 
-  // Use timeline (merged messages + polls, sorted by sent_at)
-  getTimeline().forEach(msg => {
+  messages.forEach(msg => {
     const div = document.createElement("div");
     div.className = "message " + msg.type + (msg.status === "pending" ? " pending" : "");
 
@@ -850,9 +818,6 @@ function renderMessages() {
       timeDiv.textContent = formatMessageTime(msg.sent_at);
       div.appendChild(timeDiv);
     }
-
-    // ... rest of your existing render logic
-
 
     // Reply preview
     if (msg.replyTo) {
@@ -895,79 +860,7 @@ function renderMessages() {
         div.appendChild(linkedBox);
       }
     }
-    
-// ---------- POLL MESSAGE ----------
-if (msg.isPoll) {
-  const pollBox = document.createElement("div");
-  pollBox.className = "poll-message";
 
-  // ---------- READ POLL STATUS FROM LOCALSTORAGE ----------
-  const POLL_STATUS_KEY = `pollStatus_${account.email}_${chatWith.id}_${msg.pollData?.id}`;
-  let pollStatus = "sent"; // default fallback
-
-  const pollStatusRaw = localStorage.getItem(POLL_STATUS_KEY);
-  if (pollStatusRaw) {
-    try {
-      const parsed = JSON.parse(pollStatusRaw);
-      if (parsed.pollId === msg.pollData?.id) {
-        pollStatus = parsed.status; // "pending" or "sent"
-      }
-    } catch {}
-  }
-
-  // ---------- OPTIONS ----------
-  const optionsHtml = (msg.pollData?.options || []).map((opt, index) => `
-    <div class="poll-option" data-index="${index}">
-      <span class="poll-radio"></span>
-      <span class="poll-option-text">${opt}</span>
-      <div class="poll-fill"></div>
-    </div>
-  `).join("");
-
-  pollBox.innerHTML = `
-    <div class="poll-question">${msg.pollData?.question || "Poll"}</div>
-    <div class="poll-options">${optionsHtml}</div>
-  `;
-
-  // ---------- STATUS ----------
-  const statusDiv = document.createElement("div");
-  statusDiv.className = "status-text";
-
-  if (pollStatus === "pending") {
-    statusDiv.textContent = "Pending";
-    statusDiv.classList.add("status-pending");
-  } else {
-    statusDiv.textContent = "Sent";
-    statusDiv.classList.add("status-sent");
-  }
-
-  pollBox.appendChild(statusDiv);
-
-  document.getElementById("chat-body").appendChild(pollBox);
-
-  // ---------- INTERACTION ----------
-  const allowMultiple = msg.pollData?.allowMultiple;
-  const optionEls = pollBox.querySelectorAll(".poll-option");
-
-  optionEls.forEach(optEl => {
-    const radio = optEl.querySelector(".poll-radio");
-    const fill = optEl.querySelector(".poll-fill");
-
-    optEl.onclick = () => {
-      if (!allowMultiple) {
-        optionEls.forEach(o => {
-          o.querySelector(".poll-radio").classList.remove("selected");
-          o.querySelector(".poll-fill").style.width = "0%";
-        });
-      }
-
-      const selected = radio.classList.toggle("selected");
-      fill.style.width = selected ? "100%" : "0%";
-    };
-  });
-
-  return; // exit early for poll message
-}
     // Message text
     const textNode = document.createElement("div");
     textNode.className = "msg-text";
@@ -1034,7 +927,58 @@ if (msg.isPoll) {
         }
       });
     }
+    
+    // ✅ Poll message
+if (msg.type === "poll") {
+  const pollBox = document.createElement("div");
+  pollBox.className = "message poll-message"; // no received/sent
+  pollBox.dataset.id = msg.id;
 
+  // Question
+  const questionDiv = document.createElement("div");
+  questionDiv.textContent = msg.question;
+  questionDiv.style.fontWeight = "bold";
+  questionDiv.style.padding = "8px";
+  questionDiv.style.marginBottom = "10px";
+  pollBox.appendChild(questionDiv);
+
+  // Options
+  msg.options.forEach((opt, idx) => {
+    const optionDiv = document.createElement("div");
+    optionDiv.className = "poll-option-bar";
+
+    const circle = document.createElement("div");
+    circle.className = "poll-circle";
+
+    const fill = document.createElement("div");
+    fill.className = "poll-fill";
+    circle.appendChild(fill);
+
+    const label = document.createElement("span");
+    label.textContent = opt.text;
+    label.style.color = "#fff";
+
+    optionDiv.appendChild(circle);
+    optionDiv.appendChild(label);
+    pollBox.appendChild(optionDiv);
+
+    optionDiv.onclick = () => {
+      if (!msg.allowMultiple) {
+        // remove previous selection
+        msg.options.forEach((o, i) => {
+          o.selected = false;
+          const f = pollBox.querySelectorAll(".poll-fill")[i];
+          if (f) f.style.width = "0%";
+        });
+      }
+
+      opt.selected = !opt.selected;
+      fill.style.width = opt.selected ? "100%" : "0%";
+    };
+  });
+
+  div.appendChild(pollBox);
+}
     // Status (sent messages only)
     if (msg.type === "sent") {
       const status = document.createElement("div");
@@ -1075,7 +1019,6 @@ if (msg.isPoll) {
   enableMessageTap();
   enableMultiSelect();
 }
-
 function enableMessageTap() {
   const allMessages = document.querySelectorAll(".message");
 allMessages.forEach(msgEl => {
@@ -1479,9 +1422,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const addBtn = document.getElementById("add-btn");
   const attachPanel = document.getElementById("attach-panel");
   const input = document.getElementById("message-input");
-  const pollBtn = document.getElementById("poll-btn");
 
-  // Open attach panel
   addBtn.onclick = () => {
     input.blur(); // close keyboard first
     setTimeout(() => {
@@ -1489,13 +1430,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 150);
   };
 
-  // 👉 CLICK POLL → GO TO POLL PAGE
-  pollBtn.onclick = (e) => {
-    e.stopPropagation(); // prevent panel auto-close
-    window.location.href = "fchatpoll.html";
-  };
-
-  // Close panel when tapping outside
+  // Close panel when tapping outside of it
   document.addEventListener("click", (e) => {
     if (
       attachPanel.classList.contains("active") &&
@@ -1504,11 +1439,17 @@ document.addEventListener("DOMContentLoaded", () => {
     ) {
       attachPanel.classList.remove("active");
 
-      // reopen keyboard after close
+      // 👇 reopen keyboard AFTER panel closes
       setTimeout(() => {
         input.focus();
-      }, 150);
+      }, 150); // match your animation time
     }
+  });
+
+  // ✅ New: Poll click redirects
+  const pollItem = document.querySelector(".attach-item"); // grab your poll div
+  pollItem.addEventListener("click", () => {
+    window.location.href = "fchatpoll.html";
   });
 });
 </script>
