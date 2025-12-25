@@ -405,6 +405,87 @@ body {
 #receive-status.offline { color: orange; }
 #receive-status.error { color: red; }
 #receive-status.updated { color: green; }
+/* ---------- POLL MESSAGE (BLANK FOR NOW) ---------- */
+
+.poll-message {
+  background: #000;
+  color: #fff;
+  padding: 14px;
+  border-radius: 14px;
+  width: 80%;
+  margin-left: auto; /* pushes it to the right */
+  margin-right: 0;   /* optional, ensures spacing */
+  margin-bottom: 8px;
+}
+
+.message.sent .poll-message {
+  margin-left: auto; /* right side */
+}
+
+/* Poll question */
+.poll-question {
+  font-weight: bold;
+  font-size: 15px;
+  margin-bottom: 14px;
+  line-height: 1.4;
+  color: #fff;
+}
+
+/* Poll options container */
+.poll-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Single option */
+.poll-option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  overflow: hidden;
+  background: rgba(255,255,255,0.05);
+}
+
+/* Circular checkbox */
+.poll-radio {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #aaa;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Checked state */
+.poll-radio.selected {
+  border-color: #1e88e5;
+  background: #1e88e5;
+}
+
+/* Option text */
+.poll-option-text {
+  font-size: 14px;
+  color: #fff;
+  line-height: 1.4;
+  z-index: 2;
+}
+
+/* Fill bar under each option */
+.poll-fill {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  width: 0%;
+  background: #1e88e5;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+  z-index: 1;
+}
 </style>
 </head>
 <body>
@@ -513,32 +594,9 @@ header.onclick = () => {
   }));
   window.location.href = "chatdashboard.html";
 };
-/* ---------- MESSAGE STORAGE ---------- */
-const STORAGE_KEY = `chat_${account.email}_${chatWith.id}`;
-let messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-function formatMessageTime(sentAt) {
-  if (!sentAt) return "";
-const date = new Date(sentAt);
-  const now = new Date();
-const isToday =
-    date.toDateString() === now.toDateString();
-const yesterday = new Date();
-  yesterday.setDate(now.getDate() - 1);
-const isYesterday =
-    date.toDateString() === yesterday.toDateString();
-const time = date.toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit"
-  });
-if (isToday) {
-    return time;
-  }
-const dayMonth = date.toLocaleDateString([], {
-    day: "2-digit",
-    month: "short"
-  });
-return `${dayMonth} ${time}`;
-}
+/* ---------- POLL STORAGE ---------- */
+const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
+let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
 /* ---------- MULTI SELECT LOGIC ---------- */
 let selectMode = false;
 let selectedMessages = new Set();
@@ -723,6 +781,31 @@ async function deleteForEveryoneBackend(ids) {
   const data = await res.json();
   return data.success === true;
 }
+/*---------- RENDER POLLS ---------- */
+function renderPolls() {
+  const pollContainer = document.getElementById("poll-container");
+  if (!pollContainer) return;
+
+  pollContainer.innerHTML = "";
+
+  polls.forEach(poll => {
+    const div = document.createElement("div");
+    div.className = "poll-message";
+
+    div.innerHTML = `
+      <div class="poll-question">${poll.pollData.question}</div>
+      <div class="poll-options">
+        ${poll.pollData.options.map(opt => `
+          <div class="poll-option">${opt}</div>
+        `).join("")}
+      </div>
+      <small>${formatMessageTime(poll.sent_at)}</small>
+    `;
+
+    pollContainer.appendChild(div);
+  });
+}
+
 /* ---------- RENDER MESSAGES ---------- */
 function renderMessages() {
   const box = document.getElementById("chat-body");
@@ -896,6 +979,7 @@ function renderMessages() {
   scrollToBottom();
   enableMessageTap();
   enableMultiSelect();
+  renderPolls();
 }
 function enableMessageTap() {
   const allMessages = document.querySelectorAll(".message");
