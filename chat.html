@@ -410,16 +410,32 @@ body {
 #receive-status.offline { color: orange; }
 #receive-status.error { color: red; }
 #receive-status.updated { color: green; }
-#new-message-badge {
-  position: fixed;       /* fixed to viewport */
-  bottom: 80px;          /* above chat input */
-  right: 20px;
-  width: 24px;
-  height: 24px;
-  background-color: black;
+#scroll-down-btn {
+  position: absolute;
+  bottom: 20px;
+  right: 16px;
+  width: 42px;
+  height: 42px;
+  background: #1e88e5;
   border-radius: 50%;
-  z-index: 10000;        /* on top of everything */
-  display: none;         /* hide until new messages come */
+  display: none; /* hidden by default */
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1000;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.25);
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+#scroll-down-btn span {
+  color: black;
+  font-size: 22px;
+  font-weight: bold;
+  transform: translateY(-1px);
+}
+
+#scroll-down-btn:hover {
+  transform: scale(1.08);
 }
 </style>
 </head>
@@ -463,9 +479,10 @@ body {
 
 <!-- ---------- MESSAGES ---------- -->
 <div id="chat-body"></div>
-
-<!-- New message badge -->
-<div id="new-message-badge"></div>
+<!-- ----------SCROLL BUTTON ---------- -->
+<div id="scroll-down-btn">
+  <span>⌄</span>
+</div>
 <!-- ---------- REPLY PREVIEW ---------- -->
 <div id="reply-preview" style="display:none; padding:8px 16px; background:#f1f1f1; border-left:4px solid #007bff; justify-content:space-between; align-items:center; gap:10px;">
   <div>
