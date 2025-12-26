@@ -411,14 +411,15 @@ body {
 #receive-status.error { color: red; }
 #receive-status.updated { color: green; }
 #new-message-badge {
-  position: absolute;
-  bottom: 10px;       /* 10px from bottom of chat-body */
-  right: 10px;        /* 10px from right */
+  position: fixed;       /* fixed to viewport */
+  bottom: 80px;          /* above chat input */
+  right: 20px;
   width: 24px;
   height: 24px;
-  background-color: black; /* black circle */
-  border-radius: 50%;      /* makes it a circle */
-  z-index: 1000;
+  background-color: black;
+  border-radius: 50%;
+  z-index: 10000;        /* on top of everything */
+  display: none;         /* hide until new messages come */
 }
 </style>
 </head>
@@ -461,9 +462,10 @@ body {
 <div id="receive-status">Updating…</div>
 
 <!-- ---------- MESSAGES ---------- -->
-<div id="chat-body" style="position: relative;">
-  <div id="new-message-badge"></div>
-</div>
+<div id="chat-body"></div>
+
+<!-- New message badge -->
+<div id="new-message-badge"></div>
 <!-- ---------- REPLY PREVIEW ---------- -->
 <div id="reply-preview" style="display:none; padding:8px 16px; background:#f1f1f1; border-left:4px solid #007bff; justify-content:space-between; align-items:center; gap:10px;">
   <div>
