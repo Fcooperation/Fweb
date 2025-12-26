@@ -546,6 +546,9 @@ const dayMonth = date.toLocaleDateString([], {
   });
 return `${dayMonth} ${time}`;
 }
+/*----------SYNC LOCK ---------- */
+let isSyncRunning = false;
+
 /* ---------- MULTI SELECT LOGIC ---------- */
 let selectMode = false;
 let selectedMessages = new Set();
@@ -767,8 +770,6 @@ async function checkReceivedMessages() {
     console.warn("checkReceivedMessages failed:", err);
   }
 }
-//Call it every second
-setInterval(checkReceivedMessages, 1000);
 /* ---------- RENDER MESSAGES ---------- */
 function renderMessages() {
   const box = document.getElementById("chat-body");
@@ -1205,46 +1206,6 @@ if (changed) {
     renderMessages();
   }
 }
-window.addEventListener("online", retryPending);
-setInterval(() => {
-  retryPending();
-  checkStuckSendingMessages(); // 👈 ADD THIS
-}, 1000);
-// Receive messages every 4 seconds
-setInterval(() => {
-  receiveMessages();
-}, 4000);
-//Run retryScheduledDeletes
-window.addEventListener("online", retryScheduledDeletes);
-
-setInterval(() => {
-  retryScheduledDeletes();
-}, 2000); // 2s is enough
-
-// Also receive immediately when coming online
-window.addEventListener("online", receiveMessages);
-async function deleteForEveryoneBackend(ids) {
-  try {
-    const payload = {
-      action: "delete_messages",
-      email: account.email,
-      user_id: chatWith.id,  // ✅ include the chat target
-      ids                  // array of message IDs
-    };
-
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-
-    const data = await res.json();
-    return data.success === true;
-  } catch (e) {
-    console.warn("Delete for everyone failed", e);
-    return false;
-  }
-}
 /* ---------- INIT ---------- */
 renderMessages();
 document.getElementById("send-btn").onclick = sendMessage;
@@ -1347,18 +1308,37 @@ async function receiveMessages() {
     }
   }
 }
-// Retry receiving messages automatically when back online
-window.addEventListener("online", () => {
-  const statusEl = document.getElementById("receive-status");
-  if (statusEl) {
-    statusEl.textContent = "Back online · Updating…";
-    statusEl.className = "loading";
+/*----------GLOBAL CALLS ---------- */
+async function runChatSync() {
+  if (isSyncRunning) return;
+  if (!navigator.onLine) return;
+
+  isSyncRunning = true;
+
+  try {
+    // 1️⃣ Receive new messages
+    await receiveMessages();
+
+    // 2️⃣ Check seen status
+    await checkReceivedMessages();
+
+    // 3️⃣ Retry pending messages
+    await retryPending();
+
+    // 4️⃣ Retry scheduled deletes
+    await retryScheduledDeletes();
+
+  } catch (err) {
+    console.warn("Chat sync error:", err);
+  } finally {
+    isSyncRunning = false;
   }
-  receiveMessages();
-});
-/* ---------- AUTO RECEIVE ---------- */
-setInterval(receiveMessages, 1000);
-window.addEventListener("online", receiveMessages);
+}
+// Run every second
+setInterval(runChatSync, 1000);
+
+// Run immediately when online
+window.addEventListener("online", runChatSync);
 </script>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
