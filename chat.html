@@ -548,6 +548,8 @@ return `${dayMonth} ${time}`;
 }
 /*----------SYNC LOCK ---------- */
 let isSyncRunning = false;
+let pendingAbort = false;
+
 
 /* ---------- MULTI SELECT LOGIC ---------- */
 let selectMode = false;
@@ -1309,44 +1311,44 @@ async function receiveMessages() {
   }
 }
 /*----------GLOBAL CALLS ---------- */
-let isSyncRunning = false;
-let pendingAbort = null; // controller to abort ongoing fetches
-
 async function runChatSync() {
-  if (!navigator.onLine) return;
+  // If any other sync is running, flag it to stop
+  if (isSyncRunning) {
+    pendingAbort = true;
+  }
 
-  // If a previous sync is running, abort it
-  if (isSyncRunning && pendingAbort) {
-    pendingAbort.abort(); // cancel ongoing fetches
-    isSyncRunning = false;
+  // Wait until the previous sync is completely stopped
+  while (isSyncRunning) {
+    await new Promise(res => setTimeout(res, 50)); // check every 50ms
   }
 
   isSyncRunning = true;
-  pendingAbort = new AbortController();
-  const signal = pendingAbort.signal;
+  pendingAbort = false; // reset abort flag
 
   try {
     // 1️⃣ Receive new messages (top priority)
-    await receiveMessages(signal);
+    await receiveMessages();
+    if (pendingAbort) return "aborted"; // stop if a new sync wants to run
 
     // 2️⃣ Check seen status (top priority)
-    await checkReceivedMessages(signal);
+    await checkReceivedMessages();
+    if (pendingAbort) return "aborted";
 
     // 3️⃣ Retry pending messages
-    await retryPending(signal);
+    await retryPending();
+    if (pendingAbort) return "aborted";
 
     // 4️⃣ Retry scheduled deletes
-    await retryScheduledDeletes(signal);
+    await retryScheduledDeletes();
+    if (pendingAbort) return "aborted";
 
+    return "success"; // everything completed
   } catch (err) {
-    if (err.name === "AbortError") {
-      console.warn("Chat sync aborted for a higher priority run");
-    } else {
-      console.warn("Chat sync error:", err);
-    }
+    console.warn("Chat sync error:", err);
+    return "error";
   } finally {
     isSyncRunning = false;
-    pendingAbort = null;
+    pendingAbort = false;
   }
 }
 // Run every second
