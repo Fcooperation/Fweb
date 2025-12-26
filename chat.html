@@ -1309,29 +1309,44 @@ async function receiveMessages() {
   }
 }
 /*----------GLOBAL CALLS ---------- */
+let isSyncRunning = false;
+let pendingAbort = null; // controller to abort ongoing fetches
+
 async function runChatSync() {
-  if (isSyncRunning) return;
   if (!navigator.onLine) return;
 
+  // If a previous sync is running, abort it
+  if (isSyncRunning && pendingAbort) {
+    pendingAbort.abort(); // cancel ongoing fetches
+    isSyncRunning = false;
+  }
+
   isSyncRunning = true;
+  pendingAbort = new AbortController();
+  const signal = pendingAbort.signal;
 
   try {
-    // 1️⃣ Receive new messages
-    await receiveMessages();
+    // 1️⃣ Receive new messages (top priority)
+    await receiveMessages(signal);
 
-    // 2️⃣ Check seen status
-    await checkReceivedMessages();
+    // 2️⃣ Check seen status (top priority)
+    await checkReceivedMessages(signal);
 
     // 3️⃣ Retry pending messages
-    await retryPending();
+    await retryPending(signal);
 
     // 4️⃣ Retry scheduled deletes
-    await retryScheduledDeletes();
+    await retryScheduledDeletes(signal);
 
   } catch (err) {
-    console.warn("Chat sync error:", err);
+    if (err.name === "AbortError") {
+      console.warn("Chat sync aborted for a higher priority run");
+    } else {
+      console.warn("Chat sync error:", err);
+    }
   } finally {
     isSyncRunning = false;
+    pendingAbort = null;
   }
 }
 // Run every second
