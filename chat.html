@@ -410,29 +410,15 @@ body {
 #receive-status.offline { color: orange; }
 #receive-status.error { color: red; }
 #receive-status.updated { color: green; }
-/* Notification badge */
 #new-message-badge {
   position: absolute;
-  top: 10px;       /* distance from top of chat-body */
-  right: 10px;     /* distance from right of chat-body */
-  width: 28px;
-  height: 28px;
-  background-color: #007bff; /* blue circle */
-  color: black;             /* number text */
-  font-weight: bold;
-  font-size: 14px;
-  text-align: center;
-  line-height: 28px;       /* vertical centering */
-  border-radius: 50%;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-  pointer-events: none;    /* doesn’t block clicks */
+  bottom: 10px;       /* 10px from bottom of chat-body */
+  right: 10px;        /* 10px from right */
+  width: 24px;
+  height: 24px;
+  background-color: black; /* black circle */
+  border-radius: 50%;      /* makes it a circle */
   z-index: 1000;
-  transition: transform 0.2s ease-in-out;
-}
-
-/* Optional bounce animation */
-#new-message-badge.bounce {
-  transform: scale(1.4);
 }
 </style>
 </head>
@@ -473,10 +459,10 @@ body {
   </div>
 </div>
 <div id="receive-status">Updating…</div>
+
 <!-- ---------- MESSAGES ---------- -->
 <div id="chat-body" style="position: relative;">
-  <!-- Notification badge -->
-  <div id="new-message-badge" style="display: none;">0</div>
+  <div id="new-message-badge"></div>
 </div>
 <!-- ---------- REPLY PREVIEW ---------- -->
 <div id="reply-preview" style="display:none; padding:8px 16px; background:#f1f1f1; border-left:4px solid #007bff; justify-content:space-between; align-items:center; gap:10px;">
@@ -1305,7 +1291,7 @@ async function receiveMessages() {
       changed = true;
     });
     
-    // After the forEach loop that pushes new messages
+        // After the forEach loop that pushes new messages
 if (changed) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   renderMessages();
@@ -1333,24 +1319,6 @@ if (changed) {
   }
 }
 
-// Update notification badge
-const badge = document.getElementById("new-message-badge");
-if (badge) {
-  // Count new unread messages
-  const unreadCount = messages.filter(m => m.type === "received" && m.status === "sent").length;
-
-  if (unreadCount > 0) {
-    badge.textContent = unreadCount > 99 ? "99+" : unreadCount;
-    badge.style.display = "block";
-
-    // Small bounce animation
-    badge.classList.add("bounce");
-    setTimeout(() => badge.classList.remove("bounce"), 200);
-
-  } else {
-    badge.style.display = "none";
-  }
-}
     // ✅ Save + render
     if (changed) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
@@ -1382,7 +1350,6 @@ if (badge) {
     }
   }
 }
-
 /*----------GLOBAL CALLS ---------- */
 async function runChatSync() {
   // If any other sync is running, flag it to stop
