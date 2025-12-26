@@ -1278,6 +1278,34 @@ async function receiveMessages() {
       receivedIds.push(msg.id);
       changed = true;
     });
+    
+    // After the forEach loop that pushes new messages
+if (changed) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+  renderMessages();
+
+  // 🔔 Vibrate phone (if supported)
+  if ("vibrate" in navigator) {
+    navigator.vibrate(200); // vibrates for 200ms
+  }
+
+  // ✅ Notify backend that messages were received
+  await fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      action: "received_messages",
+      ids: receivedIds,
+      email: account.email,
+      chatWithId: chatWith.id
+    })
+  });
+
+  if (statusEl) {
+    statusEl.textContent = "Updated";
+    statusEl.className = "ok";
+  }
+}
 
     // ✅ Save + render
     if (changed) {
