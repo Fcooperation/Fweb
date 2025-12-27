@@ -450,72 +450,84 @@ body {
   font-weight: 600;
   display: inline-block;
 }
-/* ---------- POLL STYLES ---------- */
-
+/* POLL CONTAINER */
 .poll-wrapper {
   width: 80%;
-  margin-left: auto;
-  margin-bottom: 12px;
+  margin: 10px 0;
+  padding: 10px;
   background: #000;
-  color: #fff;
-  border-radius: 12px;
-  padding: 12px;
-  font-size: 14px;
+  border-radius: 10px;
+  color: white;
+  align-self: flex-end;
 }
 
+/* QUESTION */
 .poll-question {
   font-weight: bold;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
 }
 
-.poll-option {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+/* HINT TEXT */
+.poll-hint {
+  font-size: 12px;
+  opacity: 0.6;
   margin-bottom: 8px;
+}
+
+/* OPTION */
+.poll-option {
+  margin-bottom: 10px;
   cursor: pointer;
 }
 
+/* ROW (circle + text) */
+.poll-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* CIRCLE */
 .poll-circle {
-  width: 16px;
-  height: 16px;
-  border: 2px solid white;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
-  flex-shrink: 0;
-  position: relative;
+  border: 2px solid #aaa;
+  transition: 0.2s;
 }
 
-.poll-circle.selected::after {
-  content: "";
-  width: 8px;
-  height: 8px;
-  background: white;
-  border-radius: 50%;
-  position: absolute;
-  top: 2px;
-  left: 2px;
+.poll-circle.selected {
+  background: #2196f3;
+  border-color: #2196f3;
 }
 
+/* OPTION TEXT */
+.poll-text {
+  font-size: 14px;
+}
+
+/* BAR */
 .poll-bar-container {
-  flex: 1;
+  width: 100px;
   height: 6px;
-  background: #333;
+  background: #222;
   border-radius: 6px;
   overflow: hidden;
+  margin-top: 4px;
 }
 
 .poll-bar {
   height: 100%;
-  width: 0%;
-  background: #007bff;
-  transition: width 0.3s;
+  width: 0;
+  background: #2196f3;
+  transition: width 0.35s ease;
 }
 
+/* STATUS */
 .poll-status {
   font-size: 11px;
   opacity: 0.6;
   margin-top: 6px;
-  text-align: right;
 }
 </style>
 </head>
@@ -931,20 +943,28 @@ async function checkReceivedMessages() {
 function renderPolls() {
   const box = document.getElementById("chat-body");
 
-  // 🔥 REMOVE OLD POLLS FIRST (important)
+  // 🔥 remove old polls
   document.querySelectorAll(".poll-wrapper").forEach(p => p.remove());
 
   polls.forEach(poll => {
     const wrapper = document.createElement("div");
     wrapper.className = "poll-wrapper";
 
-    // Question
+    // QUESTION
     const question = document.createElement("div");
     question.className = "poll-question";
     question.textContent = poll.pollData.question;
     wrapper.appendChild(question);
 
-    // Votes storage (local only for now)
+    // Hint text
+    const hint = document.createElement("div");
+    hint.className = "poll-hint";
+    hint.textContent = poll.pollData.allowMultiple
+      ? "Select more than one"
+      : "Select one";
+    wrapper.appendChild(hint);
+
+    // Votes
     const votesKey = `poll_votes_${poll.id}`;
     let votes = JSON.parse(localStorage.getItem(votesKey)) || {};
 
@@ -952,16 +972,30 @@ function renderPolls() {
       const option = document.createElement("div");
       option.className = "poll-option";
 
+      // Row (circle + text)
+      const row = document.createElement("div");
+      row.className = "poll-row";
+
       const circle = document.createElement("div");
       circle.className = "poll-circle";
 
+      const text = document.createElement("div");
+      text.className = "poll-text";
+      text.textContent = opt;
+
+      row.appendChild(circle);
+      row.appendChild(text);
+
+      // Bar
       const barWrap = document.createElement("div");
       barWrap.className = "poll-bar-container";
 
       const bar = document.createElement("div");
       bar.className = "poll-bar";
-
       barWrap.appendChild(bar);
+
+      option.appendChild(row);
+      option.appendChild(barWrap);
 
       option.onclick = () => {
         if (!poll.pollData.allowMultiple) {
@@ -970,18 +1004,17 @@ function renderPolls() {
 
         votes[index] = !votes[index];
         localStorage.setItem(votesKey, JSON.stringify(votes));
-
-        renderPolls(); // re-render safely
+        renderPolls();
       };
 
       if (votes[index]) {
         circle.classList.add("selected");
-        bar.style.width = "100%";
+        setTimeout(() => {
+          bar.style.width = "100px"; // smooth fill
+        }, 10);
+      } else {
+        bar.style.width = "0px";
       }
-
-      option.appendChild(circle);
-      option.appendChild(document.createTextNode(opt));
-      option.appendChild(barWrap);
 
       wrapper.appendChild(option);
     });
