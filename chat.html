@@ -945,7 +945,8 @@ async function checkReceivedMessages() {
   } catch (err) {
     console.warn("checkReceivedMessages failed:", err);
   }
-}/*---------- RENDER POLLS ----------*/
+}
+/*---------- RENDER POLLS ----------*/
 function renderPolls() {
   const box = document.getElementById("chat-body");
 
@@ -1017,13 +1018,14 @@ function renderPolls() {
         renderPolls();
       });
 
-      // Animate fill based on selection
+      // Smooth fill based on selection
       if (votes[index]) {
         circle.classList.add("selected");
 
-        // Force reflow to trigger CSS transition
-        bar.getBoundingClientRect();
-        bar.style.width = "100%"; // fill smoothly
+        // Small timeout ensures CSS transition works
+        setTimeout(() => {
+          bar.style.width = "100%"; // full width
+        }, 20); // 20ms is enough
       } else {
         circle.classList.remove("selected");
         bar.style.width = "0%";   
@@ -1041,7 +1043,6 @@ function renderPolls() {
     box.appendChild(wrapper);
   });
 }
-
 /* ---------- RENDER MESSAGES ---------- */
 function renderMessages() {
   const box = document.getElementById("chat-body");
