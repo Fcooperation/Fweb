@@ -552,31 +552,33 @@ header.onclick = () => {
   window.location.href = "chatdashboard.html";
 };
 /*---------- SCROLL BUTTON ----------*/
-const scrollBtn = document.getElementById("scroll-btn");
-const chatBody = document.getElementById("chat-body");
+document.addEventListener("DOMContentLoaded", () => {
+  const scrollBtn = document.getElementById("scroll-btn");
+  const chatBody = document.getElementById("chat-body");
 
-// Show/hide button based on scroll position
-chatBody.addEventListener("scroll", () => {
-  // calculate if near the bottom (within 10px tolerance)
-  const atBottom = chatBody.scrollHeight - chatBody.scrollTop - chatBody.clientHeight <= 10;
+  if (!scrollBtn || !chatBody) return;
 
-  if (atBottom) {
-    scrollBtn.style.display = "none";
-  } else {
-    scrollBtn.style.display = "flex"; // show
-  }
-});
+  // Show/hide button based on scroll position
+  chatBody.addEventListener("scroll", () => {
+    const atBottom = chatBody.scrollHeight - chatBody.scrollTop - chatBody.clientHeight <= 10;
 
-scrollBtn.addEventListener("click", () => {
-  chatBody.scrollTo({
-    top: chatBody.scrollHeight,
-    behavior: "smooth"
+    if (atBottom) {
+      scrollBtn.style.display = "none";
+    } else {
+      scrollBtn.style.display = "flex";
+    }
   });
 
-  // hide after scroll finishes
-  setTimeout(() => {
-    scrollBtn.style.display = "none";
-  }, 300); // small delay so scroll completes
+  scrollBtn.addEventListener("click", () => {
+    chatBody.scrollTo({
+      top: chatBody.scrollHeight,
+      behavior: "smooth"
+    });
+
+    setTimeout(() => {
+      scrollBtn.style.display = "none";
+    }, 300);
+  });
 });
 /* ---------- MESSAGE STORAGE ---------- */
 const STORAGE_KEY = `chat_${account.email}_${chatWith.id}`;
