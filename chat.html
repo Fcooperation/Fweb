@@ -591,9 +591,26 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 300);
   });
 });
-/* ---------- MESSAGE STORAGE ---------- */
+/* ---------- MESSAGE + POLL STORAGE ---------- */
+
 const STORAGE_KEY = `chat_${account.email}_${chatWith.id}`;
-let messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
+
+// Messages
+let messages = [];
+try {
+  messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+} catch {
+  messages = [];
+}
+
+// Polls
+let polls = [];
+try {
+  polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+} catch {
+  polls = [];
+}
 function formatMessageTime(sentAt) {
   if (!sentAt) return "";
 const date = new Date(sentAt);
