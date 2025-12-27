@@ -49,7 +49,7 @@
 <script>
 const optionsContainer = document.getElementById("options-container");
 
-// Auto-add new option
+// Auto-add new option when typing
 optionsContainer.addEventListener("input", (e) => {
   if (!e.target.classList.contains("poll-option")) return;
 
@@ -89,7 +89,6 @@ document.getElementById("send-btn").addEventListener("click", async () => {
     isPoll: true,
     senderId: account.id,
     sent_at: Date.now(),
-    status: "pending",
     pollData: {
       id: pollId,
       question,
@@ -98,19 +97,15 @@ document.getElementById("send-btn").addEventListener("click", async () => {
     }
   };
 
-  // ---------- SAVE TO CHAT POLL STORAGE ----------
+  // ---------- SAVE TO CHAT POLL STORAGE ONLY ----------
   const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
   const polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
   polls.push(pollMessage);
   localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
 
-  // ---------- SET POLL STATUS DEFAULT ----------
-  const POLL_STATUS_KEY = `pollStatus_${account.email}_${chatWith.id}_${pollId}`;
-  localStorage.setItem(POLL_STATUS_KEY, JSON.stringify({ pollId, status: "pending" }));
-
   // ---------- SEND TO SERVER ----------
   try {
-    const res = await fetch("https://fweb-backend.onrender.com/fchat", {
+    await fetch("https://fweb-backend.onrender.com/fchat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -121,21 +116,12 @@ document.getElementById("send-btn").addEventListener("click", async () => {
         chatWithId: chatWith.id
       })
     });
-
-    if (res.ok) {
-      // Update pollMessage status
-      pollMessage.status = "sent";
-      localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
-
-      // Update separate poll status JSON
-      localStorage.setItem(POLL_STATUS_KEY, JSON.stringify({ pollId, status: "sent" }));
-    }
+    // server now determines status
   } catch {
-    console.warn("Poll send failed, kept as pending");
-    // Already pending, no change needed
+    console.warn("Poll send failed, kept locally for now");
   }
 
-  // ---------- GO BACK ----------
+  // ---------- GO BACK TO CHAT ----------
   window.location.href = "chat.html";
 });
 </script>
