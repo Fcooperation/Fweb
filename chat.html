@@ -1321,17 +1321,39 @@ async function receiveMessages() {
       changed = true;
     });
     
-        // After the forEach loop that pushes new messages
+  // After the forEach loop that pushes new messages
 if (changed) {
+
+  const chatVisible = document.visibilityState === "visible";
+
+  if (chatVisible && receivedIds.length > 0) {
+    const latestReceivedTime = Math.max(
+      ...receivedIds.map(id => {
+        const msg = data.data.find(m => m.id === id);
+        return msg ? new Date(msg.sent_at).getTime() : 0;
+      })
+    );
+
+    messages.forEach(msg => {
+      if (
+        msg.type === "sent" &&
+        msg.status !== "seen" &&
+        new Date(msg.sent_at).getTime() < latestReceivedTime
+      ) {
+        msg.status = "seen";
+      }
+    });
+  }
+
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   renderMessages();
 
   // 🔔 Vibrate phone (if supported)
   if ("vibrate" in navigator) {
-    navigator.vibrate(200); // vibrates for 200ms
+    navigator.vibrate(200);
   }
 
-  // ✅ Notify backend that messages were received
+  // ✅ Notify backend
   await fetch(API_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -1348,30 +1370,6 @@ if (changed) {
     statusEl.className = "ok";
   }
 }
-
-    // ✅ Save + render
-    if (changed) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-      renderMessages();
-
-      // ✅ Notify backend that messages were received
-      await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "received_messages",
-          ids: receivedIds,
-          email: account.email,
-          chatWithId: chatWith.id
-        })
-      });
-
-      if (statusEl) {
-        statusEl.textContent = "Updated";
-        statusEl.className = "ok";
-      }
-    }
-
   } catch (err) {
     if (navigator.onLine && statusEl) {
       console.warn("Receive messages failed:", err);
