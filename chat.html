@@ -555,33 +555,29 @@ header.onclick = () => {
 const scrollBtn = document.getElementById("scroll-btn");
 const chatBody = document.getElementById("chat-body");
 
-// Show / hide based on scroll position
-function handleScroll() {
-  const atBottom =
-    chatBody.scrollTop + chatBody.clientHeight >= chatBody.scrollHeight - 5;
+// Show/hide button based on scroll position
+chatBody.addEventListener("scroll", () => {
+  // calculate if near the bottom (within 10px tolerance)
+  const atBottom = chatBody.scrollHeight - chatBody.scrollTop - chatBody.clientHeight <= 10;
 
   if (atBottom) {
     scrollBtn.style.display = "none";
   } else {
-    scrollBtn.style.display = "flex";
+    scrollBtn.style.display = "flex"; // show
   }
-}
+});
 
-// Scroll to bottom on click
 scrollBtn.addEventListener("click", () => {
   chatBody.scrollTo({
     top: chatBody.scrollHeight,
     behavior: "smooth"
   });
 
-  // Hide after scroll finishes
+  // hide after scroll finishes
   setTimeout(() => {
     scrollBtn.style.display = "none";
-  }, 300);
+  }, 300); // small delay so scroll completes
 });
-
-// Listen for scrolling inside chat
-chatBody.addEventListener("scroll", handleScroll);
 /* ---------- MESSAGE STORAGE ---------- */
 const STORAGE_KEY = `chat_${account.email}_${chatWith.id}`;
 let messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
