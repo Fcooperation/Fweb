@@ -943,12 +943,13 @@ async function checkReceivedMessages() {
 function renderPolls() {
   const box = document.getElementById("chat-body");
 
-  // 🔥 remove old polls
+  // Remove only old polls
   document.querySelectorAll(".poll-wrapper").forEach(p => p.remove());
 
   polls.forEach(poll => {
     const wrapper = document.createElement("div");
     wrapper.className = "poll-wrapper";
+    wrapper.dataset.pollId = poll.id;
 
     // QUESTION
     const question = document.createElement("div");
@@ -956,7 +957,7 @@ function renderPolls() {
     question.textContent = poll.pollData.question;
     wrapper.appendChild(question);
 
-    // Hint text
+    // HINT
     const hint = document.createElement("div");
     hint.className = "poll-hint";
     hint.textContent = poll.pollData.allowMultiple
@@ -964,15 +965,16 @@ function renderPolls() {
       : "Select one";
     wrapper.appendChild(hint);
 
-    // Votes
+    // STORAGE (unique per poll)
     const votesKey = `poll_votes_${poll.id}`;
     let votes = JSON.parse(localStorage.getItem(votesKey)) || {};
 
     poll.pollData.options.forEach((opt, index) => {
       const option = document.createElement("div");
       option.className = "poll-option";
+      option.dataset.index = index;
 
-      // Row (circle + text)
+      // Row
       const row = document.createElement("div");
       row.className = "poll-row";
 
@@ -997,20 +999,25 @@ function renderPolls() {
       option.appendChild(row);
       option.appendChild(barWrap);
 
-      option.onclick = () => {
+      // CLICK HANDLER (isolated per poll)
+      option.addEventListener("click", (e) => {
+        e.stopPropagation();
+
         if (!poll.pollData.allowMultiple) {
-          votes = {};
+          votes = {}; // reset only THIS poll
         }
 
         votes[index] = !votes[index];
         localStorage.setItem(votesKey, JSON.stringify(votes));
-        renderPolls();
-      };
 
+        renderPolls();
+      });
+
+      // UI state
       if (votes[index]) {
         circle.classList.add("selected");
         setTimeout(() => {
-          bar.style.width = "100px"; // smooth fill
+          bar.style.width = "100px";
         }, 10);
       } else {
         bar.style.width = "0px";
@@ -1019,6 +1026,7 @@ function renderPolls() {
       wrapper.appendChild(option);
     });
 
+    // STATUS
     const status = document.createElement("div");
     status.className = "poll-status";
     status.textContent = poll.status || "sent";
