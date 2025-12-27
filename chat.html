@@ -951,8 +951,8 @@ function renderPolls() {
     const wrapper = document.createElement("div");
     wrapper.className = "poll-wrapper";
     wrapper.dataset.pollId = poll.id;
-    wrapper.style.height = "200px"; // poll height
-    wrapper.style.width = "80%";    // poll width (optional)
+    wrapper.style.height = "200px"; 
+    wrapper.style.width = "80%";    
 
     // Question
     const question = document.createElement("div");
@@ -1005,22 +1005,24 @@ function renderPolls() {
         e.stopPropagation();
 
         if (!poll.pollData.allowMultiple) {
-          votes = {}; // reset only this poll
+          votes = {}; 
         }
 
         votes[index] = !votes[index];
         localStorage.setItem(votesKey, JSON.stringify(votes));
 
-        renderPolls(); // re-render only after updating this poll
+        renderPolls(); 
       });
 
-      // Fill bar based on selection
+      // Animate fill based on selection
       if (votes[index]) {
         circle.classList.add("selected");
-        bar.style.width = "80%"; // fill width
+        setTimeout(() => {
+          bar.style.width = "100%"; // full width
+        }, 10); // slight delay triggers CSS transition
       } else {
         circle.classList.remove("selected");
-        bar.style.width = "0%"; // reset
+        bar.style.width = "0%"; 
       }
 
       wrapper.appendChild(option);
