@@ -453,7 +453,7 @@ body {
 /* POLL CONTAINER */
 .poll-wrapper {
   width: 80%;
-  height: 200px;
+  height: 400px;
   margin: 10px 0;
   padding: 10px;
   background: #000;
@@ -1023,7 +1023,7 @@ function renderPolls() {
         if (!localStorage.getItem(animatedKey)) {
           // animate ONLY once
           setTimeout(() => {
-            bar.style.width = "80%";
+            bar.style.width = "100%";
           }, 10);
 
           localStorage.setItem(animatedKey, "true");
