@@ -416,37 +416,27 @@ body {
   position: fixed;
   right: 26px;
   bottom: 80px;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background: #666; /* soft grey */
-  color: #fff;
-  border: none;
 
-  font-size: 20px;
-  font-weight: bold;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+
+  background: #777;
+  border: none;
 
   display: flex;
   justify-content: center;
   align-items: center;
 
-  line-height: 1;
-  transform: translateY(1px); /* fixes vertical centering */
-
   cursor: pointer;
   z-index: 1000;
-  transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
-/* hover effect */
-#scroll-btn:hover {
-  transform: scale(1.1);
-}
-
-/* hidden state */
-#scroll-btn.hidden {
-  opacity: 0;
-  pointer-events: none;
+/* arrow inside */
+#scroll-btn span {
+  font-size: 20px;
+  color: white;
+  transform: translateY(1px); /* PERFECT vertical centering */
 }
 </style>
 </head>
@@ -490,7 +480,9 @@ body {
 
 <!-- ---------- MESSAGES ---------- -->
 <div id="chat-body"></div>
-<button id="scroll-btn" class="hidden">˅</button>
+<button id="scroll-btn">
+  <span>˅</span>
+</button>
 <!-- ---------- REPLY PREVIEW ---------- -->
 <div id="reply-preview" style="display:none; padding:8px 16px; background:#f1f1f1; border-left:4px solid #007bff; justify-content:space-between; align-items:center; gap:10px;">
   <div>
@@ -562,35 +554,14 @@ header.onclick = () => {
 /*---------- SCROLL BUTTON ----------*/
 const scrollBtn = document.getElementById("scroll-btn");
 
-function isAtBottom() {
-  return (
-    window.innerHeight + window.scrollY >=
-    document.body.offsetHeight - 10
-  );
-}
-
-// Show / hide button while scrolling
-window.addEventListener("scroll", () => {
-  if (isAtBottom()) {
-    scrollBtn.classList.add("hidden");
-  } else {
-    scrollBtn.classList.remove("hidden");
-  }
-});
-
-// Scroll to bottom when clicked
 scrollBtn.addEventListener("click", () => {
-  window.scrollTo({
-    top: document.body.scrollHeight,
+  const chatBody = document.getElementById("chat-body");
+
+  chatBody.scrollTo({
+    top: chatBody.scrollHeight,
     behavior: "smooth"
   });
-
-  // Hide after scrolling
-  setTimeout(() => {
-    scrollBtn.classList.add("hidden");
-  }, 300);
 });
-
 /* ---------- MESSAGE STORAGE ---------- */
 const STORAGE_KEY = `chat_${account.email}_${chatWith.id}`;
 let messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
