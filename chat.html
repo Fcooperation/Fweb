@@ -943,7 +943,7 @@ async function checkReceivedMessages() {
 function renderPolls() {
   const box = document.getElementById("chat-body");
 
-  // Remove only old polls
+  // Remove old polls
   document.querySelectorAll(".poll-wrapper").forEach(p => p.remove());
 
   polls.forEach(poll => {
@@ -951,13 +951,13 @@ function renderPolls() {
     wrapper.className = "poll-wrapper";
     wrapper.dataset.pollId = poll.id;
 
-    // QUESTION
+    // Question
     const question = document.createElement("div");
     question.className = "poll-question";
     question.textContent = poll.pollData.question;
     wrapper.appendChild(question);
 
-    // HINT
+    // Hint
     const hint = document.createElement("div");
     hint.className = "poll-hint";
     hint.textContent = poll.pollData.allowMultiple
@@ -965,16 +965,15 @@ function renderPolls() {
       : "Select one";
     wrapper.appendChild(hint);
 
-    // STORAGE (unique per poll)
     const votesKey = `poll_votes_${poll.id}`;
+    const animKeyPrefix = `poll_animated_${poll.id}_`;
+
     let votes = JSON.parse(localStorage.getItem(votesKey)) || {};
 
     poll.pollData.options.forEach((opt, index) => {
       const option = document.createElement("div");
       option.className = "poll-option";
-      option.dataset.index = index;
 
-      // Row
       const row = document.createElement("div");
       row.className = "poll-row";
 
@@ -988,7 +987,6 @@ function renderPolls() {
       row.appendChild(circle);
       row.appendChild(text);
 
-      // Bar
       const barWrap = document.createElement("div");
       barWrap.className = "poll-bar-container";
 
@@ -999,12 +997,15 @@ function renderPolls() {
       option.appendChild(row);
       option.appendChild(barWrap);
 
-      // CLICK HANDLER (isolated per poll)
       option.addEventListener("click", (e) => {
         e.stopPropagation();
 
         if (!poll.pollData.allowMultiple) {
-          votes = {}; // reset only THIS poll
+          votes = {};
+          // reset animations for this poll
+          Object.keys(localStorage)
+            .filter(k => k.startsWith(animKeyPrefix))
+            .forEach(k => localStorage.removeItem(k));
         }
 
         votes[index] = !votes[index];
@@ -1013,12 +1014,22 @@ function renderPolls() {
         renderPolls();
       });
 
-      // UI state
+      const animatedKey = `${animKeyPrefix}${index}`;
+
       if (votes[index]) {
         circle.classList.add("selected");
-        setTimeout(() => {
+
+        if (!localStorage.getItem(animatedKey)) {
+          // animate ONLY once
+          setTimeout(() => {
+            bar.style.width = "100px";
+          }, 10);
+
+          localStorage.setItem(animatedKey, "true");
+        } else {
+          // instantly filled (no animation)
           bar.style.width = "100px";
-        }, 10);
+        }
       } else {
         bar.style.width = "0px";
       }
@@ -1026,7 +1037,6 @@ function renderPolls() {
       wrapper.appendChild(option);
     });
 
-    // STATUS
     const status = document.createElement("div");
     status.className = "poll-status";
     status.textContent = poll.status || "sent";
