@@ -1048,11 +1048,34 @@ function renderPolls() {
       wrapper.appendChild(option);
     });
 
-    // Status (sent, pending, etc.)
-    const status = document.createElement("div");
-    status.className = "poll-status";
-    status.textContent = poll.status || "sent";
-    wrapper.appendChild(status);
+// Status (sent, pending, etc.)
+const status = document.createElement("div");
+status.classList.add("poll-status"); // keep your poll CSS
+
+if (poll.status === "sending") {
+  status.textContent = "Sending…";
+  status.classList.add("status-sending");
+} else if (poll.status === "pending") {
+  status.textContent = "Pending";
+  status.classList.add("status-pending");
+} else if (poll.status === "sent") {
+  status.textContent = "Sent";
+  status.classList.add("status-sent");
+} else if (poll.status === "deleting") {
+  status.textContent = "Deleting…";
+  status.classList.add("status-deleting");
+} else if (poll.status === "deleted") {
+  status.textContent = "Deleted";
+  status.classList.add("status-deleted");
+} else if (poll.status === "scheduled") {
+  status.textContent = "Scheduled";
+  status.classList.add("status-scheduled");
+} else if (poll.status === "seen") {
+  status.textContent = "Seen";
+  status.classList.add("status-seen");
+}
+
+wrapper.appendChild(status);
 
     box.appendChild(wrapper);
   });
