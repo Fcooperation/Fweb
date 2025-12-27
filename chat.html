@@ -1016,14 +1016,17 @@ function renderPolls() {
         renderPolls();   
       });  
   
-      // Set width immediately, rely on CSS transition for smooth fill  
-      if (votes[index]) {  
-        circle.classList.add("selected");  
-        bar.style.width = "100%"; // full width  
-      } else {  
-        circle.classList.remove("selected");  
-        bar.style.width = "0%";   
-      }  
+// Set width immediately, rely on CSS transition for smooth fill
+if (votes[index]) {
+    circle.classList.add("selected");
+
+    // Force reflow to trigger transition
+    bar.getBoundingClientRect(); 
+    bar.style.width = "100%"; // full width
+} else {
+    circle.classList.remove("selected");
+    bar.style.width = "0%";   
+}
   
       wrapper.appendChild(option);  
     });  
