@@ -438,6 +438,18 @@ body {
   color: white;
   transform: translateY(1px); /* PERFECT vertical centering */
 }
+/* ---------- DATE SEPARATOR BAR ---------- */
+.msg-date-bar {
+  text-align: center;
+  background-color: #000; /* black */
+  color: #fff;           /* white */
+  padding: 4px 12px;
+  margin: 12px 0;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
 </style>
 </head>
 <body>
@@ -836,8 +848,38 @@ async function checkReceivedMessages() {
 function renderMessages() {
   const box = document.getElementById("chat-body");
   box.innerHTML = "";
+  let lastMessageDay = null; // track last message day
 
   messages.forEach(msg => {
+  const msgDate = new Date(msg.sent_at);
+  const msgDay = msgDate.toDateString(); // simple unique day key
+
+  if (lastMessageDay !== msgDay) {
+    lastMessageDay = msgDay;
+
+    // determine label
+    const now = new Date();
+    let label = "";
+
+    const diffDays = Math.floor((now - msgDate) / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
+      label = "Today";
+    } else if (diffDays === 1) {
+      label = "Yesterday";
+    } else if (diffDays < 7 && now.getDay() > msgDate.getDay()) {
+      // same week (Mon-Fri)
+      label = msgDate.toLocaleDateString("en-US", { weekday: "long" }); 
+    } else {
+      // older
+      label = msgDate.toLocaleDateString("en-US", { month: "short", day: "numeric" }); 
+    }
+
+    const dateBar = document.createElement("div");
+    dateBar.className = "msg-date-bar";
+    dateBar.textContent = label;
+    box.appendChild(dateBar);
+  }
     const div = document.createElement("div");
     div.className = "message " + msg.type + (msg.status === "pending" ? " pending" : "");
 
