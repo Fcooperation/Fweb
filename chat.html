@@ -974,7 +974,7 @@ function renderPolls() {
       : "Select one";
     wrapper.appendChild(hint);
 
-    // Load votes for THIS poll only
+    // Votes for THIS poll only
     const votesKey = `poll_votes_${poll.id}`;
     let votes = JSON.parse(localStorage.getItem(votesKey)) || {};
 
@@ -1007,6 +1007,9 @@ function renderPolls() {
       option.appendChild(row);
       option.appendChild(barWrap);
 
+      // Key to track animation for this specific poll + option
+      const animatedKey = `poll_${poll.id}_option_${index}_animated`;
+
       // Click logic
       option.addEventListener("click", (e) => {
         e.stopPropagation();
@@ -1015,20 +1018,31 @@ function renderPolls() {
         votes[index] = !votes[index];
         localStorage.setItem(votesKey, JSON.stringify(votes));
 
+        // Reset animated keys for this poll if single choice
+        if (!poll.pollData.allowMultiple) {
+          poll.pollData.options.forEach((_, i) => {
+            if (i !== index) localStorage.removeItem(`poll_${poll.id}_option_${i}_animated`);
+          });
+        }
+
         renderPolls();
       });
 
-      // Smooth fill based on selection
+      // Animate fill based on selection
       if (votes[index]) {
         circle.classList.add("selected");
 
-        // Small timeout ensures CSS transition works
-        setTimeout(() => {
-          bar.style.width = "100%"; // full width
-        }, 20); // 20ms is enough
+        // Only animate if not already animated
+        if (!localStorage.getItem(animatedKey)) {
+          setTimeout(() => { bar.style.width = "100%"; }, 20);
+          localStorage.setItem(animatedKey, "true");
+        } else {
+          bar.style.width = "100%"; // instantly filled
+        }
       } else {
         circle.classList.remove("selected");
         bar.style.width = "0%";   
+        localStorage.removeItem(animatedKey); // reset if deselected
       }
 
       wrapper.appendChild(option);
