@@ -490,7 +490,7 @@ body {
 
 <!-- ---------- MESSAGES ---------- -->
 <div id="chat-body"></div>
-<button id="scroll-btn">⌄</button>
+<button id="scroll-btn" class="hidden">˅</button>
 <!-- ---------- REPLY PREVIEW ---------- -->
 <div id="reply-preview" style="display:none; padding:8px 16px; background:#f1f1f1; border-left:4px solid #007bff; justify-content:space-between; align-items:center; gap:10px;">
   <div>
@@ -559,7 +559,7 @@ header.onclick = () => {
   }));
   window.location.href = "chatdashboard.html";
 };
-/* ---------- SCROLL BUTTON ---------- */
+/*---------- SCROLL BUTTON ----------*/
 const scrollBtn = document.getElementById("scroll-btn");
 
 function isAtBottom() {
