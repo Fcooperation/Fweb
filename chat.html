@@ -1010,25 +1010,16 @@ function renderPolls() {
       // Click logic  
       option.addEventListener("click", (e) => {  
         e.stopPropagation();  
-  
-        // Reset only THIS poll if single selection  
-        if (!poll.pollData.allowMultiple) {  
-          votes = {};   
-        }  
-  
+        if (!poll.pollData.allowMultiple) votes = {};   
         votes[index] = !votes[index];  
         localStorage.setItem(votesKey, JSON.stringify(votes));  
-  
-        // Re-render ONLY this poll to avoid affecting others
         renderPolls();   
       });  
   
-      // Animate fill based on THIS poll's votes only  
+      // Set width immediately, rely on CSS transition for smooth fill  
       if (votes[index]) {  
         circle.classList.add("selected");  
-        setTimeout(() => {  
-          bar.style.width = "100%"; // full width  
-        }, 10);  
+        bar.style.width = "100%"; // full width  
       } else {  
         circle.classList.remove("selected");  
         bar.style.width = "0%";   
