@@ -852,34 +852,37 @@ function renderMessages() {
 
   messages.forEach(msg => {
   const msgDate = new Date(msg.sent_at);
-  const msgDay = msgDate.toDateString(); // simple unique day key
+const msgDay = msgDate.toDateString(); // simple unique day key
 
-  if (lastMessageDay !== msgDay) {
-    lastMessageDay = msgDay;
+if (lastMessageDay !== msgDay) {
+  lastMessageDay = msgDay;
 
-    // determine label
-    const now = new Date();
-    let label = "";
+  // determine label
+  const now = new Date();
+  let label = "";
 
-    const diffDays = Math.floor((now - msgDate) / (1000 * 60 * 60 * 24));
+  // calculate calendar-day difference
+  const dateA = new Date(msgDate.getFullYear(), msgDate.getMonth(), msgDate.getDate());
+  const dateB = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diffDays = Math.round((dateB - dateA) / (1000 * 60 * 60 * 24));
 
-    if (diffDays === 0) {
-      label = "Today";
-    } else if (diffDays === 1) {
-      label = "Yesterday";
-    } else if (diffDays < 7 && now.getDay() > msgDate.getDay()) {
-      // same week (Mon-Fri)
-      label = msgDate.toLocaleDateString("en-US", { weekday: "long" }); 
-    } else {
-      // older
-      label = msgDate.toLocaleDateString("en-US", { month: "short", day: "numeric" }); 
-    }
-
-    const dateBar = document.createElement("div");
-    dateBar.className = "msg-date-bar";
-    dateBar.textContent = label;
-    box.appendChild(dateBar);
+  if (diffDays === 0) {
+    label = "Today";
+  } else if (diffDays === 1) {
+    label = "Yesterday";
+  } else if (diffDays < 7) {
+    // same week (Mon-Fri)
+    label = msgDate.toLocaleDateString("en-US", { weekday: "long" });
+  } else {
+    // older messages
+    label = msgDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   }
+
+  const dateBar = document.createElement("div");
+  dateBar.className = "msg-date-bar";
+  dateBar.textContent = label;
+  box.appendChild(dateBar);
+}
     const div = document.createElement("div");
     div.className = "message " + msg.type + (msg.status === "pending" ? " pending" : "");
 
