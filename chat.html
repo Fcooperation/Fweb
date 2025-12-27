@@ -1369,6 +1369,7 @@ if (changed) {
     statusEl.textContent = "Updated";
     statusEl.className = "ok";
   }
+  return { receivedCount: receivedIds.length };
 }
   } catch (err) {
     if (navigator.onLine && statusEl) {
@@ -1378,42 +1379,77 @@ if (changed) {
     }
   }
 }
-/*----------GLOBAL CALLS ---------- */
+/*---------- GLOBAL CALLS ---------- */
 async function runChatSync() {
-  // If any other sync is running, flag it to stop
+  const statusEl = document.getElementById("receive-status");
+
+  // 🔴 Offline state
+  if (!navigator.onLine) {
+    if (statusEl) {
+      statusEl.textContent = "Offline · Retrying when online";
+      statusEl.className = "offline";
+    }
+    return;
+  }
+
+  // Prevent overlapping syncs
   if (isSyncRunning) {
     pendingAbort = true;
   }
 
-  // Wait until the previous sync is completely stopped
   while (isSyncRunning) {
-    await new Promise(res => setTimeout(res, 50)); // check every 50ms
+    await new Promise(res => setTimeout(res, 50));
   }
 
   isSyncRunning = true;
-  pendingAbort = false; // reset abort flag
+  pendingAbort = false;
 
   try {
-    // 1️⃣ Receive new messages (top priority)
-    await receiveMessages();
-    if (pendingAbort) return "aborted"; // stop if a new sync wants to run
+    let receivedCount = 0;
 
-    // 2️⃣ Check seen status (top priority)
+    // 1️⃣ Receive new messages
+    const result = await receiveMessages();
+    if (result?.receivedCount) {
+      receivedCount = result.receivedCount;
+    }
+
+    if (pendingAbort) return "aborted";
+
+    // 2️⃣ Seen check
     await checkReceivedMessages();
     if (pendingAbort) return "aborted";
 
-    // 3️⃣ Retry pending messages
+    // 3️⃣ Retry pending
     await retryPending();
     if (pendingAbort) return "aborted";
 
-    // 4️⃣ Retry scheduled deletes
+    // 4️⃣ Retry deletes
     await retryScheduledDeletes();
     if (pendingAbort) return "aborted";
 
-    return "success"; // everything completed
+    // ✅ UI feedback
+    if (statusEl) {
+      if (receivedCount > 0) {
+        statusEl.textContent = `Updated · ${receivedCount} message${receivedCount > 1 ? "s" : ""} found`;
+      } else {
+        statusEl.textContent = "Updated";
+      }
+
+      statusEl.className = "updated";
+    }
+
+    return "success";
+
   } catch (err) {
     console.warn("Chat sync error:", err);
+
+    if (statusEl) {
+      statusEl.textContent = "Error";
+      statusEl.className = "error";
+    }
+
     return "error";
+
   } finally {
     isSyncRunning = false;
     pendingAbort = false;
