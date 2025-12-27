@@ -971,72 +971,61 @@ function renderPolls() {
 
     let votes = JSON.parse(localStorage.getItem(votesKey)) || {};
 
-    poll.pollData.options.forEach((opt, index) => {
-      const option = document.createElement("div");
-      option.className = "poll-option";
+    const votesKey = `poll_votes_${poll.id}`;
+let votes = JSON.parse(localStorage.getItem(votesKey)) || {};
 
-      const row = document.createElement("div");
-      row.className = "poll-row";
+poll.pollData.options.forEach((opt, index) => {
+  const option = document.createElement("div");
+  option.className = "poll-option";
 
-      const circle = document.createElement("div");
-      circle.className = "poll-circle";
+  const row = document.createElement("div");
+  row.className = "poll-row";
 
-      const text = document.createElement("div");
-      text.className = "poll-text";
-      text.textContent = opt;
+  const circle = document.createElement("div");
+  circle.className = "poll-circle";
 
-      row.appendChild(circle);
-      row.appendChild(text);
+  const text = document.createElement("div");
+  text.className = "poll-text";
+  text.textContent = opt;
 
-      const barWrap = document.createElement("div");
-      barWrap.className = "poll-bar-container";
+  row.appendChild(circle);
+  row.appendChild(text);
 
-      const bar = document.createElement("div");
-      bar.className = "poll-bar";
-      barWrap.appendChild(bar);
+  const barWrap = document.createElement("div");
+  barWrap.className = "poll-bar-container";
 
-      option.appendChild(row);
-      option.appendChild(barWrap);
+  const bar = document.createElement("div");
+  bar.className = "poll-bar";
+  barWrap.appendChild(bar);
 
-      option.addEventListener("click", (e) => {
-        e.stopPropagation();
+  option.appendChild(row);
+  option.appendChild(barWrap);
 
-        if (!poll.pollData.allowMultiple) {
-          votes = {};
-          // reset animations for this poll
-          Object.keys(localStorage)
-            .filter(k => k.startsWith(animKeyPrefix))
-            .forEach(k => localStorage.removeItem(k));
-        }
+  option.addEventListener("click", (e) => {
+    e.stopPropagation();
 
-        votes[index] = !votes[index];
-        localStorage.setItem(votesKey, JSON.stringify(votes));
+    // Reset only this poll if single-select
+    if (!poll.pollData.allowMultiple) {
+      votes = {};
+    }
 
-        renderPolls();
-      });
+    votes[index] = !votes[index];
+    localStorage.setItem(votesKey, JSON.stringify(votes));
 
-      const animatedKey = `${animKeyPrefix}${index}`;
+    renderPolls(); // safe, each poll reads its own votes
+  });
 
-      if (votes[index]) {
-        circle.classList.add("selected");
+  // Animate bar fill per poll option
+  if (votes[index]) {
+    circle.classList.add("selected");
+    bar.style.width = "100%"; // fill full width
+  } else {
+    circle.classList.remove("selected");
+    bar.style.width = "0%";
+  }
 
-        if (!localStorage.getItem(animatedKey)) {
-          // animate ONLY once
-          setTimeout(() => {
-            bar.style.width = "100%";
-          }, 10);
-
-          localStorage.setItem(animatedKey, "true");
-        } else {
-          // instantly filled (no animation)
-          bar.style.width = "100px";
-        }
-      } else {
-        bar.style.width = "0px";
-      }
-
-      wrapper.appendChild(option);
-    });
+  wrapper.appendChild(option);
+});
 
     const status = document.createElement("div");
     status.className = "poll-status";
