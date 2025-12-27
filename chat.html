@@ -453,6 +453,7 @@ body {
 /* POLL CONTAINER */
 .poll-wrapper {
   width: 80%;
+  height: 200px;
   margin: 10px 0;
   padding: 10px;
   background: #000;
@@ -518,7 +519,7 @@ body {
 
 .poll-bar {
   height: 100%;
-  width: 80%;
+  width: 0;
   background: #2196f3;
   transition: width 0.35s ease;
 }
@@ -1022,7 +1023,7 @@ function renderPolls() {
         if (!localStorage.getItem(animatedKey)) {
           // animate ONLY once
           setTimeout(() => {
-            bar.style.width = "100px";
+            bar.style.width = "80%";
           }, 10);
 
           localStorage.setItem(animatedKey, "true");
