@@ -450,6 +450,73 @@ body {
   font-weight: 600;
   display: inline-block;
 }
+/* ---------- POLL STYLES ---------- */
+
+.poll-wrapper {
+  width: 80%;
+  margin-left: auto;
+  margin-bottom: 12px;
+  background: #000;
+  color: #fff;
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 14px;
+}
+
+.poll-question {
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.poll-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+
+.poll-circle {
+  width: 16px;
+  height: 16px;
+  border: 2px solid white;
+  border-radius: 50%;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.poll-circle.selected::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+}
+
+.poll-bar-container {
+  flex: 1;
+  height: 6px;
+  background: #333;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.poll-bar {
+  height: 100%;
+  width: 0%;
+  background: #007bff;
+  transition: width 0.3s;
+}
+
+.poll-status {
+  font-size: 11px;
+  opacity: 0.6;
+  margin-top: 6px;
+  text-align: right;
+}
 </style>
 </head>
 <body>
@@ -860,6 +927,72 @@ async function checkReceivedMessages() {
     console.warn("checkReceivedMessages failed:", err);
   }
 }
+/*---------- RENDER POLLS ----------*/
+function renderPolls() {
+  const box = document.getElementById("chat-body");
+
+  polls.forEach(poll => {
+    const wrapper = document.createElement("div");
+    wrapper.className = "poll-wrapper";
+
+    // Question
+    const question = document.createElement("div");
+    question.className = "poll-question";
+    question.textContent = poll.pollData.question;
+    wrapper.appendChild(question);
+
+    // Votes storage (local only for now)
+    const votesKey = `poll_votes_${poll.id}`;
+    let votes = JSON.parse(localStorage.getItem(votesKey)) || {};
+
+    poll.pollData.options.forEach((opt, index) => {
+      const option = document.createElement("div");
+      option.className = "poll-option";
+
+      const circle = document.createElement("div");
+      circle.className = "poll-circle";
+
+      const barWrap = document.createElement("div");
+      barWrap.className = "poll-bar-container";
+
+      const bar = document.createElement("div");
+      bar.className = "poll-bar";
+
+      barWrap.appendChild(bar);
+
+      // Click logic
+      option.onclick = () => {
+        if (!poll.pollData.allowMultiple) {
+          votes = {}; // reset if only one allowed
+        }
+
+        votes[index] = !votes[index];
+        localStorage.setItem(votesKey, JSON.stringify(votes));
+
+        renderPolls(); // re-render
+      };
+
+      if (votes[index]) {
+        circle.classList.add("selected");
+        bar.style.width = "100%";
+      }
+
+      option.appendChild(circle);
+      option.appendChild(document.createTextNode(opt));
+      option.appendChild(barWrap);
+
+      wrapper.appendChild(option);
+    });
+
+    // Status
+    const status = document.createElement("div");
+    status.className = "poll-status";
+    status.textContent = poll.status || "sent";
+    wrapper.appendChild(status);
+
+    box.appendChild(wrapper);
+  });
+}
 /* ---------- RENDER MESSAGES ---------- */
 function renderMessages() {
   const box = document.getElementById("chat-body");
@@ -1069,6 +1202,7 @@ if (lastMessageDay !== msgDay) {
   scrollToBottom();
   enableMessageTap();
   enableMultiSelect();
+  renderPolls();
 }
 function enableMessageTap() {
   const allMessages = document.querySelectorAll(".message");
