@@ -945,101 +945,103 @@ async function checkReceivedMessages() {
   } catch (err) {
     console.warn("checkReceivedMessages failed:", err);
   }
-}
-/*---------- RENDER POLLS ----------*/  
-function renderPolls() {  
-  const box = document.getElementById("chat-body");  
-  
-  // Remove old polls  
-  document.querySelectorAll(".poll-wrapper").forEach(p => p.remove());  
-  
-  polls.forEach(poll => {  
-    const wrapper = document.createElement("div");  
-    wrapper.className = "poll-wrapper";  
-    wrapper.dataset.pollId = poll.id;  
-    wrapper.style.height = "200px";   
-    wrapper.style.width = "80%";      
-  
-    // Question  
-    const question = document.createElement("div");  
-    question.className = "poll-question";  
-    question.textContent = poll.pollData.question;  
-    wrapper.appendChild(question);  
-  
-    // Hint  
-    const hint = document.createElement("div");  
-    hint.className = "poll-hint";  
-    hint.textContent = poll.pollData.allowMultiple  
-      ? "Select more than one"  
-      : "Select one";  
-    wrapper.appendChild(hint);  
-  
-    // Load votes for THIS poll only
-    const votesKey = `poll_votes_${poll.id}`;  
-    let votes = JSON.parse(localStorage.getItem(votesKey)) || {};  
-  
-    poll.pollData.options.forEach((opt, index) => {  
-      const option = document.createElement("div");  
-      option.className = "poll-option";  
-  
-      // Row: circle + text  
-      const row = document.createElement("div");  
-      row.className = "poll-row";  
-  
-      const circle = document.createElement("div");  
-      circle.className = "poll-circle";  
-  
-      const text = document.createElement("div");  
-      text.className = "poll-text";  
-      text.textContent = opt;  
-  
-      row.appendChild(circle);  
-      row.appendChild(text);  
-  
-      // Bar container  
-      const barWrap = document.createElement("div");  
-      barWrap.className = "poll-bar-container";  
-  
-      const bar = document.createElement("div");  
-      bar.className = "poll-bar";  
-      barWrap.appendChild(bar);  
-  
-      option.appendChild(row);  
-      option.appendChild(barWrap);  
-  
-      // Click logic  
-      option.addEventListener("click", (e) => {  
-        e.stopPropagation();  
-        if (!poll.pollData.allowMultiple) votes = {};   
-        votes[index] = !votes[index];  
-        localStorage.setItem(votesKey, JSON.stringify(votes));  
-        renderPolls();   
-      });  
-  
-// Set width immediately, rely on CSS transition for smooth fill
-if (votes[index]) {
-    circle.classList.add("selected");
+}/*---------- RENDER POLLS ----------*/
+function renderPolls() {
+  const box = document.getElementById("chat-body");
 
-    // Force reflow to trigger transition
-    bar.getBoundingClientRect(); 
-    bar.style.width = "100%"; // full width
-} else {
-    circle.classList.remove("selected");
-    bar.style.width = "0%";   
+  // Remove old polls
+  document.querySelectorAll(".poll-wrapper").forEach(p => p.remove());
+
+  polls.forEach(poll => {
+    const wrapper = document.createElement("div");
+    wrapper.className = "poll-wrapper";
+    wrapper.dataset.pollId = poll.id;
+    wrapper.style.height = "200px";   
+    wrapper.style.width = "80%";
+
+    // Question
+    const question = document.createElement("div");
+    question.className = "poll-question";
+    question.textContent = poll.pollData.question;
+    wrapper.appendChild(question);
+
+    // Hint
+    const hint = document.createElement("div");
+    hint.className = "poll-hint";
+    hint.textContent = poll.pollData.allowMultiple
+      ? "Select more than one"
+      : "Select one";
+    wrapper.appendChild(hint);
+
+    // Load votes for THIS poll only
+    const votesKey = `poll_votes_${poll.id}`;
+    let votes = JSON.parse(localStorage.getItem(votesKey)) || {};
+
+    poll.pollData.options.forEach((opt, index) => {
+      const option = document.createElement("div");
+      option.className = "poll-option";
+
+      // Row: circle + text
+      const row = document.createElement("div");
+      row.className = "poll-row";
+
+      const circle = document.createElement("div");
+      circle.className = "poll-circle";
+
+      const text = document.createElement("div");
+      text.className = "poll-text";
+      text.textContent = opt;
+
+      row.appendChild(circle);
+      row.appendChild(text);
+
+      // Bar container
+      const barWrap = document.createElement("div");
+      barWrap.className = "poll-bar-container";
+
+      const bar = document.createElement("div");
+      bar.className = "poll-bar";
+      barWrap.appendChild(bar);
+
+      option.appendChild(row);
+      option.appendChild(barWrap);
+
+      // Click logic
+      option.addEventListener("click", (e) => {
+        e.stopPropagation();
+
+        if (!poll.pollData.allowMultiple) votes = {};   
+        votes[index] = !votes[index];
+        localStorage.setItem(votesKey, JSON.stringify(votes));
+
+        renderPolls();
+      });
+
+      // Animate fill based on selection
+      if (votes[index]) {
+        circle.classList.add("selected");
+
+        // Force reflow to trigger CSS transition
+        bar.getBoundingClientRect();
+        bar.style.width = "100%"; // fill smoothly
+      } else {
+        circle.classList.remove("selected");
+        bar.style.width = "0%";   
+      }
+
+      wrapper.appendChild(option);
+    });
+
+    // Status (sent, pending, etc.)
+    const status = document.createElement("div");
+    status.className = "poll-status";
+    status.textContent = poll.status || "sent";
+    wrapper.appendChild(status);
+
+    box.appendChild(wrapper);
+  });
 }
-  
-      wrapper.appendChild(option);  
-    });  
-  
-    // Status  
-    const status = document.createElement("div");  
-    status.className = "poll-status";  
-    status.textContent = poll.status || "sent";  
-    wrapper.appendChild(status);  
-  
-    box.appendChild(wrapper);  
-  });  
-}
+
 /* ---------- RENDER MESSAGES ---------- */
 function renderMessages() {
   const box = document.getElementById("chat-body");
