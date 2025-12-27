@@ -553,20 +553,35 @@ header.onclick = () => {
 };
 /*---------- SCROLL BUTTON ----------*/
 const scrollBtn = document.getElementById("scroll-btn");
+const chatBody = document.getElementById("chat-body");
 
+// Show / hide based on scroll position
+function handleScroll() {
+  const atBottom =
+    chatBody.scrollTop + chatBody.clientHeight >= chatBody.scrollHeight - 5;
+
+  if (atBottom) {
+    scrollBtn.style.display = "none";
+  } else {
+    scrollBtn.style.display = "flex";
+  }
+}
+
+// Scroll to bottom on click
 scrollBtn.addEventListener("click", () => {
-  const chatBody = document.getElementById("chat-body");
-
   chatBody.scrollTo({
     top: chatBody.scrollHeight,
     behavior: "smooth"
   });
 
-  // hide after scroll finishes
+  // Hide after scroll finishes
   setTimeout(() => {
     scrollBtn.style.display = "none";
-  }, 300); // small delay so scroll completes
+  }, 300);
 });
+
+// Listen for scrolling inside chat
+chatBody.addEventListener("scroll", handleScroll);
 /* ---------- MESSAGE STORAGE ---------- */
 const STORAGE_KEY = `chat_${account.email}_${chatWith.id}`;
 let messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
