@@ -411,51 +411,37 @@ body {
 #receive-status.offline { color: orange; }
 #receive-status.error { color: red; }
 #receive-status.updated { color: green; }
-#scroll-down-btn {
-  position: absolute;
-  bottom: 16px;
+/* ----------------- SCROLL DOWN BUTTON ----------------- */
+#scroll-btn {
+  position: fixed;
   right: 16px;
-
-  width: 42px;
-  height: 42px;
-
-  background: #1e88e5;
+  bottom: 80px;
+  width: 58px;
+  height: 58px;
   border-radius: 50%;
-
-  display: none; /* hidden by default */
-  align-items: center;
+  background: linear-gradient(145deg, #2196f3, #1e88e5);
+  color: white;
+  border: none;
+  font-size: 28px;
+  font-weight: bold;
+  display: flex;
   justify-content: center;
-
+  align-items: center;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
   cursor: pointer;
-  z-index: 10;
-
-  box-shadow: 0 6px 15px rgba(0,0,0,0.25);
+  z-index: 1000;
   transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
-#scroll-down-btn span {
-  color: black;
-  font-size: 22px;
-  font-weight: bold;
-  line-height: 1;
+/* hover effect */
+#scroll-btn:hover {
+  transform: scale(1.08);
 }
-/* ----------------- ADD BUTTON ----------------- */
-#add-btn {
-  position:fixed;
-  right:16px;
-  bottom:80px;
-  width:55px;
-  height:55px;
-  border-radius:50%;
-  background:#2196f3;
-  color:white;
-  border:none;
-  font-size:28px;
-  font-weight:bold;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  box-shadow:0 3px 6px rgba(0,0,0,0.2);
+
+/* hidden state */
+#scroll-btn.hidden {
+  opacity: 0;
+  pointer-events: none;
 }
 </style>
 </head>
@@ -499,7 +485,7 @@ body {
 
 <!-- ---------- MESSAGES ---------- -->
 <div id="chat-body"></div>
-<button id="add-btn" onclick="location.href='add.html'">+</button>
+<button id="scroll-btn">⌄</button>
 <!-- ---------- REPLY PREVIEW ---------- -->
 <div id="reply-preview" style="display:none; padding:8px 16px; background:#f1f1f1; border-left:4px solid #007bff; justify-content:space-between; align-items:center; gap:10px;">
   <div>
