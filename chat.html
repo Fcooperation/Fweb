@@ -931,6 +931,9 @@ async function checkReceivedMessages() {
 function renderPolls() {
   const box = document.getElementById("chat-body");
 
+  // 🔥 REMOVE OLD POLLS FIRST (important)
+  document.querySelectorAll(".poll-wrapper").forEach(p => p.remove());
+
   polls.forEach(poll => {
     const wrapper = document.createElement("div");
     wrapper.className = "poll-wrapper";
@@ -960,16 +963,15 @@ function renderPolls() {
 
       barWrap.appendChild(bar);
 
-      // Click logic
       option.onclick = () => {
         if (!poll.pollData.allowMultiple) {
-          votes = {}; // reset if only one allowed
+          votes = {};
         }
 
         votes[index] = !votes[index];
         localStorage.setItem(votesKey, JSON.stringify(votes));
 
-        renderPolls(); // re-render
+        renderPolls(); // re-render safely
       };
 
       if (votes[index]) {
@@ -984,7 +986,6 @@ function renderPolls() {
       wrapper.appendChild(option);
     });
 
-    // Status
     const status = document.createElement("div");
     status.className = "poll-status";
     status.textContent = poll.status || "sent";
