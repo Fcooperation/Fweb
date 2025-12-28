@@ -453,54 +453,49 @@ body {
 /* POLL CONTAINER */
 .poll-wrapper {
   width: 80%;
-  min-width: 350px;          /* default min width */
-  max-width: 500px;          /* optional max width */
-  padding: 14px 16px;
+  min-width: 250px;
+  padding: 10px 12px;
   background: #000;
-  border-radius: 12px;
+  border-radius: 10px;
   color: white;
   align-self: flex-end;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  position: relative;        /* for status at bottom */
+  position: relative; /* for status at bottom */
   margin: 10px 0;
-  overflow: hidden;          /* prevent horizontal overflow */
 }
 
 /* QUESTION */
 .poll-question {
   font-weight: bold;
-  margin-bottom: 18px;       /* larger gap before options */
-  line-height: 1.4;          /* better spacing for multiple lines */
+  margin-bottom: 16px; /* larger gap before options */
 }
 
 /* HINT TEXT */
 .poll-hint {
   font-size: 12px;
   opacity: 0.6;
-  margin-bottom: 14px;
+  margin-bottom: 12px; /* reasonable gap */
 }
 
 /* OPTION */
 .poll-option {
-  margin-bottom: 12px;       /* space between options */
+  margin-bottom: 10px; /* space between options */
   cursor: pointer;
-  display: flex;
-  flex-direction: column;     /* allow bars underneath */
 }
 
 /* ROW (circle + text) */
 .poll-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 /* CIRCLE */
 .poll-circle {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   border: 2px solid #aaa;
   transition: 0.2s;
@@ -514,7 +509,6 @@ body {
 /* OPTION TEXT */
 .poll-text {
   font-size: 14px;
-  word-break: break-word;     /* prevent overflow on long text */
 }
 
 /* BAR */
@@ -524,7 +518,7 @@ body {
   background: #222;
   border-radius: 6px;
   overflow: hidden;
-  margin-top: 6px;           /* space from option text */
+  margin-top: 4px;
 }
 
 .poll-bar {
@@ -538,17 +532,9 @@ body {
 .poll-status {
   font-size: 11px;
   opacity: 0.6;
-  position: absolute;        /* bottom right */
+  position: absolute; /* bottom right */
   bottom: 8px;
   right: 10px;
-}
-
-/* MAKE POLL VERTICAL FOR MANY OPTIONS */
-.poll-wrapper {
-  display: flex;
-  flex-direction: column;
-  max-height: 100%;          /* grow vertically as needed */
-  overflow-y: auto;          /* scroll if too many options */
 }
 </style>
 </head>
