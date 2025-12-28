@@ -452,10 +452,10 @@ body {
 }
 /* POLL CONTAINER */
 .poll-wrapper {
-  width: fit-content;        /* Adjust width to content */
+  width: 80%;
   min-width: 350px;          /* default min width */
-  max-width: 90%;            /* don't exceed 90% of parent */
-  padding: 12px 16px;
+  max-width: 500px;          /* optional max width */
+  padding: 14px 16px;
   background: #000;
   border-radius: 12px;
   color: white;
@@ -465,32 +465,29 @@ body {
   flex-direction: column;
   position: relative;        /* for status at bottom */
   margin: 10px 0;
-  word-wrap: break-word;     /* break long text */
-  height: auto;              /* dynamic height */
+  overflow: hidden;          /* prevent horizontal overflow */
 }
 
 /* QUESTION */
 .poll-question {
   font-weight: bold;
-  font-size: 16px;
-  line-height: 1.4;
-  margin-bottom: 16px;      /* spacing before options */
-  word-wrap: break-word;
+  margin-bottom: 18px;       /* larger gap before options */
+  line-height: 1.4;          /* better spacing for multiple lines */
 }
 
 /* HINT TEXT */
 .poll-hint {
   font-size: 12px;
   opacity: 0.6;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 /* OPTION */
 .poll-option {
-  margin-bottom: 12px;       /* more spacing for readability */
+  margin-bottom: 12px;       /* space between options */
   cursor: pointer;
   display: flex;
-  flex-direction: column;    /* allow bar to stack under text */
+  flex-direction: column;     /* allow bars underneath */
 }
 
 /* ROW (circle + text) */
@@ -517,7 +514,7 @@ body {
 /* OPTION TEXT */
 .poll-text {
   font-size: 14px;
-  line-height: 1.4;
+  word-break: break-word;     /* prevent overflow on long text */
 }
 
 /* BAR */
@@ -527,7 +524,7 @@ body {
   background: #222;
   border-radius: 6px;
   overflow: hidden;
-  margin-top: 6px;
+  margin-top: 6px;           /* space from option text */
 }
 
 .poll-bar {
@@ -541,9 +538,17 @@ body {
 .poll-status {
   font-size: 11px;
   opacity: 0.6;
-  position: absolute;
+  position: absolute;        /* bottom right */
   bottom: 8px;
-  right: 12px;
+  right: 10px;
+}
+
+/* MAKE POLL VERTICAL FOR MANY OPTIONS */
+.poll-wrapper {
+  display: flex;
+  flex-direction: column;
+  max-height: 100%;          /* grow vertically as needed */
+  overflow-y: auto;          /* scroll if too many options */
 }
 </style>
 </head>
