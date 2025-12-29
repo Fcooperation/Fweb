@@ -961,11 +961,17 @@ wrapper.className = "poll-wrapper";
 wrapper.dataset.pollId = poll.id;
 wrapper.style.width = "80%";
 
-// ✅ HEIGHT LOGIC (PUT HERE)
 const baseHeight = 200;
-const extraOptions = Math.max(poll.pollData.options.length - 2, 0);
-const extraHeight = extraOptions * 60;
-wrapper.style.minHeight = `${baseHeight + extraHeight}px`;
+
+const optionCount = poll.pollData.options.length;
+
+// First increase (after 2 options)
+const normalExtra = Math.max(Math.min(optionCount, 10) - 2, 0) * 70;
+
+// Extra increase after 10 options
+const extraAfterTen = Math.max(optionCount - 10, 0) * 60;
+
+wrapper.style.minHeight = `${baseHeight + normalExtra + extraAfterTen}px`;
 
     // Question
     const question = document.createElement("div");
