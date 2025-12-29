@@ -454,7 +454,7 @@ body {
 .poll-wrapper {
   width: 80%;
   min-width: 250px;
-  min-height: 300px;
+  min-height: 250px;
   padding: 10px 12px;
   background: #000;
   border-radius: 10px;
@@ -536,10 +536,6 @@ body {
   position: absolute; /* bottom right */
   bottom: 8px;
   right: 10px;
-}
-.poll-time {
-  font-weight: normal;
-  color: #999;
 }
 </style>
 </head>
@@ -702,6 +698,36 @@ try {
 } catch {
   polls = [];
 }
+// ---------- MERGE MESSAGES & POLLS ----------
+let fchat_messages = [];
+
+// Normalize messages
+const formattedMessages = messages
+  .filter(m => m && m.sent_at)
+  .map(m => ({
+    type: "message",
+    sent_at: m.sent_at,
+    data: m
+  }));
+
+// Normalize polls
+const formattedPolls = polls
+  .filter(p => p && p.sent_at)
+  .map(p => ({
+    type: "poll",
+    sent_at: p.sent_at,
+    data: p
+  }));
+
+// Merge + sort by sent_at
+fchat_messages = [...formattedMessages, ...formattedPolls]
+  .sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
+
+// Optional: store if you want persistence
+localStorage.setItem(
+  `fchat_messages_${account.email}_${chatWith.id}`,
+  JSON.stringify(fchat_messages)
+);
 function formatMessageTime(sentAt) {
   if (!sentAt) return "";
 const date = new Date(sentAt);
@@ -951,45 +977,14 @@ async function checkReceivedMessages() {
     console.warn("checkReceivedMessages failed:", err);
   }
 }
-// TEMP STORAGE FOR ORDERING
-let fchatMessages = [];
-
-// Collect messages
-messages.forEach(msg => {
-  if (msg && msg.sent_at) {
-    fchatMessages.push({
-      type: "message",
-      data: msg,
-      sent_at: new Date(msg.sent_at).getTime()
-    });
-  }
-});
-
-// Collect polls
-polls.forEach(poll => {
-  if (poll && poll.sent_at) {
-    fchatMessages.push({
-      type: "poll",
-      data: poll,
-      sent_at: new Date(poll.sent_at).getTime()
-    });
-  }
-});
-
-// Sort everything by sent_at
-fchatMessages.sort((a, b) => a.sent_at - b.sent_at);
 /*---------- RENDER POLLS ----------*/
 function renderPolls() {
   const box = document.getElementById("chat-body");
-// Only keep polls from fchatMessages
-const sortedPolls = fchatMessages
-  .filter(item => item.type === "poll")
-  .map(item => item.data);
 
   // Remove old polls
   document.querySelectorAll(".poll-wrapper").forEach(p => p.remove());
 
-  sortedPolls.forEach(poll => {
+  polls.forEach(poll => {
     const wrapper = document.createElement("div");
 wrapper.className = "poll-wrapper";
 wrapper.dataset.pollId = poll.id;
@@ -1092,42 +1087,30 @@ wrapper.style.minHeight = `${baseHeight + normalExtra + extraAfterTen}px`;
 
 // Status (sent, pending, etc.)
 const status = document.createElement("div");
-status.classList.add("poll-status"); // flex container
-
-// Create time element
-const timeSpan = document.createElement("span");
-timeSpan.classList.add("poll-time");
-timeSpan.textContent = formatMessageTime(poll.sent_at); // same function used for messages
-
-// Create text for status
-const statusText = document.createElement("span");
+status.classList.add("poll-status"); // keep your poll CSS
 
 if (poll.status === "sending") {
-  statusText.textContent = "Sending…";
-  statusText.classList.add("status-sending");
+  status.textContent = "Sending…";
+  status.classList.add("status-sending");
 } else if (poll.status === "pending") {
-  statusText.textContent = "Pending";
-  statusText.classList.add("status-pending");
+  status.textContent = "Pending";
+  status.classList.add("status-pending");
 } else if (poll.status === "sent") {
-  statusText.textContent = "Sent";
-  statusText.classList.add("status-sent");
+  status.textContent = "Sent";
+  status.classList.add("status-sent");
 } else if (poll.status === "deleting") {
-  statusText.textContent = "Deleting…";
-  statusText.classList.add("status-deleting");
+  status.textContent = "Deleting…";
+  status.classList.add("status-deleting");
 } else if (poll.status === "deleted") {
-  statusText.textContent = "Deleted";
-  statusText.classList.add("status-deleted");
+  status.textContent = "Deleted";
+  status.classList.add("status-deleted");
 } else if (poll.status === "scheduled") {
-  statusText.textContent = "Scheduled";
-  statusText.classList.add("status-scheduled");
+  status.textContent = "Scheduled";
+  status.classList.add("status-scheduled");
 } else if (poll.status === "seen") {
-  statusText.textContent = "Seen";
-  statusText.classList.add("status-seen");
+  status.textContent = "Seen";
+  status.classList.add("status-seen");
 }
-
-// Append time first, then status text
-status.appendChild(timeSpan);
-status.appendChild(statusText);
 
 wrapper.appendChild(status);
 
@@ -1135,219 +1118,116 @@ wrapper.appendChild(status);
   });
 }
 /* ---------- RENDER MESSAGES ---------- */
-function renderMessages() {
+function renderFchat() {
   const box = document.getElementById("chat-body");
-  box.innerHTML = "";
-  // ✅ Sort messages by sent_at (oldest → newest)
-// Only keep messages from fchatMessages
-let sortedMessages = fchatMessages.filter(item => item.type === "message");
-  let lastMessageDay = null; // track last message day
+  box.innerHTML = ""; // clear old chat
+  let lastMessageDay = null; // for date labels
 
-sortedMessages.forEach(item => {
-  const msg = item.data; // msg is now the same as before
-  const msgDate = new Date(msg.sent_at);
-  const msgDay = msgDate.toDateString();
+  // Loop through fchat_messages (already merged & sorted by sent_at)
+  fchat_messages.forEach(item => {
+    const dateObj = new Date(item.sent_at);
+    const itemDay = dateObj.toDateString();
 
-if (lastMessageDay !== msgDay) {
-  lastMessageDay = msgDay;
+    // Date label
+    if (lastMessageDay !== itemDay) {
+      lastMessageDay = itemDay;
 
-  // determine label
-  const now = new Date();
-  let label = "";
+      const now = new Date();
+      let label = "";
 
-  // calculate calendar-day difference
-  const dateA = new Date(msgDate.getFullYear(), msgDate.getMonth(), msgDate.getDate());
-  const dateB = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const diffDays = Math.round((dateB - dateA) / (1000 * 60 * 60 * 24));
+      const dateA = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
+      const dateB = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const diffDays = Math.round((dateB - dateA) / (1000 * 60 * 60 * 24));
 
-  if (diffDays === 0) {
-    label = "Today";
-  } else if (diffDays === 1) {
-    label = "Yesterday";
-  } else if (diffDays < 7) {
-    // same week (Mon-Fri)
-    label = msgDate.toLocaleDateString("en-US", { weekday: "long" });
-  } else {
-    // older messages
-    label = msgDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-  }
+      if (diffDays === 0) label = "Today";
+      else if (diffDays === 1) label = "Yesterday";
+      else if (diffDays < 7) label = dateObj.toLocaleDateString("en-US", { weekday: "long" });
+      else label = dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
-  const dateBar = document.createElement("div");
-  dateBar.className = "msg-date-bar";
-  dateBar.textContent = label;
-  box.appendChild(dateBar);
-}
-    const div = document.createElement("div");
-    div.className = "message " + msg.type + (msg.status === "pending" ? " pending" : "");
-
-    // Header (username) – only for received messages
-    if (msg.type === "received") {
-      const header = document.createElement("div");
-      header.className = "msg-username";
-      header.textContent = msg.sender_username || "Unknown";
-      div.appendChild(header);
+      const dateBar = document.createElement("div");
+      dateBar.className = "msg-date-bar";
+      dateBar.textContent = label;
+      box.appendChild(dateBar);
     }
 
-    // Time – ONLY for received messages
-    if (msg.type === "received") {
-      const timeDiv = document.createElement("div");
-      timeDiv.className = "msg-time";
-      timeDiv.textContent = formatMessageTime(msg.sent_at);
-      div.appendChild(timeDiv);
-    }
+    if (item.type === "message") {
+      // Render message (reuse your existing message rendering code here)
+      const msg = item.data;
+      const div = document.createElement("div");
+      div.className = "message " + msg.type + (msg.status === "pending" ? " pending" : "");
+      div.dataset.id = msg.id;
 
-    // Reply preview
-    if (msg.replyTo) {
-      const replyBox = document.createElement("div");
-      replyBox.style.borderLeft = "3px solid #007bff";
-      replyBox.style.padding = "4px 8px";
-      replyBox.style.marginBottom = "6px";
-      replyBox.style.fontSize = "12px";
-      replyBox.style.opacity = "0.8";
-      replyBox.innerHTML = `
-        <strong>${msg.replyTo.sender}</strong><br>
-        ${msg.replyTo.text}
-      `;
-      div.appendChild(replyBox);
-    }
+      // Header for received
+      if (msg.type === "received") {
+        const header = document.createElement("div");
+        header.className = "msg-username";
+        header.textContent = msg.sender_username || "Unknown";
+        div.appendChild(header);
 
-    // Linked message preview
-    if (msg.linked_message === "yes" && msg.linked_message_id) {
-      const linked = messages.find(m => String(m.id) === String(msg.linked_message_id));
-
-      if (linked) {
-        const linkedBox = document.createElement("div");
-        linkedBox.className = "linked-preview";
-
-        const senderName = linked.type === "sent" ? "You" : chatWith.username;
-        linkedBox.innerHTML = `<strong>${senderName}</strong><br>${linked.text.slice(0, 80) || "Message"}`;
-
-        linkedBox.onclick = (e) => {
-          if (selectMode) return;
-          e.stopPropagation();
-
-          const target = document.querySelector(`[data-id='${linked.id}']`);
-          if (target) {
-            target.scrollIntoView({ behavior: "smooth", block: "center" });
-            target.classList.add("highlight");
-            setTimeout(() => target.classList.remove("highlight"), 1200);
-          }
-        };
-
-        div.appendChild(linkedBox);
+        const timeDiv = document.createElement("div");
+        timeDiv.className = "msg-time";
+        timeDiv.textContent = formatMessageTime(msg.sent_at);
+        div.appendChild(timeDiv);
       }
-    }
 
-    // Message text
-    const textNode = document.createElement("div");
-    textNode.className = "msg-text";
-
-    if (msg.deleted) {
-      textNode.textContent = msg.text;
-      div.classList.add("deleted");
-      div.appendChild(textNode);
-    } else {
+      // Message text
+      const textNode = document.createElement("div");
+      textNode.className = "msg-text";
       textNode.textContent = msg.text;
       div.appendChild(textNode);
 
-      // READ MORE logic
-      requestAnimationFrame(() => {
-        const lineHeight = parseFloat(getComputedStyle(textNode).lineHeight);
+      // Status for sent
+      if (msg.type === "sent") {
+        const status = document.createElement("div");
+        status.classList.add("status-text");
 
-        const INITIAL_LINES = 10;
-        const STEP_LINES = 25;
-        let currentLines = INITIAL_LINES;
+        const timeSpan = document.createElement("span");
+        timeSpan.classList.add("message-time");
+        timeSpan.textContent = formatMessageTime(msg.sent_at);
+        status.appendChild(timeSpan);
 
-        const applyClamp = () => {
-          textNode.style.display = "-webkit-box";
-          textNode.style.webkitBoxOrient = "vertical";
-          textNode.style.webkitLineClamp = currentLines;
-          textNode.style.overflow = "hidden";
-        };
+        status.append(msg.status || "Sent");
+        div.appendChild(status);
+      }
 
-        const removeClamp = () => {
-          textNode.style.webkitLineClamp = "unset";
-          textNode.style.display = "block";
-          textNode.style.overflow = "visible";
-        };
+      box.appendChild(div);
+    } else if (item.type === "poll") {
+      // Render poll (reuse your existing poll rendering code here)
+      const poll = item.data;
+      const wrapper = document.createElement("div");
+      wrapper.className = "poll-wrapper";
+      wrapper.dataset.pollId = poll.id;
+      wrapper.style.width = "80%";
 
-        if (textNode.scrollHeight > lineHeight * INITIAL_LINES) {
-          applyClamp();
+      const question = document.createElement("div");
+      question.className = "poll-question";
+      question.textContent = poll.pollData.question;
+      wrapper.appendChild(question);
 
-          const readMore = document.createElement("div");
-          readMore.className = "read-more";
-          readMore.textContent = "Read more";
-
-          readMore.onclick = () => {
-  const totalLines = Math.ceil(textNode.scrollHeight / lineHeight);
-
-  if (currentLines >= totalLines) {
-    // READ LESS
-    currentLines = INITIAL_LINES;
-    applyClamp();
-    readMore.textContent = "Read more";
-  } else {
-    // READ MORE
-    currentLines += STEP_LINES;
-
-    if (currentLines >= totalLines) {
-      removeClamp();
-      readMore.textContent = "Read less";
-    } else {
-      applyClamp();
-      readMore.textContent = "Read more";
-    }
-  }
-};
-
-          div.appendChild(readMore);
-        }
+      // Poll options...
+      poll.pollData.options.forEach((opt, index) => {
+        const option = document.createElement("div");
+        option.className = "poll-option";
+        option.textContent = opt;
+        wrapper.appendChild(option);
       });
-    }
 
-    // Status (sent messages only)
-    if (msg.type === "sent") {
+      // Poll status/time
       const status = document.createElement("div");
-      status.classList.add("status-text");
-
+      status.classList.add("poll-status");
       const timeSpan = document.createElement("span");
-      timeSpan.classList.add("message-time");
-      timeSpan.textContent = formatMessageTime(msg.sent_at);
+      timeSpan.classList.add("poll-time");
+      timeSpan.textContent = formatMessageTime(poll.sent_at);
       status.appendChild(timeSpan);
+      wrapper.appendChild(status);
 
-      if (msg.status === "sending") {
-        status.append("Sending…");
-        status.classList.add("status-sending");
-      } else if (msg.status === "pending") {
-        status.append("Pending");
-        status.classList.add("status-pending");
-      } else if (msg.status === "sent") {
-        status.append("Sent");
-        status.classList.add("status-sent");
-      } else if (msg.status === "deleting") {
-  status.append("Deleting…");
-  status.classList.add("status-deleting");
-} else if (msg.status === "deleted") {
-  status.append("Deleted");
-  status.classList.add("status-deleted");
-}else if (msg.status === "scheduled") {
-  status.append("Scheduled");
-  status.classList.add("status-scheduled");
-} else if (msg.status === "seen") {
-  status.append("Seen");
-  status.classList.add("status-seen");
-}
-
-      div.appendChild(status);
+      box.appendChild(wrapper);
     }
-    div.dataset.id = msg.id;
-    box.appendChild(div);
   });
 
   scrollToBottom();
   enableMessageTap();
   enableMultiSelect();
-  renderPolls();
 }
 function enableMessageTap() {
   const allMessages = document.querySelectorAll(".message");
