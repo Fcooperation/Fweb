@@ -454,7 +454,6 @@ body {
 .poll-wrapper {
   width: 80%;
   min-width: 250px;
-  min-height: 200px;
   padding: 10px 12px;
   background: #000;
   border-radius: 10px;
@@ -465,13 +464,12 @@ body {
   flex-direction: column;
   position: relative; /* for status at bottom */
   margin: 10px 0;
-  height: auto;
 }
 
 /* QUESTION */
 .poll-question {
   font-weight: bold;
-  margin-bottom: 20px; /* larger gap before options */
+  margin-bottom: 16px; /* larger gap before options */
 }
 
 /* HINT TEXT */
@@ -483,7 +481,7 @@ body {
 
 /* OPTION */
 .poll-option {
-  margin-bottom: 40px; /* space between options */
+  margin-bottom: 10px; /* space between options */
   cursor: pointer;
 }
 
@@ -527,7 +525,7 @@ body {
   height: 100%;
   width: 0;
   background: #2196f3;
-  transition: width 0.5s ease;
+  transition: width 0.35s ease;
 }
 
 /* STATUS (logs) */
@@ -957,15 +955,10 @@ function renderPolls() {
 
   polls.forEach(poll => {
     const wrapper = document.createElement("div");
-wrapper.className = "poll-wrapper";
-wrapper.dataset.pollId = poll.id;
-wrapper.style.width = "80%";
-
-// ✅ HEIGHT LOGIC (PUT HERE)
-const baseHeight = 200;
-const extraOptions = Math.max(poll.pollData.options.length - 2, 0);
-const extraHeight = extraOptions * 65;
-wrapper.style.minHeight = `${baseHeight + extraHeight}px`;
+    wrapper.className = "poll-wrapper";
+    wrapper.dataset.pollId = poll.id;
+    wrapper.style.height = "200px";   
+    wrapper.style.width = "80%";
 
     // Question
     const question = document.createElement("div");
@@ -1092,8 +1085,24 @@ function renderMessages() {
   const box = document.getElementById("chat-body");
   box.innerHTML = "";
   let lastMessageDay = null; // track last message day
+  // --- Merge messages + polls into one timeline ---
+const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
+const polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
 
-  messages.forEach(msg => {
+const combined = [
+  ...messages.map(m => ({ ...m, __type: "message" })),
+  ...polls.map(p => ({ ...p, __type: "poll" }))
+];
+
+// Sort by time (important!)
+combined.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
+
+  combined.forEach(item => {
+  // ---------------- POLL ----------------
+if (item.__type === "poll") {
+  renderSinglePoll(item);
+  return;
+}
   const msgDate = new Date(msg.sent_at);
 const msgDay = msgDate.toDateString(); // simple unique day key
 
@@ -1296,7 +1305,7 @@ if (lastMessageDay !== msgDay) {
   scrollToBottom();
   enableMessageTap();
   enableMultiSelect();
-  renderPolls();
+  
 }
 function enableMessageTap() {
   const allMessages = document.querySelectorAll(".message");
