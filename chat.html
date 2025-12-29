@@ -1087,50 +1087,13 @@ wrapper.appendChild(status);
     box.appendChild(wrapper);
   });
 }
-/*----------COMBINE MESSAGES WITH POLL-------*/
-function getCombinedTimeline() {
-  const messageItems = messages.map(m => ({
-    id: Number(m.id),
-    type: "message",
-    sent_at: m.sent_at,
-    data: m
-  }));
-
-  const pollItems = polls.map(p => ({
-    id: Number(p.id),
-    type: "poll",
-    sent_at: p.sent_at,
-    data: p
-  }));
-
-  return [...messageItems, ...pollItems].sort((a, b) => {
-    const aId = Number(a.id) || 0;
-    const bId = Number(b.id) || 0;
-    return aId - bId;
-  });
-}
 /* ---------- RENDER MESSAGES ---------- */
 function renderMessages() {
   const box = document.getElementById("chat-body");
   box.innerHTML = "";
   let lastMessageDay = null; // track last message day
-  messages = messages.filter(m => m && m.id != null);
 
-messages.sort((a, b) => {
-  const idA = Number(a.id) || 0;
-  const idB = Number(b.id) || 0;
-  return idA - idB;
-});
-
-  const timeline = getCombinedTimeline();
-
-timeline.forEach(item => {
-  if (item.type === "poll") {
-    renderSinglePoll(item.data);
-    return;
-  }
-
-  const msg = item.data;
+  messages.forEach(msg => {
   const msgDate = new Date(msg.sent_at);
 const msgDay = msgDate.toDateString(); // simple unique day key
 
@@ -1333,7 +1296,7 @@ if (lastMessageDay !== msgDay) {
   scrollToBottom();
   enableMessageTap();
   enableMultiSelect();
-  
+  renderPolls();
 }
 function enableMessageTap() {
   const allMessages = document.querySelectorAll(".message");
