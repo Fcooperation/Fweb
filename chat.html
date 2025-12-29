@@ -950,11 +950,15 @@ async function checkReceivedMessages() {
 /*---------- RENDER POLLS ----------*/
 function renderPolls() {
   const box = document.getElementById("chat-body");
+  // Sort polls by sent_at (oldest → newest) and ignore invalid ones
+const sortedPolls = polls
+  .filter(p => p.sent_at) // only polls with sent_at
+  .sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
 
   // Remove old polls
   document.querySelectorAll(".poll-wrapper").forEach(p => p.remove());
 
-  polls.forEach(poll => {
+  sortedPolls.forEach(poll => {
     const wrapper = document.createElement("div");
 wrapper.className = "poll-wrapper";
 wrapper.dataset.pollId = poll.id;
