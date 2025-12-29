@@ -454,6 +454,7 @@ body {
 .poll-wrapper {
   width: 80%;
   min-width: 250px;
+  min-height: 200px;
   padding: 10px 12px;
   background: #000;
   border-radius: 10px;
@@ -955,10 +956,16 @@ function renderPolls() {
 
   polls.forEach(poll => {
     const wrapper = document.createElement("div");
-    wrapper.className = "poll-wrapper";
-    wrapper.dataset.pollId = poll.id;
-    wrapper.style.height = "200px";   
-    wrapper.style.width = "80%";
+wrapper.className = "poll-wrapper";
+wrapper.dataset.pollId = poll.id;
+wrapper.style.width = "80%";
+
+// ✅ PUT HERE
+const baseHeight = 200;
+const optionCount = poll.pollData.options.length;
+const normalExtra = Math.max(Math.min(optionCount, 10) - 2, 0) * 70;
+const extraAfterTen = Math.max(optionCount - 10, 0) * 60;
+wrapper.style.minHeight = `${baseHeight + normalExtra + extraAfterTen}px`;
 
     // Question
     const question = document.createElement("div");
