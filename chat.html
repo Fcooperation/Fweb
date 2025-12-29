@@ -951,6 +951,33 @@ async function checkReceivedMessages() {
     console.warn("checkReceivedMessages failed:", err);
   }
 }
+// TEMP STORAGE FOR ORDERING
+let fchatMessages = [];
+
+// Collect messages
+messages.forEach(msg => {
+  if (msg && msg.sent_at) {
+    fchatMessages.push({
+      type: "message",
+      data: msg,
+      sent_at: new Date(msg.sent_at).getTime()
+    });
+  }
+});
+
+// Collect polls
+polls.forEach(poll => {
+  if (poll && poll.sent_at) {
+    fchatMessages.push({
+      type: "poll",
+      data: poll,
+      sent_at: new Date(poll.sent_at).getTime()
+    });
+  }
+});
+
+// Sort everything by sent_at
+fchatMessages.sort((a, b) => a.sent_at - b.sent_at);
 /*---------- RENDER POLLS ----------*/
 function renderPolls() {
   const box = document.getElementById("chat-body");
