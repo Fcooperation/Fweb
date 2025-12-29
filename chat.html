@@ -1091,6 +1091,10 @@ wrapper.appendChild(status);
 function renderMessages() {
   const box = document.getElementById("chat-body");
   box.innerHTML = "";
+  // ✅ Sort messages by sent_at (oldest → newest)
+messages = messages
+  .filter(m => m && m.sent_at) // safety
+  .sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
   let lastMessageDay = null; // track last message day
 
   messages.forEach(msg => {
