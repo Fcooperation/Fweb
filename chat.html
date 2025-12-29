@@ -1084,26 +1084,14 @@ wrapper.appendChild(status);
 function renderMessages() {
   const box = document.getElementById("chat-body");
   box.innerHTML = "";
-  let lastMessageDay = null; // track last message day
-  // --- Merge messages + polls into one timeline ---
-const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
-const polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+  let lastMessageDay = null;
 
-const combined = [
-  ...messages.map(m => ({ ...m, __type: "message" })),
-  ...polls.map(p => ({ ...p, __type: "poll" }))
-];
+  // sort by ID instead of sent_at
+  messages.sort((a, b) => a.id - b.id);
 
-// Sort by time (important!)
-combined.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
-
-  combined.forEach(item => {
-  // ---------------- POLL ----------------
-if (item.__type === "poll") {
-  renderSinglePoll(item);
-  return;
-}
-  const msgDate = new Date(msg.sent_at);
+  messages.forEach(msg => {
+    const msgDate = new Date(msg.sent_at); // can still use this for day labels if desired
+    ...
 const msgDay = msgDate.toDateString(); // simple unique day key
 
 if (lastMessageDay !== msgDay) {
@@ -1305,7 +1293,7 @@ if (lastMessageDay !== msgDay) {
   scrollToBottom();
   enableMessageTap();
   enableMultiSelect();
-  
+  renderPolls();
 }
 function enableMessageTap() {
   const allMessages = document.querySelectorAll(".message");
