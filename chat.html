@@ -1092,6 +1092,13 @@ function renderMessages() {
   const box = document.getElementById("chat-body");
   box.innerHTML = "";
   let lastMessageDay = null; // track last message day
+  messages = messages.filter(m => m && m.id != null);
+
+messages.sort((a, b) => {
+  const idA = Number(a.id) || 0;
+  const idB = Number(b.id) || 0;
+  return idA - idB;
+});
 
   messages.forEach(msg => {
   const msgDate = new Date(msg.sent_at);
