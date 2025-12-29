@@ -537,6 +537,10 @@ body {
   bottom: 8px;
   right: 10px;
 }
+.poll-time {
+  font-weight: normal;
+  color: #999;
+}
 </style>
 </head>
 <body>
@@ -1061,30 +1065,42 @@ wrapper.style.minHeight = `${baseHeight + normalExtra + extraAfterTen}px`;
 
 // Status (sent, pending, etc.)
 const status = document.createElement("div");
-status.classList.add("poll-status"); // keep your poll CSS
+status.classList.add("poll-status"); // flex container
+
+// Create time element
+const timeSpan = document.createElement("span");
+timeSpan.classList.add("poll-time");
+timeSpan.textContent = formatMessageTime(poll.sent_at); // same function used for messages
+
+// Create text for status
+const statusText = document.createElement("span");
 
 if (poll.status === "sending") {
-  status.textContent = "Sending…";
-  status.classList.add("status-sending");
+  statusText.textContent = "Sending…";
+  statusText.classList.add("status-sending");
 } else if (poll.status === "pending") {
-  status.textContent = "Pending";
-  status.classList.add("status-pending");
+  statusText.textContent = "Pending";
+  statusText.classList.add("status-pending");
 } else if (poll.status === "sent") {
-  status.textContent = "Sent";
-  status.classList.add("status-sent");
+  statusText.textContent = "Sent";
+  statusText.classList.add("status-sent");
 } else if (poll.status === "deleting") {
-  status.textContent = "Deleting…";
-  status.classList.add("status-deleting");
+  statusText.textContent = "Deleting…";
+  statusText.classList.add("status-deleting");
 } else if (poll.status === "deleted") {
-  status.textContent = "Deleted";
-  status.classList.add("status-deleted");
+  statusText.textContent = "Deleted";
+  statusText.classList.add("status-deleted");
 } else if (poll.status === "scheduled") {
-  status.textContent = "Scheduled";
-  status.classList.add("status-scheduled");
+  statusText.textContent = "Scheduled";
+  statusText.classList.add("status-scheduled");
 } else if (poll.status === "seen") {
-  status.textContent = "Seen";
-  status.classList.add("status-seen");
+  statusText.textContent = "Seen";
+  statusText.classList.add("status-seen");
 }
+
+// Append time first, then status text
+status.appendChild(timeSpan);
+status.appendChild(statusText);
 
 wrapper.appendChild(status);
 
