@@ -1084,14 +1084,10 @@ wrapper.appendChild(status);
 function renderMessages() {
   const box = document.getElementById("chat-body");
   box.innerHTML = "";
-  let lastMessageDay = null;
-
-  // sort by ID instead of sent_at
-  messages.sort((a, b) => a.id - b.id);
+  let lastMessageDay = null; // track last message day
 
   messages.forEach(msg => {
-    const msgDate = new Date(msg.sent_at); // can still use this for day labels if desired
-    ...
+  const msgDate = new Date(msg.sent_at);
 const msgDay = msgDate.toDateString(); // simple unique day key
 
 if (lastMessageDay !== msgDay) {
