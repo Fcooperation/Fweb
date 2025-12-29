@@ -981,10 +981,10 @@ fchatMessages.sort((a, b) => a.sent_at - b.sent_at);
 /*---------- RENDER POLLS ----------*/
 function renderPolls() {
   const box = document.getElementById("chat-body");
-  // Sort polls by sent_at (oldest → newest) and ignore invalid ones
-const sortedPolls = polls
-  .filter(p => p.sent_at) // only polls with sent_at
-  .sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
+// Only keep polls from fchatMessages
+const sortedPolls = fchatMessages
+  .filter(item => item.type === "poll")
+  .map(item => item.data);
 
   // Remove old polls
   document.querySelectorAll(".poll-wrapper").forEach(p => p.remove());
@@ -1139,14 +1139,14 @@ function renderMessages() {
   const box = document.getElementById("chat-body");
   box.innerHTML = "";
   // ✅ Sort messages by sent_at (oldest → newest)
-messages = messages
-  .filter(m => m && m.sent_at) // safety
-  .sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
+// Only keep messages from fchatMessages
+let sortedMessages = fchatMessages.filter(item => item.type === "message");
   let lastMessageDay = null; // track last message day
 
-  messages.forEach(msg => {
+sortedMessages.forEach(item => {
+  const msg = item.data; // msg is now the same as before
   const msgDate = new Date(msg.sent_at);
-const msgDay = msgDate.toDateString(); // simple unique day key
+  const msgDay = msgDate.toDateString();
 
 if (lastMessageDay !== msgDay) {
   lastMessageDay = msgDay;
