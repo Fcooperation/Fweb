@@ -1506,13 +1506,11 @@ async function retryPending() {
     }
   }
 }
-/* ---------- SEND MESSAGE ---------- */
 function sendMessage() {
   const input = document.getElementById("message-input");
   const text = input.value.trim();
   if (!text) return;
 
-  // 🔹 Truncate & sanitize reply preview before sending
   let truncatedReply = null;
   if (replyingMessage) {
     truncatedReply = replyingMessage.text.replace(/\s+/g, ' ').trim();
@@ -1539,32 +1537,28 @@ function sendMessage() {
     receiver_id: chatWith.id,
   };
 
-  // 🔹 Add to local messages & storage
+  // Save locally
   messages.push(msgObj);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   input.value = "";
   resetInput();
 
-  // 🔹 Show truncated reply preview
   if (truncatedReply) {
     const previewEl = document.getElementById("reply-text");
     if (previewEl) previewEl.textContent = truncatedReply;
   }
 
-  // 🔹 Combine backend polls + all messages for timeline
+  // 🔹 MERGE backend + local messages for timeline
   const timelineData = [
-    ...fchat_messages, // backend polls/messages
-    ...messages.map(msg => ({ type: "message", data: msg })) // local messages
+    ...fchat_messages,                     // backend polls/messages
+    ...messages.map(msg => ({ type: "message", data: msg }))  // local messages
   ];
-
-  // 🔹 Render updated timeline
   renderTimeline(timelineData);
 
-  // 🔹 Clear reply state
   replyingMessage = null;
   document.getElementById("reply-preview").style.display = "none";
 
-  // 🔹 Send to backend if online
+  // send to backend if online
   if (navigator.onLine) sendToBackend(msgObj);
 }
 /*----------RETRY SCHEDULED DELETION----------*/
