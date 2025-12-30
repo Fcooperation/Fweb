@@ -1185,6 +1185,8 @@ if (lastMessageDay !== msgDay) {
   
 // After rendering all messages
 polls.forEach(poll => {
+  const box = document.getElementById("chat-body");
+
   // Render each poll
   const wrapper = document.createElement("div");
   wrapper.className = "poll-wrapper";
@@ -1244,14 +1246,15 @@ polls.forEach(poll => {
     option.appendChild(row);
     option.appendChild(barWrap);
 
-    // Key to track animation for this specific poll + option
+    // Key to track animation
     const animatedKey = `poll_${poll.id}_option_${index}_animated`;
 
-    // Click logic
+    // Click logic (works inline without re-rendering the whole poll)
     option.addEventListener("click", (e) => {
       e.stopPropagation();
 
-      if (!poll.pollData.allowMultiple) votes = {};   
+      // Single choice logic
+      if (!poll.pollData.allowMultiple) votes = {};
       votes[index] = !votes[index];
       localStorage.setItem(votesKey, JSON.stringify(votes));
 
@@ -1262,23 +1265,26 @@ polls.forEach(poll => {
         });
       }
 
-      renderPolls(); // rerender polls after vote
+      // Animate vote fill
+      if (votes[index]) {
+        circle.classList.add("selected");
+        if (!localStorage.getItem(animatedKey)) {
+          setTimeout(() => { bar.style.width = "100%"; }, 20);
+          localStorage.setItem(animatedKey, "true");
+        } else {
+          bar.style.width = "100%";
+        }
+      } else {
+        circle.classList.remove("selected");
+        bar.style.width = "0%";
+        localStorage.removeItem(animatedKey);
+      }
     });
 
-    // Animate fill based on selection
+    // Initial fill based on saved votes
     if (votes[index]) {
       circle.classList.add("selected");
-
-      if (!localStorage.getItem(animatedKey)) {
-        setTimeout(() => { bar.style.width = "100%"; }, 20);
-        localStorage.setItem(animatedKey, "true");
-      } else {
-        bar.style.width = "100%";
-      }
-    } else {
-      circle.classList.remove("selected");
-      bar.style.width = "0%";   
-      localStorage.removeItem(animatedKey);
+      bar.style.width = localStorage.getItem(animatedKey) ? "100%" : "0%";
     }
 
     wrapper.appendChild(option);
@@ -1288,35 +1294,21 @@ polls.forEach(poll => {
   const status = document.createElement("div");
   status.classList.add("poll-status");
 
-  if (poll.status === "sending") {
-    status.textContent = "Sending…";
-    status.classList.add("status-sending");
-  } else if (poll.status === "pending") {
-    status.textContent = "Pending";
-    status.classList.add("status-pending");
-  } else if (poll.status === "sent") {
-    status.textContent = "Sent";
-    status.classList.add("status-sent");
-  } else if (poll.status === "deleting") {
-    status.textContent = "Deleting…";
-    status.classList.add("status-deleting");
-  } else if (poll.status === "deleted") {
-    status.textContent = "Deleted";
-    status.classList.add("status-deleted");
-  } else if (poll.status === "scheduled") {
-    status.textContent = "Scheduled";
-    status.classList.add("status-scheduled");
-  } else if (poll.status === "seen") {
-    status.textContent = "Seen";
-    status.classList.add("status-seen");
-  }
+  if (poll.status === "sending") status.textContent = "Sending…";
+  else if (poll.status === "pending") status.textContent = "Pending";
+  else if (poll.status === "sent") status.textContent = "Sent";
+  else if (poll.status === "deleting") status.textContent = "Deleting…";
+  else if (poll.status === "deleted") status.textContent = "Deleted";
+  else if (poll.status === "scheduled") status.textContent = "Scheduled";
+  else if (poll.status === "seen") status.textContent = "Seen";
 
   wrapper.appendChild(status);
 
-  // Add the poll to chat
+  // Add poll to chat
   box.appendChild(wrapper);
 });
 
+// Scroll + enable chat interactions
 scrollToBottom();
 enableMessageTap();
 enableMultiSelect();
