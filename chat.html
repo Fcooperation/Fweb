@@ -879,7 +879,7 @@ function deleteForMe() {
   messages = messages.filter(msg => !idsToDelete.includes(String(msg.id)));
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   exitSelectMode();
-  renderMessages();
+  renderTimeline(fchat_messages);
 }
 
 // Delete for everyone
@@ -902,7 +902,7 @@ selectedMessages.forEach(el => {
 });
 
 localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-renderMessages();
+renderTimeline(fchat_messages);
 exitSelectMode();
   // Send delete request to backend with email & user_id
   try {
@@ -916,7 +916,7 @@ exitSelectMode();
     });
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-    renderMessages();
+    renderTimeline(fchat_messages);
   } else {
     console.warn("Backend delete failed — keeping local delete");
   }
@@ -970,7 +970,7 @@ async function checkReceivedMessages() {
 
     if (updated) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-      renderMessages();
+      renderTimeline(fchat_messages);
     }
 
   } catch (err) {
@@ -1246,7 +1246,7 @@ async function sendToBackend(msgObj) {
   }
 
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-  renderMessages();
+  renderTimeline(fchat_messages);
 }
 
 async function retryPending() {
@@ -1258,7 +1258,7 @@ async function retryPending() {
       msg.status = "sending";
       msg.sending_since = Date.now();
       localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-      renderMessages();
+      renderTimeline(fchat_messages);
 
       await sendToBackend(msg); // wait for backend confirmation
     }
@@ -1308,7 +1308,7 @@ if (replyingMessage) {
     if (previewEl) previewEl.textContent = truncatedReply;
   }
 
-  renderMessages(); // now render messages AFTER preview is set
+  renderTimeline(fchat_messages); // now render messages AFTER preview is set
 
   replyingMessage = null;
   document.getElementById("reply-preview").style.display = "none";
@@ -1325,7 +1325,7 @@ async function retryScheduledDeletes() {
       // show deleting…
       msg.status = "deleting";
       localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-      renderMessages();
+      renderTimeline(fchat_messages);
 
       try {
         const success = await deleteForEveryoneBackend([msg.id]);
@@ -1341,7 +1341,7 @@ async function retryScheduledDeletes() {
       }
 
       localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-      renderMessages();
+      renderTimeline(fchat_messages);
     }
   }
 }
@@ -1354,7 +1354,7 @@ for (const msg of messages) {
       msg.status = "sending";
 msg.sending_since = Date.now(); // 👈 ADD THIS
       localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-      renderMessages();
+      renderTimeline(fchat_messages);
 
       await sendToBackend(msg);
     }
@@ -1376,11 +1376,11 @@ messages.forEach(msg => {
   });
 if (changed) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-    renderMessages();
+    renderTimeline(fchat_messages);
   }
 }
 /* ---------- INIT ---------- */
-renderMessages();
+renderTimeline(fchat_messages);
 document.getElementById("send-btn").onclick = sendMessage;
 document.getElementById("message-input").addEventListener("keydown", e => {
   if(e.key === "Enter") sendMessage();
@@ -1475,7 +1475,7 @@ if (changed) {
   }
 
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-  renderMessages();
+  renderTimeline(fchat_messages);
 
   // 🔔 Vibrate phone (if supported)
   if ("vibrate" in navigator) {
