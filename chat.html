@@ -1487,25 +1487,40 @@ async function sendToBackend(msgObj) {
     console.warn("Failed to send, message pending", e);
   }
 
+  // 🔹 Save local messages
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-  renderTimeline(fchat_messages);
+
+  // 🔹 Combine backend + local messages for rendering
+  const timelineData = [
+    ...fchat_messages,
+    ...messages.map(msg => ({ type: "message", data: msg }))
+  ];
+  renderTimeline(timelineData);
 }
 
+/* ---------- RETRY PENDING MESSAGES ---------- */
 async function retryPending() {
   if (!navigator.onLine) return;
 
-  // retry one by one to avoid overwriting
   for (const msg of messages) {
     if (msg.status === "pending") {
       msg.status = "sending";
       msg.sending_since = Date.now();
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-      renderTimeline(fchat_messages);
 
-      await sendToBackend(msg); // wait for backend confirmation
+      // 🔹 Save local messages and render
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+      const timelineData = [
+        ...fchat_messages,
+        ...messages.map(msg => ({ type: "message", data: msg }))
+      ];
+      renderTimeline(timelineData);
+
+      // 🔹 Send to backend
+      await sendToBackend(msg);
     }
   }
 }
+
 /* ---------- SEND MESSAGE ---------- */
 function sendMessage() {
   const input = document.getElementById("message-input");
@@ -1553,11 +1568,9 @@ function sendMessage() {
 
   // 🔹 Combine backend polls + all messages for timeline
   const timelineData = [
-    ...fchat_messages, // backend polls/messages
-    ...messages.map(msg => ({ type: "message", data: msg })) // local messages
+    ...fchat_messages,
+    ...messages.map(msg => ({ type: "message", data: msg }))
   ];
-
-  // 🔹 Render updated timeline
   renderTimeline(timelineData);
 
   // 🔹 Clear reply state
