@@ -1512,12 +1512,12 @@ function sendMessage() {
   const text = input.value.trim();
   if (!text) return;
 
-// 🔹 truncate & sanitize reply preview before sending
-let truncatedReply = null;
-if (replyingMessage) {
-  truncatedReply = replyingMessage.text.replace(/\s+/g, ' ').trim();
-  if (truncatedReply.length > 80) truncatedReply = truncatedReply.slice(0, 80) + "…";
-}
+  // 🔹 truncate & sanitize reply preview before sending
+  let truncatedReply = null;
+  if (replyingMessage) {
+    truncatedReply = replyingMessage.text.replace(/\s+/g, ' ').trim();
+    if (truncatedReply.length > 80) truncatedReply = truncatedReply.slice(0, 80) + "…";
+  }
 
   const msgObj = {
     id: Date.now(),
@@ -1539,6 +1539,7 @@ if (replyingMessage) {
     receiver_id: chatWith.id,
   };
 
+  // add to local messages
   messages.push(msgObj);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   input.value = "";
@@ -1550,11 +1551,18 @@ if (replyingMessage) {
     if (previewEl) previewEl.textContent = truncatedReply;
   }
 
-  renderTimeline(fchat_messages); // now render messages AFTER preview is set
+  // 🔹 Create the timeline including polls + updated messages
+  const timelineData = [
+    ...fchat_messages.filter(item => item.type === "poll"), // keep polls from backend
+    ...messages.map(msg => ({ type: "message", data: msg })) // local messages
+  ];
+
+  renderTimeline(timelineData); // render updated timeline
 
   replyingMessage = null;
   document.getElementById("reply-preview").style.display = "none";
 
+  // send to backend if online
   if (navigator.onLine) sendToBackend(msgObj);
 }
 
