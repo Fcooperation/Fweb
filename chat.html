@@ -1249,48 +1249,56 @@ polls.forEach(poll => {
     // Key to track animation
     const animatedKey = `poll_${poll.id}_option_${index}_animated`;
 
-    // Click logic (works inline without re-rendering the whole poll)
+    // Initialize selection state
+    if (votes[index]) {
+      circle.classList.add("selected");
+      bar.style.width = "100%";
+    }
+
+    // Click logic
     option.addEventListener("click", (e) => {
       e.stopPropagation();
 
-      // Single choice logic
-      if (!poll.pollData.allowMultiple) votes = {};
-      votes[index] = !votes[index];
-      localStorage.setItem(votesKey, JSON.stringify(votes));
-
-      // Reset animated keys if single choice
       if (!poll.pollData.allowMultiple) {
+        // Single choice: deselect all others
+        votes = {};
         poll.pollData.options.forEach((_, i) => {
-          if (i !== index) localStorage.removeItem(`poll_${poll.id}_option_${i}_animated`);
+          if (i !== index) {
+            localStorage.removeItem(`poll_${poll.id}_option_${i}_animated`);
+          }
         });
       }
 
-      // Animate vote fill
-      if (votes[index]) {
-        circle.classList.add("selected");
-        if (!localStorage.getItem(animatedKey)) {
-          setTimeout(() => { bar.style.width = "100%"; }, 20);
-          localStorage.setItem(animatedKey, "true");
-        } else {
-          bar.style.width = "100%";
-        }
-      } else {
-        circle.classList.remove("selected");
-        bar.style.width = "0%";
-        localStorage.removeItem(animatedKey);
-      }
-    });
+      // Toggle clicked option
+      votes[index] = !votes[index];
+      localStorage.setItem(votesKey, JSON.stringify(votes));
 
-    // Initial fill based on saved votes
-    if (votes[index]) {
-      circle.classList.add("selected");
-      bar.style.width = localStorage.getItem(animatedKey) ? "100%" : "0%";
-    }
+      // Update visual selection & animation
+      poll.pollData.options.forEach((_, i) => {
+        const circleEl = wrapper.querySelectorAll(".poll-circle")[i];
+        const barEl = wrapper.querySelectorAll(".poll-bar")[i];
+        const key = `poll_${poll.id}_option_${i}_animated`;
+
+        if (votes[i]) {
+          circleEl.classList.add("selected");
+          if (!localStorage.getItem(key)) {
+            setTimeout(() => { barEl.style.width = "100%"; }, 20);
+            localStorage.setItem(key, "true");
+          } else {
+            barEl.style.width = "100%";
+          }
+        } else {
+          circleEl.classList.remove("selected");
+          barEl.style.width = "0%";
+          localStorage.removeItem(key);
+        }
+      });
+    });
 
     wrapper.appendChild(option);
   });
 
-  // Status (sent, pending, etc.)
+  // Status
   const status = document.createElement("div");
   status.classList.add("poll-status");
 
@@ -1308,7 +1316,6 @@ polls.forEach(poll => {
   box.appendChild(wrapper);
 });
 
-// Scroll + enable chat interactions
 scrollToBottom();
 enableMessageTap();
 enableMultiSelect();
