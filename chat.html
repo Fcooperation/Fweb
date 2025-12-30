@@ -1429,213 +1429,200 @@ function scrollToBottom() {
   const box = document.getElementById("chat-body");
   box.scrollTop = box.scrollHeight;
 }
-/* ---------- SEND TO BACKEND (FIXED) ---------- */
+/* ---------- SEND TO BACKEND ---------- */
 async function sendToBackend(msgObj) {
-  if (!navigator.onLine) {
-    msgObj.status = "pending";
-    msgObj.sending_since = null;
-    updateLocalAndRender();
-    return;
-  }
+try {
+const payload = {
+action: "send_messages",
+email: account.email,
+id: msgObj.id,
+sender_id: account.id,
+receiver_id: chatWith.id,
+linked: msgObj.linked,
+linked_message_id: msgObj.linked_message_id,
+sent_at: msgObj.sent_at,
+text: msgObj.text
+};
 
-  // mark as sending
-  msgObj.status = "sending";
-  msgObj.sending_since = Date.now();
-  updateLocalAndRender();
+const res = await fetch(API_URL, {  
+  method: "POST",  
+  headers: { "Content-Type": "application/json" },  
+  body: JSON.stringify(payload)  
+});  
 
-  try {
-    const payload = {    
-      action: "send_messages",    
-      email: account.email,    
-      id: msgObj.id,    
-      sender_id: account.id,    
-      receiver_id: chatWith.id,    
-      linked: msgObj.linked,  
-      linked_message_id: msgObj.linked_message_id,  
-      sent_at: msgObj.sent_at,  
-      text: msgObj.text    
-    };
-    
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
+const data = await res.json();  
 
-    if (!res.ok) throw new Error("HTTP error " + res.status);
-
-    const data = await res.json();
-    console.log("Backend response:", data); // 🔹 debug
-
-    if (data.success === true) {
-      msgObj.status = "sent";
-      msgObj.sending_since = null;
-    } else {
-      msgObj.status = "pending";
-      msgObj.sending_since = null;
-      console.warn("Backend did not confirm success", data);
-    }
-
-  } catch (e) {
-    msgObj.status = "pending";
-    msgObj.sending_since = null;
-    console.warn("Failed to send message, pending", e);
-  }
-
-  // always update localStorage and UI after attempt
-  updateLocalAndRender();
+if (data.success) {  
+  msgObj.status = "sent";  
+  msgObj.sending_since = null;  
+} else {  
+  msgObj.status = "pending"; // keep pending  
 }
 
-/* ---------- HELPER: UPDATE LOCALSTORAGE & RENDER ---------- */
-function updateLocalAndRender() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-  renderTimeline([
-    ...fchat_messages,
-    ...messages.map(msg => ({ type: "message", data: msg }))
-  ]);
+} catch(e) {
+msgObj.status = "pending"; // keep pending
+msgObj.sending_since = null;
+console.warn("Failed to send, message pending", e);
 }
+
+// 🔹 Save local messages
+localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+
+// 🔹 Combine backend + local messages for rendering
+const timelineData = [
+...fchat_messages,
+...messages.map(msg => ({ type: "message", data: msg }))
+];
+renderTimeline(timelineData);
+}
+
 /* ---------- RETRY PENDING MESSAGES ---------- */
 async function retryPending() {
-  if (!navigator.onLine) return;
+if (!navigator.onLine) return;
 
-  const pendingMessages = messages.filter(msg => msg.status === "pending");
+for (const msg of messages) {
+if (msg.status === "pending") {
+msg.status = "sending";
+msg.sending_since = Date.now();
 
-  for (const msg of pendingMessages) {
-    msg.status = "sending";
-    msg.sending_since = Date.now();
-  }
+// 🔹 Save local messages and render  
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));  
+  const timelineData = [  
+    ...fchat_messages,  
+    ...messages.map(msg => ({ type: "message", data: msg }))  
+  ];  
+  renderTimeline(timelineData);  
 
-  // 🔹 Render timeline **once** after marking all as sending
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-  renderTimeline([
-    ...fchat_messages,
-    ...messages.map(msg => ({ type: "message", data: msg }))
-  ]);
+  // 🔹 Send to backend  
+  await sendToBackend(msg);  
+}
 
-  // 🔹 Now send messages to backend one by one
-  for (const msg of pendingMessages) {
-    await sendToBackend(msg);
-  }
-
-  // 🔹 Render timeline **once** after backend updates
-  renderTimeline([
-    ...fchat_messages,
-    ...messages.map(msg => ({ type: "message", data: msg }))
-  ]);
+}
 }
 
 /* ---------- SEND MESSAGE ---------- */
 function sendMessage() {
-  const input = document.getElementById("message-input");
-  const text = input.value.trim();
-  if (!text) return;
+const input = document.getElementById("message-input");
+const text = input.value.trim();
+if (!text) return;
 
-  let truncatedReply = null;
-  if (replyingMessage) {
-    truncatedReply = replyingMessage.text.replace(/\s+/g, ' ').trim();
-    if (truncatedReply.length > 80) truncatedReply = truncatedReply.slice(0, 80) + "…";
-  }
-
-  const msgObj = {
-    id: Date.now(),
-    type: "sent",
-    text,
-    sent_at: new Date().toISOString(),
-    status: navigator.onLine ? "sending" : "pending",
-    sending_since: navigator.onLine ? Date.now() : null,
-    replyTo: replyingMessage
-      ? { id: replyingMessage.id, text: truncatedReply, sender: getReplySenderName(replyingMessage) }
-      : null,
-    linked: replyingMessage ? true : false,
-    linked_message_id: replyingMessage ? replyingMessage.id : null,
-    sender_id: account.id,
-    receiver_id: chatWith.id,
-  };
-
-  messages.push(msgObj);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-  input.value = "";
-  resetInput();
-
-  if (truncatedReply) {
-    const previewEl = document.getElementById("reply-text");
-    if (previewEl) previewEl.textContent = truncatedReply;
-  }
-
-  // 🔹 Render timeline **once**
-  renderTimeline([
-    ...fchat_messages,
-    ...messages.map(msg => ({ type: "message", data: msg }))
-  ]);
-
-  replyingMessage = null;
-  document.getElementById("reply-preview").style.display = "none";
-
-  // 🔹 Send to backend if online
-  if (navigator.onLine) sendToBackend(msgObj);
+// 🔹 Truncate & sanitize reply preview before sending
+let truncatedReply = null;
+if (replyingMessage) {
+truncatedReply = replyingMessage.text.replace(/\s+/g, ' ').trim();
+if (truncatedReply.length > 80) truncatedReply = truncatedReply.slice(0, 80) + "…";
 }
-/*----------RETRY SCHEDULED DELETION----------*/
+
+const msgObj = {
+id: Date.now(),
+type: "sent",
+text,
+sent_at: new Date().toISOString(),
+status: navigator.onLine ? "sending" : "pending",
+sending_since: navigator.onLine ? Date.now() : null,
+replyTo: replyingMessage
+? {
+id: replyingMessage.id,
+text: truncatedReply,
+sender: getReplySenderName(replyingMessage),
+}
+: null,
+linked: replyingMessage ? true : false,
+linked_message_id: replyingMessage ? replyingMessage.id : null,
+sender_id: account.id,
+receiver_id: chatWith.id,
+};
+
+// 🔹 Add to local messages & storage
+messages.push(msgObj);
+localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+input.value = "";
+resetInput();
+
+// 🔹 Show truncated reply preview
+if (truncatedReply) {
+const previewEl = document.getElementById("reply-text");
+if (previewEl) previewEl.textContent = truncatedReply;
+}
+
+// 🔹 Combine backend polls + all messages for timeline
+const timelineData = [
+...fchat_messages,
+...messages.map(msg => ({ type: "message", data: msg }))
+];
+renderTimeline(timelineData);
+
+// 🔹 Clear reply state
+replyingMessage = null;
+document.getElementById("reply-preview").style.display = "none";
+
+// 🔹 Send to backend if online
+if (navigator.onLine) sendToBackend(msgObj);
+}
+/----------RETRY SCHEDULED DELETION----------/
 async function retryScheduledDeletes() {
-  if (!navigator.onLine) return;
+if (!navigator.onLine) return;
 
-  for (const msg of messages) {
-    if (msg.status === "scheduled") {
-      // show deleting…
-      msg.status = "deleting";
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-      renderTimeline(fchat_messages);
+for (const msg of messages) {
+if (msg.status === "scheduled") {
+// show deleting…
+msg.status = "deleting";
+localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+renderTimeline(fchat_messages);
 
-      try {
-        const success = await deleteForEveryoneBackend([msg.id]);
+try {  
+    const success = await deleteForEveryoneBackend([msg.id]);  
 
-        if (success) {
-          msg.status = "deleted"; // ✅ confirmed
-        } else {
-          msg.status = "pending"; // ❌ backend failed
-        }
-      } catch (err) {
-        console.error("Retry delete failed:", err);
-        msg.status = "pending"; // ❌ network / error
-      }
+    if (success) {  
+      msg.status = "deleted"; // ✅ confirmed  
+    } else {  
+      msg.status = "pending"; // ❌ backend failed  
+    }  
+  } catch (err) {  
+    console.error("Retry delete failed:", err);  
+    msg.status = "pending"; // ❌ network / error  
+  }  
 
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-      renderTimeline(fchat_messages);
-    }
-  }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));  
+  renderTimeline(fchat_messages);  
+}
+
+}
 }
 
 /* ---------- RETRY PENDING MESSAGES ---------- */
 async function retryPending() {
-  if (!navigator.onLine) return; // 🚫 no internet → do nothing
+if (!navigator.onLine) return; // 🚫 no internet → do nothing
 for (const msg of messages) {
-    if (msg.status === "pending") {
-      msg.status = "sending";
+if (msg.status === "pending") {
+msg.status = "sending";
 msg.sending_since = Date.now(); // 👈 ADD THIS
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-      renderTimeline(fchat_messages);
+localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+renderTimeline(fchat_messages);
 
-      await sendToBackend(msg);
-    }
-  }
+await sendToBackend(msg);  
+}
+
+}
 }
 function checkStuckSendingMessages() {
-  const now = Date.now();
-  let changed = false;
+const now = Date.now();
+let changed = false;
 messages.forEach(msg => {
-    if (
-      msg.status === "sending" &&
-      msg.sending_since &&
-      now - msg.sending_since > 30000 // ⏱ 30 seconds
-    ) {
-      msg.status = "pending";
-      msg.sending_since = null;
-      changed = true;
-    }
-  });
+if (
+msg.status === "sending" &&
+msg.sending_since &&
+now - msg.sending_since > 30000 // ⏱ 30 seconds
+) {
+msg.status = "pending";
+msg.sending_since = null;
+changed = true;
+}
+});
 if (changed) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-    renderTimeline(fchat_messages);
-  }
+localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+renderTimeline(fchat_messages);
+}
 }
 /* ---------- INIT ---------- */
 renderTimeline(fchat_messages);
