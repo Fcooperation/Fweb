@@ -6,18 +6,17 @@
 <title>Chat</title>
 
 <style>
-/* ---------- BASE ---------- */
 body {
   margin: 0;
   font-family: Arial, sans-serif;
   background: white;
-  height: 100vh;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
 }
 
-/* ---------- TOP BAR ---------- */
+/* ---------- TOP BAR (Dashboard) ---------- */
 #top-bar {
   height: 60px;
   display: flex;
@@ -26,6 +25,7 @@ body {
   border-bottom: 1px solid #ddd;
   background: white;
   flex-shrink: 0;
+  z-index: 10;
 }
 
 #back-btn {
