@@ -1451,11 +1451,11 @@ document.getElementById("message-input").addEventListener("keydown", e => {
   if(e.key === "Enter") sendMessage();
 });
 
-/* ---------- RECEIVE MESSAGES (UPDATED) ---------- */
+/* ---------- RECEIVE MESSAGES (FIXED) ---------- */
 async function receiveMessages() {
   const statusEl = document.getElementById("receive-status");
 
-  // 🔴 Offline state
+  // 🔴 Offline
   if (!navigator.onLine) {
     if (statusEl) {
       statusEl.textContent = "Offline · Retrying when online";
@@ -1467,7 +1467,6 @@ async function receiveMessages() {
   try {
     if (!account?.email || !chatWith?.id) return;
 
-    // 🔵 Show updating ONLY if not already updated
     if (statusEl && statusEl.textContent !== "Updated") {
       statusEl.textContent = "Updating…";
       statusEl.className = "loading";
@@ -1490,84 +1489,86 @@ async function receiveMessages() {
 
     const chatUsername = data.chatWith?.username || "Unknown";
     let changed = false;
-
-    // ✅ Collect received message IDs
     const receivedIds = [];
 
     data.data.forEach(msg => {
-      const exists = messages.some(m => String(m.id) === String(msg.id));
+      // ❗ Avoid duplicates
+      const exists = fchat_messages.some(
+        m => String(m.data?.id) === String(msg.id)
+      );
       if (exists) return;
 
-      messages.push({
-        id: msg.id,
-        type: "received",
-        text: msg.text || "",
-        sent_at: msg.sent_at || new Date().toISOString(),
-        status: "sent",
-        sender_id: msg.sender_id,
-        receiver_id: account.id,
-        sender_username: chatUsername,
-        linked_message: msg.linked === true ? "yes" : "no",
-        linked_message_id: msg.linked_message_id || null
-      });
+      const newMessage = {
+        type: "message",
+        data: {
+          id: msg.id,
+          text: msg.text || "",
+          sent_at: msg.sent_at || new Date().toISOString(),
+          status: "sent",
+          sender_id: msg.sender_id,
+          receiver_id: account.id,
+          sender_username: chatUsername,
+          linked_message: msg.linked === true ? "yes" : "no",
+          linked_message_id: msg.linked_message_id || null
+        }
+      };
 
+      fchat_messages.push(newMessage);
       receivedIds.push(msg.id);
       changed = true;
     });
-    
-  // After the forEach loop that pushes new messages
-if (changed) {
 
-  const chatVisible = document.visibilityState === "visible";
+    // ✅ Mark messages as seen
+    if (changed) {
+      const latestTime = Math.max(
+        ...receivedIds.map(id => {
+          const msg = data.data.find(m => m.id === id);
+          return msg ? new Date(msg.sent_at).getTime() : 0;
+        })
+      );
 
-  if (chatVisible && receivedIds.length > 0) {
-    const latestReceivedTime = Math.max(
-      ...receivedIds.map(id => {
-        const msg = data.data.find(m => m.id === id);
-        return msg ? new Date(msg.sent_at).getTime() : 0;
-      })
-    );
+      fchat_messages.forEach(item => {
+        if (
+          item.type === "message" &&
+          item.data.status !== "seen" &&
+          item.data.sender_id === account.id &&
+          new Date(item.data.sent_at).getTime() < latestTime
+        ) {
+          item.data.status = "seen";
+        }
+      });
 
-    messages.forEach(msg => {
-      if (
-        msg.type === "sent" &&
-        msg.status !== "seen" &&
-        new Date(msg.sent_at).getTime() < latestReceivedTime
-      ) {
-        msg.status = "seen";
-      }
-    });
-  }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(fchat_messages));
+      renderTimeline(fchat_messages);
 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-  renderTimeline(fchat_messages);
+      // 🔔 vibrate
+      if ("vibrate" in navigator) navigator.vibrate(200);
+    }
 
-  // 🔔 Vibrate phone (if supported)
-  if ("vibrate" in navigator) {
-    navigator.vibrate(200);
-  }
+    // ✅ Notify backend
+    if (receivedIds.length) {
+      await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "received_messages",
+          ids: receivedIds,
+          email: account.email,
+          chatWithId: chatWith.id
+        })
+      });
+    }
 
-  // ✅ Notify backend
-  await fetch(API_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      action: "received_messages",
-      ids: receivedIds,
-      email: account.email,
-      chatWithId: chatWith.id
-    })
-  });
+    if (statusEl) {
+      statusEl.textContent = "Updated";
+      statusEl.className = "ok";
+    }
 
-  if (statusEl) {
-    statusEl.textContent = "Updated";
-    statusEl.className = "ok";
-  }
-  return { receivedCount: receivedIds.length };
-}
+    return { receivedCount: receivedIds.length };
+
   } catch (err) {
-    if (navigator.onLine && statusEl) {
-      console.warn("Receive messages failed:", err);
+    console.warn("Receive messages failed:", err);
+    if (statusEl) {
       statusEl.textContent = "Error";
       statusEl.className = "error";
     }
