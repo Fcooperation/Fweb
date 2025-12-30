@@ -989,29 +989,6 @@ function renderTimeline(fchat_messages) {
     const date = new Date(item.sent_at);
     const dayKey = date.toDateString();
 
-    // ---------- DATE DIVIDER ----------
-    if (lastMessageDay !== dayKey) {
-      lastMessageDay = dayKey;
-
-      const now = new Date();
-      const diffDays = Math.floor(
-        (new Date(now.toDateString()) - new Date(date.toDateString())) /
-        (1000 * 60 * 60 * 24)
-      );
-
-      let label = "";
-      if (diffDays === 0) label = "Today";
-      else if (diffDays === 1) label = "Yesterday";
-      else if (diffDays < 7)
-        label = date.toLocaleDateString("en-US", { weekday: "long" });
-      else
-        label = date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-
-      const dateBar = document.createElement("div");
-      dateBar.className = "msg-date-bar";
-      dateBar.textContent = label;
-      box.appendChild(dateBar);
-    }
 
     // ==================================================
     // ================= MESSAGE ========================
