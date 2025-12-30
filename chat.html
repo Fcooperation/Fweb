@@ -1604,7 +1604,7 @@ function checkStuckSendingMessages() {
   }
 }
 /* ---------- INIT ---------- */
-renderTimeline(fchat_messages, { showDateBar: false });
+
 document.getElementById("send-btn").onclick = sendMessage;
 document.getElementById("message-input").addEventListener("keydown", e => {
   if(e.key === "Enter") sendMessage();
