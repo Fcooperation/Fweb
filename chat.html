@@ -1429,8 +1429,20 @@ function scrollToBottom() {
   const box = document.getElementById("chat-body");
   box.scrollTop = box.scrollHeight;
 }
-/* ---------- SEND TO BACKEND ---------- */
+/* ---------- SEND TO BACKEND (FIXED) ---------- */
 async function sendToBackend(msgObj) {
+  if (!navigator.onLine) {
+    msgObj.status = "pending";
+    msgObj.sending_since = null;
+    updateLocalAndRender();
+    return;
+  }
+
+  // mark as sending
+  msgObj.status = "sending";
+  msgObj.sending_since = Date.now();
+  updateLocalAndRender();
+
   try {
     const payload = {    
       action: "send_messages",    
@@ -1450,26 +1462,38 @@ async function sendToBackend(msgObj) {
       body: JSON.stringify(payload)
     });
 
-    const data = await res.json();
+    if (!res.ok) throw new Error("HTTP error " + res.status);
 
-    if (data.success) {
+    const data = await res.json();
+    console.log("Backend response:", data); // 🔹 debug
+
+    if (data.success === true) {
       msgObj.status = "sent";
       msgObj.sending_since = null;
     } else {
       msgObj.status = "pending";
+      msgObj.sending_since = null;
+      console.warn("Backend did not confirm success", data);
     }
 
-  } catch(e) {
+  } catch (e) {
     msgObj.status = "pending";
     msgObj.sending_since = null;
-    console.warn("Failed to send, message pending", e);
+    console.warn("Failed to send message, pending", e);
   }
 
-  // 🔹 Save local messages after status update
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-  // ❌ DO NOT RENDER HERE — avoid duplicate date bars
+  // always update localStorage and UI after attempt
+  updateLocalAndRender();
 }
 
+/* ---------- HELPER: UPDATE LOCALSTORAGE & RENDER ---------- */
+function updateLocalAndRender() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+  renderTimeline([
+    ...fchat_messages,
+    ...messages.map(msg => ({ type: "message", data: msg }))
+  ]);
+}
 /* ---------- RETRY PENDING MESSAGES ---------- */
 async function retryPending() {
   if (!navigator.onLine) return;
