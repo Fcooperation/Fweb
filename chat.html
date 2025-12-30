@@ -1017,27 +1017,188 @@ function renderTimeline(fchat_messages) {
     // ================= MESSAGE ========================
     // ==================================================
     if (item.type === "message") {
-      const msg = data;
+  const msg = data;
+  const msgDate = new Date(msg.sent_at);
+  const msgDay = msgDate.toDateString();
 
-      const div = document.createElement("div");
-      div.className = "message " + msg.type;
-      div.dataset.id = msg.id;
+  // ---------- DATE DIVIDER ----------
+  if (lastMessageDay !== msgDay) {
+    lastMessageDay = msgDay;
 
-      if (msg.type === "received") {
-        const header = document.createElement("div");
-        header.className = "msg-username";
-        header.textContent = msg.sender_username || "Unknown";
-        div.appendChild(header);
+    const now = new Date();
+    let label = "";
+    const dateA = new Date(msgDate.getFullYear(), msgDate.getMonth(), msgDate.getDate());
+    const dateB = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const diffDays = Math.round((dateB - dateA) / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) label = "Today";
+    else if (diffDays === 1) label = "Yesterday";
+    else if (diffDays < 7) label = msgDate.toLocaleDateString("en-US", { weekday: "long" });
+    else label = msgDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+
+    const dateBar = document.createElement("div");
+    dateBar.className = "msg-date-bar";
+    dateBar.textContent = label;
+    box.appendChild(dateBar);
+  }
+
+  const div = document.createElement("div");
+  div.className = "message " + msg.type + (msg.status === "pending" ? " pending" : "");
+  div.dataset.id = msg.id;
+
+  // Header (username)
+  if (msg.type === "received") {
+    const header = document.createElement("div");
+    header.className = "msg-username";
+    header.textContent = msg.sender_username || "Unknown";
+    div.appendChild(header);
+
+    // Time for received
+    const timeDiv = document.createElement("div");
+    timeDiv.className = "msg-time";
+    timeDiv.textContent = formatMessageTime(msg.sent_at);
+    div.appendChild(timeDiv);
+  }
+
+  // Reply preview
+  if (msg.replyTo) {
+    const replyBox = document.createElement("div");
+    replyBox.style.borderLeft = "3px solid #007bff";
+    replyBox.style.padding = "4px 8px";
+    replyBox.style.marginBottom = "6px";
+    replyBox.style.fontSize = "12px";
+    replyBox.style.opacity = "0.8";
+    replyBox.innerHTML = `<strong>${msg.replyTo.sender}</strong><br>${msg.replyTo.text}`;
+    div.appendChild(replyBox);
+  }
+
+  // Linked message preview
+  if (msg.linked_message === "yes" && msg.linked_message_id) {
+    const linked = fchat_messages.find(m => String(m.data.id) === String(msg.linked_message_id));
+
+    if (linked) {
+      const linkedBox = document.createElement("div");
+      linkedBox.className = "linked-preview";
+
+      const senderName = linked.data.type === "sent" ? "You" : chatWith.username;
+      linkedBox.innerHTML = `<strong>${senderName}</strong><br>${linked.data.text.slice(0, 80) || "Message"}`;
+
+      linkedBox.onclick = (e) => {
+        if (selectMode) return;
+        e.stopPropagation();
+
+        const target = document.querySelector(`[data-id='${linked.data.id}']`);
+        if (target) {
+          target.scrollIntoView({ behavior: "smooth", block: "center" });
+          target.classList.add("highlight");
+          setTimeout(() => target.classList.remove("highlight"), 1200);
+        }
+      };
+
+      div.appendChild(linkedBox);
+    }
+  }
+
+  // Message text
+  const textNode = document.createElement("div");
+  textNode.className = "msg-text";
+
+  if (msg.deleted) {
+    textNode.textContent = msg.text;
+    div.classList.add("deleted");
+    div.appendChild(textNode);
+  } else {
+    textNode.textContent = msg.text;
+    div.appendChild(textNode);
+
+    // READ MORE logic
+    requestAnimationFrame(() => {
+      const lineHeight = parseFloat(getComputedStyle(textNode).lineHeight);
+      const INITIAL_LINES = 10;
+      const STEP_LINES = 25;
+      let currentLines = INITIAL_LINES;
+
+      const applyClamp = () => {
+        textNode.style.display = "-webkit-box";
+        textNode.style.webkitBoxOrient = "vertical";
+        textNode.style.webkitLineClamp = currentLines;
+        textNode.style.overflow = "hidden";
+      };
+      const removeClamp = () => {
+        textNode.style.webkitLineClamp = "unset";
+        textNode.style.display = "block";
+        textNode.style.overflow = "visible";
+      };
+
+      if (textNode.scrollHeight > lineHeight * INITIAL_LINES) {
+        applyClamp();
+
+        const readMore = document.createElement("div");
+        readMore.className = "read-more";
+        readMore.textContent = "Read more";
+
+        readMore.onclick = () => {
+          const totalLines = Math.ceil(textNode.scrollHeight / lineHeight);
+
+          if (currentLines >= totalLines) {
+            currentLines = INITIAL_LINES;
+            applyClamp();
+            readMore.textContent = "Read more";
+          } else {
+            currentLines += STEP_LINES;
+            if (currentLines >= totalLines) {
+              removeClamp();
+              readMore.textContent = "Read less";
+            } else {
+              applyClamp();
+              readMore.textContent = "Read more";
+            }
+          }
+        };
+
+        div.appendChild(readMore);
       }
+    });
+  }
 
-      const text = document.createElement("div");
-      text.className = "msg-text";
-      text.textContent = msg.text;
-      div.appendChild(text);
+  // Status (sent messages)
+  if (msg.type === "sent") {
+    const status = document.createElement("div");
+    status.classList.add("status-text");
 
-      box.appendChild(div);
+    const timeSpan = document.createElement("span");
+    timeSpan.classList.add("message-time");
+    timeSpan.textContent = formatMessageTime(msg.sent_at);
+    status.appendChild(timeSpan);
+
+    if (msg.status === "sending") {
+      status.append("Sending…");
+      status.classList.add("status-sending");
+    } else if (msg.status === "pending") {
+      status.append("Pending");
+      status.classList.add("status-pending");
+    } else if (msg.status === "sent") {
+      status.append("Sent");
+      status.classList.add("status-sent");
+    } else if (msg.status === "deleting") {
+      status.append("Deleting…");
+      status.classList.add("status-deleting");
+    } else if (msg.status === "deleted") {
+      status.append("Deleted");
+      status.classList.add("status-deleted");
+    } else if (msg.status === "scheduled") {
+      status.append("Scheduled");
+      status.classList.add("status-scheduled");
+    } else if (msg.status === "seen") {
+      status.append("Seen");
+      status.classList.add("status-seen");
     }
 
+    div.appendChild(status);
+  }
+
+  box.appendChild(div);
+}
     // ==================================================
     // =================== POLL =========================
     // ==================================================
