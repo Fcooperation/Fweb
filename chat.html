@@ -981,32 +981,29 @@ function renderTimeline(fchat_messages) {
   const box = document.getElementById("chat-body");
   box.innerHTML = "";
 
-  // ✅ SORT by time
-  const sorted = [...fchat_messages].sort(
-    (a, b) => new Date(a.data.sent_at) - new Date(b.data.sent_at)
-  );
-
   let lastMessageDay = null;
 
-  sorted.forEach(item => {
+  fchat_messages.forEach(item => {
     const data = item.data;
-    const msgDate = new Date(data.sent_at);
-    const dayKey = msgDate.toDateString();
 
-    // ✅ Date separator (once per day)
+    // ✅ FIX DATE SOURCE
+    const date = new Date(data.sent_at);
+    const dayKey = date.toDateString();
+
+    // ✅ DATE SEPARATOR (like WhatsApp)
     if (dayKey !== lastMessageDay) {
       const dateDivider = document.createElement("div");
       dateDivider.className = "date-divider";
-
-      const today = new Date().toDateString();
       dateDivider.textContent =
-        dayKey === today ? "Today" : dayKey;
+        dayKey === new Date().toDateString() ? "Today" : dayKey;
 
       box.appendChild(dateDivider);
       lastMessageDay = dayKey;
     }
 
-    // ================= MESSAGE =================
+    // ==================================================
+    // ================= MESSAGE ========================
+    // ==================================================
     if (item.type === "message") {
       const msg = data;
       const div = document.createElement("div");
@@ -1022,39 +1019,94 @@ function renderTimeline(fchat_messages) {
         header.textContent = msg.sender_username || "Unknown";
         div.appendChild(header);
 
-        const time = document.createElement("div");
-        time.className = "msg-time";
-        time.textContent = formatMessageTime(msg.sent_at);
-        div.appendChild(time);
+        const timeDiv = document.createElement("div");
+        timeDiv.className = "msg-time";
+        timeDiv.textContent = formatMessageTime(msg.sent_at);
+        div.appendChild(timeDiv);
       }
 
-      // Message text
-      const text = document.createElement("div");
-      text.className = "msg-text";
-      text.textContent = msg.text;
-      div.appendChild(text);
+      // Reply preview
+      if (msg.replyTo) {
+        const replyBox = document.createElement("div");
+        replyBox.className = "reply-preview";
+        replyBox.innerHTML = `<strong>${msg.replyTo.sender}</strong><br>${msg.replyTo.text}`;
+        div.appendChild(replyBox);
+      }
 
-      // Status (sent)
+      // Linked message
+      if (msg.linked_message === "yes" && msg.linked_message_id) {
+        const linked = fchat_messages.find(
+          m => String(m.data.id) === String(msg.linked_message_id)
+        );
+
+        if (linked) {
+          const linkedBox = document.createElement("div");
+          linkedBox.className = "linked-preview";
+
+          const senderName =
+            linked.data.type === "sent" ? "You" : chatWith.username;
+
+          linkedBox.innerHTML = `<strong>${senderName}</strong><br>${linked.data.text.slice(0, 80)}`;
+
+          linkedBox.onclick = () => {
+            const target = document.querySelector(
+              `[data-id='${linked.data.id}']`
+            );
+            if (target) {
+              target.scrollIntoView({ behavior: "smooth", block: "center" });
+              target.classList.add("highlight");
+              setTimeout(() => target.classList.remove("highlight"), 1200);
+            }
+          };
+
+          div.appendChild(linkedBox);
+        }
+      }
+
+      // Message body
+      const textNode = document.createElement("div");
+      textNode.className = "msg-text";
+      textNode.textContent = msg.text;
+
+      if (msg.deleted) {
+        div.classList.add("deleted");
+      }
+
+      div.appendChild(textNode);
+
+      // Status (sent only)
       if (msg.type === "sent") {
         const status = document.createElement("div");
         status.className = "status-text";
 
-        const map = {
+        const timeSpan = document.createElement("span");
+        timeSpan.textContent = formatMessageTime(msg.sent_at);
+        status.appendChild(timeSpan);
+
+        const stateMap = {
           sending: "Sending…",
           pending: "Pending",
           sent: "Sent",
-          seen: "Seen",
-          deleted: "Deleted"
+          deleting: "Deleting…",
+          deleted: "Deleted",
+          scheduled: "Scheduled",
+          seen: "Seen"
         };
 
-        status.textContent = map[msg.status] || "";
+        if (stateMap[msg.status]) {
+          status.append(" " + stateMap[msg.status]);
+          status.classList.add(`status-${msg.status}`);
+        }
+
         div.appendChild(status);
       }
 
       box.appendChild(div);
     }
 
-    // ================= POLL =================
+    // ==================================================
+    // =================== POLL =========================
+    // ==================================================
     if (item.type === "poll") {
       const poll = data;
 
@@ -1067,11 +1119,46 @@ function renderTimeline(fchat_messages) {
       question.textContent = poll.pollData.question;
       wrapper.appendChild(question);
 
-      poll.pollData.options.forEach(opt => {
-        const optDiv = document.createElement("div");
-        optDiv.className = "poll-option";
-        optDiv.textContent = opt;
-        wrapper.appendChild(optDiv);
+      const hint = document.createElement("div");
+      hint.className = "poll-hint";
+      hint.textContent = poll.pollData.allowMultiple
+        ? "Select more than one"
+        : "Select one";
+      wrapper.appendChild(hint);
+
+      const votesKey = `poll_votes_${poll.id}`;
+      let votes = JSON.parse(localStorage.getItem(votesKey)) || {};
+
+      poll.pollData.options.forEach((opt, index) => {
+        const option = document.createElement("div");
+        option.className = "poll-option";
+
+        const row = document.createElement("div");
+        row.className = "poll-row";
+
+        const circle = document.createElement("div");
+        circle.className = "poll-circle";
+
+        const text = document.createElement("div");
+        text.className = "poll-text";
+        text.textContent = opt;
+
+        row.appendChild(circle);
+        row.appendChild(text);
+        option.appendChild(row);
+
+        const bar = document.createElement("div");
+        bar.className = "poll-bar";
+        option.appendChild(bar);
+
+        option.onclick = () => {
+          if (!poll.pollData.allowMultiple) votes = {};
+          votes[index] = !votes[index];
+          localStorage.setItem(votesKey, JSON.stringify(votes));
+          updatePollUI(poll.id);
+        };
+
+        wrapper.appendChild(option);
       });
 
       box.appendChild(wrapper);
