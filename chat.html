@@ -1179,8 +1179,6 @@ if (lastMessageDay !== msgDay) {
 
       div.appendChild(status);
     }
-    div.dataset.id = msg.id;
-    box.appendChild(div);
   });
   
 // After rendering all messages
@@ -1312,8 +1310,22 @@ polls.forEach(poll => {
 
   wrapper.appendChild(status);
 
-  // Add poll to chat
-  box.appendChild(wrapper);
+});
+
+// ---------- APPEND MESSAGES & POLLS IN ORDER ----------
+const box = document.getElementById("chat-body");
+
+// Loop over fchat_messages which is already sorted by sent_at
+fchat_messages.forEach(item => {
+  if (item.type === "message") {
+    // Append existing message div
+    const msgDiv = document.querySelector(`.message[data-id='${item.data.id}']`);
+    if (msgDiv) box.appendChild(msgDiv);
+  } else if (item.type === "poll") {
+    // Append existing poll wrapper
+    const pollWrapper = document.querySelector(`.poll-wrapper[data-poll-id='${item.data.id}']`);
+    if (pollWrapper) box.appendChild(pollWrapper);
+  }
 });
 
 scrollToBottom();
