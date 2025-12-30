@@ -1512,6 +1512,7 @@ function sendMessage() {
   const text = input.value.trim();
   if (!text) return;
 
+  // 🔹 Truncate & sanitize reply preview before sending
   let truncatedReply = null;
   if (replyingMessage) {
     truncatedReply = replyingMessage.text.replace(/\s+/g, ' ').trim();
@@ -1538,24 +1539,32 @@ function sendMessage() {
     receiver_id: chatWith.id,
   };
 
-  // Add to local messages & storage
+  // 🔹 Add to local messages & storage
   messages.push(msgObj);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   input.value = "";
   resetInput();
 
+  // 🔹 Show truncated reply preview
   if (truncatedReply) {
     const previewEl = document.getElementById("reply-text");
     if (previewEl) previewEl.textContent = truncatedReply;
   }
 
-  // 🔹 Updated timeline: polls + new message
-  const updatedTimeline = [...fchat_messages, { type: "message", data: msgObj }];
-  renderTimeline(updatedTimeline);
+  // 🔹 Combine backend polls + all messages for timeline
+  const timelineData = [
+    ...fchat_messages, // backend polls/messages
+    ...messages.map(msg => ({ type: "message", data: msg })) // local messages
+  ];
 
+  // 🔹 Render updated timeline
+  renderTimeline(timelineData);
+
+  // 🔹 Clear reply state
   replyingMessage = null;
   document.getElementById("reply-preview").style.display = "none";
 
+  // 🔹 Send to backend if online
   if (navigator.onLine) sendToBackend(msgObj);
 }
 /*----------RETRY SCHEDULED DELETION----------*/
