@@ -1512,7 +1512,6 @@ function sendMessage() {
   const text = input.value.trim();
   if (!text) return;
 
-  // 🔹 truncate & sanitize reply preview before sending
   let truncatedReply = null;
   if (replyingMessage) {
     truncatedReply = replyingMessage.text.replace(/\s+/g, ' ').trim();
@@ -1529,7 +1528,7 @@ function sendMessage() {
     replyTo: replyingMessage
       ? {
           id: replyingMessage.id,
-          text: truncatedReply,   // <-- store truncated text here
+          text: truncatedReply,
           sender: getReplySenderName(replyingMessage),
         }
       : null,
@@ -1539,33 +1538,26 @@ function sendMessage() {
     receiver_id: chatWith.id,
   };
 
-  // add to local messages
+  // Add to local messages & storage
   messages.push(msgObj);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   input.value = "";
   resetInput();
 
-  // Show the reply preview with truncated text
   if (truncatedReply) {
     const previewEl = document.getElementById("reply-text");
     if (previewEl) previewEl.textContent = truncatedReply;
   }
 
-  // 🔹 Create the timeline including polls + updated messages
-  const timelineData = [
-    ...fchat_messages.filter(item => item.type === "poll"), // keep polls from backend
-    ...messages.map(msg => ({ type: "message", data: msg })) // local messages
-  ];
-
-  renderTimeline(timelineData); // render updated timeline
+  // 🔹 Updated timeline: polls + new message
+  const updatedTimeline = [...fchat_messages, { type: "message", data: msgObj }];
+  renderTimeline(updatedTimeline);
 
   replyingMessage = null;
   document.getElementById("reply-preview").style.display = "none";
 
-  // send to backend if online
   if (navigator.onLine) sendToBackend(msgObj);
 }
-
 /*----------RETRY SCHEDULED DELETION----------*/
 async function retryScheduledDeletes() {
   if (!navigator.onLine) return;
