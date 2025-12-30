@@ -1451,7 +1451,6 @@ function scrollToBottom() {
   const box = document.getElementById("chat-body");
   box.scrollTop = box.scrollHeight;
 }
-/* ---------- SEND TO BACKEND ---------- */
 async function sendToBackend(msgObj) {
   try {
     const payload = {    
@@ -1488,9 +1487,14 @@ async function sendToBackend(msgObj) {
   }
 
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-  renderTimeline(fchat_messages);
-}
 
+  // Merge backend + local messages before rendering
+  const timelineData = [
+    ...fchat_messages,
+    ...messages.map(msg => ({ type: "message", data: msg }))
+  ];
+  renderTimeline(timelineData);
+}
 async function retryPending() {
   if (!navigator.onLine) return;
 
