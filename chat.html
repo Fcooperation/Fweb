@@ -977,7 +977,6 @@ async function checkReceivedMessages() {
     console.warn("checkReceivedMessages failed:", err);
   }
 }
-// RENDER FCHAT_MESSAGES
 function renderTimeline(fchat_messages) {
   const box = document.getElementById("chat-body");
   box.innerHTML = "";
@@ -986,174 +985,125 @@ function renderTimeline(fchat_messages) {
 
   fchat_messages.forEach(item => {
     const data = item.data;
-    const date = new Date(item.sent_at);
+
+    // ✅ FIX DATE SOURCE
+    const date = new Date(data.sent_at);
     const dayKey = date.toDateString();
 
+    // ✅ DATE SEPARATOR (like WhatsApp)
+    if (dayKey !== lastMessageDay) {
+      const dateDivider = document.createElement("div");
+      dateDivider.className = "date-divider";
+      dateDivider.textContent =
+        dayKey === new Date().toDateString() ? "Today" : dayKey;
+
+      box.appendChild(dateDivider);
+      lastMessageDay = dayKey;
+    }
 
     // ==================================================
     // ================= MESSAGE ========================
     // ==================================================
     if (item.type === "message") {
-  const msg = data;
-  const msgDate = new Date(msg.sent_at);
-  const msgDay = msgDate.toDateString();
-  const div = document.createElement("div");
-  div.className = "message " + msg.type + (msg.status === "pending" ? " pending" : "");
-  div.dataset.id = msg.id;
+      const msg = data;
+      const div = document.createElement("div");
 
-  // Header (username)
-  if (msg.type === "received") {
-    const header = document.createElement("div");
-    header.className = "msg-username";
-    header.textContent = msg.sender_username || "Unknown";
-    div.appendChild(header);
+      div.className =
+        "message " + msg.type + (msg.status === "pending" ? " pending" : "");
+      div.dataset.id = msg.id;
 
-    // Time for received
-    const timeDiv = document.createElement("div");
-    timeDiv.className = "msg-time";
-    timeDiv.textContent = formatMessageTime(msg.sent_at);
-    div.appendChild(timeDiv);
-  }
+      // Sender name
+      if (msg.type === "received") {
+        const header = document.createElement("div");
+        header.className = "msg-username";
+        header.textContent = msg.sender_username || "Unknown";
+        div.appendChild(header);
 
-  // Reply preview
-  if (msg.replyTo) {
-    const replyBox = document.createElement("div");
-    replyBox.style.borderLeft = "3px solid #007bff";
-    replyBox.style.padding = "4px 8px";
-    replyBox.style.marginBottom = "6px";
-    replyBox.style.fontSize = "12px";
-    replyBox.style.opacity = "0.8";
-    replyBox.innerHTML = `<strong>${msg.replyTo.sender}</strong><br>${msg.replyTo.text}`;
-    div.appendChild(replyBox);
-  }
+        const timeDiv = document.createElement("div");
+        timeDiv.className = "msg-time";
+        timeDiv.textContent = formatMessageTime(msg.sent_at);
+        div.appendChild(timeDiv);
+      }
 
-  // Linked message preview
-  if (msg.linked_message === "yes" && msg.linked_message_id) {
-    const linked = fchat_messages.find(m => String(m.data.id) === String(msg.linked_message_id));
+      // Reply preview
+      if (msg.replyTo) {
+        const replyBox = document.createElement("div");
+        replyBox.className = "reply-preview";
+        replyBox.innerHTML = `<strong>${msg.replyTo.sender}</strong><br>${msg.replyTo.text}`;
+        div.appendChild(replyBox);
+      }
 
-    if (linked) {
-      const linkedBox = document.createElement("div");
-      linkedBox.className = "linked-preview";
+      // Linked message
+      if (msg.linked_message === "yes" && msg.linked_message_id) {
+        const linked = fchat_messages.find(
+          m => String(m.data.id) === String(msg.linked_message_id)
+        );
 
-      const senderName = linked.data.type === "sent" ? "You" : chatWith.username;
-      linkedBox.innerHTML = `<strong>${senderName}</strong><br>${linked.data.text.slice(0, 80) || "Message"}`;
+        if (linked) {
+          const linkedBox = document.createElement("div");
+          linkedBox.className = "linked-preview";
 
-      linkedBox.onclick = (e) => {
-        if (selectMode) return;
-        e.stopPropagation();
+          const senderName =
+            linked.data.type === "sent" ? "You" : chatWith.username;
 
-        const target = document.querySelector(`[data-id='${linked.data.id}']`);
-        if (target) {
-          target.scrollIntoView({ behavior: "smooth", block: "center" });
-          target.classList.add("highlight");
-          setTimeout(() => target.classList.remove("highlight"), 1200);
-        }
-      };
+          linkedBox.innerHTML = `<strong>${senderName}</strong><br>${linked.data.text.slice(0, 80)}`;
 
-      div.appendChild(linkedBox);
-    }
-  }
-
-  // Message text
-  const textNode = document.createElement("div");
-  textNode.className = "msg-text";
-
-  if (msg.deleted) {
-    textNode.textContent = msg.text;
-    div.classList.add("deleted");
-    div.appendChild(textNode);
-  } else {
-    textNode.textContent = msg.text;
-    div.appendChild(textNode);
-
-    // READ MORE logic
-    requestAnimationFrame(() => {
-      const lineHeight = parseFloat(getComputedStyle(textNode).lineHeight);
-      const INITIAL_LINES = 10;
-      const STEP_LINES = 25;
-      let currentLines = INITIAL_LINES;
-
-      const applyClamp = () => {
-        textNode.style.display = "-webkit-box";
-        textNode.style.webkitBoxOrient = "vertical";
-        textNode.style.webkitLineClamp = currentLines;
-        textNode.style.overflow = "hidden";
-      };
-      const removeClamp = () => {
-        textNode.style.webkitLineClamp = "unset";
-        textNode.style.display = "block";
-        textNode.style.overflow = "visible";
-      };
-
-      if (textNode.scrollHeight > lineHeight * INITIAL_LINES) {
-        applyClamp();
-
-        const readMore = document.createElement("div");
-        readMore.className = "read-more";
-        readMore.textContent = "Read more";
-
-        readMore.onclick = () => {
-          const totalLines = Math.ceil(textNode.scrollHeight / lineHeight);
-
-          if (currentLines >= totalLines) {
-            currentLines = INITIAL_LINES;
-            applyClamp();
-            readMore.textContent = "Read more";
-          } else {
-            currentLines += STEP_LINES;
-            if (currentLines >= totalLines) {
-              removeClamp();
-              readMore.textContent = "Read less";
-            } else {
-              applyClamp();
-              readMore.textContent = "Read more";
+          linkedBox.onclick = () => {
+            const target = document.querySelector(
+              `[data-id='${linked.data.id}']`
+            );
+            if (target) {
+              target.scrollIntoView({ behavior: "smooth", block: "center" });
+              target.classList.add("highlight");
+              setTimeout(() => target.classList.remove("highlight"), 1200);
             }
-          }
+          };
+
+          div.appendChild(linkedBox);
+        }
+      }
+
+      // Message body
+      const textNode = document.createElement("div");
+      textNode.className = "msg-text";
+      textNode.textContent = msg.text;
+
+      if (msg.deleted) {
+        div.classList.add("deleted");
+      }
+
+      div.appendChild(textNode);
+
+      // Status (sent only)
+      if (msg.type === "sent") {
+        const status = document.createElement("div");
+        status.className = "status-text";
+
+        const timeSpan = document.createElement("span");
+        timeSpan.textContent = formatMessageTime(msg.sent_at);
+        status.appendChild(timeSpan);
+
+        const stateMap = {
+          sending: "Sending…",
+          pending: "Pending",
+          sent: "Sent",
+          deleting: "Deleting…",
+          deleted: "Deleted",
+          scheduled: "Scheduled",
+          seen: "Seen"
         };
 
-        div.appendChild(readMore);
+        if (stateMap[msg.status]) {
+          status.append(" " + stateMap[msg.status]);
+          status.classList.add(`status-${msg.status}`);
+        }
+
+        div.appendChild(status);
       }
-    });
-  }
 
-  // Status (sent messages)
-  if (msg.type === "sent") {
-    const status = document.createElement("div");
-    status.classList.add("status-text");
-
-    const timeSpan = document.createElement("span");
-    timeSpan.classList.add("message-time");
-    timeSpan.textContent = formatMessageTime(msg.sent_at);
-    status.appendChild(timeSpan);
-
-    if (msg.status === "sending") {
-      status.append("Sending…");
-      status.classList.add("status-sending");
-    } else if (msg.status === "pending") {
-      status.append("Pending");
-      status.classList.add("status-pending");
-    } else if (msg.status === "sent") {
-      status.append("Sent");
-      status.classList.add("status-sent");
-    } else if (msg.status === "deleting") {
-      status.append("Deleting…");
-      status.classList.add("status-deleting");
-    } else if (msg.status === "deleted") {
-      status.append("Deleted");
-      status.classList.add("status-deleted");
-    } else if (msg.status === "scheduled") {
-      status.append("Scheduled");
-      status.classList.add("status-scheduled");
-    } else if (msg.status === "seen") {
-      status.append("Seen");
-      status.classList.add("status-seen");
+      box.appendChild(div);
     }
 
-    div.appendChild(status);
-  }
-
-  box.appendChild(div);
-}
     // ==================================================
     // =================== POLL =========================
     // ==================================================
@@ -1163,22 +1113,12 @@ function renderTimeline(fchat_messages) {
       const wrapper = document.createElement("div");
       wrapper.className = "poll-wrapper";
       wrapper.dataset.pollId = poll.id;
-      wrapper.style.width = "80%";
 
-      // ✅ Dynamic height logic
-      const baseHeight = 200;
-      const optionCount = poll.pollData.options.length;
-      const normalExtra = Math.max(Math.min(optionCount, 7) - 2, 0) * 70;
-      const extraAfterTen = Math.max(optionCount - 7, 0) * 60;
-      wrapper.style.minHeight = `${baseHeight + normalExtra + extraAfterTen}px`;
-
-      // Question
       const question = document.createElement("div");
       question.className = "poll-question";
       question.textContent = poll.pollData.question;
       wrapper.appendChild(question);
 
-      // Hint
       const hint = document.createElement("div");
       hint.className = "poll-hint";
       hint.textContent = poll.pollData.allowMultiple
@@ -1186,7 +1126,6 @@ function renderTimeline(fchat_messages) {
         : "Select one";
       wrapper.appendChild(hint);
 
-      // Votes (local per poll)
       const votesKey = `poll_votes_${poll.id}`;
       let votes = JSON.parse(localStorage.getItem(votesKey)) || {};
 
@@ -1194,7 +1133,6 @@ function renderTimeline(fchat_messages) {
         const option = document.createElement("div");
         option.className = "poll-option";
 
-        // Row
         const row = document.createElement("div");
         row.className = "poll-row";
 
@@ -1207,87 +1145,22 @@ function renderTimeline(fchat_messages) {
 
         row.appendChild(circle);
         row.appendChild(text);
-
-        // Bar
-        const barWrap = document.createElement("div");
-        barWrap.className = "poll-bar-container";
+        option.appendChild(row);
 
         const bar = document.createElement("div");
         bar.className = "poll-bar";
-        barWrap.appendChild(bar);
+        option.appendChild(bar);
 
-        option.appendChild(row);
-        option.appendChild(barWrap);
-
-        const animatedKey = `poll_${poll.id}_option_${index}_animated`;
-
-        // Click logic (FIXED: only update poll UI, not full timeline)
-        option.addEventListener("click", (e) => {
-          e.stopPropagation();
-
+        option.onclick = () => {
           if (!poll.pollData.allowMultiple) votes = {};
           votes[index] = !votes[index];
           localStorage.setItem(votesKey, JSON.stringify(votes));
-
-          // Reset animations if single select
-          if (!poll.pollData.allowMultiple) {
-            poll.pollData.options.forEach((_, i) => {
-              if (i !== index)
-                localStorage.removeItem(`poll_${poll.id}_option_${i}_animated`);
-            });
-          }
-
-          // ✅ Update only this poll
           updatePollUI(poll.id);
-        });
-
-        // Visual state
-        if (votes[index]) {
-          circle.classList.add("selected");
-
-          if (!localStorage.getItem(animatedKey)) {
-            setTimeout(() => (bar.style.width = "100%"), 20);
-            localStorage.setItem(animatedKey, "true");
-          } else {
-            bar.style.width = "100%";
-          }
-        } else {
-          circle.classList.remove("selected");
-          bar.style.width = "0%";
-          localStorage.removeItem(animatedKey);
-        }
+        };
 
         wrapper.appendChild(option);
       });
 
-      // Status
-      const status = document.createElement("div");
-      status.classList.add("poll-status");
-
-      if (poll.status === "sending") {
-        status.textContent = "Sending…";
-        status.classList.add("status-sending");
-      } else if (poll.status === "pending") {
-        status.textContent = "Pending";
-        status.classList.add("status-pending");
-      } else if (poll.status === "sent") {
-        status.textContent = "Sent";
-        status.classList.add("status-sent");
-      } else if (poll.status === "deleting") {
-        status.textContent = "Deleting…";
-        status.classList.add("status-deleting");
-      } else if (poll.status === "deleted") {
-        status.textContent = "Deleted";
-        status.classList.add("status-deleted");
-      } else if (poll.status === "scheduled") {
-        status.textContent = "Scheduled";
-        status.classList.add("status-scheduled");
-      } else if (poll.status === "seen") {
-        status.textContent = "Seen";
-        status.classList.add("status-seen");
-      }
-
-      wrapper.appendChild(status);
       box.appendChild(wrapper);
     }
   });
@@ -1295,27 +1168,6 @@ function renderTimeline(fchat_messages) {
   scrollToBottom();
   enableMessageTap();
   enableMultiSelect();
-}
-
-// ===== HELPER: only update one poll =====
-function updatePollUI(pollId) {
-  const wrapper = document.querySelector(`[data-poll-id="${pollId}"]`);
-  if (!wrapper) return;
-
-  const votes = JSON.parse(localStorage.getItem(`poll_votes_${pollId}`)) || {};
-
-  wrapper.querySelectorAll(".poll-option").forEach((opt, i) => {
-    const circle = opt.querySelector(".poll-circle");
-    const bar = opt.querySelector(".poll-bar");
-
-    if (votes[i]) {
-      circle.classList.add("selected");
-      bar.style.width = "100%";
-    } else {
-      circle.classList.remove("selected");
-      bar.style.width = "0%";
-    }
-  });
 }
 function enableMessageTap() {
   const allMessages = document.querySelectorAll(".message");
