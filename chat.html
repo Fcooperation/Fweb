@@ -1042,78 +1042,138 @@ function renderTimeline(fchat_messages) {
     // =================== POLL =========================
     // ==================================================
     if (item.type === "poll") {
-      const poll = data;
+  const poll = data;
 
-      const wrapper = document.createElement("div");
-      wrapper.className = "poll-wrapper";
-      wrapper.dataset.pollId = poll.id;
+  const wrapper = document.createElement("div");
+  wrapper.className = "poll-wrapper";
+  wrapper.dataset.pollId = poll.id;
+  wrapper.style.width = "80%";
 
-      const question = document.createElement("div");
-      question.className = "poll-question";
-      question.textContent = poll.pollData.question;
-      wrapper.appendChild(question);
+  // ✅ Dynamic height logic
+  const baseHeight = 200;
+  const optionCount = poll.pollData.options.length;
+  const normalExtra = Math.max(Math.min(optionCount, 7) - 2, 0) * 70;
+  const extraAfterTen = Math.max(optionCount - 7, 0) * 60;
+  wrapper.style.minHeight = `${baseHeight + normalExtra + extraAfterTen}px`;
 
-      const hint = document.createElement("div");
-      hint.className = "poll-hint";
-      hint.textContent = poll.pollData.allowMultiple
-        ? "Select more than one"
-        : "Select one";
-      wrapper.appendChild(hint);
+  // Question
+  const question = document.createElement("div");
+  question.className = "poll-question";
+  question.textContent = poll.pollData.question;
+  wrapper.appendChild(question);
 
-      const votesKey = `poll_votes_${poll.id}`;
-      let votes = JSON.parse(localStorage.getItem(votesKey)) || {};
+  // Hint
+  const hint = document.createElement("div");
+  hint.className = "poll-hint";
+  hint.textContent = poll.pollData.allowMultiple
+    ? "Select more than one"
+    : "Select one";
+  wrapper.appendChild(hint);
 
-      poll.pollData.options.forEach((opt, index) => {
-        const option = document.createElement("div");
-        option.className = "poll-option";
+  // Votes (local per poll)
+  const votesKey = `poll_votes_${poll.id}`;
+  let votes = JSON.parse(localStorage.getItem(votesKey)) || {};
 
-        const row = document.createElement("div");
-        row.className = "poll-row";
+  poll.pollData.options.forEach((opt, index) => {
+    const option = document.createElement("div");
+    option.className = "poll-option";
 
-        const circle = document.createElement("div");
-        circle.className = "poll-circle";
+    // Row
+    const row = document.createElement("div");
+    row.className = "poll-row";
 
-        const text = document.createElement("div");
-        text.className = "poll-text";
-        text.textContent = opt;
+    const circle = document.createElement("div");
+    circle.className = "poll-circle";
 
-        row.append(circle, text);
-        option.appendChild(row);
+    const text = document.createElement("div");
+    text.className = "poll-text";
+    text.textContent = opt;
 
-        const bar = document.createElement("div");
-        bar.className = "poll-bar";
-        option.appendChild(bar);
+    row.appendChild(circle);
+    row.appendChild(text);
 
-        if (votes[index]) {
-          circle.classList.add("selected");
-          bar.style.width = "100%";
-        }
+    // Bar
+    const barWrap = document.createElement("div");
+    barWrap.className = "poll-bar-container";
 
-        option.onclick = () => {
-          if (!poll.pollData.allowMultiple) votes = {};
+    const bar = document.createElement("div");
+    bar.className = "poll-bar";
+    barWrap.appendChild(bar);
 
-          votes[index] = !votes[index];
-          localStorage.setItem(votesKey, JSON.stringify(votes));
+    option.appendChild(row);
+    option.appendChild(barWrap);
 
-          wrapper.querySelectorAll(".poll-option").forEach((optEl, i) => {
-            const c = optEl.querySelector(".poll-circle");
-            const b = optEl.querySelector(".poll-bar");
+    const animatedKey = `poll_${poll.id}_option_${index}_animated`;
 
-            if (votes[i]) {
-              c.classList.add("selected");
-              b.style.width = "100%";
-            } else {
-              c.classList.remove("selected");
-              b.style.width = "0%";
-            }
-          });
-        };
+    // Click logic
+    option.addEventListener("click", (e) => {
+      e.stopPropagation();
 
-        wrapper.appendChild(option);
-      });
+      if (!poll.pollData.allowMultiple) votes = {};
+      votes[index] = !votes[index];
+      localStorage.setItem(votesKey, JSON.stringify(votes));
 
-      box.appendChild(wrapper);
+      // Reset animations if single select
+      if (!poll.pollData.allowMultiple) {
+        poll.pollData.options.forEach((_, i) => {
+          if (i !== index)
+            localStorage.removeItem(`poll_${poll.id}_option_${i}_animated`);
+        });
+      }
+
+      // Re-render via timeline logic
+      renderTimeline();
+    });
+
+    // Visual state
+    if (votes[index]) {
+      circle.classList.add("selected");
+
+      if (!localStorage.getItem(animatedKey)) {
+        setTimeout(() => (bar.style.width = "100%"), 20);
+        localStorage.setItem(animatedKey, "true");
+      } else {
+        bar.style.width = "100%";
+      }
+    } else {
+      circle.classList.remove("selected");
+      bar.style.width = "0%";
+      localStorage.removeItem(animatedKey);
     }
+
+    wrapper.appendChild(option);
+  });
+
+  // Status
+  const status = document.createElement("div");
+  status.classList.add("poll-status");
+
+  if (poll.status === "sending") {
+    status.textContent = "Sending…";
+    status.classList.add("status-sending");
+  } else if (poll.status === "pending") {
+    status.textContent = "Pending";
+    status.classList.add("status-pending");
+  } else if (poll.status === "sent") {
+    status.textContent = "Sent";
+    status.classList.add("status-sent");
+  } else if (poll.status === "deleting") {
+    status.textContent = "Deleting…";
+    status.classList.add("status-deleting");
+  } else if (poll.status === "deleted") {
+    status.textContent = "Deleted";
+    status.classList.add("status-deleted");
+  } else if (poll.status === "scheduled") {
+    status.textContent = "Scheduled";
+    status.classList.add("status-scheduled");
+  } else if (poll.status === "seen") {
+    status.textContent = "Seen";
+    status.classList.add("status-seen");
+  }
+
+  wrapper.appendChild(status);
+  box.appendChild(wrapper);
+}
   });
 
   scrollToBottom();
