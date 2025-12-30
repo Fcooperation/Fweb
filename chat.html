@@ -18,16 +18,17 @@ body {
 
 /* ---------- TOP BAR (Dashboard) ---------- */
 #top-bar {
-  height: 60px;
   display: flex;
   align-items: center;
-  padding: 0 12px;
+  gap: 12px;
+  padding: 12px 16px;
   border-bottom: 1px solid #ddd;
-  background: white;
-  flex-shrink: 0;
-  z-index: 10;
+  cursor:pointer;
+  position: sticky;    /* stays in place */
+  top: 0;              /* stick to top */
+  z-index: 100;        /* stays above messages */
+  background: white;   /* ensures it doesn’t blend with messages when scrolling */
 }
-
 #back-btn {
   font-size: 22px;
   margin-right: 10px;
@@ -91,13 +92,15 @@ body {
 
 /* ---------- INPUT BAR ---------- */
 #input-bar {
-  height: 60px;
-  display: flex;
-  align-items: center;
-  padding: 10px;
+    display: flex;
+  gap: 10px;
+  padding: 10px 16px;
   border-top: 1px solid #ddd;
-  background: white;
-  flex-shrink: 0;
+  align-items: center;
+  position: sticky;   /* stays in place while messages scroll */
+  bottom: 0;          /* stick to bottom of chat body */
+  z-index: 100;       /* stays above messages */
+  background: white;  /* ensures it doesn’t blend with messages */
 }
 
 #message-input {
