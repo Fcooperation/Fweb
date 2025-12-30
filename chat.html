@@ -988,8 +988,8 @@ function renderTimeline(fchat_messages) {
     const data = item.data;
     const date = new Date(item.sent_at);
     const dayKey = date.toDateString();
-    
-        // ---------- DATE DIVIDER ----------
+
+    // ---------- DATE DIVIDER ----------
     if (lastMessageDay !== dayKey) {
       lastMessageDay = dayKey;
 
@@ -1012,7 +1012,6 @@ function renderTimeline(fchat_messages) {
       dateBar.textContent = label;
       box.appendChild(dateBar);
     }
-
 
     // ==================================================
     // ================= MESSAGE ========================
@@ -1430,39 +1429,21 @@ function scrollToBottom() {
   const box = document.getElementById("chat-body");
   box.scrollTop = box.scrollHeight;
 }
-/* ---------- UPDATE TIMELINE ---------- */
-function updateTimeline() {
-  // Merge backend + local messages, de-dupe by ID
-  const allMessages = [...fchat_messages, ...messages].reduce((acc, msg) => {
-    const id = msg.id || msg.data?.id;
-    if (!acc.map.has(id)) {
-      acc.map.set(id, msg);
-      acc.list.push(msg);
-    }
-    return acc;
-  }, { map: new Map(), list: [] }).list;
-
-  // Format for renderTimeline
-  const timelineData = allMessages.map(msg => msg.data ? msg : { type: "message", data: msg });
-
-  renderTimeline(timelineData);
-}
-
 /* ---------- SEND TO BACKEND ---------- */
 async function sendToBackend(msgObj) {
   try {
-    const payload = {
-      action: "send_messages",
-      email: account.email,
-      id: msgObj.id,
-      sender_id: account.id,
-      receiver_id: chatWith.id,
-      linked: msgObj.linked,
-      linked_message_id: msgObj.linked_message_id,
-      sent_at: msgObj.sent_at,
-      text: msgObj.text
+    const payload = {    
+      action: "send_messages",    
+      email: account.email,    
+      id: msgObj.id,    
+      sender_id: account.id,    
+      receiver_id: chatWith.id,    
+      linked: msgObj.linked,  
+      linked_message_id: msgObj.linked_message_id,  
+      sent_at: msgObj.sent_at,  
+      text: msgObj.text    
     };
-
+    
     const res = await fetch(API_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -1477,23 +1458,54 @@ async function sendToBackend(msgObj) {
     } else {
       msgObj.status = "pending";
     }
-  } catch (e) {
+
+  } catch(e) {
     msgObj.status = "pending";
     msgObj.sending_since = null;
     console.warn("Failed to send, message pending", e);
   }
 
-  // Save local messages & render once
+  // 🔹 Save local messages after status update
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-  updateTimeline();
+  // ❌ DO NOT RENDER HERE — avoid duplicate date bars
 }
+
+/* ---------- RETRY PENDING MESSAGES ---------- */
+async function retryPending() {
+  if (!navigator.onLine) return;
+
+  const pendingMessages = messages.filter(msg => msg.status === "pending");
+
+  for (const msg of pendingMessages) {
+    msg.status = "sending";
+    msg.sending_since = Date.now();
+  }
+
+  // 🔹 Render timeline **once** after marking all as sending
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+  renderTimeline([
+    ...fchat_messages,
+    ...messages.map(msg => ({ type: "message", data: msg }))
+  ]);
+
+  // 🔹 Now send messages to backend one by one
+  for (const msg of pendingMessages) {
+    await sendToBackend(msg);
+  }
+
+  // 🔹 Render timeline **once** after backend updates
+  renderTimeline([
+    ...fchat_messages,
+    ...messages.map(msg => ({ type: "message", data: msg }))
+  ]);
+}
+
 /* ---------- SEND MESSAGE ---------- */
 function sendMessage() {
   const input = document.getElementById("message-input");
   const text = input.value.trim();
   if (!text) return;
 
-  // Truncate & sanitize reply preview
   let truncatedReply = null;
   if (replyingMessage) {
     truncatedReply = replyingMessage.text.replace(/\s+/g, ' ').trim();
@@ -1508,36 +1520,34 @@ function sendMessage() {
     status: navigator.onLine ? "sending" : "pending",
     sending_since: navigator.onLine ? Date.now() : null,
     replyTo: replyingMessage
-      ? {
-          id: replyingMessage.id,
-          text: truncatedReply,
-          sender: getReplySenderName(replyingMessage)
-        }
+      ? { id: replyingMessage.id, text: truncatedReply, sender: getReplySenderName(replyingMessage) }
       : null,
     linked: replyingMessage ? true : false,
     linked_message_id: replyingMessage ? replyingMessage.id : null,
     sender_id: account.id,
-    receiver_id: chatWith.id
+    receiver_id: chatWith.id,
   };
 
-  // Add to local messages & storage
   messages.push(msgObj);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-
-  // Clear input & reply preview
   input.value = "";
   resetInput();
-  if (replyingMessage) {
+
+  if (truncatedReply) {
     const previewEl = document.getElementById("reply-text");
     if (previewEl) previewEl.textContent = truncatedReply;
   }
+
+  // 🔹 Render timeline **once**
+  renderTimeline([
+    ...fchat_messages,
+    ...messages.map(msg => ({ type: "message", data: msg }))
+  ]);
+
   replyingMessage = null;
   document.getElementById("reply-preview").style.display = "none";
 
-  // Render timeline once
-  updateTimeline();
-
-  // Send to backend if online
+  // 🔹 Send to backend if online
   if (navigator.onLine) sendToBackend(msgObj);
 }
 /*----------RETRY SCHEDULED DELETION----------*/
