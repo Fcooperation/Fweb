@@ -119,7 +119,8 @@ body {
   font-size: 14px;
   border-radius: 6px;
 }
-/* POLL CONTAINER */
+
+/* POLL STYLES */
 .poll-wrapper {
   width: 80%;
   min-width: 250px;
@@ -132,37 +133,26 @@ body {
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  position: relative; /* for status at bottom */
+  position: relative;
   margin: 10px 0;
 }
 
-/* QUESTION */
 .poll-question {
   font-weight: bold;
-  margin-bottom: 45px; /* larger gap before options */
+  margin-bottom: 45px;
 }
 
-/* HINT TEXT */
-.poll-hint {
-  font-size: 12px;
-  opacity: 0.6;
-  margin-bottom: 12px; /* reasonable gap */
-}
-
-/* OPTION */
 .poll-option {
-  margin-bottom: 35px; /* space between options */
+  margin-bottom: 35px;
   cursor: pointer;
 }
 
-/* ROW (circle + text) */
 .poll-row {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-/* CIRCLE */
 .poll-circle {
   width: 14px;
   height: 14px;
@@ -176,12 +166,10 @@ body {
   border-color: #2196f3;
 }
 
-/* OPTION TEXT */
 .poll-text {
   font-size: 14px;
 }
 
-/* BAR */
 .poll-bar-container {
   width: 100%;
   height: 6px;
@@ -198,11 +186,10 @@ body {
   transition: width 0.35s ease;
 }
 
-/* STATUS (logs) */
 .poll-status {
   font-size: 11px;
   opacity: 0.6;
-  position: absolute; /* bottom right */
+  position: absolute;
   bottom: 8px;
   right: 10px;
 }
@@ -211,30 +198,25 @@ body {
 
 <body>
 
-<!-- HEADER -->
 <div id="chat-header">
   <div id="left-box">
     <div id="back-btn" onclick="goBack()">←</div>
     <div id="profile-pic"></div>
   </div>
-
   <div id="center-info">
     <div id="chat-username">Username</div>
     <div id="chat-id">ID</div>
   </div>
 </div>
 
-<!-- CHAT BODY -->
 <div id="chat-body"></div>
 
-<!-- INPUT -->
 <div id="chat-input">
   <input type="text" id="messageInput" placeholder="Type a message...">
   <button id="sendBtn">Send</button>
 </div>
 
 <script>
-/* -------------------- CONFIG & STORAGE -------------------- */
 const API_URL = "https://fweb-backend.onrender.com/fchat";
 const account = JSON.parse(localStorage.getItem("faccount")) || {};
 const chatWith = JSON.parse(localStorage.getItem("chatting_with")) || {};
@@ -250,7 +232,7 @@ let messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
 const FCHAT_STORAGE_KEY = `fchat_messages_${account.email}`;
 let fchatMessages = JSON.parse(localStorage.getItem(FCHAT_STORAGE_KEY)) || [];
 
-/* -------------------- HEADER -------------------- */
+// Header
 document.getElementById("chat-username").textContent = chatWith.username || "User";
 document.getElementById("chat-id").textContent = "ID: " + (chatWith.id || "");
 
@@ -260,12 +242,40 @@ if (chatWith.profile_pic) {
   profilePic.style.backgroundSize = "cover";
   profilePic.style.backgroundPosition = "center";
 } else {
-  const initials = (chatWith.username || "U").split(" ").map(w=>w[0]).join("").toUpperCase();
-  profilePic.textContent = initials;
+  profilePic.textContent = (chatWith.username || "U").split(" ").map(w => w[0]).join("").toUpperCase();
 }
 
-/* -------------------- TIMELINE -------------------- */
+// Chat body
 const chatBody = document.getElementById("chat-body");
+
+function addMessage(msgObj) {
+  const msg = document.createElement("div");
+
+  if (msgObj.isPoll && msgObj.pollData) {
+    msg.className = "poll-wrapper " + (msgObj.sender_id === account.id ? "sent" : "received");
+    msg.innerHTML = `
+      <div class="poll-question">${msgObj.pollData.question}</div>
+      ${msgObj.pollData.options.map((opt,i) => `
+        <div class="poll-option" data-index="${i}">
+          <div class="poll-row">
+            <div class="poll-circle"></div>
+            <div class="poll-text">${opt}</div>
+          </div>
+          <div class="poll-bar-container">
+            <div class="poll-bar"></div>
+          </div>
+        </div>
+      `).join('')}
+      <div class="poll-status">${msgObj.status || 'pending'}</div>
+    `;
+  } else {
+    msg.className = "message " + (msgObj.type || (msgObj.sender_id === account.id ? "sent" : "received"));
+    msg.textContent = msgObj.text;
+  }
+
+  chatBody.appendChild(msg);
+  chatBody.scrollTop = chatBody.scrollHeight;
+}
 
 function updateTimeline() {
   chatBody.innerHTML = "";
@@ -276,86 +286,42 @@ function updateTimeline() {
 
   chatItems.forEach(m => addMessage(m));
 }
-function addMessage(msgObj) {
-  const msg = document.createElement("div");
 
-  if (msgObj.isPoll && msgObj.pollData) {
-    // Poll message
-    msg.className = "poll-wrapper " + (msgObj.sender_id === account.id ? "sent" : "received");
+// Sync messages
+function syncToFChat(msgObj=null) {
+  if(msgObj && !fchatMessages.some(fm => fm.id === msgObj.id)) fchatMessages.push(msgObj);
+  else messages.forEach(m => { if(!fchatMessages.some(fm=>fm.id===m.id)) fchatMessages.push(m); });
 
-    msg.innerHTML = `
-      <div class="poll-question">${msgObj.pollData.question}</div>
-      ${msgObj.pollData.options.map((opt, i) => `
-        <div class="poll-option" data-index="${i}">
-          <div class="poll-row">
-            <div class="poll-circle"></div>
-            <div class="poll-text">${opt}</div>
-          </div>
-          <div class="poll-bar-container">
-            <div class="poll-bar" style="width:0"></div>
-          </div>
-        </div>
-      `).join('')}
-      <div class="poll-status">${msgObj.status || 'pending'}</div>
-    `;
-  } else {
-    // Normal text message
-    msg.className = "message " + (msgObj.type || (msgObj.sender_id === account.id ? "sent" : "received"));
-    msg.textContent = msgObj.text;
-  }
-
-  chatBody.appendChild(msg);
-  chatBody.scrollTop = chatBody.scrollHeight;
-}
-
-/* -------------------- SYNC TO FCHAT -------------------- */
-function syncToFChat(msgObj = null) {
-  if(msgObj) {
-    // Add new message only if not exists
-    if (!fchatMessages.some(fm => fm.id === msgObj.id)) {
-      fchatMessages.push(msgObj);
-    }
-  } else {
-    // Sync all messages from messages[]
-    messages.forEach(m => {
-      if (!fchatMessages.some(fm => fm.id === m.id)) {
-        fchatMessages.push(m);
-      }
-    });
-  }
-
-  fchatMessages.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
+  fchatMessages.sort((a,b) => new Date(a.sent_at)-new Date(b.sent_at));
   localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
   updateTimeline();
 }
 
-// SYNC POLLS 
+// Sync polls
 function syncPolls() {
   const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
   const polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
 
   polls.forEach(p => {
-    // Add to fchatMessages if not exists
-    if (!fchatMessages.some(fm => fm.id === p.id)) {
+    if(!fchatMessages.some(fm => fm.id===p.id)) {
       fchatMessages.push({
         id: p.id,
         type: "sent",
         isPoll: true,
         pollData: p.pollData,
         status: p.status,
-        sender_id: p.senderId,
+        sender_id: p.sender_id,
         receiver_id: chatWith.id,
         sent_at: p.sent_at
       });
     }
   });
 
-  // Sort and save
-  fchatMessages.sort((a,b) => new Date(a.sent_at) - new Date(b.sent_at));
+  fchatMessages.sort((a,b)=>new Date(a.sent_at)-new Date(b.sent_at));
   localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
 }
 
-/* -------------------- SEND TO BACKEND -------------------- */
+// Send message
 async function sendToBackend(msgObj) {
   try {
     const payload = {
@@ -372,35 +338,27 @@ async function sendToBackend(msgObj) {
 
     const res = await fetch(API_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {"Content-Type":"application/json"},
       body: JSON.stringify(payload)
     });
 
     const data = await res.json();
-
-    if (data.success) {
-      msgObj.status = "sent";
-      msgObj.sending_since = null;
-    } else {
-      msgObj.status = "pending";
-    }
-  } catch (e) {
+    msgObj.status = data.success ? "sent" : "pending";
+  } catch(e) {
     msgObj.status = "pending";
-    msgObj.sending_since = null;
-    console.warn("Failed to send, message pending", e);
+    console.warn("Failed to send", e);
   }
 
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-  syncToFChat(msgObj); // update fchatMessages and UI
+  syncToFChat(msgObj);
 }
 
-/* -------------------- SEND MESSAGE -------------------- */
 let replyingMessage = null;
 
 function sendMessage() {
   const input = document.getElementById("messageInput");
   const text = input.value.trim();
-  if (!text) return;
+  if(!text) return;
 
   const msgObj = {
     id: Date.now(),
@@ -411,39 +369,32 @@ function sendMessage() {
     sending_since: navigator.onLine ? Date.now() : null,
     replyTo: replyingMessage ? {
       id: replyingMessage.id,
-      text: replyingMessage.text.slice(0,80) + (replyingMessage.text.length > 80 ? "…" : ""),
+      text: replyingMessage.text.slice(0,80)+(replyingMessage.text.length>80?"…":""),
       sender: replyingMessage.sender_id
-    } : null,
-    linked: replyingMessage ? true : false,
-    linked_message_id: replyingMessage ? replyingMessage.id : null,
+    }:null,
+    linked: replyingMessage ? true:false,
+    linked_message_id: replyingMessage ? replyingMessage.id:null,
     sender_id: account.id,
     receiver_id: chatWith.id
   };
 
-  // Save locally
   messages.push(msgObj);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-
-  // Update fchatMessages and UI
   syncToFChat(msgObj);
 
-  input.value = "";
-  replyingMessage = null;
+  input.value="";
+  replyingMessage=null;
 
-  if (navigator.onLine) sendToBackend(msgObj);
+  if(navigator.onLine) sendToBackend(msgObj);
 }
 
 document.getElementById("sendBtn").onclick = sendMessage;
 
-/* -------------------- BACK -------------------- */
-function goBack() {
-  window.location.href = "fchat.html";
-}
+function goBack(){ window.location.href="fchat.html"; }
 
-// Initial render
+// Initial load
+syncPolls();
 syncToFChat();
-syncPolls();  // load polls from localStorage to fchatMessages
-updateTimeline();  // render everything
 </script>
 
 </body>
