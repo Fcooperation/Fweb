@@ -182,7 +182,12 @@ const chatBody = document.getElementById("chat-body");
 
 function updateTimeline() {
   chatBody.innerHTML = "";
-  messages.forEach(m => addMessage(m.text, m.type || (m.sender_id === account.id ? "sent" : "received")));
+  // Render from fchatMessages[] filtered by current chat
+  const chatMessages = fchatMessages
+    .filter(m => m.receiver_id === chatWith.id || m.sender_id === chatWith.id)
+    .sort((a,b) => new Date(a.sent_at) - new Date(b.sent_at));
+
+  chatMessages.forEach(m => addMessage(m.text, m.type || (m.sender_id === account.id ? "sent" : "received")));
 }
 
 function addMessage(text, type) {
@@ -194,15 +199,24 @@ function addMessage(text, type) {
 }
 
 /* -------------------- SYNC TO FCHAT -------------------- */
-function syncToFChat() {
-  messages.forEach(m => {
-    if (!fchatMessages.some(fm => fm.id === m.id)) {
-      fchatMessages.push(m);
+function syncToFChat(msgObj = null) {
+  if(msgObj) {
+    // Add new message only if not exists
+    if (!fchatMessages.some(fm => fm.id === msgObj.id)) {
+      fchatMessages.push(msgObj);
     }
-  });
+  } else {
+    // Sync all messages from messages[]
+    messages.forEach(m => {
+      if (!fchatMessages.some(fm => fm.id === m.id)) {
+        fchatMessages.push(m);
+      }
+    });
+  }
 
   fchatMessages.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
   localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
+  updateTimeline();
 }
 
 /* -------------------- SEND TO BACKEND -------------------- */
@@ -241,8 +255,7 @@ async function sendToBackend(msgObj) {
   }
 
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-  syncToFChat(); // update fchat_messages after backend
-  updateTimeline();
+  syncToFChat(msgObj); // update fchatMessages and UI
 }
 
 /* -------------------- SEND MESSAGE -------------------- */
@@ -271,16 +284,15 @@ function sendMessage() {
     receiver_id: chatWith.id
   };
 
+  // Save locally
   messages.push(msgObj);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
 
-  // SYNC TO FCHAT
-  syncToFChat();
+  // Update fchatMessages and UI
+  syncToFChat(msgObj);
 
   input.value = "";
   replyingMessage = null;
-
-  updateTimeline();
 
   if (navigator.onLine) sendToBackend(msgObj);
 }
@@ -293,8 +305,6 @@ function goBack() {
 }
 
 // Initial render
-updateTimeline();
-// Sync existing messages on page load
 syncToFChat();
 </script>
 
