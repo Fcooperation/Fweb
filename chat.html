@@ -873,7 +873,6 @@ document.addEventListener("click", e => {
   }
 });
 
-// Delete for me
 function deleteForMe() {
   const idsToDelete = [...selectedMessages].map(el => el.dataset.id);
 
@@ -894,7 +893,6 @@ function deleteForMe() {
   // Re-render immediately
   renderTimeline(fchat_messages);
 }
-
 
 // Delete for everyone
 async function deleteForEveryone() {
@@ -1665,18 +1663,28 @@ async function receiveMessages() {
       const exists = messages.some(m => String(m.id) === String(msg.id));
       if (exists) return;
 
-      messages.push({
-        id: msg.id,
-        type: "received",
-        text: msg.text || "",
-        sent_at: msg.sent_at || new Date().toISOString(),
-        status: "sent",
-        sender_id: msg.sender_id,
-        receiver_id: account.id,
-        sender_username: chatUsername,
-        linked_message: msg.linked === true ? "yes" : "no",
-        linked_message_id: msg.linked_message_id || null
-      });
+      const newMsg = {
+  id: msg.id,
+  type: "message",
+  data: {
+    id: msg.id,
+    type: "received",
+    text: msg.text || "",
+    sent_at: msg.sent_at || new Date().toISOString(),
+    status: "sent",
+    sender_id: msg.sender_id,
+    receiver_id: account.id,
+    sender_username: chatUsername,
+    linked_message: msg.linked === true ? "yes" : "no",
+    linked_message_id: msg.linked_message_id || null
+  }
+};
+
+// ✅ push into fchat_messages (what renderTimeline actually uses)
+fchat_messages.push(newMsg);
+
+// still store locally if you want
+messages.push(newMsg.data);
 
       receivedIds.push(msg.id);
       changed = true;
