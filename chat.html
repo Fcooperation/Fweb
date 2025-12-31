@@ -873,12 +873,24 @@ document.addEventListener("click", e => {
   }
 });
 
-// Delete for me
 function deleteForMe() {
   const idsToDelete = [...selectedMessages].map(el => el.dataset.id);
+
+  // Remove from messages
   messages = messages.filter(msg => !idsToDelete.includes(String(msg.id)));
+
+  // Remove from merged timeline
+  fchat_messages = fchat_messages.filter(item => 
+    !(item.type === "message" && idsToDelete.includes(String(item.data.id)))
+  );
+
+  // Save updated messages
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+
+  // Exit select mode
   exitSelectMode();
+
+  // Re-render immediately
   renderTimeline(fchat_messages);
 }
 
