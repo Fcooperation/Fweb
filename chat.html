@@ -1708,7 +1708,7 @@ if (changed) {
     });
   }
 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+  localStorage.setItem("fchat_messages", JSON.stringify(fchat_messages));
   renderTimeline(fchat_messages);
 
   // 🔔 Vibrate phone (if supported)
