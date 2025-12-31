@@ -203,10 +203,11 @@ async function sendMessage() {
   if (!text) return;
 
   const msgObj = {
+    action: "send_messages",       // include action for backend
     id: Date.now(),
     sender_id: account.id,
     receiver_id: chatWith.id,
-    message: text,
+    text,                           // backend expects 'text'
     linked: "no",
     linked_message_id: null,
     sent_at: new Date().toISOString()
@@ -214,7 +215,7 @@ async function sendMessage() {
 
   // 1️⃣ Send to backend
   try {
-    await fetch("https://fweb-backend.onrender.com/fchat_send_message", {
+    await fetch("https://fweb-backend.onrender.com/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(msgObj)
@@ -224,11 +225,11 @@ async function sendMessage() {
   }
 
   // 2️⃣ Store in local messages[] per chat
-  messages.push(msgObj);
+  messages.push({ ...msgObj, message: text }); // localStorage expects 'message'
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
 
   // 3️⃣ Update fchat_messages[] sorted by sent_at
-  fchatMessages.push(msgObj);
+  fchatMessages.push({ ...msgObj, message: text });
   fchatMessages.sort((a,b)=> new Date(a.sent_at) - new Date(b.sent_at));
   localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
 
