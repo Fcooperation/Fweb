@@ -699,7 +699,9 @@ try {
   polls = [];
 }
 // ---------- MERGE MESSAGES & POLLS ----------
-let fchat_messages = [];
+let fchat_messages = JSON.parse(
+  localStorage.getItem(`fchat_messages_${account.email}_${chatWith.id}`)
+) || [];
 
 // Normalize messages
 const formattedMessages = messages
