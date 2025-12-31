@@ -119,6 +119,93 @@ body {
   font-size: 14px;
   border-radius: 6px;
 }
+/* POLL CONTAINER */
+.poll-wrapper {
+  width: 80%;
+  min-width: 250px;
+  min-height: 250px;
+  padding: 10px 12px;
+  background: #000;
+  border-radius: 10px;
+  color: white;
+  align-self: flex-end;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  position: relative; /* for status at bottom */
+  margin: 10px 0;
+}
+
+/* QUESTION */
+.poll-question {
+  font-weight: bold;
+  margin-bottom: 45px; /* larger gap before options */
+}
+
+/* HINT TEXT */
+.poll-hint {
+  font-size: 12px;
+  opacity: 0.6;
+  margin-bottom: 12px; /* reasonable gap */
+}
+
+/* OPTION */
+.poll-option {
+  margin-bottom: 35px; /* space between options */
+  cursor: pointer;
+}
+
+/* ROW (circle + text) */
+.poll-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* CIRCLE */
+.poll-circle {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid #aaa;
+  transition: 0.2s;
+}
+
+.poll-circle.selected {
+  background: #2196f3;
+  border-color: #2196f3;
+}
+
+/* OPTION TEXT */
+.poll-text {
+  font-size: 14px;
+}
+
+/* BAR */
+.poll-bar-container {
+  width: 100%;
+  height: 6px;
+  background: #222;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.poll-bar {
+  height: 100%;
+  width: 0;
+  background: #2196f3;
+  transition: width 0.35s ease;
+}
+
+/* STATUS (logs) */
+.poll-status {
+  font-size: 11px;
+  opacity: 0.6;
+  position: absolute; /* bottom right */
+  bottom: 8px;
+  right: 10px;
+}
 </style>
 </head>
 
@@ -182,18 +269,41 @@ const chatBody = document.getElementById("chat-body");
 
 function updateTimeline() {
   chatBody.innerHTML = "";
-  // Render from fchatMessages[] filtered by current chat
-  const chatMessages = fchatMessages
+
+  const chatItems = fchatMessages
     .filter(m => m.receiver_id === chatWith.id || m.sender_id === chatWith.id)
     .sort((a,b) => new Date(a.sent_at) - new Date(b.sent_at));
 
-  chatMessages.forEach(m => addMessage(m.text, m.type || (m.sender_id === account.id ? "sent" : "received")));
+  chatItems.forEach(m => addMessage(m));
 }
-
-function addMessage(text, type) {
+function addMessage(msgObj) {
   const msg = document.createElement("div");
-  msg.className = "message " + type;
-  msg.textContent = text;
+
+  if (msgObj.isPoll && msgObj.pollData) {
+    // Poll message
+    msg.className = "poll-wrapper " + (msgObj.sender_id === account.id ? "sent" : "received");
+
+    msg.innerHTML = `
+      <div class="poll-question">${msgObj.pollData.question}</div>
+      ${msgObj.pollData.options.map((opt, i) => `
+        <div class="poll-option" data-index="${i}">
+          <div class="poll-row">
+            <div class="poll-circle"></div>
+            <div class="poll-text">${opt}</div>
+          </div>
+          <div class="poll-bar-container">
+            <div class="poll-bar" style="width:0"></div>
+          </div>
+        </div>
+      `).join('')}
+      <div class="poll-status">${msgObj.status || 'pending'}</div>
+    `;
+  } else {
+    // Normal text message
+    msg.className = "message " + (msgObj.type || (msgObj.sender_id === account.id ? "sent" : "received"));
+    msg.textContent = msgObj.text;
+  }
+
   chatBody.appendChild(msg);
   chatBody.scrollTop = chatBody.scrollHeight;
 }
@@ -217,6 +327,32 @@ function syncToFChat(msgObj = null) {
   fchatMessages.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
   localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
   updateTimeline();
+}
+
+// SYNC POLLS 
+function syncPolls() {
+  const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
+  const polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+
+  polls.forEach(p => {
+    // Add to fchatMessages if not exists
+    if (!fchatMessages.some(fm => fm.id === p.id)) {
+      fchatMessages.push({
+        id: p.id,
+        type: "sent",
+        isPoll: true,
+        pollData: p.pollData,
+        status: p.status,
+        sender_id: p.senderId,
+        receiver_id: chatWith.id,
+        sent_at: p.sent_at
+      });
+    }
+  });
+
+  // Sort and save
+  fchatMessages.sort((a,b) => new Date(a.sent_at) - new Date(b.sent_at));
+  localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
 }
 
 /* -------------------- SEND TO BACKEND -------------------- */
@@ -306,6 +442,8 @@ function goBack() {
 
 // Initial render
 syncToFChat();
+syncPolls();  // load polls from localStorage to fchatMessages
+updateTimeline();  // render everything
 </script>
 
 </body>
