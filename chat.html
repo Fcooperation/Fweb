@@ -1665,7 +1665,7 @@ async function receiveMessages() {
       const exists = messages.some(m => String(m.id) === String(msg.id));
       if (exists) return;
 
-      fchat_messages.push({
+      messages.push({
         id: msg.id,
         type: "received",
         text: msg.text || "",
