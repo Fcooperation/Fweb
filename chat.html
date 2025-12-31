@@ -873,14 +873,27 @@ document.addEventListener("click", e => {
   }
 });
 
-// Delete for me
 function deleteForMe() {
   const idsToDelete = [...selectedMessages].map(el => el.dataset.id);
+
+  // Remove from messages
   messages = messages.filter(msg => !idsToDelete.includes(String(msg.id)));
+
+  // Remove from merged timeline
+  fchat_messages = fchat_messages.filter(item => 
+    !(item.type === "message" && idsToDelete.includes(String(item.data.id)))
+  );
+
+  // Save updated messages
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+
+  // Exit select mode
   exitSelectMode();
+
+  // Re-render immediately
   renderTimeline(fchat_messages);
 }
+
 
 // Delete for everyone
 async function deleteForEveryone() {
@@ -1652,17 +1665,19 @@ async function receiveMessages() {
       if (exists) return;
 
       fchat_messages.push({
-        id: msg.id,
-        type: "received",
-        text: msg.text || "",
-        sent_at: msg.sent_at || new Date().toISOString(),
-        status: "sent",
-        sender_id: msg.sender_id,
-        receiver_id: account.id,
-        sender_username: chatUsername,
-        linked_message: msg.linked === true ? "yes" : "no",
-        linked_message_id: msg.linked_message_id || null
-      });
+  id: msg.id,
+  type: "message",
+  data: {
+    id: msg.id,
+    text: msg.text,
+    sent_at: msg.sent_at,
+    sender_id: msg.sender_id,
+    receiver_id: account.id,
+    linked_message: msg.linked === true ? "yes" : "no",
+    linked_message_id: msg.linked_message_id || null,
+    status: "sent"
+  }
+});
 
       receivedIds.push(msg.id);
       changed = true;
@@ -1692,8 +1707,10 @@ if (changed) {
     });
   }
 
-  localStorage.setItem("fchat_messages", JSON.stringify(fchat_messages));
-  renderTimeline(fchat_messages);
+  localStorage.setItem(
+  `fchat_messages_${account.email}_${chatWith.id}`,
+  JSON.stringify(fchat_messages)
+);
 
   // 🔔 Vibrate phone (if supported)
   if ("vibrate" in navigator) {
