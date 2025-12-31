@@ -214,7 +214,7 @@ async function sendMessage() {
 
   // 1️⃣ Send to backend
   try {
-    await fetch("https://fweb-backend.onrender.com/chat", {
+    await fetch("https://fweb-backend.onrender.com/fchat_send_message", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(msgObj)
