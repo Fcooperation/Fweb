@@ -22,24 +22,29 @@ body {
   top: 0;
   background: white;
   border-bottom: 1px solid #ddd;
-  padding: 10px 14px;
+  padding: 14px 18px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: space-between;
   z-index: 10;
 }
 
+#left-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 #back-btn {
-  font-size: 20px;
+  font-size: 22px;
   cursor: pointer;
   user-select: none;
 }
 
 #profile-pic {
-  width: 45px;
-  height: 45px;
+  width: 46px;
+  height: 46px;
   border-radius: 50%;
-  object-fit: cover;
   background: black;
   color: white;
   display: flex;
@@ -48,15 +53,16 @@ body {
   font-weight: bold;
 }
 
-#chat-info {
-  display: flex;
-  flex-direction: column;
+#center-info {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
 }
 
 #chat-username {
   font-size: 16px;
   font-weight: bold;
-  color: black;
 }
 
 #chat-id {
@@ -67,9 +73,8 @@ body {
 /* -------------------- CHAT BODY -------------------- */
 #chat-body {
   flex: 1;
-  padding: 12px;
+  padding: 14px;
   overflow-y: auto;
-  background: white;
 }
 
 /* -------------------- MESSAGE STYLE -------------------- */
@@ -98,7 +103,7 @@ body {
   bottom: 0;
   background: white;
   border-top: 1px solid #ddd;
-  padding: 10px;
+  padding: 12px;
   display: flex;
   gap: 8px;
 }
@@ -126,11 +131,12 @@ body {
 
 <!-- HEADER -->
 <div id="chat-header">
-  <div id="back-btn" onclick="goBack()">←</div>
+  <div id="left-box">
+    <div id="back-btn" onclick="goBack()">←</div>
+    <div id="profile-pic"></div>
+  </div>
 
-  <div id="profile-pic"></div>
-
-  <div id="chat-info">
+  <div id="center-info">
     <div id="chat-username">Username</div>
     <div id="chat-id">ID</div>
   </div>
@@ -146,22 +152,25 @@ body {
 </div>
 
 <script>
-/* -------------------- LOAD CHAT USER -------------------- */
+/* -------------------- LOAD ACCOUNT & CHAT -------------------- */
+const account = JSON.parse(localStorage.getItem("faccount")) || {};
 const chatWith = JSON.parse(localStorage.getItem("chatting_with"));
 
 // Redirect if no chat selected
 if (!chatWith || !chatWith.id) {
+  alert("No chat selected");
   window.location.href = "fchat.html";
 }
 
-const usernameEl = document.getElementById("chat-username");
-const idEl = document.getElementById("chat-id");
+/* -------------------- STORAGE KEY -------------------- */
+const STORAGE_KEY = `chat_${account.email}_${chatWith.id}`;
+
+/* -------------------- HEADER SETUP -------------------- */
+document.getElementById("chat-username").textContent = chatWith.username || "User";
+document.getElementById("chat-id").textContent = "ID: " + (chatWith.id || "");
+
 const profilePic = document.getElementById("profile-pic");
 
-usernameEl.textContent = chatWith.username || "User";
-idEl.textContent = "ID: " + (chatWith.id || "");
-
-// Profile pic or initials
 if (chatWith.profile_pic) {
   profilePic.style.backgroundImage = `url('${chatWith.profile_pic}')`;
   profilePic.style.backgroundSize = "cover";
@@ -175,13 +184,13 @@ if (chatWith.profile_pic) {
   profilePic.textContent = initials;
 }
 
-/* -------------------- BACK BUTTON -------------------- */
-function goBack() {
-  window.location.href = "fchat.html";
-}
+/* -------------------- LOAD MESSAGES -------------------- */
+const chatBody = document.getElementById("chat-body");
+let messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+
+messages.forEach(m => addMessage(m.text, m.type));
 
 /* -------------------- SEND MESSAGE -------------------- */
-const chatBody = document.getElementById("chat-body");
 const input = document.getElementById("messageInput");
 const sendBtn = document.getElementById("sendBtn");
 
@@ -191,14 +200,26 @@ function sendMessage() {
   const text = input.value.trim();
   if (!text) return;
 
+  const msg = { text, type: "sent", time: Date.now() };
+  messages.push(msg);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+
+  addMessage(text, "sent");
+  input.value = "";
+}
+
+function addMessage(text, type) {
   const msg = document.createElement("div");
-  msg.className = "message sent";
+  msg.className = "message " + type;
   msg.textContent = text;
 
   chatBody.appendChild(msg);
   chatBody.scrollTop = chatBody.scrollHeight;
+}
 
-  input.value = "";
+/* -------------------- BACK -------------------- */
+function goBack() {
+  window.location.href = "fchat.html";
 }
 </script>
 
