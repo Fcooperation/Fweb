@@ -264,8 +264,13 @@ const chatBody = document.getElementById("chat-body");
 function addMessage(msgObj) {
   const msg = document.createElement("div");
 
+  // Determine if this is sent or received
+  const isSent = String(msgObj.sender_id) === String(account.id);
+  const alignmentClass = isSent ? "sent" : "received";
+
   if (msgObj.isPoll && msgObj.pollData) {
-    msg.className = "poll-wrapper " + (msgObj.sender_id === account.id ? "sent" : "received");
+    // Poll message
+    msg.className = `poll-wrapper ${alignmentClass}`;
     msg.innerHTML = `
       <div class="poll-question">${msgObj.pollData.question}</div>
       ${msgObj.pollData.options.map((opt,i) => `
@@ -282,7 +287,8 @@ function addMessage(msgObj) {
       <div class="poll-status">${msgObj.status || 'pending'}</div>
     `;
   } else {
-    msg.className = "message " + (msgObj.type || (msgObj.sender_id === account.id ? "sent" : "received"));
+    // Normal text message
+    msg.className = `message ${msgObj.type || alignmentClass}`;
     msg.textContent = msgObj.text;
   }
 
