@@ -162,15 +162,15 @@ if (!chatWith || !chatWith.id) {
   window.location.href = "fchat.html";
 }
 
-/* -------------------- STORAGE KEY -------------------- */
-const STORAGE_KEY = `chat_${account.email}_${chatWith.id}`;
+/* -------------------- STORAGE KEYS -------------------- */
+const STORAGE_KEY = `chat_${account.email}_${chatWith.id}`; // per chat per user
+const FCHAT_STORAGE_KEY = `fchat_messages_${account.email}`; // fchat messages storage
 
 /* -------------------- HEADER SETUP -------------------- */
 document.getElementById("chat-username").textContent = chatWith.username || "User";
 document.getElementById("chat-id").textContent = "ID: " + (chatWith.id || "");
 
 const profilePic = document.getElementById("profile-pic");
-
 if (chatWith.profile_pic) {
   profilePic.style.backgroundImage = `url('${chatWith.profile_pic}')`;
   profilePic.style.backgroundSize = "cover";
@@ -187,8 +187,10 @@ if (chatWith.profile_pic) {
 /* -------------------- LOAD MESSAGES -------------------- */
 const chatBody = document.getElementById("chat-body");
 let messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+let fchatMessages = JSON.parse(localStorage.getItem(FCHAT_STORAGE_KEY)) || [];
 
-messages.forEach(m => addMessage(m.text, m.type));
+// Render messages on chat body
+messages.forEach(m => addMessage(m.message, m.sender_id === account.id ? "sent" : "received"));
 
 /* -------------------- SEND MESSAGE -------------------- */
 const input = document.getElementById("messageInput");
@@ -196,14 +198,41 @@ const sendBtn = document.getElementById("sendBtn");
 
 sendBtn.onclick = sendMessage;
 
-function sendMessage() {
+async function sendMessage() {
   const text = input.value.trim();
   if (!text) return;
 
-  const msg = { text, type: "sent", time: Date.now() };
-  messages.push(msg);
+  const msgObj = {
+    id: Date.now(),
+    sender_id: account.id,
+    receiver_id: chatWith.id,
+    message: text,
+    linked: "no",
+    linked_message_id: null,
+    sent_at: new Date().toISOString()
+  };
+
+  // 1️⃣ Send to backend
+  try {
+    await fetch("https://fweb-backend.onrender.com/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(msgObj)
+    });
+  } catch (e) {
+    console.warn("Failed to send to backend, still saving locally");
+  }
+
+  // 2️⃣ Store in local messages[] per chat
+  messages.push(msgObj);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
 
+  // 3️⃣ Update fchat_messages[] sorted by sent_at
+  fchatMessages.push(msgObj);
+  fchatMessages.sort((a,b)=> new Date(a.sent_at) - new Date(b.sent_at));
+  localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
+
+  // 4️⃣ Render message
   addMessage(text, "sent");
   input.value = "";
 }
@@ -212,7 +241,6 @@ function addMessage(text, type) {
   const msg = document.createElement("div");
   msg.className = "message " + type;
   msg.textContent = text;
-
   chatBody.appendChild(msg);
   chatBody.scrollTop = chatBody.scrollHeight;
 }
