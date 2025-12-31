@@ -1009,6 +1009,7 @@ function renderTimeline(fchat_messages) {
     // ==================================================
     if (item.type === "message") {
   const msg = data;
+const msgType = msg.type; // now "received" or "sent"
   const msgDate = new Date(msg.sent_at);
   const msgDay = msgDate.toDateString();
   const div = document.createElement("div");
@@ -1016,7 +1017,7 @@ function renderTimeline(fchat_messages) {
   div.dataset.id = msg.id;
 
   // Header (username)
-  if (msg.type === "received") {
+  if (msgType === "received") {
     const header = document.createElement("div");
     header.className = "msg-username";
     header.textContent = msg.sender_username || "Unknown";
@@ -1131,7 +1132,7 @@ function renderTimeline(fchat_messages) {
   }
 
   // Status (sent messages)
-  if (msg.type === "sent") {
+  if (msgType === "sent") {
     const status = document.createElement("div");
     status.classList.add("status-text");
 
@@ -1671,8 +1672,8 @@ async function receiveMessages() {
     id: msg.id,
     text: msg.text,
     sent_at: msg.sent_at,
-    sender_id: msg.sender_id,
-    receiver_id: account.id,
+    type: msg.sender_id === account.id ? "sent" : "received", // add this!
+    sender_username: msg.sender_username || chatWith.username,
     linked_message: msg.linked === true ? "yes" : "no",
     linked_message_id: msg.linked_message_id || null,
     status: "sent"
@@ -1696,7 +1697,7 @@ if (changed) {
       })
     );
 
-    messages.forEach(msg => {
+    fchat_messages.forEach(msg => {
       if (
         msg.type === "sent" &&
         msg.status !== "seen" &&
