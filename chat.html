@@ -1,1446 +1,201 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Chat</title>
+
 <style>
-/* ---------- RESET ---------- */
-* { box-sizing: border-box; margin:0; padding:0; }
-/* ---------- BODY ---------- */
+/* -------------------- GENERAL -------------------- */
 body {
+  margin: 0;
   font-family: Arial, sans-serif;
+  background: white;
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: white;
 }
-/* ---------- TOP BAR ---------- */
+
+/* -------------------- TOP BAR -------------------- */
 #chat-header {
+  position: sticky;
+  top: 0;
+  background: white;
+  border-bottom: 1px solid #ddd;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 10;
+}
+
+#left-box {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 16px;
-  border-bottom: 1px solid #ddd;
-  cursor:pointer;
-  position: sticky;    /* stays in place */
-  top: 0;              /* stick to top */
-  z-index: 100;        /* stays above messages */
-  background: white;   /* ensures it doesn’t blend with messages when scrolling */
-}
-#chat-header img {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  object-fit: cover;
-  background: black;
-}
-#chat-header .info {
-  display: flex;
-  flex-direction: column;
-}
-#chat-header .username {
-  font-size: 16px;
-  font-weight: bold;
-}
-#chat-header .status {
-  font-size: 12px;
-  color: #555;
-}
-/* ---------- CHAT BODY ---------- */
-#chat-body {
-  position: relative;   /* 🔥 IMPORTANT */
-  flex: 1;
-  padding: 16px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-/* ---------- MESSAGE BUBBLES ---------- */
-.message {
-  max-width: 90%;                  /* wider bubbles */
-  padding: 12px 18px 22px 18px;    /* bottom padding for time */
-  touch-action: pan-y;
-  border-radius: 14px;
-  font-size: 14px;
-  line-height: 1.4;
-  position: relative;
-  transition: transform 0.2s ease;
-  word-wrap: break-word;
-  display: inline-block;
-  user-select: none;               /* prevent text selection */
 }
 
-.message.sent {
-  background: black;
-  position: relative; /* ensure child absolute positioning works */
-  color: white;
-  align-self: flex-end;
-  min-width: 100px;    /* minimum bubble width for very short messages */
-  max-width: 80%;     /* prevents very long messages from stretching too far */
-}
-.message.received {
-  align-self: flex-start;
-  background: #e9e9e9;
-  color: black;
-  border-bottom-left-radius: 4px;
-  padding: 12px 18px 22px 18px;   /* top, sides, bottom */
-  position: relative;
-
-  min-width: 100px;    /* minimum bubble width for very short messages */
-  max-width: 80%;     /* prevents very long messages from stretching too far */
-  display: inline-block;
-  word-wrap: break-word;  /* wrap long text */
-}
-.pending {
-  opacity: 0.6;
-}
-
-/* ---------- SENT MESSAGE TIME & STATUS INLINE ---------- */
-.message.sent .msg-time {
-  display: inline-block;   /* inline with status text */
-  float: right;            /* right side inside bubble */
-  margin-left: 6px;        /* spacing from status */
-}
-.status-text.sent {
-  display: inline-block;   /* keep inline with time */
-}
-
-/* ---------- RECEIVED MESSAGE TIME UNDER TEXT ---------- */
-
-.message.received .msg-time {
-  position: absolute;  /* position relative to bubble */
-  bottom: 4px;         /* distance from bottom of bubble */
-  right: 8px;          /* right aligned inside bubble */
-  display: block;
-  text-align: right;
-  font-size: 11px;
-  opacity: 0.6;
-}
-
-/* ---------- INPUT BAR ---------- */
-#chat-input {
-  display: flex;
-  gap: 10px;
-  padding: 10px 16px;
-  border-top: 1px solid #ddd;
-  align-items: center;
-  position: sticky;   /* stays in place while messages scroll */
-  bottom: 0;          /* stick to bottom of chat body */
-  z-index: 100;       /* stays above messages */
-  background: white;  /* ensures it doesn’t blend with messages */
-}
-#chat-input textarea {
-  flex: 1;
-  padding: 10px 14px;
-  border-radius: 20px;
-  border: 1px solid #ccc;
-  font-size: 14px;
-  outline: none;
-  resize: none;
-  overflow-y: auto;
-  min-height: 36px;
-  max-height: 120px;
-}
-#send-btn {
-  padding: 10px 18px;
-  border-radius: 20px;
-  border: none;
-  background: black;
-  color: white;
-  font-size: 14px;
+#back-btn {
+  font-size: 22px;
   cursor: pointer;
-}
-#reply-preview {
-  border-top: 1px solid #ddd;
-  display: flex;
-}
-#cancel-reply {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: none;
-  background: #e0e0e0;
-  color: #333;
-  font-size: 16px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-#cancel-reply:active { background: #ccc; }
-
-/* ---------- MESSAGE STATUS ---------- */
-.status-text {
-  font-size: 11px;
-  margin-top: 4px;
-  text-align: right;
-  opacity: 0.85;
-}
-.status-sending { color: grey; }
-.status-pending { color: orange; }
-.status-sent { color: #1e88e5; }
-.status-deleted { color: red; }
-.status-deleting { color: grey; }
-.status-scheduled { color: orange; }
-.pending { opacity: 0.6; }
-.scheduled { opacity: 0.6; }
-.status-seen {
-  color: #1e88e5;          /* blue color for seen */
-  font-weight: bold;        /* bold text */
-  position: relative;       /* needed for the blue dot */
-}
-
-/* ---------- MESSAGE TIME ---------- */
-.message-time {
-  font-weight: bold;
-  font-style: italic;
-  margin-top: 4px;
-  display: block;
-  text-align: right;
-  font-size: 11px;
-  opacity: 0.6;
-}
-
-.message:active { opacity: 0.7; }
-
-.message.highlight {
-  animation: megaGlow 2s ease-out 1;
-}
-
-@keyframes megaGlow {
-  0% {
-    box-shadow:
-      0 0 0 4px #1e88e5,
-      0 0 25px 10px rgba(30,136,229,1),
-      0 0 50px 18px rgba(30,136,229,0.9),
-      0 0 80px 30px rgba(30,136,229,0.7);
-  }
-  100% { box-shadow: none; }
-}
-
-/* ---------- MULTI SELECT MODE ---------- */
-#chat-body.select-mode { background: rgba(0,0,0,0.08); }
-.message.selected {
-  background: #cce4ff !important;
-  box-shadow: 0 0 0 2px #1e88e5 inset;
-}
-#chat-body.select-mode .message:not(.selected) { opacity: 0.5; }
-
-/* ---------- DELETE OPTIONS ---------- */
-.delete-option {
-  padding: 14px;
-  text-align: center;
-  font-size: 15px;
-  border-bottom: 1px solid #eee;
-  cursor: pointer;
-}
-.delete-option:last-child { border-bottom: none; }
-.delete-option:active { background: #f1f1f1; }
-.delete-option[data-action="everyone"] { color: red; font-weight: bold; }
-.delete-option.cancel { color: #555; }
-
-.message.deleted { background: #e0e0e0 !important; color: #666; font-style: italic; }
-.message.sent.deleted { background: #e0e0e0; color: #666; }
-
-/* Chat container */
-#chat-container {
-  max-width: 500px;
-  margin: auto;
-  background: #fff;
-  padding: 10px;
-  border-radius: 8px;
-  height: 400px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Message card */
-.chat-card {
-  margin: 8px 0;
-  padding: 10px;
-  border-radius: 6px;
-  max-width: 80%;
-  position: relative;
-  word-wrap: break-word;
-}
-
-/* Time label inside card */
-.chat-time {
-  font-size: 0.75em;
-  color: #555;
-  position: absolute;
-  bottom: 4px;
-  right: 8px;
-}
-
-/* Status display above chat */
-#receive-status {
-  text-align: center;
-  margin-bottom: 10px;
-  font-weight: bold;
-}
-.loading { color: blue; }
-.success { color: green; }
-.offline { color: red; }
-
-/* 🔗 Linked / Reply preview */
-.linked-preview {
-  font-size: 12px;
-  padding: 6px 8px;
-  margin-bottom: 6px;
-  border-left: 3px solid #4f8cff;
-  background: rgba(79, 140, 255, 0.1);
-  color: #333;
-  cursor: pointer;
-  border-radius: 6px;
-
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;   /* ensures single line with ellipsis */
-}
-
-/* Highlight original message when jumped to */
-.chat-card.highlight { animation: flash 1.2s ease; }
-@keyframes flash {
-  0% { background-color: #fff3cd; }
-  100% { background-color: inherit; }
-}
-
-.msg-username {
-  font-size: 12px;
-  font-weight: bold;
-  margin-bottom: 3px;
-  opacity: 0.8;
-}
-
-.msg-text {
-  font-size: 14px;
-  display: block;
-  word-wrap: break-word;
-}
-
-.msg-time {
-  position: relative;
-  bottom: auto;
-  right: auto;
-  margin-top: 4px;
-  text-align: right;
-  font-size: 11px;
-  opacity: 0.6;
-}
-/* ---------- READ MORE ---------- */
-.msg-text {
-  font-size: 14px;
-  line-height: 1.4em;
-  white-space: pre-wrap;
-}
-
-.msg-text.collapsed {
-  display: -webkit-box;
-  -webkit-line-clamp: 5;      /* 👈 MAX LINES */
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.read-more {
-  color: #007bff;
-  font-size: 13px;
-  font-weight: 600;   /* 👈 ADD THIS */
-  cursor: pointer;
-  margin-top: 4px;
   user-select: none;
 }
-/* Plus button */
-#add-btn {
-  font-size: 22px;
-  width: 40px;
-  height: 40px;
+
+#profile-pic {
+  width: 46px;
+  height: 46px;
   border-radius: 50%;
-  border: none;
-  background: white;
-  cursor: pointer;
-}
-/* Panel bounce animation */
-@keyframes panel-bounce {
-  0% { transform: translateY(100%); }
-  60% { transform: translateY(-10%); }
-  80% { transform: translateY(5%); }
-  100% { transform: translateY(0); }
-}
-
-#attach-panel {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 250px;
-  background: #fff;
-  transform: translateY(100%);
-  transition: transform 0.3s ease;
-  z-index: 1000;
-  padding-top: 20px;
-}
-
-/* When active, trigger bounce */
-#attach-panel.active {
-  animation: panel-bounce 0.5s ease forwards;
-}
-/* ---------- SLIDE PANEL ---------- 
-/* Content */
-.attach-content {
+  background: black;
+  color: white;
   display: flex;
-  gap: 12px;
-}
-
-.attach-item {
-  padding: 12px;
-  border-radius: 8px;
-  background: #f1f1f1;
-  cursor: pointer;
-  margin-bottom: 12px;
-}
-#receive-status {
-  text-align: center;
-  font-weight: bold;
-  margin-bottom: 8px;
-  font-size: 13px;
-}
-
-#receive-status.offline { color: orange; }
-#receive-status.error { color: red; }
-#receive-status.updated { color: green; }
-/* ----------------- SCROLL DOWN BUTTON ----------------- */
-#scroll-btn {
-  position: fixed;
-  right: 26px;
-  bottom: 80px;
-
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-
-  background: #777;
-  border: none;
-
-  display: flex;
+  align-items: center;
   justify-content: center;
-  align-items: center;
-
-  cursor: pointer;
-  z-index: 1000;
-}
-
-/* arrow inside */
-#scroll-btn span {
-  font-size: 20px;
-  color: white;
-  transform: translateY(1px); /* PERFECT vertical centering */
-}
-/* ---------- DATE SEPARATOR BAR ---------- */
-.msg-date-bar {
-  text-align: center;
-  background-color: #000; /* black */
-  color: #fff;           /* white */
-  padding: 4px 12px;
-  margin: 12px 0;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 600;
-  display: inline-block;
-}
-/* POLL CONTAINER */
-.poll-wrapper {
-  width: 80%;
-  min-width: 250px;
-  min-height: 250px;
-  padding: 10px 12px;
-  background: #000;
-  border-radius: 10px;
-  color: white;
-  align-self: flex-end;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  position: relative; /* for status at bottom */
-  margin: 10px 0;
-}
-
-/* QUESTION */
-.poll-question {
   font-weight: bold;
-  margin-bottom: 45px; /* larger gap before options */
 }
 
-/* HINT TEXT */
-.poll-hint {
+#center-info {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+}
+
+#chat-username {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+#chat-id {
   font-size: 12px;
-  opacity: 0.6;
-  margin-bottom: 12px; /* reasonable gap */
+  color: #555;
 }
 
-/* OPTION */
-.poll-option {
-  margin-bottom: 35px; /* space between options */
-  cursor: pointer;
+/* -------------------- CHAT BODY -------------------- */
+#chat-body {
+  flex: 1;
+  padding: 14px;
+  overflow-y: auto;
 }
 
-/* ROW (circle + text) */
-.poll-row {
+/* -------------------- MESSAGE STYLE -------------------- */
+.message {
+  max-width: 75%;
+  padding: 10px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.sent {
+  background: black;
+  color: white;
+  margin-left: auto;
+}
+
+.received {
+  background: #eee;
+  color: black;
+}
+
+/* -------------------- INPUT BAR -------------------- */
+#chat-input {
+  position: sticky;
+  bottom: 0;
+  background: white;
+  border-top: 1px solid #ddd;
+  padding: 12px;
   display: flex;
-  align-items: center;
   gap: 8px;
 }
 
-/* CIRCLE */
-.poll-circle {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  border: 2px solid #aaa;
-  transition: 0.2s;
-}
-
-.poll-circle.selected {
-  background: #2196f3;
-  border-color: #2196f3;
-}
-
-/* OPTION TEXT */
-.poll-text {
-  font-size: 14px;
-}
-
-/* BAR */
-.poll-bar-container {
-  width: 100%;
-  height: 6px;
-  background: #222;
+#messageInput {
+  flex: 1;
+  padding: 10px;
+  font-size: 15px;
+  border: 1px solid #ccc;
   border-radius: 6px;
-  overflow: hidden;
-  margin-top: 4px;
 }
 
-.poll-bar {
-  height: 100%;
-  width: 0;
-  background: #2196f3;
-  transition: width 0.35s ease;
-}
-
-/* STATUS (logs) */
-.poll-status {
-  font-size: 11px;
-  opacity: 0.6;
-  position: absolute; /* bottom right */
-  bottom: 8px;
-  right: 10px;
+#sendBtn {
+  padding: 10px 16px;
+  border: none;
+  background: black;
+  color: white;
+  font-size: 14px;
+  border-radius: 6px;
 }
 </style>
 </head>
+
 <body>
-  <!-- ---------- SELECTION BOARD ---------- -->
-<div id="selection-bar" style="
-    display: none;position: fixed;top: 0;left: 0;right: 0;height: 64px;
-    background: white;z-index: 1000;
-    align-items: center;padding: 0 16px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-">
-    <button id="select-back" style="
-        border: none;background: none;
-        font-size: 18px;cursor: pointer;
-    ">← Back</button>
-    <button id="select-delete" style="
-  margin-left: auto;border: none;
-  background: none;font-size: 16px;
-  cursor: pointer;">🗑 Delete</button>
-</div>
-<div id="delete-menu" style="
-  display: none;position: fixed;left: 50%;bottom: 30%;transform: translateX(-50%);background: white;border-radius: 12px;box-shadow: 0 10px 30px rgba(0,0,0,0.2);z-index: 2000;width: 260px;overflow: hidden;">
-<div class="delete-option" data-action="me">
-    Delete for me
-  </div>
-<div class="delete-option" data-action="everyone">
-    Delete for everyone
-  </div>
-<div class="delete-option cancel">
-    Cancel
-  </div>
-</div>
-<!-- ---------- HEADER ---------- --><div id="chat-header">
-  <img id="chat-pic" src="">
-  <div class="info">
-    <div class="username" id="chat-username">Loading...</div>
-    <div class="status" id="chat-status">Status...</div>
-  </div>
-</div>
-<div id="receive-status">Updating…</div>
 
-<!-- ---------- MESSAGES ---------- -->
+<!-- HEADER -->
+<div id="chat-header">
+  <div id="left-box">
+    <div id="back-btn" onclick="goBack()">←</div>
+    <div id="profile-pic"></div>
+  </div>
+
+  <div id="center-info">
+    <div id="chat-username">Username</div>
+    <div id="chat-id">ID</div>
+  </div>
+</div>
+
+<!-- CHAT BODY -->
 <div id="chat-body"></div>
-<button id="scroll-btn">
-  <span>˅</span>
-</button>
-<!-- ---------- REPLY PREVIEW ---------- -->
-<div id="reply-preview" style="display:none; padding:8px 16px; background:#f1f1f1; border-left:4px solid #007bff; justify-content:space-between; align-items:center; gap:10px;">
-  <div>
-    <div id="reply-sender" style="font-weight:bold; font-size:12px;"></div>
-    <div id="reply-text" style="font-size:14px; color:#555;"></div>
-  </div>
-<button id="cancel-reply" aria-label="Cancel reply">✕</button>
-</div>
-<!-- ---------- INPUT ---------- -->
-<div id="chat-input">
-  <button id="add-btn">➕</button>
- <textarea id="message-input" placeholder="Type a message…"></textarea>
 
-  <button id="send-btn">Send</button>
-</div><!-- ---------- ATTACH / POLLS PANEL ---------- -->
-<div id="attach-panel">
-  <div class="attach-content">
-    <div class="attach-item" id="poll-btn">📊 Poll</div>
-    <!-- later: media, docs, etc -->
-  </div>
+<!-- INPUT -->
+<div id="chat-input">
+  <input type="text" id="messageInput" placeholder="Type a message...">
+  <button id="sendBtn">Send</button>
 </div>
 
 <script>
+/* -------------------- CONFIG & STORAGE -------------------- */
 const API_URL = "https://fweb-backend.onrender.com/fchat";
-/* ---------- LOAD CHAT TARGET ---------- */
-const chatWith = JSON.parse(localStorage.getItem("chatting_with")) || null;
-const account = JSON.parse(localStorage.getItem("faccount")) || {email:"", password:""};
-const input = document.getElementById("message-input");
-const chatHeader = document.getElementById("chat-header");
-const chatBody = document.getElementById("chat-body");
+const account = JSON.parse(localStorage.getItem("faccount")) || {};
+const chatWith = JSON.parse(localStorage.getItem("chatting_with")) || {};
 
-chatBody.addEventListener("scroll", () => {
-  // Make sure header is always visible
-  chatHeader.style.transform = "translateY(0)";
-});
-// Auto-grow / shrink as user types
-input.addEventListener("input", () => {
-  input.style.height = "auto";                   // reset height first
-  input.style.height = input.scrollHeight + "px"; // grow/shrink to fit content
-});
-
-// Function to reset input after sending
-function resetInput() {
-  input.value = "";            // clear input text
-  input.style.height = "auto"; // shrink back to one line
-}
-
-// Call this inside your sendMessage() at the end (before or after renderMessages)
 if (!chatWith || !chatWith.id) {
   alert("No chat selected");
   window.location.href = "fchat.html";
 }
-/* ---------- HEADER DATA ---------- */
-const header = document.getElementById("chat-header");
-document.getElementById("chat-username").textContent = chatWith.username || "Unknown";
-document.getElementById("chat-status").textContent = chatWith.status || "";
-document.getElementById("chat-pic").src = chatWith.profile_pic || "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCI+PC9zdmc+";
-/* ---------- HEADER CLICK TO DASHBOARD ---------- */
-header.onclick = () => {
-  localStorage.setItem("chat_viewing", JSON.stringify({
-    id: chatWith.id,
-    username: chatWith.username || "",
-    profile_pic: chatWith.profile_pic || "",
-    status: chatWith.status || ""
-  }));
-  window.location.href = "chatdashboard.html";
-};
-/*---------- SCROLL BUTTON ----------*/
-document.addEventListener("DOMContentLoaded", () => {
-  const scrollBtn = document.getElementById("scroll-btn");
-  const chatBody = document.getElementById("chat-body");
-
-  if (!scrollBtn || !chatBody) return;
-
-  // Show/hide button based on scroll position
-  chatBody.addEventListener("scroll", () => {
-    const atBottom = chatBody.scrollHeight - chatBody.scrollTop - chatBody.clientHeight <= 10;
-
-    if (atBottom) {
-      scrollBtn.style.display = "none";
-    } else {
-      scrollBtn.style.display = "flex";
-    }
-  });
-
-  scrollBtn.addEventListener("click", () => {
-    chatBody.scrollTo({
-      top: chatBody.scrollHeight,
-      behavior: "smooth"
-    });
-
-    setTimeout(() => {
-      scrollBtn.style.display = "none";
-    }, 300);
-  });
-});
-/* ---------- MESSAGE + POLL STORAGE ---------- */
 
 const STORAGE_KEY = `chat_${account.email}_${chatWith.id}`;
-const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
+let messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
 
-// Messages
-let messages = [];
-try {
-  messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-} catch {
-  messages = [];
+/* -------------------- HEADER -------------------- */
+document.getElementById("chat-username").textContent = chatWith.username || "User";
+document.getElementById("chat-id").textContent = "ID: " + (chatWith.id || "");
+
+const profilePic = document.getElementById("profile-pic");
+if (chatWith.profile_pic) {
+  profilePic.style.backgroundImage = `url('${chatWith.profile_pic}')`;
+  profilePic.style.backgroundSize = "cover";
+  profilePic.style.backgroundPosition = "center";
+} else {
+  const initials = (chatWith.username || "U").split(" ").map(w=>w[0]).join("").toUpperCase();
+  profilePic.textContent = initials;
 }
 
-// Polls
-let polls = [];
-try {
-  polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
-} catch {
-  polls = [];
-}
-// ---------- MERGE MESSAGES & POLLS ----------
-let fchat_messages = JSON.parse(
-  localStorage.getItem(`fchat_messages_${account.email}_${chatWith.id}`)
-) || [];
+/* -------------------- TIMELINE -------------------- */
+const chatBody = document.getElementById("chat-body");
 
-// Normalize messages
-const formattedMessages = messages
-  .filter(m => m && m.sent_at)
-  .map(m => ({
-    type: "message",
-    sent_at: m.sent_at,
-    data: m
-  }));
-
-// Normalize polls
-const formattedPolls = polls
-  .filter(p => p && p.sent_at)
-  .map(p => ({
-    type: "poll",
-    sent_at: p.sent_at,
-    data: p
-  }));
-
-// Merge + sort by sent_at
-fchat_messages = [...formattedMessages, ...formattedPolls]
-  .sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
-
-// Optional: store if you want persistence
-localStorage.setItem(
-  `fchat_messages_${account.email}_${chatWith.id}`,
-  JSON.stringify(fchat_messages)
-);
-function formatMessageTime(sentAt) {
-  if (!sentAt) return "";
-const date = new Date(sentAt);
-  const now = new Date();
-const isToday =
-    date.toDateString() === now.toDateString();
-const yesterday = new Date();
-  yesterday.setDate(now.getDate() - 1);
-const isYesterday =
-    date.toDateString() === yesterday.toDateString();
-const time = date.toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit"
-  });
-if (isToday) {
-    return time;
-  }
-const dayMonth = date.toLocaleDateString([], {
-    day: "2-digit",
-    month: "short"
-  });
-return `${dayMonth} ${time}`;
-}
-/*----------SYNC LOCK ---------- */
-let isSyncRunning = false;
-let pendingAbort = false;
-
-
-/* ---------- MULTI SELECT LOGIC ---------- */
-let selectMode = false;
-let selectedMessages = new Set();
-const selectionBar = document.getElementById("selection-bar");
-const deleteBtn = document.getElementById("select-delete");
-const deleteMenu = document.getElementById("delete-menu");
-
-// Back button closes selection mode
-document.getElementById("select-back").onclick = exitSelectMode;
-
-deleteBtn.onclick = () => {
-  if (selectedMessages.size === 0) return;
-  const deleteForEveryoneOption = deleteMenu.querySelector('[data-action="everyone"]');
-  let canDeleteForEveryone = true;
-
-  // Check if any message is already deleted
-  selectedMessages.forEach(el => {
-    if (el.classList.contains("deleted")) canDeleteForEveryone = false;
-  });
-
-  // Check if messages are eligible for "delete for everyone"
-  selectedMessages.forEach(el => {
-    const msgId = el.dataset.id;
-    const msg = messages.find(m => String(m.id) === msgId);
-    if (!msg || msg.type !== "sent" || msg.status === "seen" || msg.status === "pending") {
-      canDeleteForEveryone = false;
-    }
-  });
-
-  // Show / hide option
-  deleteForEveryoneOption.style.display = canDeleteForEveryone ? "block" : "none";
-  deleteMenu.style.display = "block";
-};
-
-// Delete menu click
-deleteMenu.addEventListener("click", e => {
-  const option = e.target.closest(".delete-option");
-  if (!option) return;
-  if (option.classList.contains("cancel")) {
-    closeDeleteMenu();
-    return;
-  }
-
-  const action = option.dataset.action;
-  if (action === "me") deleteForMe();
-  if (action === "everyone") deleteForEveryone();
-
-  closeDeleteMenu();
-});
-
-// Press & hold / multi-select setup
-let holdTimer = null;
-function enableMultiSelect() {
-  const chatBody = document.getElementById("chat-body");
-  chatBody.querySelectorAll(".message").forEach(msg => {
-    // PRESS & HOLD
-    msg.addEventListener("touchstart", e => {
-      if (selectMode) return;
-      holdTimer = setTimeout(() => enterSelectMode(msg), 500);
-    });
-    msg.addEventListener("touchend", () => clearTimeout(holdTimer));
-    msg.addEventListener("touchmove", () => clearTimeout(holdTimer));
-
-    // TAP WHILE IN SELECT MODE
-    msg.addEventListener("click", e => {
-      if (!selectMode) return;
-      toggleSelection(msg);
-      e.stopPropagation();
-    });
-  });
-
-  // Tap empty space to exit select mode
-  chatBody.addEventListener("click", e => {
-    if (selectMode && !e.target.closest(".message")) exitSelectMode();
-  });
-}
-
-function enterSelectMode(msg) {
-  selectMode = true;
-  document.getElementById("chat-body").classList.add("select-mode");
-  selectionBar.style.display = "flex";
-  toggleSelection(msg);
-}
-
-function toggleSelection(msg) {
-  if (selectedMessages.has(msg)) {
-    msg.classList.remove("selected");
-    selectedMessages.delete(msg);
-  } else {
-    msg.classList.add("selected");
-    selectedMessages.add(msg);
-  }
-
-  if (selectedMessages.size === 0) exitSelectMode();
-}
-
-function exitSelectMode() {
-  selectMode = false;
-  selectedMessages.forEach(m => m.classList.remove("selected"));
-  selectedMessages.clear();
-  document.getElementById("chat-body").classList.remove("select-mode");
-  selectionBar.style.display = "none";
-  closeDeleteMenu();
-}
-
-function closeDeleteMenu() {
-  deleteMenu.style.display = "none";
-}
-
-document.addEventListener("click", e => {
-  if (deleteMenu.style.display === "block") {
-    if (!e.target.closest("#delete-menu") && !e.target.closest("#select-delete")) {
-      closeDeleteMenu();
-    }
-  }
-});
-
-function deleteForMe() {
-  const idsToDelete = [...selectedMessages].map(el => el.dataset.id);
-
-  // Remove from messages
-  messages = messages.filter(msg => !idsToDelete.includes(String(msg.id)));
-
-  // Remove from merged timeline
-  fchat_messages = fchat_messages.filter(item => 
-    !(item.type === "message" && idsToDelete.includes(String(item.data.id)))
-  );
-
-  // Save updated messages
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-
-  // Exit select mode
-  exitSelectMode();
-
-  // Re-render immediately
-  renderTimeline(fchat_messages);
-}
-
-
-// Delete for everyone
-async function deleteForEveryone() {
-  const ids = [...selectedMessages].map(el => Number(el.dataset.id));
-
-// Optimistic UI update with offline check
-selectedMessages.forEach(el => {
-  const msgId = el.dataset.id;
-  const msg = messages.find(m => String(m.id) === msgId);
-  if (msg) {
-    msg.deleted = true;
-    msg.text = "This message was deleted by you";
-
-    // If offline, mark as pending; otherwise mark as deleting
-    msg.status = navigator.onLine ? "deleting" : "scheduled";
-
-    msg.type = "sent";
-  }
-});
-
-localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-renderTimeline(fchat_messages);
-exitSelectMode();
-  // Send delete request to backend with email & user_id
-  try {
-  const success = await deleteForEveryoneBackend(ids);
-
-  if (success) {
-    // ✅ Mark messages as fully deleted
-    ids.forEach(id => {
-      const msg = messages.find(m => m.id === id);
-      if (msg) msg.status = "deleted";
-    });
-
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-    renderTimeline(fchat_messages);
-  } else {
-    console.warn("Backend delete failed — keeping local delete");
-  }
-} catch (err) {
-  console.error("Error deleting messages for everyone:", err);
-}
-}
-// Backend call
-async function deleteForEveryoneBackend(ids) {
-  const res = await fetch("/api/chat", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      action: "delete_messages",
-      email: account.email,   // 🔐 auth (logged-in user)
-      user_id: chatWith.id,   // 🎯 target chat user
-      ids: ids                // 🧹 message IDs
-    })
-  });
-
-  const data = await res.json();
-  return data.success === true;
-}
-// ---------- CHECK RECEIVED MESSAGES (SEEN STATUS) ----------
-async function checkReceivedMessages() {
-  if (!navigator.onLine) return;
-
-  try {
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "get_received_messages",
-        email: account.email,
-        chatWithId: chatWith.id
-      })
-    });
-
-    const data = await res.json();
-    if (!data || !Array.isArray(data.ids)) return;
-
-    let updated = false;
-
-    data.ids.forEach(id => {
-      const msg = messages.find(m => String(m.id) === String(id));
-      if (msg && msg.status !== "seen") {
-        msg.status = "seen";
-        updated = true;
-      }
-    });
-
-    if (updated) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-      renderTimeline(fchat_messages);
-    }
-
-  } catch (err) {
-    console.warn("checkReceivedMessages failed:", err);
-  }
-}
-// RENDER FCHAT_MESSAGES
-function renderTimeline(fchat_messages) {
-  const box = document.getElementById("chat-body");
-  box.innerHTML = "";
-
-  let lastMessageDay = null;
-
-  fchat_messages.forEach(item => {
-    const data = item.data;
-    const date = new Date(item.sent_at);
-    const dayKey = date.toDateString();
-
-
-
-    // ==================================================
-    // ================= MESSAGE ========================
-    // ==================================================
-    if (item.type === "message") {
-  const msg = data;
-  const msgDate = new Date(msg.sent_at);
-  const msgDay = msgDate.toDateString();
-  const div = document.createElement("div");
-  div.className = "message " + msg.type + (msg.status === "pending" ? " pending" : "");
-  div.dataset.id = msg.id;
-
-  // Header (username)
-  if (msg.type === "received") {
-    const header = document.createElement("div");
-    header.className = "msg-username";
-    header.textContent = msg.sender_username || "Unknown";
-    div.appendChild(header);
-
-    // Time for received
-    const timeDiv = document.createElement("div");
-    timeDiv.className = "msg-time";
-    timeDiv.textContent = formatMessageTime(msg.sent_at);
-    div.appendChild(timeDiv);
-  }
-
-  // Reply preview
-  if (msg.replyTo) {
-    const replyBox = document.createElement("div");
-    replyBox.style.borderLeft = "3px solid #007bff";
-    replyBox.style.padding = "4px 8px";
-    replyBox.style.marginBottom = "6px";
-    replyBox.style.fontSize = "12px";
-    replyBox.style.opacity = "0.8";
-    replyBox.innerHTML = `<strong>${msg.replyTo.sender}</strong><br>${msg.replyTo.text}`;
-    div.appendChild(replyBox);
-  }
-
-  // Linked message preview
-  if (msg.linked_message === "yes" && msg.linked_message_id) {
-    const linked = fchat_messages.find(m => String(m.data.id) === String(msg.linked_message_id));
-
-    if (linked) {
-      const linkedBox = document.createElement("div");
-      linkedBox.className = "linked-preview";
-
-      const senderName = linked.data.type === "sent" ? "You" : chatWith.username;
-      linkedBox.innerHTML = `<strong>${senderName}</strong><br>${linked.data.text.slice(0, 80) || "Message"}`;
-
-      linkedBox.onclick = (e) => {
-        if (selectMode) return;
-        e.stopPropagation();
-
-        const target = document.querySelector(`[data-id='${linked.data.id}']`);
-        if (target) {
-          target.scrollIntoView({ behavior: "smooth", block: "center" });
-          target.classList.add("highlight");
-          setTimeout(() => target.classList.remove("highlight"), 1200);
-        }
-      };
-
-      div.appendChild(linkedBox);
-    }
-  }
-
-  // Message text
-  const textNode = document.createElement("div");
-  textNode.className = "msg-text";
-
-  if (msg.deleted) {
-    textNode.textContent = msg.text;
-    div.classList.add("deleted");
-    div.appendChild(textNode);
-  } else {
-    textNode.textContent = msg.text;
-    div.appendChild(textNode);
-
-    // READ MORE logic
-    requestAnimationFrame(() => {
-      const lineHeight = parseFloat(getComputedStyle(textNode).lineHeight);
-      const INITIAL_LINES = 10;
-      const STEP_LINES = 25;
-      let currentLines = INITIAL_LINES;
-
-      const applyClamp = () => {
-        textNode.style.display = "-webkit-box";
-        textNode.style.webkitBoxOrient = "vertical";
-        textNode.style.webkitLineClamp = currentLines;
-        textNode.style.overflow = "hidden";
-      };
-      const removeClamp = () => {
-        textNode.style.webkitLineClamp = "unset";
-        textNode.style.display = "block";
-        textNode.style.overflow = "visible";
-      };
-
-      if (textNode.scrollHeight > lineHeight * INITIAL_LINES) {
-        applyClamp();
-
-        const readMore = document.createElement("div");
-        readMore.className = "read-more";
-        readMore.textContent = "Read more";
-
-        readMore.onclick = () => {
-          const totalLines = Math.ceil(textNode.scrollHeight / lineHeight);
-
-          if (currentLines >= totalLines) {
-            currentLines = INITIAL_LINES;
-            applyClamp();
-            readMore.textContent = "Read more";
-          } else {
-            currentLines += STEP_LINES;
-            if (currentLines >= totalLines) {
-              removeClamp();
-              readMore.textContent = "Read less";
-            } else {
-              applyClamp();
-              readMore.textContent = "Read more";
-            }
-          }
-        };
-
-        div.appendChild(readMore);
-      }
-    });
-  }
-
-  // Status (sent messages)
-  if (msg.type === "sent") {
-    const status = document.createElement("div");
-    status.classList.add("status-text");
-
-    const timeSpan = document.createElement("span");
-    timeSpan.classList.add("message-time");
-    timeSpan.textContent = formatMessageTime(msg.sent_at);
-    status.appendChild(timeSpan);
-
-    if (msg.status === "sending") {
-      status.append("Sending…");
-      status.classList.add("status-sending");
-    } else if (msg.status === "pending") {
-      status.append("Pending");
-      status.classList.add("status-pending");
-    } else if (msg.status === "sent") {
-      status.append("Sent");
-      status.classList.add("status-sent");
-    } else if (msg.status === "deleting") {
-      status.append("Deleting…");
-      status.classList.add("status-deleting");
-    } else if (msg.status === "deleted") {
-      status.append("Deleted");
-      status.classList.add("status-deleted");
-    } else if (msg.status === "scheduled") {
-      status.append("Scheduled");
-      status.classList.add("status-scheduled");
-    } else if (msg.status === "seen") {
-      status.append("Seen");
-      status.classList.add("status-seen");
-    }
-
-    div.appendChild(status);
-  }
-
-  box.appendChild(div);
-}
-    // ==================================================
-    // =================== POLL =========================
-    // ==================================================
-    if (item.type === "poll") {
-      const poll = data;
-
-      const wrapper = document.createElement("div");
-      wrapper.className = "poll-wrapper";
-      wrapper.dataset.pollId = poll.id;
-      wrapper.style.width = "80%";
-
-      // ✅ Dynamic height logic
-      const baseHeight = 200;
-      const optionCount = poll.pollData.options.length;
-      const normalExtra = Math.max(Math.min(optionCount, 7) - 2, 0) * 70;
-      const extraAfterTen = Math.max(optionCount - 7, 0) * 60;
-      wrapper.style.minHeight = `${baseHeight + normalExtra + extraAfterTen}px`;
-
-      // Question
-      const question = document.createElement("div");
-      question.className = "poll-question";
-      question.textContent = poll.pollData.question;
-      wrapper.appendChild(question);
-
-      // Hint
-      const hint = document.createElement("div");
-      hint.className = "poll-hint";
-      hint.textContent = poll.pollData.allowMultiple
-        ? "Select more than one"
-        : "Select one";
-      wrapper.appendChild(hint);
-
-      // Votes (local per poll)
-      const votesKey = `poll_votes_${poll.id}`;
-      let votes = JSON.parse(localStorage.getItem(votesKey)) || {};
-
-      poll.pollData.options.forEach((opt, index) => {
-        const option = document.createElement("div");
-        option.className = "poll-option";
-
-        // Row
-        const row = document.createElement("div");
-        row.className = "poll-row";
-
-        const circle = document.createElement("div");
-        circle.className = "poll-circle";
-
-        const text = document.createElement("div");
-        text.className = "poll-text";
-        text.textContent = opt;
-
-        row.appendChild(circle);
-        row.appendChild(text);
-
-        // Bar
-        const barWrap = document.createElement("div");
-        barWrap.className = "poll-bar-container";
-
-        const bar = document.createElement("div");
-        bar.className = "poll-bar";
-        barWrap.appendChild(bar);
-
-        option.appendChild(row);
-        option.appendChild(barWrap);
-
-        const animatedKey = `poll_${poll.id}_option_${index}_animated`;
-
-        // Click logic (FIXED: only update poll UI, not full timeline)
-        option.addEventListener("click", (e) => {
-          e.stopPropagation();
-
-          if (!poll.pollData.allowMultiple) votes = {};
-          votes[index] = !votes[index];
-          localStorage.setItem(votesKey, JSON.stringify(votes));
-
-          // Reset animations if single select
-          if (!poll.pollData.allowMultiple) {
-            poll.pollData.options.forEach((_, i) => {
-              if (i !== index)
-                localStorage.removeItem(`poll_${poll.id}_option_${i}_animated`);
-            });
-          }
-
-          // ✅ Update only this poll
-          updatePollUI(poll.id);
-        });
-
-        // Visual state
-        if (votes[index]) {
-          circle.classList.add("selected");
-
-          if (!localStorage.getItem(animatedKey)) {
-            setTimeout(() => (bar.style.width = "100%"), 20);
-            localStorage.setItem(animatedKey, "true");
-          } else {
-            bar.style.width = "100%";
-          }
-        } else {
-          circle.classList.remove("selected");
-          bar.style.width = "0%";
-          localStorage.removeItem(animatedKey);
-        }
-
-        wrapper.appendChild(option);
-      });
-
-      // Status
-      const status = document.createElement("div");
-      status.classList.add("poll-status");
-
-      if (poll.status === "sending") {
-        status.textContent = "Sending…";
-        status.classList.add("status-sending");
-      } else if (poll.status === "pending") {
-        status.textContent = "Pending";
-        status.classList.add("status-pending");
-      } else if (poll.status === "sent") {
-        status.textContent = "Sent";
-        status.classList.add("status-sent");
-      } else if (poll.status === "deleting") {
-        status.textContent = "Deleting…";
-        status.classList.add("status-deleting");
-      } else if (poll.status === "deleted") {
-        status.textContent = "Deleted";
-        status.classList.add("status-deleted");
-      } else if (poll.status === "scheduled") {
-        status.textContent = "Scheduled";
-        status.classList.add("status-scheduled");
-      } else if (poll.status === "seen") {
-        status.textContent = "Seen";
-        status.classList.add("status-seen");
-      }
-
-      wrapper.appendChild(status);
-      box.appendChild(wrapper);
-    }
-  });
-
-  scrollToBottom();
-  enableMessageTap();
-  enableMultiSelect();
-}
-
-// ===== HELPER: only update one poll =====
-function updatePollUI(pollId) {
-  const wrapper = document.querySelector(`[data-poll-id="${pollId}"]`);
-  if (!wrapper) return;
-
-  const votes = JSON.parse(localStorage.getItem(`poll_votes_${pollId}`)) || {};
-
-  wrapper.querySelectorAll(".poll-option").forEach((opt, i) => {
-    const circle = opt.querySelector(".poll-circle");
-    const bar = opt.querySelector(".poll-bar");
-
-    if (votes[i]) {
-      circle.classList.add("selected");
-      bar.style.width = "100%";
-    } else {
-      circle.classList.remove("selected");
-      bar.style.width = "0%";
-    }
-  });
-}
-function enableMessageTap() {
-  const allMessages = document.querySelectorAll(".message");
-allMessages.forEach(msgEl => {
-    msgEl.onclick = () => {
-      if (selectMode) return; // 🚫 disable jump while selecting
-      if (msgEl.classList.contains("deleted")) return;
-      const msgId = msgEl.dataset.id;
-      const msgData = messages.find(m => m.id == msgId);
-if (!msgData) return;
-// ❌ Not linked → do nothing
-      if (!msgData.linked || !msgData.linked_message_id) return;
-// ✅ Linked → find original message
-      const linkedEl = document.querySelector(
-        `.message[data-id='${msgData.linked_message_id}']`
-      );
-if (!linkedEl) return;
-// Scroll to original
-      linkedEl.scrollIntoView({
-  behavior: "smooth",
-  block: "center"
-});
-// wait for scroll to settle before glowing
-setTimeout(() => {
-  linkedEl.classList.add("highlight");
-setTimeout(() => {
-    linkedEl.classList.remove("highlight");
-  }, 2000);
-}, 350); // ← delay controls when glow starts
-    };
-  });
-}
-let startX = 0;
-let currentMsg = null;
-let replyingMessage = null;
-document.getElementById("cancel-reply").onclick = () => {
-  replyingMessage = null;
-  document.getElementById("reply-preview").style.display = "none";
-};
-function getReplySenderName(msg) {
-  return msg.type === "sent" ? "You" : chatWith.username;
-}
-function scrollToInput() {
-  const inputBar = document.getElementById("chat-input");
-  inputBar.scrollIntoView({ behavior: "smooth", block: "end" });
-}
-document.getElementById("chat-body").addEventListener("touchstart", e => {
-  const msg = e.target.closest(".message");
-  if (!msg) return;
-  if (msg.classList.contains("deleted")) return;
-startX = e.touches[0].clientX;
-  currentMsg = msg;
-});
-document.getElementById("chat-body").addEventListener("touchmove", e => {
-  if (!currentMsg) return;
-const moveX = e.touches[0].clientX;
-  const diffX = moveX - startX;
-// Move message slightly with finger
-  if (diffX > 0 && diffX < 80) {
-    currentMsg.style.transform = `translateX(${diffX}px)`;
-  }
-});
-document.getElementById("chat-body").addEventListener("touchend", e => {
-  if (!currentMsg) return;
-const endX = e.changedTouches[0].clientX;
-  const diffX = endX - startX;
-// Reset position
-  currentMsg.style.transform = "translateX(0)";
-  if (diffX > 50) {
-  const msgId = currentMsg.dataset.id;
-  const msgData = messages.find(m => m.id == msgId);
-if (msgData) {
-  replyingMessage = msgData;
-document.getElementById("reply-sender").textContent = getReplySenderName(msgData);
-  let preview = msgData.text;
-if (preview.length > 40) preview = preview.slice(0, 40) + "…";
-document.getElementById("reply-text").textContent = preview;
-document.getElementById("reply-preview").style.display = "block";
-scrollToInput();
-const input = document.getElementById("message-input");
-  setTimeout(() => input.focus(), 150);
-   }
-}
-currentMsg = null;
-});
-/* ---------- SCROLL ---------- */
-function scrollToBottom() {
-  const box = document.getElementById("chat-body");
-  box.scrollTop = box.scrollHeight;
-}
-/* ---------- UPDATE TIMELINE ---------- */
 function updateTimeline() {
-  // Merge backend + local messages, de-dupe by ID
-  const allMessages = [...fchat_messages, ...messages].reduce((acc, msg) => {
-    const id = msg.id || msg.data?.id;
-    if (!acc.map.has(id)) {
-      acc.map.set(id, msg);
-      acc.list.push(msg);
-    }
-    return acc;
-  }, { map: new Map(), list: [] }).list;
-
-  // Format for renderTimeline
-  const timelineData = allMessages.map(msg => msg.data ? msg : { type: "message", data: msg });
-
-  renderTimeline(timelineData);
+  chatBody.innerHTML = "";
+  messages.forEach(m => addMessage(m.text, m.type || (m.sender_id === account.id ? "sent" : "received")));
 }
 
-/* ---------- SEND TO BACKEND ---------- */
+function addMessage(text, type) {
+  const msg = document.createElement("div");
+  msg.className = "message " + type;
+  msg.textContent = text;
+  chatBody.appendChild(msg);
+  chatBody.scrollTop = chatBody.scrollHeight;
+}
+
+/* -------------------- SEND TO BACKEND -------------------- */
 async function sendToBackend(msgObj) {
   try {
     const payload = {
@@ -1467,7 +222,7 @@ async function sendToBackend(msgObj) {
       msgObj.status = "sent";
       msgObj.sending_since = null;
     } else {
-      msgObj.status = "pending";
+      msgObj.status = "pending"; // leave pending for now
     }
   } catch (e) {
     msgObj.status = "pending";
@@ -1475,39 +230,17 @@ async function sendToBackend(msgObj) {
     console.warn("Failed to send, message pending", e);
   }
 
-  // Save local messages & render once
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   updateTimeline();
 }
 
-/* ---------- RETRY PENDING MESSAGES ---------- */
-async function retryPending() {
-  if (!navigator.onLine) return;
+/* -------------------- SEND MESSAGE -------------------- */
+let replyingMessage = null;
 
-  for (const msg of messages) {
-    if (msg.status === "pending") {
-      msg.status = "sending";
-      msg.sending_since = Date.now();
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-      updateTimeline(); // render once before sending
-
-      await sendToBackend(msg); // await backend response
-    }
-  }
-}
-
-/* ---------- SEND MESSAGE ---------- */
 function sendMessage() {
-  const input = document.getElementById("message-input");
+  const input = document.getElementById("messageInput");
   const text = input.value.trim();
   if (!text) return;
-
-  // Truncate & sanitize reply preview
-  let truncatedReply = null;
-  if (replyingMessage) {
-    truncatedReply = replyingMessage.text.replace(/\s+/g, ' ').trim();
-    if (truncatedReply.length > 80) truncatedReply = truncatedReply.slice(0, 80) + "…";
-  }
 
   const msgObj = {
     id: Date.now(),
@@ -1516,352 +249,38 @@ function sendMessage() {
     sent_at: new Date().toISOString(),
     status: navigator.onLine ? "sending" : "pending",
     sending_since: navigator.onLine ? Date.now() : null,
-    replyTo: replyingMessage
-      ? {
-          id: replyingMessage.id,
-          text: truncatedReply,
-          sender: getReplySenderName(replyingMessage)
-        }
-      : null,
+    replyTo: replyingMessage ? {
+      id: replyingMessage.id,
+      text: replyingMessage.text.slice(0,80) + (replyingMessage.text.length > 80 ? "…" : ""),
+      sender: replyingMessage.sender_id
+    } : null,
     linked: replyingMessage ? true : false,
     linked_message_id: replyingMessage ? replyingMessage.id : null,
     sender_id: account.id,
     receiver_id: chatWith.id
   };
 
-  // Add to local messages & storage
   messages.push(msgObj);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
 
-  // Clear input & reply preview
   input.value = "";
-  resetInput();
-  if (replyingMessage) {
-    const previewEl = document.getElementById("reply-text");
-    if (previewEl) previewEl.textContent = truncatedReply;
-  }
   replyingMessage = null;
-  document.getElementById("reply-preview").style.display = "none";
 
-  // Render timeline once
   updateTimeline();
 
-  // Send to backend if online
   if (navigator.onLine) sendToBackend(msgObj);
 }
-/*----------RETRY SCHEDULED DELETION----------*/
-async function retryScheduledDeletes() {
-  if (!navigator.onLine) return;
 
-  for (const msg of messages) {
-    if (msg.status === "scheduled") {
-      // show deleting…
-      msg.status = "deleting";
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-      renderTimeline(fchat_messages);
+document.getElementById("sendBtn").onclick = sendMessage;
 
-      try {
-        const success = await deleteForEveryoneBackend([msg.id]);
-
-        if (success) {
-          msg.status = "deleted"; // ✅ confirmed
-        } else {
-          msg.status = "pending"; // ❌ backend failed
-        }
-      } catch (err) {
-        console.error("Retry delete failed:", err);
-        msg.status = "pending"; // ❌ network / error
-      }
-
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-      renderTimeline(fchat_messages);
-    }
-  }
+/* -------------------- BACK -------------------- */
+function goBack() {
+  window.location.href = "fchat.html";
 }
 
-/* ---------- RETRY PENDING MESSAGES ---------- */
-async function retryPending() {
-  if (!navigator.onLine) return; // 🚫 no internet → do nothing
-for (const msg of messages) {
-    if (msg.status === "pending") {
-      msg.status = "sending";
-msg.sending_since = Date.now(); // 👈 ADD THIS
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-      renderTimeline(fchat_messages);
-
-      await sendToBackend(msg);
-    }
-  }
-}
-function checkStuckSendingMessages() {
-  const now = Date.now();
-  let changed = false;
-messages.forEach(msg => {
-    if (
-      msg.status === "sending" &&
-      msg.sending_since &&
-      now - msg.sending_since > 30000 // ⏱ 30 seconds
-    ) {
-      msg.status = "pending";
-      msg.sending_since = null;
-      changed = true;
-    }
-  });
-if (changed) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-    renderTimeline(fchat_messages);
-  }
-}
-/* ---------- INIT ---------- */
-renderTimeline(fchat_messages);
-document.getElementById("send-btn").onclick = sendMessage;
-document.getElementById("message-input").addEventListener("keydown", e => {
-  if(e.key === "Enter") sendMessage();
-});
-
-/* ---------- RECEIVE MESSAGES (UPDATED) ---------- */
-async function receiveMessages() {
-  const statusEl = document.getElementById("receive-status");
-
-  // 🔴 Offline state
-  if (!navigator.onLine) {
-    if (statusEl) {
-      statusEl.textContent = "Offline · Retrying when online";
-      statusEl.className = "offline";
-    }
-    return;
-  }
-
-  try {
-    if (!account?.email || !chatWith?.id) return;
-
-    // 🔵 Show updating ONLY if not already updated
-    if (statusEl && statusEl.textContent !== "Updated") {
-      statusEl.textContent = "Updating…";
-      statusEl.className = "loading";
-    }
-
-    const payload = {
-      action: "receive_messages",
-      email: account.email,
-      chatWithId: chatWith.id
-    };
-
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-
-    const data = await res.json();
-    if (!Array.isArray(data.data)) return;
-
-    const chatUsername = data.chatWith?.username || "Unknown";
-    let changed = false;
-
-    // ✅ Collect received message IDs
-    const receivedIds = [];
-
-    data.data.forEach(msg => {
-      const exists = messages.some(m => String(m.id) === String(msg.id));
-      if (exists) return;
-
-      fchat_messages.push({
-  id: msg.id,
-  type: "message",
-  data: {
-    id: msg.id,
-    text: msg.text,
-    sent_at: msg.sent_at,
-    sender_id: msg.sender_id,
-    receiver_id: account.id,
-    linked_message: msg.linked === true ? "yes" : "no",
-    linked_message_id: msg.linked_message_id || null,
-    status: "sent"
-  }
-});
-
-      receivedIds.push(msg.id);
-      changed = true;
-    });
-    
-  // After the forEach loop that pushes new messages
-if (changed) {
-
-  const chatVisible = document.visibilityState === "visible";
-
-  if (chatVisible && receivedIds.length > 0) {
-    const latestReceivedTime = Math.max(
-      ...receivedIds.map(id => {
-        const msg = data.data.find(m => m.id === id);
-        return msg ? new Date(msg.sent_at).getTime() : 0;
-      })
-    );
-
-    messages.forEach(msg => {
-      if (
-        msg.type === "sent" &&
-        msg.status !== "seen" &&
-        new Date(msg.sent_at).getTime() < latestReceivedTime
-      ) {
-        msg.status = "seen";
-      }
-    });
-  }
-
-  localStorage.setItem(
-  `fchat_messages_${account.email}_${chatWith.id}`,
-  JSON.stringify(fchat_messages)
-);
-
-  // 🔔 Vibrate phone (if supported)
-  if ("vibrate" in navigator) {
-    navigator.vibrate(200);
-  }
-
-  // ✅ Notify backend
-  await fetch(API_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      action: "received_messages",
-      ids: receivedIds,
-      email: account.email,
-      chatWithId: chatWith.id
-    })
-  });
-
-  if (statusEl) {
-    statusEl.textContent = "Updated";
-    statusEl.className = "ok";
-  }
-  return { receivedCount: receivedIds.length };
-}
-  } catch (err) {
-    if (navigator.onLine && statusEl) {
-      console.warn("Receive messages failed:", err);
-      statusEl.textContent = "Error";
-      statusEl.className = "error";
-    }
-  }
-}
-/*---------- GLOBAL CALLS ---------- */
-async function runChatSync() {
-  const statusEl = document.getElementById("receive-status");
-
-  // 🔴 Offline state
-  if (!navigator.onLine) {
-    if (statusEl) {
-      statusEl.textContent = "Offline · Retrying when online";
-      statusEl.className = "offline";
-    }
-    return;
-  }
-
-  // Prevent overlapping syncs
-  if (isSyncRunning) {
-    pendingAbort = true;
-  }
-
-  while (isSyncRunning) {
-    await new Promise(res => setTimeout(res, 50));
-  }
-
-  isSyncRunning = true;
-  pendingAbort = false;
-
-  try {
-    let receivedCount = 0;
-
-    // 1️⃣ Receive new messages
-    const result = await receiveMessages();
-    if (result?.receivedCount) {
-      receivedCount = result.receivedCount;
-    }
-
-    if (pendingAbort) return "aborted";
-
-    // 2️⃣ Seen check
-    await checkReceivedMessages();
-    if (pendingAbort) return "aborted";
-
-    // 3️⃣ Retry pending
-    await retryPending();
-    if (pendingAbort) return "aborted";
-
-    // 4️⃣ Retry deletes
-    await retryScheduledDeletes();
-    if (pendingAbort) return "aborted";
-
-    // ✅ UI feedback
-    if (statusEl) {
-      if (receivedCount > 0) {
-        statusEl.textContent = `Updated · ${receivedCount} message${receivedCount > 1 ? "s" : ""} found`;
-      } else {
-        statusEl.textContent = "Updated";
-      }
-
-      statusEl.className = "updated";
-    }
-
-    return "success";
-
-  } catch (err) {
-    console.warn("Chat sync error:", err);
-
-    if (statusEl) {
-      statusEl.textContent = "Error";
-      statusEl.className = "error";
-    }
-
-    return "error";
-
-  } finally {
-    isSyncRunning = false;
-    pendingAbort = false;
-  }
-}
-// Run every second
-setInterval(runChatSync, 1000);
-
-// Run immediately when online
-window.addEventListener("online", runChatSync);
+// Initial render
+updateTimeline();
 </script>
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-  const addBtn = document.getElementById("add-btn");
-  const attachPanel = document.getElementById("attach-panel");
-  const input = document.getElementById("message-input");
-  const pollBtn = document.getElementById("poll-btn");
 
-  // Open attach panel
-  addBtn.onclick = () => {
-    input.blur(); // close keyboard first
-    setTimeout(() => {
-      attachPanel.classList.add("active");
-    }, 150);
-  };
-
-  // Redirect to poll page
-  pollBtn.addEventListener("click", () => {
-    window.location.href = "fchatpoll.html";
-  });
-
-  // Close panel when clicking outside
-  document.addEventListener("click", (e) => {
-    if (
-      attachPanel.classList.contains("active") &&
-      !attachPanel.contains(e.target) &&
-      e.target !== addBtn
-    ) {
-      attachPanel.classList.remove("active");
-
-      // reopen keyboard after panel closes
-      setTimeout(() => {
-        input.focus();
-      }, 150);
-    }
-  });
-});
-</script>
-</body></html>
+</body>
+</html>
