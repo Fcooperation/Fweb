@@ -6,7 +6,6 @@
 <title>Chat</title>
 
 <style>
-/* -------------------- GENERAL -------------------- */
 body {
   margin: 0;
   font-family: Arial, sans-serif;
@@ -16,7 +15,6 @@ body {
   flex-direction: column;
 }
 
-/* -------------------- TOP BAR -------------------- */
 #chat-header {
   position: sticky;
   top: 0;
@@ -70,14 +68,12 @@ body {
   color: #555;
 }
 
-/* -------------------- CHAT BODY -------------------- */
 #chat-body {
   flex: 1;
   padding: 14px;
   overflow-y: auto;
 }
 
-/* -------------------- MESSAGE STYLE -------------------- */
 .message {
   max-width: 75%;
   padding: 10px;
@@ -97,7 +93,6 @@ body {
   color: black;
 }
 
-/* -------------------- INPUT BAR -------------------- */
 #chat-input {
   position: sticky;
   bottom: 0;
@@ -165,6 +160,9 @@ if (!chatWith || !chatWith.id) {
 const STORAGE_KEY = `chat_${account.email}_${chatWith.id}`;
 let messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
 
+const FCHAT_STORAGE_KEY = `fchat_messages_${account.email}`;
+let fchatMessages = JSON.parse(localStorage.getItem(FCHAT_STORAGE_KEY)) || [];
+
 /* -------------------- HEADER -------------------- */
 document.getElementById("chat-username").textContent = chatWith.username || "User";
 document.getElementById("chat-id").textContent = "ID: " + (chatWith.id || "");
@@ -195,6 +193,18 @@ function addMessage(text, type) {
   chatBody.scrollTop = chatBody.scrollHeight;
 }
 
+/* -------------------- SYNC TO FCHAT -------------------- */
+function syncToFChat() {
+  messages.forEach(m => {
+    if (!fchatMessages.some(fm => fm.id === m.id)) {
+      fchatMessages.push(m);
+    }
+  });
+
+  fchatMessages.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
+  localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
+}
+
 /* -------------------- SEND TO BACKEND -------------------- */
 async function sendToBackend(msgObj) {
   try {
@@ -222,7 +232,7 @@ async function sendToBackend(msgObj) {
       msgObj.status = "sent";
       msgObj.sending_since = null;
     } else {
-      msgObj.status = "pending"; // leave pending for now
+      msgObj.status = "pending";
     }
   } catch (e) {
     msgObj.status = "pending";
@@ -231,6 +241,7 @@ async function sendToBackend(msgObj) {
   }
 
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+  syncToFChat(); // update fchat_messages after backend
   updateTimeline();
 }
 
@@ -263,6 +274,9 @@ function sendMessage() {
   messages.push(msgObj);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
 
+  // SYNC TO FCHAT
+  syncToFChat();
+
   input.value = "";
   replyingMessage = null;
 
@@ -280,6 +294,8 @@ function goBack() {
 
 // Initial render
 updateTimeline();
+// Sync existing messages on page load
+syncToFChat();
 </script>
 
 </body>
