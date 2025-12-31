@@ -873,6 +873,7 @@ document.addEventListener("click", e => {
   }
 });
 
+// Delete for me
 function deleteForMe() {
   const idsToDelete = [...selectedMessages].map(el => el.dataset.id);
 
@@ -1665,19 +1666,17 @@ async function receiveMessages() {
       if (exists) return;
 
       fchat_messages.push({
-  id: msg.id,
-  type: "message",
-  data: {
-    id: msg.id,
-    text: msg.text,
-    sent_at: msg.sent_at,
-    sender_id: msg.sender_id,
-    receiver_id: account.id,
-    linked_message: msg.linked === true ? "yes" : "no",
-    linked_message_id: msg.linked_message_id || null,
-    status: "sent"
-  }
-});
+        id: msg.id,
+        type: "received",
+        text: msg.text || "",
+        sent_at: msg.sent_at || new Date().toISOString(),
+        status: "sent",
+        sender_id: msg.sender_id,
+        receiver_id: account.id,
+        sender_username: chatUsername,
+        linked_message: msg.linked === true ? "yes" : "no",
+        linked_message_id: msg.linked_message_id || null
+      });
 
       receivedIds.push(msg.id);
       changed = true;
@@ -1707,8 +1706,8 @@ if (changed) {
     });
   }
 
-  localStorage.setItem("fchat_messages", JSON.stringify(fchat_messages));
-renderTimeline(fchat_messages);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+  renderTimeline(fchat_messages);
 
   // 🔔 Vibrate phone (if supported)
   if ("vibrate" in navigator) {
