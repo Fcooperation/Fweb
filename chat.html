@@ -86,6 +86,7 @@ body {
   min-width: 60%;
   white-space: pre-wrap;
   word-wrap: break-word;
+  line-height: 1.35;
 }
 
 .sent {
@@ -466,6 +467,9 @@ document.getElementById("messageInput").addEventListener("keydown", e => {
     e.preventDefault();
     sendMessage();
   }
+});
+document.getElementById("messageInput").addEventListener("input", e => {
+  e.target.value = e.target.value.replace(/\n{3,}/g, "\n\n");
 });
 // Date dividers
 function formatDateLabel(dateStr) {
