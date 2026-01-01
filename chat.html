@@ -249,7 +249,31 @@ body {
 .poll-wrapper::before {
   content: "";
   display: block;
-  min-height: 40px;
+  min-height: 30px;
+}
+/* SENT TAIL */
+.message.sent::after {
+  content: "";
+  position: absolute;
+  right: -8px;
+  bottom: 8px;
+  width: 0;
+  height: 0;
+  border-left: 8px solid #dcf8c6;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+}
+/* RECEIVED TAIL */
+.message.received::after {
+  content: "";
+  position: absolute;
+  left: -8px;
+  bottom: 8px;
+  width: 0;
+  height: 0;
+  border-right: 8px solid #ffffff;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
 }
 </style>
 </head>
