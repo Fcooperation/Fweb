@@ -360,6 +360,39 @@ body {
   color: #fff;
   border-left-color: #2196f3;
 }
+/* LIMIT MESSAGE TO 10 LINES */
+.message-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 10;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-wrap: break-word;
+}
+
+/* Expanded message */
+.message-text.expanded {
+  -webkit-line-clamp: unset;
+}
+
+/* Read more button */
+.read-more {
+  color: #2196f3;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 4px;
+  display: inline-block;
+}
+#messageInput {
+  flex: 1;
+  padding: 10px;
+  font-size: 15px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  resize: none;
+  height: 40px;
+  max-height: 120px;
+  overflow-y: auto;
+}
 </style>
 </head>
 
@@ -384,7 +417,7 @@ body {
 </div>
 
 <div id="chat-input">
-  <input type="text" id="messageInput" placeholder="Type a message...">
+<textarea id="messageInput" placeholder="Type a message..."></textarea>
   <button id="sendBtn">Send</button>
 </div>
 
@@ -420,6 +453,18 @@ if (chatWith.profile_pic) {
 // Chat body
 const chatBody = document.getElementById("chat-body");
 
+const textarea = document.getElementById("messageInput");
+
+textarea.addEventListener("input", () => {
+  textarea.style.height = "auto";
+  textarea.style.height = textarea.scrollHeight + "px";
+});
+document.getElementById("messageInput").addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
 // Date dividers
 function formatDateLabel(dateStr) {
   const date = new Date(dateStr);
@@ -489,11 +534,27 @@ function addMessage(msgObj) {
 
   msg.innerHTML = `
     ${replyHTML}
-    <div>${msgObj.text}</div>
+    <div class="message-text">${msgObj.text}</div>
+<span class="read-more" style="display:none;">Read more</span>
     <div class="message-meta">
       ${time} ${isSent ? "• " + (msgObj.status || "sent") : ""}
     </div>
   `;
+  setTimeout(() => {
+  const textEl = msg.querySelector(".message-text");
+  const readMore = msg.querySelector(".read-more");
+
+  if (!textEl || !readMore) return;
+
+  if (textEl.scrollHeight > textEl.clientHeight) {
+    readMore.style.display = "inline";
+  }
+
+  readMore.onclick = () => {
+    const expanded = textEl.classList.toggle("expanded");
+    readMore.textContent = expanded ? "Show less" : "Read more";
+  };
+}, 10);
 
   enableSwipe(msg, msgObj); // pass full message object
 }
