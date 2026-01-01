@@ -78,15 +78,10 @@ body {
 
 .message {
   max-width: 75%;
-  min-width: 40%;        /* ✅ minimum width */
-  min-height: 40px;      /* ✅ minimum height */
   padding: 10px;
   margin-bottom: 8px;
   border-radius: 8px;
   font-size: 14px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
 }
 
 .sent {
@@ -129,9 +124,8 @@ body {
 
 /* POLL STYLES */
 .poll-wrapper {
-  width: 75%;
-  min-width: 40%;
-  min-height: 40px;     /* ✅ same feel as messages */
+  width: 75%;              /* match .message max-width */
+  min-width: 250px;
   padding: 10px 12px;
   border-radius: 8px;
   box-sizing: border-box;
@@ -140,6 +134,7 @@ body {
   position: relative;
   margin: 8px 0;
   cursor: default;
+  transition: background 0.2s;
 }
 
 /* Sent vs Received Alignment */
@@ -250,6 +245,12 @@ body {
 .date-divider::after {
   right: 0;
 }
+.message::before,
+.poll-wrapper::before {
+  content: "";
+  display: block;
+  min-height: 40px;
+}
 </style>
 </head>
 
@@ -326,30 +327,6 @@ function formatDateLabel(dateStr) {
     day: "numeric"
   });
 }
-// Format Message Time
-function formatMessageTime(dateStr) {
-  const date = new Date(dateStr);
-  const now = new Date();
-
-  const isToday =
-    date.getFullYear() === now.getFullYear() &&
-    date.getMonth() === now.getMonth() &&
-    date.getDate() === now.getDate();
-
-  const time = date.toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit"
-  });
-
-  if (isToday) return time;
-
-  const datePart = date.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric"
-  });
-
-  return `${datePart}, ${time}`;
-}
 // Add message function
 function addMessage(msgObj) {
   const msg = document.createElement("div");
@@ -358,7 +335,10 @@ function addMessage(msgObj) {
   const alignmentClass = isSent ? "sent" : "received";
 
   // Format time
-  const time = formatMessageTime(msgObj.sent_at);
+  const time = new Date(msgObj.sent_at).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit"
+  });
 
   if (msgObj.isPoll && msgObj.pollData) {
     msg.className = `poll-wrapper ${alignmentClass}`;
