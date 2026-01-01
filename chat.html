@@ -83,9 +83,7 @@ body {
   border-radius: 8px;
   font-size: 14px;
   position: relative;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  line-height: 1.35;
+  min-width: 60%;
 }
 
 .sent {
@@ -458,21 +456,13 @@ if (chatWith.profile_pic) {
 // Chat body
 const chatBody = document.getElementById("chat-body");
 
-const textarea = document.getElementById("messageInput");
-
-textarea.addEventListener("input", () => {
-  textarea.style.height = "auto";
-  textarea.style.height = textarea.scrollHeight + "px";
-});
 document.getElementById("messageInput").addEventListener("keydown", e => {
   if (e.key === "Enter" && e.ctrlKey) {
     e.preventDefault();
     sendMessage();
   }
 });
-document.getElementById("messageInput").addEventListener("input", e => {
-  e.target.value = e.target.value.replace(/\n{3,}/g, "\n\n");
-});
+
 // Date dividers
 function formatDateLabel(dateStr) {
   const date = new Date(dateStr);
@@ -542,27 +532,11 @@ function addMessage(msgObj) {
 
   msg.innerHTML = `
     ${replyHTML}
-<div class="message-text">${msgObj.text.trim()}</div>
-<span class="read-more" style="display:none;">Read more</span>
+    <div>${msgObj.text}</div>
     <div class="message-meta">
       ${time} ${isSent ? "• " + (msgObj.status || "sent") : ""}
     </div>
   `;
-  setTimeout(() => {
-  const textEl = msg.querySelector(".message-text");
-  const readMore = msg.querySelector(".read-more");
-
-  if (!textEl || !readMore) return;
-
-  if (textEl.scrollHeight > textEl.clientHeight) {
-    readMore.style.display = "inline";
-  }
-
-  readMore.onclick = () => {
-    const expanded = textEl.classList.toggle("expanded");
-    readMore.textContent = expanded ? "Show less" : "Read more";
-  };
-}, 10);
 
   enableSwipe(msg, msgObj); // pass full message object
 }
