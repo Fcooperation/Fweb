@@ -341,6 +341,24 @@ body {
 .message {
   transition: transform 0.2s ease;
 }
+.reply-bubble {
+  background: #eee;
+  padding: 6px 10px;
+  border-left: 3px solid #2196f3;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #333;
+  margin-bottom: 4px;
+  max-width: 90%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.sent .reply-bubble {
+  background: #333;
+  color: #fff;
+  border-left-color: #2196f3;
+}
 </style>
 </head>
 
@@ -455,17 +473,29 @@ function addMessage(msgObj) {
       <div class="message-meta">
         ${time} ${isSent ? "• " + (msgObj.status || "sent") : ""}
       </div>
-    `;
-  } else {
-    msg.className = `message ${alignmentClass}`;
-    msg.innerHTML = `
-      <div>${msgObj.text}</div>
-      <div class="message-meta">
-        ${time} ${isSent ? "• " + (msgObj.status || "sent") : ""}
+    `;else {
+  msg.className = `message ${alignmentClass}`;
+
+  let replyHTML = "";
+  if (msgObj.replyTo) {
+    replyHTML = `
+      <div class="reply-bubble">
+        ${msgObj.replyTo.text}
       </div>
     `;
-    enableSwipe(msg, msgObj.text || "");
   }
+
+  msg.innerHTML = `
+    ${replyHTML}
+    <div>${msgObj.text}</div>
+    <div class="message-meta">
+      ${time} ${isSent ? "• " + (msgObj.status || "sent") : ""}
+    </div>
+  `;
+
+  enableSwipe(msg, msgObj.text || "");
+}
+  } 
 
   chatBody.appendChild(msg);
   chatBody.scrollTop = chatBody.scrollHeight;
@@ -567,7 +597,7 @@ let replyingMessage = null;
 function sendMessage() {
   const input = document.getElementById("messageInput");
   const text = input.value.trim();
-  if(!text) return;
+  if (!text) return;
 
   const msgObj = {
     id: Date.now(),
@@ -576,13 +606,17 @@ function sendMessage() {
     sent_at: new Date().toISOString(),
     status: navigator.onLine ? "sending" : "pending",
     sending_since: navigator.onLine ? Date.now() : null,
-    replyTo: replyingMessage ? {
-      id: replyingMessage.id,
-      text: replyingMessage.text.slice(0,80)+(replyingMessage.text.length>80?"…":""),
-      sender: replyingMessage.sender_id
-    }:null,
-    linked: replyingMessage ? true:false,
-    linked_message_id: replyingMessage ? replyingMessage.id:null,
+    replyTo: replyingMessage
+      ? {
+          id: replyingMessage.id,
+          text:
+            replyingMessage.text?.slice(0, 120) +
+            (replyingMessage.text?.length > 120 ? "…" : ""),
+          sender: replyingMessage.sender_id
+        }
+      : null,
+    linked: replyingMessage ? true : false, // yes/no field
+    linked_message_id: replyingMessage ? replyingMessage.id : null,
     sender_id: account.id,
     receiver_id: chatWith.id
   };
@@ -591,10 +625,13 @@ function sendMessage() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   syncToFChat(msgObj);
 
-  input.value="";
-  replyingMessage=null;
+  input.value = "";
+  replyingMessage = null;
 
-  if(navigator.onLine) sendToBackend(msgObj);
+  if (navigator.onLine) sendToBackend(msgObj);
+
+  // hide reply preview
+  document.getElementById("reply-preview").style.display = "none";
 }
 
 document.getElementById("sendBtn").onclick = sendMessage;
