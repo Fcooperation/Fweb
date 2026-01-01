@@ -220,6 +220,31 @@ body {
 .message.received .message-meta {
   justify-content: flex-start;
 }
+.date-divider {
+  text-align: center;
+  margin: 12px 0;
+  font-size: 12px;
+  color: #666;
+  position: relative;
+}
+
+.date-divider::before,
+.date-divider::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 30%;
+  height: 1px;
+  background: #ddd;
+}
+
+.date-divider::before {
+  left: 0;
+}
+
+.date-divider::after {
+  right: 0;
+}
 </style>
 </head>
 
@@ -275,6 +300,28 @@ if (chatWith.profile_pic) {
 // Chat body
 const chatBody = document.getElementById("chat-body");
 
+// Date dividers
+function formatDateLabel(dateStr) {
+  const date = new Date(dateStr);
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+
+  const isSameDay = (d1, d2) =>
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate();
+
+  if (isSameDay(date, today)) return "Today";
+  if (isSameDay(date, yesterday)) return "Yesterday";
+
+  return date.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric"
+  });
+}
+// Add message function
 function addMessage(msgObj) {
   const msg = document.createElement("div");
 
@@ -321,15 +368,30 @@ function addMessage(msgObj) {
   chatBody.appendChild(msg);
   chatBody.scrollTop = chatBody.scrollHeight;
 }
-
+// Update timeline
 function updateTimeline() {
   chatBody.innerHTML = "";
 
   const chatItems = fchatMessages
     .filter(m => m.receiver_id === chatWith.id || m.sender_id === chatWith.id)
-    .sort((a,b) => new Date(a.sent_at) - new Date(b.sent_at));
+    .sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
 
-  chatItems.forEach(m => addMessage(m));
+  let lastDate = null;
+
+  chatItems.forEach(msg => {
+    const msgDate = new Date(msg.sent_at).toDateString();
+
+    if (msgDate !== lastDate) {
+      const dateDivider = document.createElement("div");
+      dateDivider.className = "date-divider";
+      dateDivider.textContent = formatDateLabel(msg.sent_at);
+      chatBody.appendChild(dateDivider);
+
+      lastDate = msgDate;
+    }
+
+    addMessage(msg);
+  });
 }
 
 // Sync messages
