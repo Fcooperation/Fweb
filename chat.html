@@ -321,6 +321,30 @@ function formatDateLabel(dateStr) {
     day: "numeric"
   });
 }
+// Format Message Time
+function formatMessageTime(dateStr) {
+  const date = new Date(dateStr);
+  const now = new Date();
+
+  const isToday =
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate();
+
+  const time = date.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+
+  if (isToday) return time;
+
+  const datePart = date.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric"
+  });
+
+  return `${datePart}, ${time}`;
+}
 // Add message function
 function addMessage(msgObj) {
   const msg = document.createElement("div");
@@ -329,10 +353,7 @@ function addMessage(msgObj) {
   const alignmentClass = isSent ? "sent" : "received";
 
   // Format time
-  const time = new Date(msgObj.sent_at).toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit"
-  });
+  const time = formatMessageTime(msgObj.sent_at);
 
   if (msgObj.isPoll && msgObj.pollData) {
     msg.className = `poll-wrapper ${alignmentClass}`;
