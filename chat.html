@@ -640,22 +640,26 @@ function goBack(){ window.location.href="fchat.html"; }
 let startX = 0;
 let currentMessage = null;
 
-function enableSwipe(messageEl, msgObj) {
+function enableSwipe(messageEl, text) {
   messageEl.addEventListener("touchstart", e => {
     startX = e.touches[0].clientX;
   });
 
   messageEl.addEventListener("touchmove", e => {
     const diff = e.touches[0].clientX - startX;
-    if (diff > 40) messageEl.style.transform = "translateX(25px)";
+
+    if (diff > 40) { // swipe right
+      messageEl.style.transform = "translateX(25px)";
+    }
   });
 
   messageEl.addEventListener("touchend", e => {
     const diff = e.changedTouches[0].clientX - startX;
+
     if (diff > 60) {
-      replyingMessage = msgObj; // ← now it’s correctly set
-      showReplyPreview(msgObj.text);
+      showReplyPreview(text);
     }
+
     messageEl.style.transform = "translateX(0)";
   });
 }
