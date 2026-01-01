@@ -473,7 +473,8 @@ function addMessage(msgObj) {
       <div class="message-meta">
         ${time} ${isSent ? "• " + (msgObj.status || "sent") : ""}
       </div>
-    `;else {
+    `;
+  } else {
   msg.className = `message ${alignmentClass}`;
 
   let replyHTML = "";
@@ -495,8 +496,6 @@ function addMessage(msgObj) {
 
   enableSwipe(msg, msgObj.text || "");
 }
-  } 
-
   chatBody.appendChild(msg);
   chatBody.scrollTop = chatBody.scrollHeight;
 }
@@ -668,15 +667,9 @@ function enableSwipe(messageEl, text) {
 function showReplyPreview(text) {
   const preview = document.getElementById("reply-preview");
   const previewText = document.getElementById("reply-text");
-  const input = document.getElementById("messageInput");
 
   previewText.textContent = text.slice(0, 120);
   preview.style.display = "flex";
-
-  // ⬇️ Force keyboard to open
-  setTimeout(() => {
-    input.focus();
-  }, 100);
 }
 
 // Close preview
