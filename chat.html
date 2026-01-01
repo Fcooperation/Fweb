@@ -208,6 +208,18 @@ body {
   bottom: 6px;
   right: 10px;
 }
+.message-meta {
+  font-size: 11px;
+  opacity: 0.6;
+  margin-top: 4px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.message.received .message-meta {
+  justify-content: flex-start;
+}
 </style>
 </head>
 
@@ -266,16 +278,21 @@ const chatBody = document.getElementById("chat-body");
 function addMessage(msgObj) {
   const msg = document.createElement("div");
 
-  // Determine if this is sent or received
   const isSent = String(msgObj.sender_id) === String(account.id);
   const alignmentClass = isSent ? "sent" : "received";
 
+  // Format time
+  const time = new Date(msgObj.sent_at).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+
   if (msgObj.isPoll && msgObj.pollData) {
-    // Poll message
     msg.className = `poll-wrapper ${alignmentClass}`;
     msg.innerHTML = `
       <div class="poll-question">${msgObj.pollData.question}</div>
-      ${msgObj.pollData.options.map((opt,i) => `
+
+      ${msgObj.pollData.options.map((opt, i) => `
         <div class="poll-option" data-index="${i}">
           <div class="poll-row">
             <div class="poll-circle"></div>
@@ -285,13 +302,20 @@ function addMessage(msgObj) {
             <div class="poll-bar"></div>
           </div>
         </div>
-      `).join('')}
-      <div class="poll-status">${msgObj.status || 'pending'}</div>
+      `).join("")}
+
+      <div class="message-meta">
+        ${time} ${isSent ? "• " + (msgObj.status || "sent") : ""}
+      </div>
     `;
   } else {
-    // Normal text message
-    msg.className = `message ${msgObj.type || alignmentClass}`;
-    msg.textContent = msgObj.text;
+    msg.className = `message ${alignmentClass}`;
+    msg.innerHTML = `
+      <div>${msgObj.text}</div>
+      <div class="message-meta">
+        ${time} ${isSent ? "• " + (msgObj.status || "sent") : ""}
+      </div>
+    `;
   }
 
   chatBody.appendChild(msg);
