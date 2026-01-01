@@ -246,52 +246,63 @@ body {
 .date-divider::after {
   right: 0;
 }
-/* SENT TAIL */
+/* SENT MESSAGE TAIL */
 .message.sent::after {
   content: "";
   position: absolute;
-  right: -8px;
-  top: 5px;
+  right: -7px;
+  top: 14px;
   width: 0;
   height: 0;
   border-left: 8px solid black;
-  border-top: 8px solid transparent;
-  border-bottom: 8px solid transparent;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
 }
-/* RECEIVED TAIL */
+
+/* RECEIVED MESSAGE TAIL */
 .message.received::after {
   content: "";
   position: absolute;
-  left: -8px;
-  top: 5px;
+  left: -7px;
+  top: 14px;
   width: 0;
   height: 0;
   border-right: 8px solid #eee;
-  border-top: 8px solid transparent;
-  border-bottom: 8px solid transparent;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
 }
+
+/* POLL SENT */
 .poll-wrapper.sent::after {
   content: "";
   position: absolute;
-  right: -8px;
-  top: 5px;
+  right: -7px;
+  top: 14px;
   width: 0;
   height: 0;
   border-left: 8px solid black;
-  border-top: 8px solid transparent;
-  border-bottom: 8px solid transparent;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
 }
 
+/* POLL RECEIVED */
 .poll-wrapper.received::after {
   content: "";
   position: absolute;
   left: -7px;
-  top: 5px;
+  top: 14px;
   width: 0;
   height: 0;
   border-right: 8px solid #eee;
-  border-top: 8px solid transparent;
-  border-bottom: 8px solid transparent;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+}
+.message.sent {
+  border-top-right-radius: 4px;
+}
+
+.message.received {
+  border-top-left-radius: 4px;
 }
 </style>
 </head>
