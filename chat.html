@@ -79,16 +79,10 @@ body {
 .message {
   max-width: 75%;
   padding: 10px;
-  padding-top: 6px; /* ensures content doesn’t stick to top */
-  padding-bottom: 6px;
   margin-bottom: 8px;
   border-radius: 8px;
   font-size: 14px;
   position: relative;
-  line-height: 1.4;
-  min-height: 20px; /* minimum height of message content */
-  display: flex;
-  flex-direction: column; /* so sent time can be below */
 }
 
 .sent {
@@ -324,6 +318,9 @@ body {
   overflow-y: hidden;
   line-height: 1.4;
   max-height: 120px;
+}
+.message.before {
+  min-height: 40px;
 }
 </style>
 </head>
