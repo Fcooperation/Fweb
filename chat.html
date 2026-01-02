@@ -351,6 +351,52 @@ body {
   }
   100% { box-shadow: none; }
 }
+/* Default sent messages */
+.message.sent {
+  background: black;
+  color: white;
+  opacity: 1;
+  position: relative;
+  transition: opacity 0.2s ease;
+}
+
+/* Pending: offline or failed to send */
+.message.sent.pending {
+  background: #ff9800;   /* orange-ish */
+  opacity: 0.6;           /* dim */
+  color: white;
+}
+
+/* Sending: in progress */
+.message.sent.sending {
+  background: #9e9e9e;   /* grey */
+  opacity: 0.8;
+  color: white;
+}
+
+/* Sent successfully */
+.message.sent.sent {
+  background: #1e88e5;   /* blue */
+  color: white;
+  opacity: 1;
+}
+
+/* Seen by receiver */
+.message.sent.seen {
+  background: #1e88e5;   /* blue */
+  color: white;
+  font-weight: bold;
+  opacity: 1;
+}
+
+/* Small status indicator at bottom right (optional) */
+.message .message-meta {
+  font-size: 11px;
+  opacity: 0.8;
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
 </style>
 </head>
 
@@ -539,8 +585,18 @@ if (msgObj.linked) {
   });
 }
 }
+applyMessageStatus(msg, msgObj);
   chatBody.appendChild(msg);
   chatBody.scrollTop = chatBody.scrollHeight;
+}
+// Message status
+function applyMessageStatus(msgEl, msgObj) {
+  // Remove old status classes
+  msgEl.classList.remove("pending", "sending", "sent", "seen");
+
+  if (msgObj.sender_id === account.id && msgObj.status) {
+    msgEl.classList.add(msgObj.status); // pending / sending / sent / seen
+  }
 }
 // Update timeline
 function updateTimeline() {
@@ -680,30 +736,36 @@ function sendMessage() {
   if (!text) return;
 
   const msgObj = {
-    id: Date.now(),
-    type: "sent",
-    text,
-    sent_at: new Date().toISOString(),
-    status: navigator.onLine ? "sending" : "pending",
-    sending_since: navigator.onLine ? Date.now() : null,
-    replyTo: replyingMessage
-      ? {
-          id: replyingMessage.id,
-          text:
-            replyingMessage.text?.slice(0, 120) +
-            (replyingMessage.text?.length > 120 ? "…" : ""),
-          sender: replyingMessage.sender_id
-        }
-      : null,
-    linked: replyingMessage ? true : false, // yes/no field
-    linked_message_id: replyingMessage ? replyingMessage.id : null,
-    sender_id: account.id,
-    receiver_id: chatWith.id
-  };
+  id: Date.now(),
+  type: "sent",
+  text,
+  sent_at: new Date().toISOString(),
+  status: navigator.onLine ? "sending" : "pending",
+  sending_since: navigator.onLine ? Date.now() : null,
+  replyTo: replyingMessage ? { id: replyingMessage.id, text: replyingMessage.text?.slice(0, 120), sender: replyingMessage.sender_id } : null,
+  linked: replyingMessage ? true : false,
+  linked_message_id: replyingMessage ? replyingMessage.id : null,
+  sender_id: account.id,
+  receiver_id: chatWith.id
+};
 
-  messages.push(msgObj);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+messages.push(msgObj);
+localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+if (navigator.onLine) {
+  // Temporarily show "sending"
+  msgObj.status = "sending";
   syncToFChat(msgObj);
+
+  sendToBackend(msgObj).then(() => {
+    msgObj.status = "sent"; // after backend confirms
+    syncToFChat(msgObj);
+  });
+} else {
+  // offline → pending
+  msgObj.status = "pending";
+  syncToFChat(msgObj);
+}
+syncToFChat(msgObj);
 
   input.value = "";
   input.style.height = "auto";
