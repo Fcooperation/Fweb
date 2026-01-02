@@ -543,6 +543,21 @@ function addMessage(msgObj) {
       ${time} ${isSent ? "• " + (msgObj.status || "sent") : ""}
     </div>
   `;
+  setTimeout(() => {
+  const textEl = msg.querySelector(".message-text");
+  const readMore = msg.querySelector(".read-more");
+
+  if (!textEl || !readMore) return;
+
+  if (textEl.scrollHeight > textEl.clientHeight) {
+    readMore.style.display = "inline";
+  }
+
+  readMore.onclick = () => {
+    const expanded = textEl.classList.toggle("expanded");
+    readMore.textContent = expanded ? "Show less" : "Read more";
+  };
+}, 10);
 
   enableSwipe(msg, msgObj); // pass full message object
 }
@@ -725,22 +740,6 @@ function showReplyPreview(text) {
 document.getElementById("close-reply").onclick = () => {
   document.getElementById("reply-preview").style.display = "none";
 };
-setTimeout(() => {
-  const textEl = msg.querySelector(".message-text");
-  const readMore = msg.querySelector(".read-more");
-
-  if (!textEl || !readMore) return;
-
-  if (textEl.scrollHeight > textEl.clientHeight) {
-    readMore.style.display = "inline";
-  }
-
-  readMore.onclick = () => {
-    const expanded = textEl.classList.toggle("expanded");
-    readMore.textContent = expanded ? "Show less" : "Read more";
-  };
-}, 10);
-
 // Initial load
 syncPolls();
 syncToFChat();
