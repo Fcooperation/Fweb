@@ -457,7 +457,7 @@ function addMessage(msgObj) {
   </div>
 `;
 
-  enableSwipe(msg, msgObj.text || "");
+  enableSwipe(msg, msgObj); // full object
 }
   chatBody.appendChild(msg);
   chatBody.scrollTop = chatBody.scrollHeight;
@@ -604,38 +604,29 @@ function goBack(){ window.location.href="fchat.html"; }
 let startX = 0;
 let currentMessage = null;
 
-function enableSwipe(messageEl, text) {
-  messageEl.addEventListener("touchstart", e => {
-    startX = e.touches[0].clientX;
-  });
-
+function enableSwipe(messageEl, msgObj) {
+  messageEl.addEventListener("touchstart", e => { startX = e.touches[0].clientX; });
   messageEl.addEventListener("touchmove", e => {
     const diff = e.touches[0].clientX - startX;
-
-    if (diff > 40) { // swipe right
-      messageEl.style.transform = "translateX(25px)";
-    }
+    if (diff > 40) messageEl.style.transform = "translateX(25px)";
   });
-
   messageEl.addEventListener("touchend", e => {
     const diff = e.changedTouches[0].clientX - startX;
-
-    if (diff > 60) {
-      showReplyPreview(text);
-    }
-
+    if (diff > 60) showReplyPreview(msgObj); // pass full object
     messageEl.style.transform = "translateX(0)";
   });
 }
 
-function showReplyPreview(text) {
+function showReplyPreview(msgObj) {
   const preview = document.getElementById("reply-preview");
   const previewText = document.getElementById("reply-text");
 
-  previewText.textContent = text.slice(0, 120);
+  previewText.textContent = msgObj.text?.slice(0, 120) || "";
   preview.style.display = "flex";
-}
 
+  // THIS IS CRUCIAL:
+  replyingMessage = msgObj; // ✅ now sendMessage knows this is linked
+}
 // Close preview
 document.getElementById("close-reply").onclick = () => {
   document.getElementById("reply-preview").style.display = "none";
