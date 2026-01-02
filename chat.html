@@ -484,15 +484,21 @@ const textBox = msg.querySelector(".message-text");
 applyReadMore(textBox, msgObj.text);
 
   enableSwipe(msg, msgObj); // full object
-  // Glow on tap for linked messages only
+// Glow on tap for linked messages only
 if (msgObj.linked) {
   msg.style.cursor = "pointer"; // shows it can be tapped
 
   msg.addEventListener("click", () => {
+    // Find the original message element this one is linked to
+    const linkedMsgId = msgObj.linked_message_id;
+    const originalMsg = chatBody.querySelector(`[data-id='${linkedMsgId}']`);
+
+    if (!originalMsg) return; // no linked message found
+
     // reset in case animation is running
-    msg.classList.remove("highlight-message");
-    void msg.offsetWidth; // force reflow so animation restarts
-    msg.classList.add("highlight-message");
+    originalMsg.classList.remove("highlight-message");
+    void originalMsg.offsetWidth; // force reflow so animation restarts
+    originalMsg.classList.add("highlight-message");
   });
 }
 }
