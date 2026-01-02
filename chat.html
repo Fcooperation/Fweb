@@ -489,22 +489,47 @@ if (msgObj.linked) {
   msg.style.cursor = "pointer"; // shows it can be tapped
 
   msg.addEventListener("click", () => {
-    // Find the original message element this one is linked to
     const linkedMsgId = msgObj.linked_message_id;
     const originalMsg = chatBody.querySelector(`[data-id='${linkedMsgId}']`);
+    if (!originalMsg) return;
 
-    if (!originalMsg) return; // no linked message found
+    // Flag to cancel scroll if user taps
+    let cancelScroll = false;
 
-    // Scroll the original message into view first
-    originalMsg.scrollIntoView({ behavior: "smooth", block: "center" });
+    // Listen for any tap/click to stop the scroll
+    const stopScroll = () => { cancelScroll = true; };
+    document.addEventListener("click", stopScroll, { once: true, capture: true });
 
-    // Add a slight delay so the scroll happens before the glow
-    setTimeout(() => {
-      // reset in case animation is running
+    // Smooth scroll using requestAnimationFrame
+    const startScrollTop = chatBody.scrollTop;
+    const targetTop = originalMsg.offsetTop - chatBody.offsetHeight / 2 + originalMsg.offsetHeight / 2;
+    const duration = 400; // scroll duration in ms
+    const startTime = performance.now();
+
+    function smoothScroll(currentTime) {
+      if (cancelScroll) return; // stop immediately if tapped
+
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      chatBody.scrollTop = startScrollTop + (targetTop - startScrollTop) * easeInOutQuad(progress);
+
+      if (progress < 1) {
+        requestAnimationFrame(smoothScroll);
+      } else {
+        triggerGlow(); // scroll finished, trigger glow
+      }
+    }
+
+    // Easing function
+    function easeInOutQuad(t) { return t<0.5 ? 2*t*t : -1+(4-2*t)*t; }
+
+    function triggerGlow() {
       originalMsg.classList.remove("highlight-message");
-      void originalMsg.offsetWidth; // force reflow so animation restarts
+      void originalMsg.offsetWidth; // force reflow
       originalMsg.classList.add("highlight-message");
-    }, 250); // 250ms delay, adjust if needed
+    }
+
+    requestAnimationFrame(smoothScroll);
   });
 }
 }
