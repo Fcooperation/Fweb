@@ -330,16 +330,6 @@ body {
 .read-toggle:hover {
   text-decoration: underline;
 }
-.highlight-message {
-  animation: glowPulse 1.2s ease-in-out 2;
-  box-shadow: 0 0 15px rgba(33, 150, 243, 0.9);
-}
-
-@keyframes glowPulse {
-  0% { box-shadow: 0 0 0 rgba(33,150,243,0); }
-  50% { box-shadow: 0 0 18px rgba(33,150,243,0.9); }
-  100% { box-shadow: 0 0 0 rgba(33,150,243,0); }
-}
 </style>
 </head>
 
@@ -424,9 +414,6 @@ function formatDateLabel(dateStr) {
 // Add message function
 function addMessage(msgObj) {
   const msg = document.createElement("div");
-  msg.dataset.id = msgObj.id;
-  if (msgObj.isPoll && msgObj.pollData) {
-  msg.className = `poll-wrapper ${alignmentClass}`;
 
   const isSent = String(msgObj.sender_id) === String(account.id);
   const alignmentClass = isSent ? "sent" : "received";
@@ -677,7 +664,7 @@ function enableSwipe(messageEl, msgObj) {
     messageEl.style.transform = "translateX(0)";
   });
 }
-// Show Reply Preview
+
 function showReplyPreview(msgObj) {
   const preview = document.getElementById("reply-preview");
   const previewText = document.getElementById("reply-text");
@@ -685,26 +672,8 @@ function showReplyPreview(msgObj) {
   previewText.textContent = msgObj.text?.slice(0, 120) || "";
   preview.style.display = "flex";
 
-  replyingMessage = msgObj;
-
-  setTimeout(() => {
-    const target = document.querySelector(`[data-id="${msgObj.id}"]`);
-    if (!target) return;
-
-    target.scrollIntoView({
-      behavior: "smooth",
-      block: "center"
-    });
-
-    // glow effect
-    setTimeout(() => {
-      target.classList.add("highlight-message");
-
-      setTimeout(() => {
-        target.classList.remove("highlight-message");
-      }, 1500);
-    }, 200);
-  }, 100);
+  // THIS IS CRUCIAL:
+  replyingMessage = msgObj; // ✅ now sendMessage knows this is linked
 }
 // Close preview
 document.getElementById("close-reply").onclick = () => {
