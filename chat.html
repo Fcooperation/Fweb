@@ -330,6 +330,10 @@ body {
 .read-toggle:hover {
   text-decoration: underline;
 }
+.highlight-message {
+  animation: glowPulse 1.2s ease-in-out 2;
+  box-shadow: 0 0 15px rgba(33, 150, 243, 0.9);
+}
 </style>
 </head>
 
@@ -414,6 +418,7 @@ function formatDateLabel(dateStr) {
 // Add message function
 function addMessage(msgObj) {
   const msg = document.createElement("div");
+  msg.dataset.id = msgObj.id;
 
   const isSent = String(msgObj.sender_id) === String(account.id);
   const alignmentClass = isSent ? "sent" : "received";
@@ -464,6 +469,16 @@ function addMessage(msgObj) {
     ${time} ${isSent ? "• " + (msgObj.status || "sent") : ""}
   </div>
 `;
+// Glow if this message is linked (reply)
+if (msgObj.linked === true) {
+  setTimeout(() => {
+    msg.classList.add("highlight-message");
+
+    setTimeout(() => {
+      msg.classList.remove("highlight-message");
+    }, 1500);
+  }, 100);
+}
 const textBox = msg.querySelector(".message-text");
 applyReadMore(textBox, msgObj.text);
 
