@@ -495,10 +495,16 @@ if (msgObj.linked) {
 
     if (!originalMsg) return; // no linked message found
 
-    // reset in case animation is running
-    originalMsg.classList.remove("highlight-message");
-    void originalMsg.offsetWidth; // force reflow so animation restarts
-    originalMsg.classList.add("highlight-message");
+    // Scroll the original message into view first
+    originalMsg.scrollIntoView({ behavior: "smooth", block: "center" });
+
+    // Add a slight delay so the scroll happens before the glow
+    setTimeout(() => {
+      // reset in case animation is running
+      originalMsg.classList.remove("highlight-message");
+      void originalMsg.offsetWidth; // force reflow so animation restarts
+      originalMsg.classList.add("highlight-message");
+    }, 250); // 250ms delay, adjust if needed
   });
 }
 }
