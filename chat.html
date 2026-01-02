@@ -448,7 +448,7 @@ function addMessage(msgObj) {
 
   msg.innerHTML = `
     ${replyHTML}
-    <div>${msgObj.text}</div>
+    <div>${msgObj.text.replace(/\n/g, "<br>")}</div>
     <div class="message-meta">
       ${time} ${isSent ? "• " + (msgObj.status || "sent") : ""}
     </div>
