@@ -425,6 +425,8 @@ function formatDateLabel(dateStr) {
 function addMessage(msgObj) {
   const msg = document.createElement("div");
   msg.dataset.id = msgObj.id;
+  if (msgObj.isPoll && msgObj.pollData) {
+  msg.className = `poll-wrapper ${alignmentClass}`;
 
   const isSent = String(msgObj.sender_id) === String(account.id);
   const alignmentClass = isSent ? "sent" : "received";
@@ -685,23 +687,24 @@ function showReplyPreview(msgObj) {
 
   replyingMessage = msgObj;
 
-  // Scroll to original message
   setTimeout(() => {
-    const messages = document.querySelectorAll(".message");
-    messages.forEach(el => {
-      if (el.dataset.id == msgObj.id) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
+    const target = document.querySelector(`[data-id="${msgObj.id}"]`);
+    if (!target) return;
 
-        setTimeout(() => {
-          el.classList.add("highlight-message");
-
-          setTimeout(() => {
-            el.classList.remove("highlight-message");
-          }, 1500);
-        }, 300);
-      }
+    target.scrollIntoView({
+      behavior: "smooth",
+      block: "center"
     });
-  }, 150);
+
+    // glow effect
+    setTimeout(() => {
+      target.classList.add("highlight-message");
+
+      setTimeout(() => {
+        target.classList.remove("highlight-message");
+      }, 1500);
+    }, 200);
+  }, 100);
 }
 // Close preview
 document.getElementById("close-reply").onclick = () => {
