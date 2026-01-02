@@ -319,6 +319,17 @@ body {
   line-height: 1.4;
   max-height: 120px;
 }
+.read-toggle {
+  color: #2196f3;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 6px;
+  display: inline-block;
+}
+
+.read-toggle:hover {
+  text-decoration: underline;
+}
 </style>
 </head>
 
@@ -448,14 +459,13 @@ function addMessage(msgObj) {
 
   msg.innerHTML = `
   ${replyHTML}
-  <div>${msgObj.text
-    .replace(/\n/g, "<br>")          // preserve user line breaks
-    .replace(/(\S{40})/g, "$1<wbr>") // insert line break opportunities every 40 chars
-  }</div>
+<div class="message-text"></div>
   <div class="message-meta">
     ${time} ${isSent ? "• " + (msgObj.status || "sent") : ""}
   </div>
 `;
+const textBox = msg.querySelector(".message-text");
+applyReadMore(textBox, msgObj.text);
 
   enableSwipe(msg, msgObj); // full object
 }
@@ -487,7 +497,45 @@ function updateTimeline() {
     addMessage(msg);
   });
 }
+// Read more, Read less logic
+function applyReadMore(container, fullText) {
+  const lines = fullText.split("\n");
+  const MAX_LINES = 10;
+  const STEP = 15;
 
+  if (lines.length <= MAX_LINES) {
+    container.innerHTML = fullText.replace(/\n/g, "<br>");
+    return;
+  }
+
+  let visibleLines = MAX_LINES;
+
+  function render() {
+    const shown = lines.slice(0, visibleLines).join("<br>");
+    container.innerHTML = shown;
+
+    const toggle = document.createElement("span");
+    toggle.className = "read-toggle";
+
+    if (visibleLines < lines.length) {
+      toggle.textContent = " Read more";
+      toggle.onclick = () => {
+        visibleLines = Math.min(visibleLines + STEP, lines.length);
+        render();
+      };
+    } else {
+      toggle.textContent = " Read less";
+      toggle.onclick = () => {
+        visibleLines = MAX_LINES;
+        render();
+      };
+    }
+
+    container.appendChild(toggle);
+  }
+
+  render();
+}
 // Sync messages
 function syncToFChat(msgObj=null) {
   if(msgObj && !fchatMessages.some(fm => fm.id === msgObj.id)) fchatMessages.push(msgObj);
