@@ -330,23 +330,15 @@ body {
 .read-toggle:hover {
   text-decoration: underline;
 }
+/* Glow/flash for linked messages on tap */
 .highlight-message {
-  animation: megaGlow 0.8s ease-in-out 2;
+  animation: flashGlow 1s ease-in-out 1;
 }
 
-@keyframes megaGlow {
-  0% {
-    box-shadow: 0 0 0px rgba(33, 150, 243, 0);
-  }
-  50% {
-    box-shadow: 
-      0 0 25px rgba(33, 150, 243, 1),
-      0 0 45px rgba(33, 150, 243, 0.8),
-      0 0 70px rgba(33, 150, 243, 0.6);
-  }
-  100% {
-    box-shadow: 0 0 0px rgba(33, 150, 243, 0);
-  }
+@keyframes flashGlow {
+  0%   { background-color: #fff3cd; }  /* bright yellow flash start */
+  50%  { background-color: #fff9d6; }  /* slightly faded */
+  100% { background-color: inherit; }  /* back to original message color */
 }
 </style>
 </head>
