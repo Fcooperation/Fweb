@@ -462,6 +462,12 @@ document.getElementById("messageInput").addEventListener("keydown", e => {
     sendMessage();
   }
 });
+const textarea = document.getElementById("messageInput");
+
+textarea.addEventListener("input", () => {
+  textarea.style.height = "auto";
+  textarea.style.height = textarea.scrollHeight + "px";
+});
 
 // Date dividers
 function formatDateLabel(dateStr) {
@@ -719,6 +725,21 @@ function showReplyPreview(text) {
 document.getElementById("close-reply").onclick = () => {
   document.getElementById("reply-preview").style.display = "none";
 };
+setTimeout(() => {
+  const textEl = msg.querySelector(".message-text");
+  const readMore = msg.querySelector(".read-more");
+
+  if (!textEl || !readMore) return;
+
+  if (textEl.scrollHeight > textEl.clientHeight) {
+    readMore.style.display = "inline";
+  }
+
+  readMore.onclick = () => {
+    const expanded = textEl.classList.toggle("expanded");
+    readMore.textContent = expanded ? "Show less" : "Read more";
+  };
+}, 10);
 
 // Initial load
 syncPolls();
