@@ -447,12 +447,15 @@ function addMessage(msgObj) {
   }
 
   msg.innerHTML = `
-    ${replyHTML}
-    <div>${msgObj.text.replace(/\n/g, "<br>")}</div>
-    <div class="message-meta">
-      ${time} ${isSent ? "• " + (msgObj.status || "sent") : ""}
-    </div>
-  `;
+  ${replyHTML}
+  <div>${msgObj.text
+    .replace(/\n/g, "<br>")          // preserve user line breaks
+    .replace(/(\S{40})/g, "$1<wbr>") // insert line break opportunities every 40 chars
+  }</div>
+  <div class="message-meta">
+    ${time} ${isSent ? "• " + (msgObj.status || "sent") : ""}
+  </div>
+`;
 
   enableSwipe(msg, msgObj.text || "");
 }
