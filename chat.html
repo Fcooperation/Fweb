@@ -331,8 +331,22 @@ body {
   text-decoration: underline;
 }
 .highlight-message {
-  animation: glowPulse 1.2s ease-in-out 2;
-  box-shadow: 0 0 15px rgba(33, 150, 243, 0.9);
+  animation: megaGlow 0.8s ease-in-out 2;
+}
+
+@keyframes megaGlow {
+  0% {
+    box-shadow: 0 0 0px rgba(33, 150, 243, 0);
+  }
+  50% {
+    box-shadow: 
+      0 0 25px rgba(33, 150, 243, 1),
+      0 0 45px rgba(33, 150, 243, 0.8),
+      0 0 70px rgba(33, 150, 243, 0.6);
+  }
+  100% {
+    box-shadow: 0 0 0px rgba(33, 150, 243, 0);
+  }
 }
 </style>
 </head>
