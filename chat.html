@@ -308,6 +308,17 @@ body {
   color: #fff;
   border-left-color: #2196f3;
 }
+#messageInput {
+  flex: 1;
+  padding: 10px;
+  font-size: 15px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  resize: none;
+  overflow-y: hidden;
+  line-height: 1.4;
+  max-height: 120px;
+}
 </style>
 </head>
 
@@ -332,7 +343,7 @@ body {
 </div>
 
 <div id="chat-input">
-  <input type="text" id="messageInput" placeholder="Type a message...">
+  <textarea id="messageInput" placeholder="Type a message..." rows="1"></textarea>
   <button id="sendBtn">Send</button>
 </div>
 
@@ -574,6 +585,7 @@ function sendMessage() {
   syncToFChat(msgObj);
 
   input.value = "";
+  input.style.height = "auto";
   replyingMessage = null;
 
   if (navigator.onLine) sendToBackend(msgObj);
@@ -626,6 +638,12 @@ document.getElementById("close-reply").onclick = () => {
   document.getElementById("reply-preview").style.display = "none";
 };
 
+const textarea = document.getElementById("messageInput");
+
+textarea.addEventListener("input", () => {
+  textarea.style.height = "auto";
+  textarea.style.height = Math.min(textarea.scrollHeight, 120) + "px";
+});
 // Initial load
 syncPolls();
 syncToFChat();
