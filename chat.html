@@ -332,13 +332,18 @@ body {
 }
 /* Glow/flash for linked messages on tap */
 .highlight-message {
-  animation: flashGlow 1s ease-in-out 1;
+  animation: megaGlow 2s ease-out 1;
 }
 
-@keyframes flashGlow {
-  0%   { background-color: #fff3cd; }  /* bright yellow flash start */
-  50%  { background-color: #fff9d6; }  /* slightly faded */
-  100% { background-color: inherit; }  /* back to original message color */
+@keyframes megaGlow {
+  0% {
+    box-shadow:
+      0 0 0 4px #1e88e5,
+      0 0 25px 10px rgba(30,136,229,1),
+      0 0 50px 18px rgba(30,136,229,0.9),
+      0 0 80px 30px rgba(30,136,229,0.7);
+  }
+  100% { box-shadow: none; }
 }
 </style>
 </head>
