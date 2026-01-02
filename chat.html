@@ -483,20 +483,21 @@ function addMessage(msgObj) {
     ${time} ${isSent ? "• " + (msgObj.status || "sent") : ""}
   </div>
 `;
-// Glow if this message is linked (reply)
-if (msgObj.linked === true) {
-  setTimeout(() => {
-    msg.classList.add("highlight-message");
-
-    setTimeout(() => {
-      msg.classList.remove("highlight-message");
-    }, 1500);
-  }, 100);
-}
 const textBox = msg.querySelector(".message-text");
 applyReadMore(textBox, msgObj.text);
 
   enableSwipe(msg, msgObj); // full object
+  // Glow on tap for linked messages only
+if (msgObj.linked) {
+  msg.style.cursor = "pointer"; // shows it can be tapped
+
+  msg.addEventListener("click", () => {
+    // reset in case animation is running
+    msg.classList.remove("highlight-message");
+    void msg.offsetWidth; // force reflow so animation restarts
+    msg.classList.add("highlight-message");
+  });
+}
 }
   chatBody.appendChild(msg);
   chatBody.scrollTop = chatBody.scrollHeight;
