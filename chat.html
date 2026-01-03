@@ -351,28 +351,6 @@ body {
   }
   100% { box-shadow: none; }
 }
-/* MESSAGE STATUS TEXT ONLY */
-
-/* Pending */
-.message.sent.pending .message-meta {
-  color: orange;
-}
-
-/* Sending */
-.message.sent.sending .message-meta {
-  color: #999;
-}
-
-/* Sent */
-.message.sent.sent .message-meta {
-  color: #2196f3;
-}
-
-/* Seen */
-.message.sent.seen .message-meta {
-  color: #2196f3;
-  font-weight: bold;
-}
 </style>
 </head>
 
@@ -500,7 +478,6 @@ function addMessage(msgObj) {
     `;
   } else {
   msg.className = `message ${alignmentClass}`;
-  applyMessageStatus(msg, msgObj);
 
   let replyHTML = "";
   if (msgObj.replyTo) {
