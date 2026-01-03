@@ -351,6 +351,41 @@ body {
   }
   100% { box-shadow: none; }
 }
+/* MESSAGE STATUS STATES */
+
+/* Pending (offline) */
+.message.sent.pending {
+  opacity: 0.5;
+}
+
+.message.sent.pending .message-meta {
+  color: orange;
+  font-weight: bold;
+}
+
+/* Sending */
+.message.sent.sending {
+  opacity: 0.7;
+}
+
+.message.sent.sending .message-meta {
+  color: #888;
+}
+
+/* Sent */
+.message.sent.sent .message-meta {
+  color: #2196f3;
+}
+
+/* Seen (for later use) */
+.message.sent.seen {
+  font-weight: bold;
+}
+
+.message.sent.seen .message-meta {
+  color: #2196f3;
+  font-weight: bold;
+}
 </style>
 </head>
 
@@ -432,6 +467,14 @@ function formatDateLabel(dateStr) {
     day: "numeric"
   });
 }
+// MESSAGES LOGS
+function applyMessageStatus(msgEl, msgObj) {
+  msgEl.classList.remove("pending", "sending", "sent", "seen");
+
+  if (msgObj.sender_id === account.id && msgObj.status) {
+    msgEl.classList.add(msgObj.status);
+  }
+}
 // Add message function
 function addMessage(msgObj) {
   const msg = document.createElement("div");
@@ -469,6 +512,9 @@ function addMessage(msgObj) {
     `;
   } else {
   msg.className = `message ${alignmentClass}`;
+
+// 👇 ADD THIS LINE RIGHT HERE
+applyMessageStatus(msg, msgObj);
 
   let replyHTML = "";
   if (msgObj.replyTo) {
