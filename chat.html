@@ -488,6 +488,7 @@ function addMessage(msgObj) {
     `;
   } else {
   msg.className = `message ${alignmentClass}`;
+  applyMessageStatus(msg, msgObj);
 
   let replyHTML = "";
   if (msgObj.replyTo) {
