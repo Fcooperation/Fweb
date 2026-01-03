@@ -511,7 +511,8 @@ function addMessage(msgObj) {
       </div>
     `;
   } else {
-  msg.className = `message ${alignmentClass}`;
+  const statusClass = isSent ? (msgObj.status || "sent") : "";
+msg.className = `message ${alignmentClass} ${statusClass}`;
 
 // 👇 ADD THIS LINE RIGHT HERE
 applyMessageStatus(msg, msgObj);
