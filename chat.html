@@ -351,6 +351,7 @@ body {
   }
   100% { box-shadow: none; }
 }
+/* Message bubble (keep as-is) */
 .message.sending {
   background: black;
   color: white;
@@ -364,6 +365,25 @@ body {
   color: white;
   opacity: 0.7;
   margin-left: auto;
+}
+
+/* Status text ONLY */
+.message.pending .message-meta {
+  color: orange;
+  font-weight: bold;
+}
+
+.message.sending .message-meta {
+  color: #888;
+}
+
+.message.sent .message-meta {
+  color: #2196f3;
+}
+
+.message.seen .message-meta {
+  color: #2196f3;
+  font-weight: bold;
 }
 </style>
 </head>
