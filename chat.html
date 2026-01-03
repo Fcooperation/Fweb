@@ -351,6 +351,28 @@ body {
   }
   100% { box-shadow: none; }
 }
+/* MESSAGE STATUS TEXT ONLY */
+
+/* Pending */
+.message.sent.pending .message-meta {
+  color: orange;
+}
+
+/* Sending */
+.message.sent.sending .message-meta {
+  color: #999;
+}
+
+/* Sent */
+.message.sent.sent .message-meta {
+  color: #2196f3;
+}
+
+/* Seen */
+.message.sent.seen .message-meta {
+  color: #2196f3;
+  font-weight: bold;
+}
 </style>
 </head>
 
@@ -432,6 +454,15 @@ function formatDateLabel(dateStr) {
     day: "numeric"
   });
 }
+// Messages status
+function applyMessageStatus(msgEl, msgObj) {
+  // remove old status classes
+  msgEl.classList.remove("pending", "sending", "sent", "seen");
+
+  if (msgObj.sender_id === account.id && msgObj.status) {
+    msgEl.classList.add(msgObj.status); // pending / sending / sent / seen
+  }
+}
 // Add message function
 function addMessage(msgObj) {
   const msg = document.createElement("div");
@@ -469,6 +500,7 @@ function addMessage(msgObj) {
     `;
   } else {
   msg.className = `message ${alignmentClass}`;
+  applyMessageStatus(msg, msgObj);
 
   let replyHTML = "";
   if (msgObj.replyTo) {
