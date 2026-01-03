@@ -490,48 +490,63 @@ const textBox = msg.querySelector(".message-text");
 applyReadMore(textBox, msgObj.text);
 
   enableSwipe(msg, msgObj); // full object
-// Glow on tap for linked messages only
+// Glow ONLY when clicking the reply preview bubble
 if (msgObj.linked) {
-  msg.style.cursor = "pointer"; // shows it can be tapped
+  const replyBubble = msg.querySelector(".reply-bubble");
+  if (!replyBubble) return;
 
-  msg.addEventListener("click", () => {
+  replyBubble.style.cursor = "pointer";
+
+  replyBubble.addEventListener("click", (e) => {
+    e.stopPropagation(); // ⛔ clicking bubble won't trigger message click
+
     const linkedMsgId = msgObj.linked_message_id;
-    const originalMsg = chatBody.querySelector(`[data-id='${linkedMsgId}']`);
+    const originalMsg = chatBody.querySelector(
+      `[data-id='${linkedMsgId}']`
+    );
     if (!originalMsg) return;
 
-    // Flag to cancel scroll if user taps
     let cancelScroll = false;
 
-    // Listen for any tap/click to stop the scroll
     const stopScroll = () => { cancelScroll = true; };
-    document.addEventListener("click", stopScroll, { once: true, capture: true });
+    document.addEventListener("click", stopScroll, {
+      once: true,
+      capture: true
+    });
 
-    // Smooth scroll using requestAnimationFrame
     const startScrollTop = chatBody.scrollTop;
-    const targetTop = originalMsg.offsetTop - chatBody.offsetHeight / 2 + originalMsg.offsetHeight / 2;
-    const duration = 400; // scroll duration in ms
+    const targetTop =
+      originalMsg.offsetTop -
+      chatBody.offsetHeight / 2 +
+      originalMsg.offsetHeight / 2;
+
+    const duration = 400;
     const startTime = performance.now();
 
+    function easeInOutQuad(t) {
+      return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+    }
+
     function smoothScroll(currentTime) {
-      if (cancelScroll) return; // stop immediately if tapped
+      if (cancelScroll) return;
 
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      chatBody.scrollTop = startScrollTop + (targetTop - startScrollTop) * easeInOutQuad(progress);
+
+      chatBody.scrollTop =
+        startScrollTop +
+        (targetTop - startScrollTop) * easeInOutQuad(progress);
 
       if (progress < 1) {
         requestAnimationFrame(smoothScroll);
       } else {
-        triggerGlow(); // scroll finished, trigger glow
+        triggerGlow();
       }
     }
 
-    // Easing function
-    function easeInOutQuad(t) { return t<0.5 ? 2*t*t : -1+(4-2*t)*t; }
-
     function triggerGlow() {
       originalMsg.classList.remove("highlight-message");
-      void originalMsg.offsetWidth; // force reflow
+      void originalMsg.offsetWidth;
       originalMsg.classList.add("highlight-message");
     }
 
