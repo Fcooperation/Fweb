@@ -13,6 +13,8 @@ body {
   height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 #chat-header {
@@ -96,8 +98,8 @@ body {
   background: #eee;
   color: black;
 }
-.message::before,
-.poll-wrapper::before {
+.message.sent::before,
+.poll-wrapper.sent::before {
   content: "";
   display: block;
   min-height: 17px;
@@ -323,9 +325,9 @@ body {
   border-radius: 6px;
   resize: none;
   overflow-y: auto;
-  overflow-x:hidden;
   line-height: 1.4;
   max-height: 120px;
+  overflow-x: hidden;
 }
 .read-toggle {
   color: #2196f3;
@@ -352,40 +354,6 @@ body {
       0 0 80px 30px rgba(30,136,229,0.7);
   }
   100% { box-shadow: none; }
-}
-/* Message bubble (keep as-is) */
-.message.sending {
-  background: black;
-  color: white;
-  opacity: 0.6;
-  font-style: italic;
-  margin-left: auto;
-}
-
-.message.pending {
-  background: #aaa;
-  color: white;
-  opacity: 0.7;
-  margin-left: auto;
-}
-
-/* Status text ONLY */
-.message.pending .message-meta {
-  color: orange;
-  font-weight: bold;
-}
-
-.message.sending .message-meta {
-  color: #888;
-}
-
-.message.sent .message-meta {
-  color: #2196f3;
-}
-
-.message.seen .message-meta {
-  color: #2196f3;
-  font-weight: bold;
 }
 </style>
 </head>
@@ -468,15 +436,6 @@ function formatDateLabel(dateStr) {
     day: "numeric"
   });
 }
-// Messages status
-function applyMessageStatus(msgEl, msgObj) {
-  // remove old status classes
-  msgEl.classList.remove("pending", "sending", "sent", "seen");
-
-  if (msgObj.sender_id === account.id && msgObj.status) {
-    msgEl.classList.add(msgObj.status); // pending / sending / sent / seen
-  }
-}
 // Add message function
 function addMessage(msgObj) {
   const msg = document.createElement("div");
@@ -508,15 +467,9 @@ function addMessage(msgObj) {
         </div>
       `).join("")}
 
-      ${isSent ? `
-  <div class="message-meta">
-    ${time} • ${msgObj.status || "sent"}
-  </div>
-` : `
-  <div class="message-meta">
-    ${time}
-  </div>
-`}
+      <div class="message-meta">
+        ${time} ${isSent ? "• " + (msgObj.status || "sent") : ""}
+      </div>
     `;
   } else {
   msg.className = `message ${alignmentClass}`;
@@ -533,9 +486,9 @@ function addMessage(msgObj) {
 
   msg.innerHTML = `
   ${replyHTML}
-<div class="message-text"></div>
+  <div class="message-text"></div>
   <div class="message-meta">
-    ${time} ${isSent ? "• " + (msgObj.status || "sent") : ""}
+    ${time}
   </div>
 `;
 const textBox = msg.querySelector(".message-text");
