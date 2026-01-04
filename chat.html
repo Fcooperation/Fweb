@@ -486,10 +486,49 @@ function toggleSelectMessage(el, msgObj) {
     el.classList.add("selected", "highlight-message");
   }
 
-  // exit selection mode if nothing selected
-  if (selectedMessages.size === 0) {
-    selectionMode = false;
+  // enter selection mode if at least one message selected
+  selectionMode = selectedMessages.size > 0;
+
+  // Refresh the selection board visibility
+  updateSelectionBoard();
+}
+
+// Selection board elements
+const selectionBoard = document.getElementById("selection-board");
+const boardBackBtn = document.getElementById("board-back-btn");
+
+// Show/hide the selection board based on selection
+function updateSelectionBoard() {
+  if (selectionMode) {
+    selectionBoard.style.display = "flex";
+    // optionally, you can update board title with count
+    const boardTitle = document.getElementById("board-title");
+    boardTitle.textContent = `${selectedMessages.size} selected`;
+  } else {
+    selectionBoard.style.display = "none";
   }
+}
+
+// Back button cancels selection mode
+boardBackBtn.onclick = () => {
+  clearSelection();
+};
+
+// Tapping anywhere on chat background also cancels selection mode
+chatBody.addEventListener("click", () => {
+  if (selectionMode) clearSelection();
+});
+
+// Helper to clear all selections
+function clearSelection() {
+  selectedMessages.forEach(id => {
+    const msgEl = chatBody.querySelector(`[data-id='${id}']`);
+    if (msgEl) msgEl.classList.remove("selected", "highlight-message");
+  });
+
+  selectedMessages.clear();
+  selectionMode = false;
+  updateSelectionBoard();
 }
 // Add message function
 function addMessage(msgObj) {
