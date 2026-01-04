@@ -508,9 +508,15 @@ function addMessage(msgObj) {
         </div>
       `).join("")}
 
-      <div class="message-meta">
-        ${time} ${isSent ? "• " + (msgObj.status || "sent") : ""}
-      </div>
+      ${isSent ? `
+  <div class="message-meta">
+    ${time} • ${msgObj.status || "sent"}
+  </div>
+` : `
+  <div class="message-meta">
+    ${time}
+  </div>
+`}
     `;
   } else {
   msg.className = `message ${alignmentClass}`;
