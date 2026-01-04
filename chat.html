@@ -548,7 +548,7 @@ function addMessage(msgObj) {
   ${replyHTML}
 <div class="message-text"></div>
   <div class="message-meta">
-    ${time} ${isSent ? "• " + (msgObj.status || "sent") : ""}
+    ${time}${isSent ? ` • <span class="status-text">${msgObj.status || "sent"}</span>` : ""}
   </div>
 `;
 const textBox = msg.querySelector(".message-text");
