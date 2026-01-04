@@ -13,8 +13,6 @@ body {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  overflow-x: hidden;
-  max-width: 100%;
 }
 
 #chat-header {
@@ -76,16 +74,14 @@ body {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  overflow-x: hidden;
 }
 
 .message {
-  width: 75%;
+  max-width: 75%;
   padding: 10px;
   margin-bottom: 8px;
   border-radius: 8px;
   font-size: 14px;
-  position: relative;
 }
 
 .sent {
@@ -97,12 +93,6 @@ body {
 .received {
   background: #eee;
   color: black;
-}
-.message.sent::before,
-.poll-wrapper.sent::before {
-  content: "";
-  display: block;
-  min-height: 17px;
 }
 
 #chat-input {
@@ -218,143 +208,6 @@ body {
   bottom: 6px;
   right: 10px;
 }
-.message-meta {
-  font-size: 11px;
-  opacity: 0.6;
-  margin-top: 4px;
-  display: flex;
-  justify-content: flex-end;
-  gap: 6px;
-}
-
-.message.received .message-meta {
-  justify-content: flex-start;
-}
-.date-divider {
-  text-align: center;
-  margin: 12px 0;
-  font-size: 12px;
-  color: #666;
-  position: relative;
-}
-
-.date-divider::before,
-.date-divider::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  width: 30%;
-  height: 1px;
-  background: #ddd;
-}
-
-.date-divider::before {
-  left: 0;
-}
-
-.date-divider::after {
-  right: 0;
-}
-/* REPLY PREVIEW */
-#reply-preview {
-  position: sticky;
-  bottom: 60px;
-  background: #f1f1f1;
-  border-top: 1px solid #ddd;
-  padding: 10px 14px;
-  font-size: 14px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  animation: slideUp 0.2s ease;
-}
-
-#reply-text {
-  max-width: 85%;
-  color: #333;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-#close-reply {
-  font-size: 18px;
-  cursor: pointer;
-  padding-left: 10px;
-}
-
-/* animation */
-@keyframes slideUp {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-/* Swipe indicator (optional feedback) */
-.message {
-  transition: transform 0.2s ease;
-}
-.reply-bubble {
-  background: #eee;
-  padding: 6px 10px;
-  border-left: 3px solid #2196f3;
-  border-radius: 6px;
-  font-size: 13px;
-  color: #333;
-  margin-bottom: 4px;
-  max-width: 90%;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-.sent .reply-bubble {
-  background: #333;
-  color: #fff;
-  border-left-color: #2196f3;
-}
-#messageInput {
-  flex: 1;
-  padding: 10px;
-  font-size: 15px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  resize: none;
-  overflow-y: auto;
-  line-height: 1.4;
-  max-height: 120px;
-  overflow-x: hidden;
-}
-.read-toggle {
-  color: #2196f3;
-  font-weight: bold;
-  cursor: pointer;
-  margin-top: 6px;
-  display: inline-block;
-}
-
-.read-toggle:hover {
-  text-decoration: underline;
-}
-/* Glow/flash for linked messages on tap */
-.highlight-message {
-  animation: megaGlow 2s ease-out 1;
-}
-
-@keyframes megaGlow {
-  0% {
-    box-shadow:
-      0 0 0 4px #1e88e5,
-      0 0 25px 10px rgba(30,136,229,1),
-      0 0 50px 18px rgba(30,136,229,0.9),
-      0 0 80px 30px rgba(30,136,229,0.7);
-  }
-  100% { box-shadow: none; }
-}
 </style>
 </head>
 
@@ -372,14 +225,9 @@ body {
 </div>
 
 <div id="chat-body"></div>
-<!-- MESSAGE PREVIEW -->
-<div id="reply-preview" style="display:none;">
-  <div id="reply-text"></div>
-  <span id="close-reply">✕</span>
-</div>
 
 <div id="chat-input">
-  <textarea id="messageInput" placeholder="Type a message..." rows="1"></textarea>
+  <input type="text" id="messageInput" placeholder="Type a message...">
   <button id="sendBtn">Send</button>
 </div>
 
@@ -415,47 +263,19 @@ if (chatWith.profile_pic) {
 // Chat body
 const chatBody = document.getElementById("chat-body");
 
-// Date dividers
-function formatDateLabel(dateStr) {
-  const date = new Date(dateStr);
-  const today = new Date();
-  const yesterday = new Date();
-  yesterday.setDate(today.getDate() - 1);
-
-  const isSameDay = (d1, d2) =>
-    d1.getFullYear() === d2.getFullYear() &&
-    d1.getMonth() === d2.getMonth() &&
-    d1.getDate() === d2.getDate();
-
-  if (isSameDay(date, today)) return "Today";
-  if (isSameDay(date, yesterday)) return "Yesterday";
-
-  return date.toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric"
-  });
-}
-// Add message function
 function addMessage(msgObj) {
   const msg = document.createElement("div");
-  msg.dataset.id = msgObj.id;
 
+  // Determine if this is sent or received
   const isSent = String(msgObj.sender_id) === String(account.id);
   const alignmentClass = isSent ? "sent" : "received";
 
-  // Format time
-  const time = new Date(msgObj.sent_at).toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit"
-  });
-
   if (msgObj.isPoll && msgObj.pollData) {
+    // Poll message
     msg.className = `poll-wrapper ${alignmentClass}`;
     msg.innerHTML = `
       <div class="poll-question">${msgObj.pollData.question}</div>
-
-      ${msgObj.pollData.options.map((opt, i) => `
+      ${msgObj.pollData.options.map((opt,i) => `
         <div class="poll-option" data-index="${i}">
           <div class="poll-row">
             <div class="poll-circle"></div>
@@ -465,167 +285,29 @@ function addMessage(msgObj) {
             <div class="poll-bar"></div>
           </div>
         </div>
-      `).join("")}
-
-      <div class="message-meta">
-        ${time} ${isSent ? "• " + (msgObj.status || "sent") : ""}
-      </div>
+      `).join('')}
+      <div class="poll-status">${msgObj.status || 'pending'}</div>
     `;
   } else {
-  msg.className = `message ${alignmentClass}`;
-  applyMessageStatus(msg, msgObj);
-
-  let replyHTML = "";
-  if (msgObj.replyTo) {
-    replyHTML = `
-      <div class="reply-bubble">
-        ${msgObj.replyTo.text}
-      </div>
-    `;
+    // Normal text message
+    msg.className = `message ${msgObj.type || alignmentClass}`;
+    msg.textContent = msgObj.text;
   }
 
-  msg.innerHTML = `
-  ${replyHTML}
-  <div class="message-text"></div>
-  <div class="message-meta">
-    ${time}
-  </div>
-`;
-const textBox = msg.querySelector(".message-text");
-applyReadMore(textBox, msgObj.text);
-
-  enableSwipe(msg, msgObj); // full object
-// Glow ONLY when clicking the reply preview bubble
-if (msgObj.linked) {
-  const replyBubble = msg.querySelector(".reply-bubble");
-  if (!replyBubble) return;
-
-  replyBubble.style.cursor = "pointer";
-
-  replyBubble.addEventListener("click", (e) => {
-    e.stopPropagation(); // ⛔ clicking bubble won't trigger message click
-
-    const linkedMsgId = msgObj.linked_message_id;
-    const originalMsg = chatBody.querySelector(
-      `[data-id='${linkedMsgId}']`
-    );
-    if (!originalMsg) return;
-
-    let cancelScroll = false;
-
-    const stopScroll = () => { cancelScroll = true; };
-    document.addEventListener("click", stopScroll, {
-      once: true,
-      capture: true
-    });
-
-    const startScrollTop = chatBody.scrollTop;
-    const targetTop =
-      originalMsg.offsetTop -
-      chatBody.offsetHeight / 2 +
-      originalMsg.offsetHeight / 2;
-
-    const duration = 400;
-    const startTime = performance.now();
-
-    function easeInOutQuad(t) {
-      return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-    }
-
-    function smoothScroll(currentTime) {
-      if (cancelScroll) return;
-
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-
-      chatBody.scrollTop =
-        startScrollTop +
-        (targetTop - startScrollTop) * easeInOutQuad(progress);
-
-      if (progress < 1) {
-        requestAnimationFrame(smoothScroll);
-      } else {
-        triggerGlow();
-      }
-    }
-
-    function triggerGlow() {
-      originalMsg.classList.remove("highlight-message");
-      void originalMsg.offsetWidth;
-      originalMsg.classList.add("highlight-message");
-    }
-
-    requestAnimationFrame(smoothScroll);
-  });
-}
-}
   chatBody.appendChild(msg);
   chatBody.scrollTop = chatBody.scrollHeight;
 }
-// Update timeline
+
 function updateTimeline() {
   chatBody.innerHTML = "";
 
   const chatItems = fchatMessages
     .filter(m => m.receiver_id === chatWith.id || m.sender_id === chatWith.id)
-    .sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
+    .sort((a,b) => new Date(a.sent_at) - new Date(b.sent_at));
 
-  let lastDate = null;
-
-  chatItems.forEach(msg => {
-    const msgDate = new Date(msg.sent_at).toDateString();
-
-    if (msgDate !== lastDate) {
-      const dateDivider = document.createElement("div");
-      dateDivider.className = "date-divider";
-      dateDivider.textContent = formatDateLabel(msg.sent_at);
-      chatBody.appendChild(dateDivider);
-
-      lastDate = msgDate;
-    }
-
-    addMessage(msg);
-  });
+  chatItems.forEach(m => addMessage(m));
 }
-// Read more, Read less logic
-function applyReadMore(container, fullText) {
-  const lines = fullText.split("\n");
-  const MAX_LINES = 10;
-  const STEP = 15;
 
-  if (lines.length <= MAX_LINES) {
-    container.innerHTML = fullText.replace(/\n/g, "<br>");
-    return;
-  }
-
-  let visibleLines = MAX_LINES;
-
-  function render() {
-    const shown = lines.slice(0, visibleLines).join("<br>");
-    container.innerHTML = shown;
-
-    const toggle = document.createElement("span");
-    toggle.className = "read-toggle";
-
-    if (visibleLines < lines.length) {
-      toggle.textContent = " Read more";
-      toggle.onclick = () => {
-        visibleLines = Math.min(visibleLines + STEP, lines.length);
-        render();
-      };
-    } else {
-      toggle.textContent = " Read less";
-      toggle.onclick = () => {
-        visibleLines = MAX_LINES;
-        render();
-      };
-    }
-
-    container.appendChild(toggle);
-  }
-
-  render();
-}
 // Sync messages
 function syncToFChat(msgObj=null) {
   if(msgObj && !fchatMessages.some(fm => fm.id === msgObj.id)) fchatMessages.push(msgObj);
@@ -697,7 +379,7 @@ let replyingMessage = null;
 function sendMessage() {
   const input = document.getElementById("messageInput");
   const text = input.value.trim();
-  if (!text) return;
+  if(!text) return;
 
   const msgObj = {
     id: Date.now(),
@@ -706,17 +388,13 @@ function sendMessage() {
     sent_at: new Date().toISOString(),
     status: navigator.onLine ? "sending" : "pending",
     sending_since: navigator.onLine ? Date.now() : null,
-    replyTo: replyingMessage
-      ? {
-          id: replyingMessage.id,
-          text:
-            replyingMessage.text?.slice(0, 120) +
-            (replyingMessage.text?.length > 120 ? "…" : ""),
-          sender: replyingMessage.sender_id
-        }
-      : null,
-    linked: replyingMessage ? true : false, // yes/no field
-    linked_message_id: replyingMessage ? replyingMessage.id : null,
+    replyTo: replyingMessage ? {
+      id: replyingMessage.id,
+      text: replyingMessage.text.slice(0,80)+(replyingMessage.text.length>80?"…":""),
+      sender: replyingMessage.sender_id
+    }:null,
+    linked: replyingMessage ? true:false,
+    linked_message_id: replyingMessage ? replyingMessage.id:null,
     sender_id: account.id,
     receiver_id: chatWith.id
   };
@@ -725,57 +403,16 @@ function sendMessage() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   syncToFChat(msgObj);
 
-  input.value = "";
-  input.style.height = "auto";
-  replyingMessage = null;
+  input.value="";
+  replyingMessage=null;
 
-  if (navigator.onLine) sendToBackend(msgObj);
-
-  // hide reply preview
-  document.getElementById("reply-preview").style.display = "none";
+  if(navigator.onLine) sendToBackend(msgObj);
 }
 
 document.getElementById("sendBtn").onclick = sendMessage;
 
 function goBack(){ window.location.href="fchat.html"; }
 
-let startX = 0;
-let currentMessage = null;
-
-function enableSwipe(messageEl, msgObj) {
-  messageEl.addEventListener("touchstart", e => { startX = e.touches[0].clientX; });
-  messageEl.addEventListener("touchmove", e => {
-    const diff = e.touches[0].clientX - startX;
-    if (diff > 40) messageEl.style.transform = "translateX(25px)";
-  });
-  messageEl.addEventListener("touchend", e => {
-    const diff = e.changedTouches[0].clientX - startX;
-    if (diff > 60) showReplyPreview(msgObj); // pass full object
-    messageEl.style.transform = "translateX(0)";
-  });
-}
-
-function showReplyPreview(msgObj) {
-  const preview = document.getElementById("reply-preview");
-  const previewText = document.getElementById("reply-text");
-
-  previewText.textContent = msgObj.text?.slice(0, 120) || "";
-  preview.style.display = "flex";
-
-  // THIS IS CRUCIAL:
-  replyingMessage = msgObj; // ✅ now sendMessage knows this is linked
-}
-// Close preview
-document.getElementById("close-reply").onclick = () => {
-  document.getElementById("reply-preview").style.display = "none";
-};
-
-const textarea = document.getElementById("messageInput");
-
-textarea.addEventListener("input", () => {
-  textarea.style.height = "auto";
-  textarea.style.height = Math.min(textarea.scrollHeight, 120) + "px";
-});
 // Initial load
 syncPolls();
 syncToFChat();
