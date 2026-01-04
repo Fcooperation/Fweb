@@ -13,8 +13,6 @@ body {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  overflow-x: hidden;
-  max-width: 100%;
 }
 
 #chat-header {
@@ -76,7 +74,6 @@ body {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  overflow-x: hidden;
 }
 
 .message {
@@ -98,8 +95,8 @@ body {
   background: #eee;
   color: black;
 }
-.message.sent::before,
-.poll-wrapper.sent::before {
+.message::before,
+.poll-wrapper::before {
   content: "";
   display: block;
   min-height: 17px;
@@ -325,9 +322,9 @@ body {
   border-radius: 6px;
   resize: none;
   overflow-y: auto;
+  overflow-x:hidden;
   line-height: 1.4;
   max-height: 120px;
-  overflow-x: hidden;
 }
 .read-toggle {
   color: #2196f3;
@@ -371,40 +368,23 @@ body {
   margin-left: auto;
 }
 
-/* status container */
-.message.sent .message-meta {
-  font-size: 12px;
-  margin-top: 4px;
-  text-align: right;
-}
-
-/* pending */
-.message.sent.pending .message-meta {
+/* Status text ONLY */
+.message.pending .message-meta {
   color: orange;
-}
-
-/* sending */
-.message.sent.sending .message-meta {
-  color: grey;
-}
-
-/* sent */
-.message.sent.sent .message-meta {
-  color: #2196f3;
-}
-
-/* seen */
-.message.sent.seen .message-meta {
-  color: #2196f3;
   font-weight: bold;
 }
-.message.received {
-  background: #f1f1f1;
-  color: #000;
-  margin-right: auto;
+
+.message.sending .message-meta {
+  color: #888;
 }
-.status-text {
-  margin-left: 4px;
+
+.message.sent .message-meta {
+  color: #2196f3;
+}
+
+.message.seen .message-meta {
+  color: #2196f3;
+  font-weight: bold;
 }
 </style>
 </head>
@@ -548,7 +528,7 @@ function addMessage(msgObj) {
   ${replyHTML}
 <div class="message-text"></div>
   <div class="message-meta">
-    ${time}${isSent ? ` • <span class="status-text">${msgObj.status || "sent"}</span>` : ""}
+    ${time} ${isSent ? "• " + (msgObj.status || "sent") : ""}
   </div>
 `;
 const textBox = msg.querySelector(".message-text");
