@@ -346,6 +346,18 @@ body {
   }
   100% { box-shadow: none; }
 }
+/* ===== MULTI SELECT ===== */
+
+.message.selected,
+.poll-wrapper.selected {
+  opacity: 0.55; /* faint like WhatsApp */
+}
+
+/* reuse your glow */
+.message.selected.highlight-message,
+.poll-wrapper.selected.highlight-message {
+  animation: megaGlow 2s ease-out 1;
+}
 </style>
 </head>
 
@@ -386,6 +398,9 @@ if (!chatWith || !chatWith.id) {
 
 const STORAGE_KEY = `chat_${account.email}_${chatWith.id}`;
 let messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+let selectionMode = false;
+const selectedMessages = new Set();
+let longPressTimer = null;
 
 const FCHAT_STORAGE_KEY = `fchat_messages_${account.email}`;
 let fchatMessages = JSON.parse(localStorage.getItem(FCHAT_STORAGE_KEY)) || [];
@@ -426,6 +441,23 @@ function formatDateLabel(dateStr) {
     month: "short",
     day: "numeric"
   });
+}
+// Toggle Selection Mode
+function toggleSelectMessage(el, msgObj) {
+  const id = msgObj.id;
+
+  if (selectedMessages.has(id)) {
+    selectedMessages.delete(id);
+    el.classList.remove("selected", "highlight-message");
+  } else {
+    selectedMessages.add(id);
+    el.classList.add("selected", "highlight-message");
+  }
+
+  // exit selection mode if nothing selected
+  if (selectedMessages.size === 0) {
+    selectionMode = false;
+  }
 }
 // Add message function
 function addMessage(msgObj) {
@@ -550,6 +582,31 @@ if (msgObj.linked) {
 }
 }
   chatBody.appendChild(msg);
+  // ===== LONG PRESS MULTI SELECT =====
+msg.addEventListener("touchstart", e => {
+  if (e.target.closest(".reply-bubble")) return; // don't hijack reply clicks
+
+  longPressTimer = setTimeout(() => {
+    selectionMode = true;
+    toggleSelectMessage(msg, msgObj);
+  }, 400);
+});
+
+msg.addEventListener("touchend", () => {
+  clearTimeout(longPressTimer);
+});
+
+msg.addEventListener("touchmove", () => {
+  clearTimeout(longPressTimer);
+});
+
+// Tap behavior when selection mode is active
+msg.addEventListener("click", e => {
+  if (!selectionMode) return;
+
+  e.stopPropagation();
+  toggleSelectMessage(msg, msgObj);
+});
   chatBody.scrollTop = chatBody.scrollHeight;
 }
 // Update timeline
