@@ -358,27 +358,31 @@ body {
 .poll-wrapper.selected.highlight-message {
   animation: megaGlow 2s ease-out 1;
 }
-/* ===== SELECTION MODE TOOLBAR ===== */
-#selection-toolbar {
-  position: absolute; /* cover chat completely */
+#selection-board {
+  position: sticky; /* sticks to top */
   top: 0;
   left: 0;
   right: 0;
-  height: 100%; /* full height to cover dashboard */
-  background: rgba(255, 255, 255, 0.95); /* white overlay, slightly transparent if you like */
-  z-index: 50; /* above everything else */
+  height: 60px;
+  background: white; /* board background */
+  border-bottom: 1px solid #ddd;
   display: flex;
-  align-items: flex-start;
-  padding: 14px;
-  box-sizing: border-box;
-  transition: opacity 0.25s ease;
+  align-items: center;
+  padding: 0 16px;
+  gap: 12px;
+  z-index: 20; /* above chat header */
+  font-family: Arial, sans-serif;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-#selection-back-btn {
+#board-back-btn {
   font-size: 22px;
   cursor: pointer;
   user-select: none;
-  color: black;
+}
+
+#board-title {
+  font-size: 16px;
   font-weight: bold;
 }
 </style>
@@ -396,16 +400,17 @@ body {
     <div id="chat-id">ID</div>
   </div>
 </div>
+<!-- SELECTION MODE BOARD -->
+<div id="selection-board" style="display:none;">
+  <div id="board-back-btn">←</div>
+  <div id="board-title">Selection Mode</div>
+</div>
 
 <div id="chat-body"></div>
 <!-- MESSAGE PREVIEW -->
 <div id="reply-preview" style="display:none;">
   <div id="reply-text"></div>
   <span id="close-reply">✕</span>
-</div>
-<!-- SELECTION MODE TOOLBAR -->
-<div id="selection-toolbar" style="display:none;">
-  <div id="selection-back-btn">← Back</div>
 </div>
 
 <div id="chat-input">
@@ -469,7 +474,7 @@ function formatDateLabel(dateStr) {
     day: "numeric"
   });
 }
-// ===== TOGGLE SELECTION MODE =====
+// Toggle Selection Mode
 function toggleSelectMessage(el, msgObj) {
   const id = msgObj.id;
 
@@ -481,42 +486,11 @@ function toggleSelectMessage(el, msgObj) {
     el.classList.add("selected", "highlight-message");
   }
 
-  // Show toolbar if any selected, hide if none
-  if (selectedMessages.size > 0) {
-    selectionMode = true;
-    selectionToolbar.style.display = "flex";
-  } else {
+  // exit selection mode if nothing selected
+  if (selectedMessages.size === 0) {
     selectionMode = false;
-    selectionToolbar.style.display = "none";
   }
 }
-
-// ===== SELECTION TOOLBAR =====
-const selectionToolbar = document.getElementById("selection-toolbar");
-const selectionBackBtn = document.getElementById("selection-back-btn");
-
-// We don’t need count or username anymore
-function updateSelectionToolbar() {
-  // Simply show/hide the toolbar
-  if (selectedMessages.size > 0) {
-    selectionToolbar.style.display = "flex";
-  } else {
-    selectionToolbar.style.display = "none";
-  }
-}
-
-// ===== BACK BUTTON LOGIC =====
-selectionBackBtn.onclick = () => {
-  // Unselect all messages
-  selectedMessages.forEach(id => {
-    const msgEl = chatBody.querySelector(`[data-id='${id}']`);
-    if (msgEl) msgEl.classList.remove("selected", "highlight-message");
-  });
-
-  selectedMessages.clear();
-  selectionMode = false;
-  selectionToolbar.style.display = "none"; // hide overlay
-};
 // Add message function
 function addMessage(msgObj) {
   const msg = document.createElement("div");
