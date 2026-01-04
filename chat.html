@@ -371,23 +371,37 @@ body {
   margin-left: auto;
 }
 
-/* Status text ONLY */
-.message.pending .message-meta {
-  color: orange;
-  font-weight: bold;
-}
-
-.message.sending .message-meta {
-  color: #888;
-}
-
+/* status container */
 .message.sent .message-meta {
+  font-size: 12px;
+  margin-top: 4px;
+  text-align: right;
+}
+
+/* pending */
+.message.sent.pending .message-meta {
+  color: orange;
+}
+
+/* sending */
+.message.sent.sending .message-meta {
+  color: grey;
+}
+
+/* sent */
+.message.sent.sent .message-meta {
   color: #2196f3;
 }
 
-.message.seen .message-meta {
+/* seen */
+.message.sent.seen .message-meta {
   color: #2196f3;
   font-weight: bold;
+}
+.message.received {
+  background: #f1f1f1;
+  color: #000;
+  margin-right: auto;
 }
 </style>
 </head>
