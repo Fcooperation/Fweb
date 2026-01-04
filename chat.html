@@ -501,8 +501,9 @@ const boardBackBtn = document.getElementById("board-back-btn");
 function updateSelectionBoard() {
   if (selectionMode) {
     selectionBoard.style.display = "flex";
+    // optionally, you can update board title with count
     const boardTitle = document.getElementById("board-title");
-    boardTitle.textContent = "Selection Mode"; // static, no count
+    boardTitle.textContent = `${selectedMessages.size} selected`;
   } else {
     selectionBoard.style.display = "none";
   }
@@ -600,6 +601,7 @@ if (msgObj.linked) {
   e.stopPropagation();
   // smooth scroll to linked message
 });
+
 
     const linkedMsgId = msgObj.linked_message_id;
     const originalMsg = chatBody.querySelector(
