@@ -502,7 +502,7 @@ function updateSelectionBoard() {
   if (selectionMode) {
     selectionBoard.style.display = "flex";
     const boardTitle = document.getElementById("board-title");
-    boardTitle.textContent = "Selection Mode"; // static, no count
+    boardTitle.textContent = ""; // static, no count
   } else {
     selectionBoard.style.display = "none";
   }
