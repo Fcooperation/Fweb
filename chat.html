@@ -595,7 +595,8 @@ if (msgObj.linked) {
   replyBubble.style.cursor = "pointer";
 
   replyBubble.addEventListener("click", (e) => {
-    e.stopPropagation(); // ⛔ clicking bubble won't trigger message click
+    e.stopPropagation();
+    if (selectionMode) return;
 
     const linkedMsgId = msgObj.linked_message_id;
     const originalMsg = chatBody.querySelector(
