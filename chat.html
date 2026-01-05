@@ -547,7 +547,7 @@ if (!chatWith || !chatWith.id) {
   alert("No chat selected");
   window.location.href = "fchat.html";
 }
-
+// Message Storage
 const STORAGE_KEY = `chat_${account.email}_${chatWith.id}`;
 let messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
 let selectionMode = false;
@@ -623,26 +623,30 @@ const deleteForEveryoneBtn = document.querySelector(".delete-everyone");
 deleteForMeBtn.addEventListener("click", () => {
   if (selectedMessages.size === 0) return;
 
-  // 1. Remove from fchatMessages
+  // 1️⃣ Delete from chat-specific messages (UI source)
+  messages = messages.filter(
+    msg => !selectedMessages.has(msg.id)
+  );
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+
+  // 2️⃣ Delete from global fchat messages
   fchatMessages = fchatMessages.filter(
     msg => !selectedMessages.has(msg.id)
   );
-
-  // 2. Persist change
   localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
 
-  // 3. Remove from DOM
+  // 3️⃣ Remove from DOM
   selectedMessages.forEach(id => {
     const msgEl = chatBody.querySelector(`[data-id='${id}']`);
     if (msgEl) msgEl.remove();
   });
 
-  // 4. Cleanup
+  // 4️⃣ Cleanup
   selectedMessages.clear();
   selectionMode = false;
   updateSelectionBoard();
 
-  // 5. Close modal
+  // 5️⃣ Close modal
   deleteModal.style.display = "none";
 });
 
