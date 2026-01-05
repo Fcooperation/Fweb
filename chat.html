@@ -616,6 +616,35 @@ function toggleSelectMessage(el, msgObj) {
 // Selection board elements
 const selectionBoard = document.getElementById("selection-board");
 const boardBackBtn = document.getElementById("board-back-btn");
+const deleteForMeBtn = document.querySelector(".delete-me");
+const deleteForEveryoneBtn = document.querySelector(".delete-everyone");
+
+// ===== DELETE FOR ME =====
+deleteForMeBtn.addEventListener("click", () => {
+  if (selectedMessages.size === 0) return;
+
+  // 1. Remove from fchatMessages
+  fchatMessages = fchatMessages.filter(
+    msg => !selectedMessages.has(msg.id)
+  );
+
+  // 2. Persist change
+  localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
+
+  // 3. Remove from DOM
+  selectedMessages.forEach(id => {
+    const msgEl = chatBody.querySelector(`[data-id='${id}']`);
+    if (msgEl) msgEl.remove();
+  });
+
+  // 4. Cleanup
+  selectedMessages.clear();
+  selectionMode = false;
+  updateSelectionBoard();
+
+  // 5. Close modal
+  deleteModal.style.display = "none";
+});
 
 // Show/hide the selection board based on selection
 function updateSelectionBoard() {
