@@ -414,6 +414,72 @@ body {
 #board-delete-btn:active {
   transform: scale(0.96);
 }
+/* ===== DELETE MODAL ===== */
+#delete-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+/* Modal box */
+.delete-box {
+  width: 90%;
+  max-width: 320px;
+  background: white;
+  border-radius: 14px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: popIn 0.15s ease;
+}
+
+/* shared button style */
+.delete-option,
+.delete-cancel {
+  padding: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+}
+
+/* Option 1 */
+.delete-me {
+  background: white;
+  color: black;
+  border: 1px solid #ddd;
+}
+
+/* Option 2 */
+.delete-everyone {
+  background: white;
+  color: #e53935;
+  border: 1px solid #e53935;
+}
+
+/* Cancel */
+.delete-cancel {
+  background: #e53935;
+  color: black;
+}
+
+/* subtle animation */
+@keyframes popIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
 </style>
 </head>
 
@@ -438,6 +504,25 @@ body {
   <!-- ADD THIS -->
   <div id="board-delete-btn">
     Delete
+  </div>
+</div>
+
+<!-- DELETE OPTIONS MODAL -->
+<div id="delete-modal" style="display:none;">
+  <div class="delete-box">
+
+    <button class="delete-option delete-me">
+      Delete for me
+    </button>
+
+    <button class="delete-option delete-everyone">
+      Delete for everyone
+    </button>
+
+    <button class="delete-cancel">
+      Cancel
+    </button>
+
   </div>
 </div>
 
@@ -547,6 +632,29 @@ function updateSelectionBoard() {
 boardBackBtn.onclick = () => {
   clearSelection();
 };
+
+// ===== DELETE MODAL LOGIC =====
+const deleteModal = document.getElementById("delete-modal");
+const deleteBtn = document.getElementById("board-delete-btn");
+const cancelDeleteBtn = document.querySelector(".delete-cancel");
+
+// Open delete form
+deleteBtn.addEventListener("click", (e) => {
+  e.stopPropagation(); // prevent selection clear
+  deleteModal.style.display = "flex";
+});
+
+// Cancel closes modal
+cancelDeleteBtn.addEventListener("click", () => {
+  deleteModal.style.display = "none";
+});
+
+// Clicking outside the box closes modal
+deleteModal.addEventListener("click", (e) => {
+  if (e.target === deleteModal) {
+    deleteModal.style.display = "none";
+  }
+});
 
 // Tapping anywhere on chat background also cancels selection mode
 chatBody.addEventListener("click", () => {
