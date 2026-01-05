@@ -385,6 +385,35 @@ body {
   font-size: 16px;
   font-weight: bold;
 }
+/* ===== SELECTION BOARD DELETE BUTTON ===== */
+#board-delete-btn {
+  margin-left: auto;           /* pushes it to the far right */
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+
+  border-radius: 20px;
+  border: 1px solid #e53935;
+
+  color: #e53935;
+  background: rgba(229, 57, 53, 0.08);
+
+  cursor: pointer;
+  user-select: none;
+
+  transition: all 0.2s ease;
+}
+
+/* hover / active feedback */
+#board-delete-btn:hover {
+  background: #e53935;
+  color: white;
+}
+
+#board-delete-btn:active {
+  transform: scale(0.96);
+}
 </style>
 </head>
 
@@ -403,7 +432,13 @@ body {
 <!-- SELECTION MODE BOARD -->
 <div id="selection-board" style="display:none;">
   <div id="board-back-btn">←</div>
+
   <div id="board-title">Selection Mode</div>
+
+  <!-- ADD THIS -->
+  <div id="board-delete-btn">
+    Delete
+  </div>
 </div>
 
 <div id="chat-body"></div>
