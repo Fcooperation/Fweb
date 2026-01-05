@@ -501,9 +501,8 @@ const boardBackBtn = document.getElementById("board-back-btn");
 function updateSelectionBoard() {
   if (selectionMode) {
     selectionBoard.style.display = "flex";
-    // optionally, you can update board title with count
     const boardTitle = document.getElementById("board-title");
-    boardTitle.textContent = `${selectedMessages.size} selected`;
+    boardTitle.textContent = ""; // static, no count
   } else {
     selectionBoard.style.display = "none";
   }
@@ -596,12 +595,7 @@ if (msgObj.linked) {
   replyBubble.style.cursor = "pointer";
 
   replyBubble.addEventListener("click", (e) => {
-  if (selectionMode) return; // ❌ ignore taps in selection mode
-
-  e.stopPropagation();
-  // smooth scroll to linked message
-});
-
+    e.stopPropagation(); // ⛔ clicking bubble won't trigger message click
 
     const linkedMsgId = msgObj.linked_message_id;
     const originalMsg = chatBody.querySelector(
