@@ -505,3 +505,10 @@ body {
   border-radius: 5px;
   padding: 2px 5px;
 }
+.poll-instruction {
+  font-size: 12px;
+  color: #666;
+  opacity: 0.7;
+  margin-top: 4px;
+  margin-bottom: 8px; /* space before options */
+}

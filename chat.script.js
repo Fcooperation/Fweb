@@ -309,28 +309,35 @@ function addMessage(msgObj) {
   });
 
   if (msgObj.isPoll && msgObj.pollData) {
-    msg.className = `poll-wrapper ${alignmentClass}`;
-msg.pollData = msgObj.pollData; // <- attach here
-    msg.innerHTML = `
-      <div class="poll-question">${msgObj.pollData.question}</div>
+  msg.className = `poll-wrapper ${alignmentClass}`;
+  msg.pollData = msgObj.pollData; // attach poll JSON
 
-      ${msgObj.pollData.options.map((opt, i) => `
-        <div class="poll-option" data-index="${i}">
-          <div class="poll-row">
-            <div class="poll-circle"></div>
-            <div class="poll-text">${opt}</div>
-          </div>
-          <div class="poll-bar-container">
-            <div class="poll-bar"></div>
-          </div>
+  // Decide instruction text
+  const instructionText = msgObj.pollData.allowMultiple
+    ? "Select one or more"
+    : "Select one";
+
+  msg.innerHTML = `
+    <div class="poll-question">${msgObj.pollData.question}</div>
+    <div class="poll-instruction">${instructionText}</div>
+
+    ${msgObj.pollData.options.map((opt, i) => `
+      <div class="poll-option" data-index="${i}">
+        <div class="poll-row">
+          <div class="poll-circle"></div>
+          <div class="poll-text">${opt}</div>
         </div>
-      `).join("")}
-
-      <div class="message-meta">
-        ${time} ${isSent ? "• " + (msgObj.status || "sent") : ""}
+        <div class="poll-bar-container">
+          <div class="poll-bar"></div>
+        </div>
       </div>
-    `;
-  } else {
+    `).join("")}
+
+    <div class="message-meta">
+      ${time} ${isSent ? "• " + (msgObj.status || "sent") : ""}
+    </div>
+  `;
+} else {
   msg.className = `message ${alignmentClass}`;
 
 let replyHTML = "";
