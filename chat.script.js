@@ -337,6 +337,27 @@ function addMessage(msgObj) {
       ${time} ${isSent ? "• " + (msgObj.status || "sent") : ""}
     </div>
   `;
+  // ==== LOAD PREVIOUS VOTES ====
+const VOTE_STORAGE_KEY = `poll_votes_${account.email}_${chatWith.id}`;
+const votes = JSON.parse(localStorage.getItem(VOTE_STORAGE_KEY)) || [];
+
+// Find vote for this poll
+const savedVote = votes.find(v => v.action === "vote_polls" && v.poll_id === pollObj.pollData.id || v.poll_id === pollId);
+
+// If found, mark the selected options
+if (savedVote && savedVote.option_voted) {
+  const votedOptions = savedVote.option_voted.split(",").map(v => Number(v) - 1); // convert back to 0-indexed
+
+  votedOptions.forEach(idx => {
+    const optEl = msg.querySelector(`.poll-option[data-index='${idx}']`);
+    if (optEl) {
+      const circle = optEl.querySelector(".poll-circle");
+      const bar = optEl.querySelector(".poll-bar");
+      circle.classList.add("selected");
+      bar.style.width = "100%";
+    }
+  });
+}
 } else {
   msg.className = `message ${alignmentClass}`;
 
