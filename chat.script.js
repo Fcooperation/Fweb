@@ -708,6 +708,26 @@ textarea.addEventListener("input", () => {
   textarea.style.height = "auto";
   textarea.style.height = Math.min(textarea.scrollHeight, 120) + "px";
 });
+// ===== SIMPLE POLL CLICK HIGHLIGHT =====
+chatBody.addEventListener("click", (e) => {
+  const optionEl = e.target.closest(".poll-option");
+  if (!optionEl) return;
+
+  const pollWrapper = optionEl.closest(".poll-wrapper");
+  if (!pollWrapper) return;
+
+  // Deselect all options first
+  pollWrapper.querySelectorAll(".poll-option .poll-circle").forEach(circle => {
+    circle.classList.remove("selected");
+  });
+  pollWrapper.querySelectorAll(".poll-bar").forEach(bar => {
+    bar.style.width = "0%";
+  });
+
+  // Select clicked option
+  optionEl.querySelector(".poll-circle").classList.add("selected");
+  optionEl.querySelector(".poll-bar").style.width = "100%";
+});
 // Initial load
 syncPolls();
 syncToFChat();
