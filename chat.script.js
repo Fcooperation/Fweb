@@ -716,7 +716,7 @@ textarea.addEventListener("input", () => {
   textarea.style.height = "auto";
   textarea.style.height = Math.min(textarea.scrollHeight, 120) + "px";
 });
-// ===== POLL CLICK WITH MULTI-SELECT SUPPORT =====
+// ===== POLL CLICK WITH MULTI-SELECT SUPPORT (CONFIRMED SAVE) =====
 chatBody.addEventListener("click", (e) => {
   const optionEl = e.target.closest(".poll-option");
   if (!optionEl) return;
@@ -724,87 +724,87 @@ chatBody.addEventListener("click", (e) => {
   const pollWrapper = optionEl.closest(".poll-wrapper");
   if (!pollWrapper) return;
 
-  const pollId = Number(pollWrapper.querySelector(".poll-question")?.dataset.pollId);
-  if (pollId === undefined) return;
+  const pollId = Number(
+    pollWrapper.querySelector(".poll-question")?.dataset.pollId
+  );
+  if (Number.isNaN(pollId)) return;
 
-  const pollData = pollWrapper.pollData; // attached in addMessage()
+  const pollData = pollWrapper.pollData;
   if (!pollData) return;
 
-  const optionIndex = Number(optionEl.dataset.index);
-
-  // Prepare localStorage key for votes
+  // ---------- STORAGE ----------
   const VOTE_STORAGE_KEY = `poll_votes_${account.email}_${chatWith.id}`;
   let votes = JSON.parse(localStorage.getItem(VOTE_STORAGE_KEY)) || [];
 
-  if (pollData.allowMultiple) {
-    const circle = optionEl.querySelector(".poll-circle");
-    const bar = optionEl.querySelector(".poll-bar");
-    const isSelected = circle.classList.contains("selected");
+  // ---------- CALCULATE NEW SELECTION (NO UI CHANGE YET) ----------
+  let selectedIndexes = [];
 
-    if (isSelected) {
-      circle.classList.remove("selected");
-      bar.style.width = "0%";
+  pollWrapper.querySelectorAll(".poll-option").forEach((opt, idx) => {
+    const circle = opt.querySelector(".poll-circle");
+
+    if (pollData.allowMultiple) {
+      if (opt === optionEl) {
+        // toggle only clicked option
+        const willSelect = !circle.classList.contains("selected");
+        if (willSelect) selectedIndexes.push(idx);
+      } else if (circle.classList.contains("selected")) {
+        selectedIndexes.push(idx);
+      }
     } else {
-      circle.classList.add("selected");
-      bar.style.width = "100%";
+      // single select
+      if (opt === optionEl) selectedIndexes = [idx];
     }
-  } else {
-    // Single selection mode: deselect all others
-    pollWrapper.querySelectorAll(".poll-option").forEach(opt => {
-      const c = opt.querySelector(".poll-circle");
-      const b = opt.querySelector(".poll-bar");
-      c.classList.remove("selected");
-      b.style.width = "0%";
-    });
+  });
 
-    // Select the clicked option
-    optionEl.querySelector(".poll-circle").classList.add("selected");
-    optionEl.querySelector(".poll-bar").style.width = "100%";
-  }
-
-  // ==== UPDATE LOCAL STORAGE WITH VOTE ====
-  const selectedOptions = Array.from(pollWrapper.querySelectorAll(".poll-option"))
-    .map((opt, idx) => {
-      const c = opt.querySelector(".poll-circle");
-      return c.classList.contains("selected") ? idx + 1 : null; // option number
-    })
-    .filter(v => v !== null);
-
+  // ---------- BUILD VOTE JSON ----------
   const voteJson = {
     action: "vote_polls",
     poll_id: pollId,
     sender_id: account.id,
     receiver_id: chatWith.id,
-    option_voted: selectedOptions.join(",") // multiple allowed
+    option_voted: selectedIndexes.map(i => i + 1).join(",")
   };
-  
-  // ==== SEND VOTE TO BACKEND FIRST ====
-fetch("/api/chat", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify(voteJson)
-})
-.then(res => res.json())
-.then(data => {
-  if (!data.success) {
-    console.error("Vote not saved on backend");
-  }
-})
-.catch(err => {
-  console.error("Vote send failed:", err);
-});
 
-  // Check if vote for this poll already exists
-  const existingIndex = votes.findIndex(v => v.action === "vote_polls" && v.poll_id === pollId);
-  if (existingIndex !== -1) {
-    votes[existingIndex] = voteJson; // replace
-  } else {
-    votes.push(voteJson); // add new
-  }
+  // ---------- SEND TO BACKEND ----------
+  fetch("/api/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(voteJson)
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (!data?.success) throw new Error("Backend rejected vote");
 
-  localStorage.setItem(VOTE_STORAGE_KEY, JSON.stringify(votes));
+      // ✅ BACKEND CONFIRMED — APPLY UI CHANGES
+      pollWrapper.querySelectorAll(".poll-option").forEach((opt, idx) => {
+        const circle = opt.querySelector(".poll-circle");
+        const bar = opt.querySelector(".poll-bar");
+
+        if (selectedIndexes.includes(idx)) {
+          circle.classList.add("selected");
+          bar.style.width = "100%";
+        } else {
+          circle.classList.remove("selected");
+          bar.style.width = "0%";
+        }
+      });
+
+      // ---------- SAVE TO LOCAL STORAGE ----------
+      const existingIndex = votes.findIndex(
+        v => v.action === "vote_polls" && v.poll_id === pollId
+      );
+
+      if (existingIndex !== -1) {
+        votes[existingIndex] = voteJson;
+      } else {
+        votes.push(voteJson);
+      }
+
+      localStorage.setItem(VOTE_STORAGE_KEY, JSON.stringify(votes));
+    })
+    .catch(err => {
+      console.error("Vote failed, UI not updated:", err);
+    });
 });
 // Initial load
 syncPolls();
