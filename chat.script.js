@@ -374,13 +374,14 @@ if (msgObj.linked) {
   replyBubble.style.cursor = "pointer";
 
   replyBubble.addEventListener("click", (e) => {
-    e.stopPropagation(); // ⛔ clicking bubble won't trigger message click
+  if (selectionMode) return; // 🚫 ignore reply click when selecting
+  e.stopPropagation();
 
-    const linkedMsgId = msgObj.linked_message_id;
-    const originalMsg = chatBody.querySelector(
-      `[data-id='${linkedMsgId}']`
-    );
-    if (!originalMsg) return;
+  const linkedMsgId = msgObj.linked_message_id;
+  const originalMsg = chatBody.querySelector(
+    `[data-id='${linkedMsgId}']`
+  );
+  if (!originalMsg) return;
 
     let cancelScroll = false;
 
@@ -663,19 +664,28 @@ function goBack(){ window.location.href="fchat.html"; }
 
 let startX = 0;
 let currentMessage = null;
-
 function enableSwipe(messageEl, msgObj) {
-  messageEl.addEventListener("touchstart", e => { startX = e.touches[0].clientX; });
+  let startX = 0;
+
+  messageEl.addEventListener("touchstart", e => {
+    if (selectionMode) return; // 🚫 ignore swipe if selecting
+    startX = e.touches[0].clientX;
+  });
+
   messageEl.addEventListener("touchmove", e => {
+    if (selectionMode) return; // 🚫 ignore swipe
     const diff = e.touches[0].clientX - startX;
     if (diff > 40) messageEl.style.transform = "translateX(25px)";
   });
+
   messageEl.addEventListener("touchend", e => {
+    if (selectionMode) return; // 🚫 ignore swipe
     const diff = e.changedTouches[0].clientX - startX;
     if (diff > 60) showReplyPreview(msgObj); // pass full object
     messageEl.style.transform = "translateX(0)";
   });
 }
+
 
 function showReplyPreview(msgObj) {
   const preview = document.getElementById("reply-preview");
