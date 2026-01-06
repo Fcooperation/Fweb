@@ -358,7 +358,8 @@ if (savedVote && savedVote.option_voted) {
       bar.style.width = "100%";
     }
   });
-} else {
+}
+}else {
   msg.className = `message ${alignmentClass}`;
 
 let replyHTML = "";
