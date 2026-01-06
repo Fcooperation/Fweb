@@ -777,6 +777,24 @@ chatBody.addEventListener("click", (e) => {
     receiver_id: chatWith.id,
     option_voted: selectedOptions.join(",") // multiple allowed
   };
+  
+  // ==== SEND VOTE TO BACKEND FIRST ====
+fetch("/api/chat", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify(voteJson)
+})
+.then(res => res.json())
+.then(data => {
+  if (!data.success) {
+    console.error("Vote not saved on backend");
+  }
+})
+.catch(err => {
+  console.error("Vote send failed:", err);
+});
 
   // Check if vote for this poll already exists
   const existingIndex = votes.findIndex(v => v.action === "vote_polls" && v.poll_id === pollId);
