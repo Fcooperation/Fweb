@@ -802,6 +802,34 @@ deleteBtn.addEventListener("click", (e) => {
 cancelDeleteBtn.addEventListener("click", () => {
   deleteModal.style.display = "none";
 });
+// Delete For Everyone Limit
+function updateDeleteModalButtons() {
+  // Convert Set to array of selected message objects
+  const selectedMsgObjs = Array.from(selectedMessages).map(id =>
+    messages.find(m => m.id === id)
+  );
+
+  // Check if all selected messages are eligible for "delete for everyone"
+  const allCanDeleteForEveryone = selectedMsgObjs.length > 0 && selectedMsgObjs.every(m =>
+    m.sender_id === account.id && m.status === "sent"
+  );
+
+  if (allCanDeleteForEveryone) {
+    deleteForEveryoneBtn.style.display = "inline-block";
+  } else {
+    deleteForEveryoneBtn.style.display = "none";
+  }
+
+  // "Delete for me" is always visible
+  deleteForMeBtn.style.display = "inline-block";
+}
+
+// When opening the delete modal
+deleteBtn.addEventListener("click", (e) => {
+  e.stopPropagation(); // prevent selection clear
+  updateDeleteModalButtons(); // ✅ check which buttons should show
+  deleteModal.style.display = "flex";
+});
 
 // Clicking outside the box closes modal
 deleteModal.addEventListener("click", (e) => {
