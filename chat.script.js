@@ -310,6 +310,7 @@ function addMessage(msgObj) {
 
   if (msgObj.isPoll && msgObj.pollData) {
     msg.className = `poll-wrapper ${alignmentClass}`;
+msg.pollData = msgObj.pollData; // <- attach here
     msg.innerHTML = `
       <div class="poll-question">${msgObj.pollData.question}</div>
 
