@@ -766,7 +766,7 @@ chatBody.addEventListener("click", (e) => {
   };
 
   // ---------- SEND TO BACKEND ----------
-  fetch("/api/chat", {
+  fetch(API_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(voteJson)
