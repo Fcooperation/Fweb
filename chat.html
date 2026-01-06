@@ -717,21 +717,28 @@ deleteForEveryoneBtn.addEventListener("click", () => {
 
   const jsonToSend = {
     action: "delete_for_everyone",
-    chat_id: CURRENT_CHAT_ID, // make sure you have this variable
+    chat_id: chatWith.id,
     message_ids: Array.from(selectedMessages),
-    requested_by: CURRENT_USER_ID, // make sure you have this variable
+    requested_by: account.id,
     timestamp: Date.now()
   };
 
-  // Send to backend (replace sendToBackend with your actual function)
-  sendToBackend(jsonToSend);
+  // Send to backend
+  fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(jsonToSend)
+  })
+  .then(res => res.json())
+  .then(res => console.log("Delete for everyone response:", res))
+  .catch(err => console.error(err));
 
   // Update frontend immediately
   selectedMessages.forEach(id => {
     const msgEl = chatBody.querySelector(`[data-id='${id}']`);
     if (msgEl) {
       msgEl.classList.add("deleted-for-everyone");
-      msgEl.innerHTML = `<i class="deleted-text">This message was deleted by ${jsonToSend.requested_by === CURRENT_USER_ID ? "you" : "someone"}</i>`;
+      msgEl.innerHTML = `<i class="deleted-text">This message was deleted by you</i>`;
     }
   });
 
