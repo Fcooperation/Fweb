@@ -504,18 +504,16 @@ body {
 .menu-item:hover {
   background: #f1f1f1;
 }
-.deleted-for-everyone {
+.deleted-text {
+  color: red;
   font-style: italic;
-  color: #999;
-  text-align: center;
-  pointer-events: none; /* prevents menu on deleted messages */
+}
+.deleted-for-everyone {
+  background-color: #fdd; /* optional light red background */
+  border-radius: 5px;
+  padding: 2px 5px;
 }
 
-.deleted-text {
-  font-style: italic;
-  color: #999;
-  font-size: 0.9em;
-}
 </style>
 </head>
 
@@ -733,9 +731,8 @@ deleteForEveryoneBtn.addEventListener("click", () => {
   .then(res => console.log("Delete for everyone response:", res))
   .catch(err => console.error(err));
 
-  // Update frontend AND localStorage arrays without deleting the objects
+  // Update frontend AND localStorage arrays
   selectedMessages.forEach(id => {
-    // Update messages[]
     messages = messages.map(msg => {
       if (msg.id === id) {
         return {
@@ -743,13 +740,13 @@ deleteForEveryoneBtn.addEventListener("click", () => {
           deleted: true,
           deleted_for: "everyone",
           requested_by: account.id,
+          status: "deleted", // ✅ mark status as deleted
           text: "" // optional, clear original text
         };
       }
       return msg;
     });
 
-    // Update fchatMessages[]
     fchatMessages = fchatMessages.map(msg => {
       if (msg.id === id) {
         return {
@@ -757,6 +754,7 @@ deleteForEveryoneBtn.addEventListener("click", () => {
           deleted: true,
           deleted_for: "everyone",
           requested_by: account.id,
+          status: "deleted",
           text: ""
         };
       }
@@ -771,7 +769,7 @@ deleteForEveryoneBtn.addEventListener("click", () => {
     }
   });
 
-  // Save updated arrays back to localStorage
+  // Save updated arrays
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
 
@@ -804,14 +802,14 @@ cancelDeleteBtn.addEventListener("click", () => {
 });
 // Delete For Everyone Limit
 function updateDeleteModalButtons() {
-  // Convert Set to array of selected message objects
   const selectedMsgObjs = Array.from(selectedMessages).map(id =>
     messages.find(m => m.id === id)
   );
 
-  // Check if all selected messages are eligible for "delete for everyone"
   const allCanDeleteForEveryone = selectedMsgObjs.length > 0 && selectedMsgObjs.every(m =>
-    m.sender_id === account.id && m.status === "sent"
+    m.sender_id === account.id &&
+    m.status === "sent" &&
+    !m.deleted // ✅ ignore already deleted messages
   );
 
   if (allCanDeleteForEveryone) {
@@ -820,7 +818,6 @@ function updateDeleteModalButtons() {
     deleteForEveryoneBtn.style.display = "none";
   }
 
-  // "Delete for me" is always visible
   deleteForMeBtn.style.display = "inline-block";
 }
 
