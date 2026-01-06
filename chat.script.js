@@ -318,35 +318,36 @@ function addMessage(msgObj) {
     : "Select one";
 
   msg.innerHTML = `
-    <div class="poll-question">${msgObj.pollData.question}</div>
-    <div class="poll-instruction">${instructionText}</div>
+  <div class="poll-question">${msgObj.pollData.question}</div>
+  <div class="poll-instruction">${instructionText}</div>
 
-    ${msgObj.pollData.options.map((opt, i) => `
-      <div class="poll-option" data-index="${i}">
-        <div class="poll-row">
-          <div class="poll-circle"></div>
-          <div class="poll-text">${opt}</div>
-        </div>
-        <div class="poll-bar-container">
-          <div class="poll-bar"></div>
-        </div>
+  ${msgObj.pollData.options.map((opt, i) => `
+    <div class="poll-option" data-index="${i}">
+      <div class="poll-row">
+        <div class="poll-circle"></div>
+        <div class="poll-text">${opt}</div>
       </div>
-    `).join("")}
-
-    <div class="message-meta">
-      ${time} ${isSent ? "• " + (msgObj.status || "sent") : ""}
+      <div class="poll-bar-container">
+        <div class="poll-bar"></div>
+      </div>
     </div>
-  `;
-  // ==== LOAD PREVIOUS VOTES ====
+  `).join("")}
+
+  <div class="message-meta">
+    ${time} ${isSent ? "• " + (msgObj.status || "sent") : ""}
+  </div>
+`;
+
+// ==== LOAD PREVIOUS VOTES ====
 const VOTE_STORAGE_KEY = `poll_votes_${account.email}_${chatWith.id}`;
 const votes = JSON.parse(localStorage.getItem(VOTE_STORAGE_KEY)) || [];
 
 // Find vote for this poll
-const savedVote = votes.find(v => v.action === "vote_polls" && v.poll_id === pollObj.pollData.id || v.poll_id === pollId);
+const savedVote = votes.find(v => v.action === "vote_polls" && v.poll_id === pollId);
 
 // If found, mark the selected options
 if (savedVote && savedVote.option_voted) {
-  const votedOptions = savedVote.option_voted.split(",").map(v => Number(v) - 1); // convert back to 0-indexed
+  const votedOptions = savedVote.option_voted.split(",").map(v => Number(v) - 1); // convert to 0-indexed
 
   votedOptions.forEach(idx => {
     const optEl = msg.querySelector(`.poll-option[data-index='${idx}']`);
@@ -357,7 +358,6 @@ if (savedVote && savedVote.option_voted) {
       bar.style.width = "100%";
     }
   });
-}
 } else {
   msg.className = `message ${alignmentClass}`;
 
