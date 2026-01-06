@@ -329,19 +329,6 @@ function addMessage(msgObj) {
         ${time} ${isSent ? "• " + (msgObj.status || "sent") : ""}
       </div>
     `;
-    if (msgObj.isPoll && msgObj.pollData?.votes) {
-  const votes = msgObj.pollData.votes;
-  const totalVotes = Object.values(votes).reduce((a,b) => a + b.length, 0);
-  pollWrapper.querySelectorAll(".poll-option").forEach(opt => {
-    const idx = Number(opt.dataset.index);
-    if (votes[idx]?.includes(account.email)) {
-      opt.querySelector(".poll-circle").classList.add("selected");
-    }
-    const count = votes[idx]?.length || 0;
-    const bar = opt.querySelector(".poll-bar");
-    bar.style.width = totalVotes === 0 ? "0%" : ((count / totalVotes) * 100) + "%";
-  });
-}
   } else {
   msg.className = `message ${alignmentClass}`;
 
@@ -720,73 +707,6 @@ const textarea = document.getElementById("messageInput");
 textarea.addEventListener("input", () => {
   textarea.style.height = "auto";
   textarea.style.height = Math.min(textarea.scrollHeight, 120) + "px";
-});
-
-// Poll option click handler
-chatBody.addEventListener("click", (e) => {
-  const optionEl = e.target.closest(".poll-option");
-  if (!optionEl) return;
-
-  const pollWrapper = optionEl.closest(".poll-wrapper");
-  if (!pollWrapper) return;
-
-  const pollId = Number(pollWrapper.dataset.id || pollWrapper.querySelector(".poll-question")?.dataset.pollId);
-  if (!pollId) return;
-
-  // Get poll from localStorage
-  const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
-  const polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
-  const pollObj = polls.find(p => p.id === pollId);
-  if (!pollObj) return;
-
-  const optionIndex = Number(optionEl.dataset.index);
-  const user = account.email;
-
-  if (!pollObj.pollData.votes) pollObj.pollData.votes = {};
-  const votes = pollObj.pollData.votes;
-
-  // Initialize votes array for option
-  if (!votes[optionIndex]) votes[optionIndex] = [];
-
-  if (pollObj.pollData.allowMultiple) {
-    // Toggle vote for this option
-    if (votes[optionIndex].includes(user)) {
-      votes[optionIndex] = votes[optionIndex].filter(u => u !== user);
-      optionEl.querySelector(".poll-circle").classList.remove("selected");
-    } else {
-      votes[optionIndex].push(user);
-      optionEl.querySelector(".poll-circle").classList.add("selected");
-    }
-  } else {
-    // Single selection
-    Object.keys(votes).forEach(idx => {
-      votes[idx] = votes[idx].filter(u => u !== user);
-      const circle = pollWrapper.querySelector(`.poll-option[data-index='${idx}'] .poll-circle`);
-      if (circle) circle.classList.remove("selected");
-    });
-    votes[optionIndex].push(user);
-    optionEl.querySelector(".poll-circle").classList.add("selected");
-  }
-
-  // Update bar width (proportional to votes)
-  const totalVotes = Object.values(votes).reduce((a,b) => a + b.length, 0);
-  pollWrapper.querySelectorAll(".poll-option").forEach(opt => {
-    const idx = Number(opt.dataset.index);
-    const count = votes[idx]?.length || 0;
-    const bar = opt.querySelector(".poll-bar");
-    if (totalVotes === 0) bar.style.width = "0%";
-    else bar.style.width = ((count / totalVotes) * 100) + "%";
-  });
-
-  // Save back to localStorage
-  localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
-
-  // Optional: update fchatMessages too
-  const fIndex = fchatMessages.findIndex(fm => fm.id === pollId);
-  if (fIndex !== -1) {
-    fchatMessages[fIndex].pollData.votes = votes;
-    localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
-  }
 });
 // Initial load
 syncPolls();
