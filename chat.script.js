@@ -708,7 +708,7 @@ textarea.addEventListener("input", () => {
   textarea.style.height = "auto";
   textarea.style.height = Math.min(textarea.scrollHeight, 120) + "px";
 });
-// ===== SIMPLE POLL CLICK HIGHLIGHT =====
+// ===== POLL CLICK WITH MULTI-SELECT SUPPORT =====
 chatBody.addEventListener("click", (e) => {
   const optionEl = e.target.closest(".poll-option");
   if (!optionEl) return;
@@ -716,17 +716,42 @@ chatBody.addEventListener("click", (e) => {
   const pollWrapper = optionEl.closest(".poll-wrapper");
   if (!pollWrapper) return;
 
-  // Deselect all options first
-  pollWrapper.querySelectorAll(".poll-option .poll-circle").forEach(circle => {
-    circle.classList.remove("selected");
-  });
-  pollWrapper.querySelectorAll(".poll-bar").forEach(bar => {
-    bar.style.width = "0%";
-  });
+  // Get poll object from DOM
+  const pollId = Number(pollWrapper.querySelector(".poll-question")?.dataset.pollId);
+  if (pollId === undefined) return;
 
-  // Select clicked option
-  optionEl.querySelector(".poll-circle").classList.add("selected");
-  optionEl.querySelector(".poll-bar").style.width = "100%";
+  // For now, assume the poll data is stored on the element (we can attach it when rendering)
+  const pollData = pollWrapper.pollData; // set this when generating the poll in addMessage()
+  if (!pollData) return;
+
+  const optionIndex = Number(optionEl.dataset.index);
+
+  if (pollData.allowMultiple) {
+    // Toggle selection for this option only
+    const circle = optionEl.querySelector(".poll-circle");
+    const bar = optionEl.querySelector(".poll-bar");
+    const isSelected = circle.classList.contains("selected");
+
+    if (isSelected) {
+      circle.classList.remove("selected");
+      bar.style.width = "0%";
+    } else {
+      circle.classList.add("selected");
+      bar.style.width = "100%";
+    }
+  } else {
+    // Single selection mode: deselect all others
+    pollWrapper.querySelectorAll(".poll-option").forEach(opt => {
+      const c = opt.querySelector(".poll-circle");
+      const b = opt.querySelector(".poll-bar");
+      c.classList.remove("selected");
+      b.style.width = "0%";
+    });
+
+    // Select the clicked option
+    optionEl.querySelector(".poll-circle").classList.add("selected");
+    optionEl.querySelector(".poll-bar").style.width = "100%";
+  }
 });
 // Initial load
 syncPolls();
