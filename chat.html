@@ -883,10 +883,12 @@ if (msgObj.linked) {
 }
 }
   chatBody.appendChild(msg);
-  // Desktop left-click menu
-msg.addEventListener("click", e => {
-  if (selectionMode) return; // already handled
-  if (e.pointerType === "touch") return; // ignore mobile
+// Desktop right-click menu
+msg.addEventListener("contextmenu", e => {
+  e.preventDefault(); // ⛔ disable browser menu
+
+  if (selectionMode) return;
+  if (e.pointerType === "touch") return;
 
   e.stopPropagation();
 
@@ -894,15 +896,15 @@ msg.addEventListener("click", e => {
   menuTargetEl = msg;
 
   const rect = msg.getBoundingClientRect();
-
   const isSent = msg.classList.contains("sent");
 
-  messageMenu.style.top = window.scrollY + rect.top + rect.height / 2 + "px";
+  messageMenu.style.top =
+    window.scrollY + rect.top + rect.height / 2 + "px";
 
   if (isSent) {
-    messageMenu.style.left = rect.left - 120 + "px"; // left side
+    messageMenu.style.left = rect.left - 120 + "px";
   } else {
-    messageMenu.style.left = rect.right + 10 + "px"; // right side
+    messageMenu.style.left = rect.right + 10 + "px";
   }
 
   messageMenu.style.display = "block";
