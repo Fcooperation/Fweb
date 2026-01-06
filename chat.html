@@ -733,15 +733,37 @@ deleteForEveryoneBtn.addEventListener("click", () => {
   .then(res => console.log("Delete for everyone response:", res))
   .catch(err => console.error(err));
 
-  // Update frontend immediately AND remove from localStorage arrays
+  // Update frontend AND localStorage arrays without deleting the objects
   selectedMessages.forEach(id => {
-    // Remove from messages[]
-    messages = messages.filter(msg => msg.id !== id);
+    // Update messages[]
+    messages = messages.map(msg => {
+      if (msg.id === id) {
+        return {
+          ...msg,
+          deleted: true,
+          deleted_for: "everyone",
+          requested_by: account.id,
+          text: "" // optional, clear original text
+        };
+      }
+      return msg;
+    });
 
-    // Remove from fchatMessages[]
-    fchatMessages = fchatMessages.filter(msg => msg.id !== id);
+    // Update fchatMessages[]
+    fchatMessages = fchatMessages.map(msg => {
+      if (msg.id === id) {
+        return {
+          ...msg,
+          deleted: true,
+          deleted_for: "everyone",
+          requested_by: account.id,
+          text: ""
+        };
+      }
+      return msg;
+    });
 
-    // Remove from DOM
+    // Update DOM
     const msgEl = chatBody.querySelector(`[data-id='${id}']`);
     if (msgEl) {
       msgEl.classList.add("deleted-for-everyone");
@@ -749,7 +771,7 @@ deleteForEveryoneBtn.addEventListener("click", () => {
     }
   });
 
-  // Save updated arrays to localStorage
+  // Save updated arrays back to localStorage
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
 
