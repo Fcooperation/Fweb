@@ -310,15 +310,14 @@ function addMessage(msgObj) {
 
   if (msgObj.isPoll && msgObj.pollData) {
   msg.className = `poll-wrapper ${alignmentClass}`;
-  msg.pollData = msgObj.pollData; // attach poll JSON
+  msg.pollData = msgObj.pollData;
 
-  // Decide instruction text
   const instructionText = msgObj.pollData.allowMultiple
     ? "Select one or more"
     : "Select one";
 
   msg.innerHTML = `
-    <div class="poll-question">${msgObj.pollData.question}</div>
+    <div class="poll-question" data-poll-id="${msgObj.id}">${msgObj.pollData.question}</div>
     <div class="poll-instruction">${instructionText}</div>
 
     ${msgObj.pollData.options.map((opt, i) => `
@@ -337,6 +336,23 @@ function addMessage(msgObj) {
       ${time} ${isSent ? "• " + (msgObj.status || "sent") : ""}
     </div>
   `;
+
+  // Now the DOM exists, safe to mark previous votes
+  const VOTE_KEY = `fchat_votes_${account.email}`;
+  const votes = JSON.parse(localStorage.getItem(VOTE_KEY)) || [];
+  const myVote = votes.find(v => v.pollId == msgObj.id && v.action === "vote polls");
+
+  if (myVote) {
+    const votedIndexes = myVote.option_voted.split(",").map(i => Number(i));
+    msg.querySelectorAll(".poll-option").forEach(opt => {
+      const idx = Number(opt.dataset.index);
+      if (votedIndexes.includes(idx)) {
+        opt.querySelector(".poll-circle").classList.add("selected");
+        opt.querySelector(".poll-bar").style.width = "100%";
+      }
+    });
+  }
+}
 } else {
   msg.className = `message ${alignmentClass}`;
 
@@ -716,7 +732,7 @@ textarea.addEventListener("input", () => {
   textarea.style.height = "auto";
   textarea.style.height = Math.min(textarea.scrollHeight, 120) + "px";
 });
-// ===== POLL CLICK WITH MULTI-SELECT SUPPORT =====
+// ===== POLL CLICK WITH MULTI-SELECT SUPPORT & LOCALSTORAGE =====
 chatBody.addEventListener("click", (e) => {
   const optionEl = e.target.closest(".poll-option");
   if (!optionEl) return;
@@ -725,17 +741,17 @@ chatBody.addEventListener("click", (e) => {
   if (!pollWrapper) return;
 
   // Get poll object from DOM
-  const pollId = Number(pollWrapper.querySelector(".poll-question")?.dataset.pollId);
-  if (pollId === undefined) return;
+  const pollId = pollWrapper.dataset.pollId; // set data-poll-id when rendering
+  if (!pollId) return;
 
-  // For now, assume the poll data is stored on the element (we can attach it when rendering)
-  const pollData = pollWrapper.pollData; // set this when generating the poll in addMessage()
+  const pollData = pollWrapper.pollData;
   if (!pollData) return;
 
   const optionIndex = Number(optionEl.dataset.index);
 
+  let selectedOptions = [];
+
   if (pollData.allowMultiple) {
-    // Toggle selection for this option only
     const circle = optionEl.querySelector(".poll-circle");
     const bar = optionEl.querySelector(".poll-bar");
     const isSelected = circle.classList.contains("selected");
@@ -747,8 +763,15 @@ chatBody.addEventListener("click", (e) => {
       circle.classList.add("selected");
       bar.style.width = "100%";
     }
+
+    // Collect all selected options in multi-select
+    pollWrapper.querySelectorAll(".poll-option").forEach(opt => {
+      if (opt.querySelector(".poll-circle").classList.contains("selected")) {
+        selectedOptions.push(opt.dataset.index);
+      }
+    });
   } else {
-    // Single selection mode: deselect all others
+    // Single selection: deselect all others
     pollWrapper.querySelectorAll(".poll-option").forEach(opt => {
       const c = opt.querySelector(".poll-circle");
       const b = opt.querySelector(".poll-bar");
@@ -756,10 +779,34 @@ chatBody.addEventListener("click", (e) => {
       b.style.width = "0%";
     });
 
-    // Select the clicked option
     optionEl.querySelector(".poll-circle").classList.add("selected");
     optionEl.querySelector(".poll-bar").style.width = "100%";
+
+    selectedOptions = [optionIndex];
   }
+
+  // Save vote in localStorage
+  const VOTE_KEY = `fchat_votes_${account.email}`;
+  let votes = JSON.parse(localStorage.getItem(VOTE_KEY)) || [];
+
+  // Check if this poll already has a vote
+  const existingIndex = votes.findIndex(v => v.pollId == pollId && v.action === "vote polls");
+
+  const voteJson = {
+    action: "vote polls",
+    pollId,
+    sender_id: account.id,
+    receiver_id: chatWith.id,
+    option_voted: selectedOptions.join(",")
+  };
+
+  if (existingIndex > -1) {
+    votes[existingIndex] = voteJson; // replace
+  } else {
+    votes.push(voteJson);
+  }
+
+  localStorage.setItem(VOTE_KEY, JSON.stringify(votes));
 });
 // Initial load
 syncPolls();
