@@ -716,7 +716,7 @@ textarea.addEventListener("input", () => {
   textarea.style.height = "auto";
   textarea.style.height = Math.min(textarea.scrollHeight, 120) + "px";
 });
-// ===== POLL CLICK WITH MULTI-SELECT SUPPORT & LOCALSTORAGE =====
+// ===== POLL CLICK WITH MULTI-SELECT SUPPORT =====
 chatBody.addEventListener("click", (e) => {
   const optionEl = e.target.closest(".poll-option");
   if (!optionEl) return;
@@ -724,16 +724,17 @@ chatBody.addEventListener("click", (e) => {
   const pollWrapper = optionEl.closest(".poll-wrapper");
   if (!pollWrapper) return;
 
-  // Get poll object from DOM
-  const pollId = pollWrapper.dataset.pollId; // set data-poll-id when rendering
-  if (!pollId) return;
+  const pollId = Number(pollWrapper.querySelector(".poll-question")?.dataset.pollId);
+  if (pollId === undefined) return;
 
-  const pollData = pollWrapper.pollData;
+  const pollData = pollWrapper.pollData; // attached in addMessage()
   if (!pollData) return;
 
   const optionIndex = Number(optionEl.dataset.index);
 
-  let selectedOptions = [];
+  // Prepare localStorage key for votes
+  const VOTE_STORAGE_KEY = `poll_votes_${account.email}_${chatWith.id}`;
+  let votes = JSON.parse(localStorage.getItem(VOTE_STORAGE_KEY)) || [];
 
   if (pollData.allowMultiple) {
     const circle = optionEl.querySelector(".poll-circle");
@@ -747,15 +748,8 @@ chatBody.addEventListener("click", (e) => {
       circle.classList.add("selected");
       bar.style.width = "100%";
     }
-
-    // Collect all selected options in multi-select
-    pollWrapper.querySelectorAll(".poll-option").forEach(opt => {
-      if (opt.querySelector(".poll-circle").classList.contains("selected")) {
-        selectedOptions.push(opt.dataset.index);
-      }
-    });
   } else {
-    // Single selection: deselect all others
+    // Single selection mode: deselect all others
     pollWrapper.querySelectorAll(".poll-option").forEach(opt => {
       const c = opt.querySelector(".poll-circle");
       const b = opt.querySelector(".poll-bar");
@@ -763,34 +757,36 @@ chatBody.addEventListener("click", (e) => {
       b.style.width = "0%";
     });
 
+    // Select the clicked option
     optionEl.querySelector(".poll-circle").classList.add("selected");
     optionEl.querySelector(".poll-bar").style.width = "100%";
-
-    selectedOptions = [optionIndex];
   }
 
-  // Save vote in localStorage
-  const VOTE_KEY = `fchat_votes_${account.email}`;
-  let votes = JSON.parse(localStorage.getItem(VOTE_KEY)) || [];
-
-  // Check if this poll already has a vote
-  const existingIndex = votes.findIndex(v => v.pollId == pollId && v.action === "vote polls");
+  // ==== UPDATE LOCAL STORAGE WITH VOTE ====
+  const selectedOptions = Array.from(pollWrapper.querySelectorAll(".poll-option"))
+    .map((opt, idx) => {
+      const c = opt.querySelector(".poll-circle");
+      return c.classList.contains("selected") ? idx + 1 : null; // option number
+    })
+    .filter(v => v !== null);
 
   const voteJson = {
-    action: "vote polls",
-    pollId,
+    action: "vote_polls",
+    poll_id: pollId,
     sender_id: account.id,
     receiver_id: chatWith.id,
-    option_voted: selectedOptions.join(",")
+    option_voted: selectedOptions.join(",") // multiple allowed
   };
 
-  if (existingIndex > -1) {
+  // Check if vote for this poll already exists
+  const existingIndex = votes.findIndex(v => v.action === "vote_polls" && v.poll_id === pollId);
+  if (existingIndex !== -1) {
     votes[existingIndex] = voteJson; // replace
   } else {
-    votes.push(voteJson);
+    votes.push(voteJson); // add new
   }
 
-  localStorage.setItem(VOTE_KEY, JSON.stringify(votes));
+  localStorage.setItem(VOTE_STORAGE_KEY, JSON.stringify(votes));
 });
 // Initial load
 syncPolls();
