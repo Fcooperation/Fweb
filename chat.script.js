@@ -333,7 +333,7 @@ function addMessage(msgObj) {
   msg.className = `message ${alignmentClass}`;
 
 let replyHTML = "";
-if (msgObj.replyTo) {
+if (msgObj.replyTo && !(msgObj.deleted && msgObj.deleted_for === "everyone")) {
   replyHTML = `
     <div class="reply-bubble">
       ${msgObj.replyTo.text}
