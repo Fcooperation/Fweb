@@ -310,14 +310,15 @@ function addMessage(msgObj) {
 
   if (msgObj.isPoll && msgObj.pollData) {
   msg.className = `poll-wrapper ${alignmentClass}`;
-  msg.pollData = msgObj.pollData;
+  msg.pollData = msgObj.pollData; // attach poll JSON
 
+  // Decide instruction text
   const instructionText = msgObj.pollData.allowMultiple
     ? "Select one or more"
     : "Select one";
 
   msg.innerHTML = `
-    <div class="poll-question" data-poll-id="${msgObj.id}">${msgObj.pollData.question}</div>
+    <div class="poll-question">${msgObj.pollData.question}</div>
     <div class="poll-instruction">${instructionText}</div>
 
     ${msgObj.pollData.options.map((opt, i) => `
@@ -336,23 +337,6 @@ function addMessage(msgObj) {
       ${time} ${isSent ? "• " + (msgObj.status || "sent") : ""}
     </div>
   `;
-
-  // Now the DOM exists, safe to mark previous votes
-  const VOTE_KEY = `fchat_votes_${account.email}`;
-  const votes = JSON.parse(localStorage.getItem(VOTE_KEY)) || [];
-  const myVote = votes.find(v => v.pollId == msgObj.id && v.action === "vote polls");
-
-  if (myVote) {
-    const votedIndexes = myVote.option_voted.split(",").map(i => Number(i));
-    msg.querySelectorAll(".poll-option").forEach(opt => {
-      const idx = Number(opt.dataset.index);
-      if (votedIndexes.includes(idx)) {
-        opt.querySelector(".poll-circle").classList.add("selected");
-        opt.querySelector(".poll-bar").style.width = "100%";
-      }
-    });
-  }
-}
 } else {
   msg.className = `message ${alignmentClass}`;
 
