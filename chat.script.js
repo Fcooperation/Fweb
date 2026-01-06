@@ -185,8 +185,14 @@ deleteForEveryoneBtn.addEventListener("click", () => {
     // Update DOM
     const msgEl = chatBody.querySelector(`[data-id='${id}']`);
     if (msgEl) {
-      msgEl.classList.add("deleted-for-everyone");
-      msgEl.innerHTML = `<i class="deleted-text">This message was deleted by you</i>`;
+      const isSent = msgEl.classList.contains("sent");
+
+msgEl.className = `message ${isSent ? "sent" : "received"} deleted-for-everyone`;
+msgEl.innerHTML = `
+  <i class="deleted-text">
+    This message was deleted by you
+  </i>
+`;
     }
   });
 
@@ -337,6 +343,7 @@ if (msgObj.replyTo) {
 
 // ✅ Handle deleted-for-everyone
 if (msgObj.deleted && msgObj.deleted_for === "everyone") {
+  msg.className = `message ${alignmentClass} deleted-for-everyone`;
   msg.innerHTML = `
     ${replyHTML}
     <i class="deleted-text">
