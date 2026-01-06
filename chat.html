@@ -733,14 +733,25 @@ deleteForEveryoneBtn.addEventListener("click", () => {
   .then(res => console.log("Delete for everyone response:", res))
   .catch(err => console.error(err));
 
-  // Update frontend immediately
+  // Update frontend immediately AND remove from localStorage arrays
   selectedMessages.forEach(id => {
+    // Remove from messages[]
+    messages = messages.filter(msg => msg.id !== id);
+
+    // Remove from fchatMessages[]
+    fchatMessages = fchatMessages.filter(msg => msg.id !== id);
+
+    // Remove from DOM
     const msgEl = chatBody.querySelector(`[data-id='${id}']`);
     if (msgEl) {
       msgEl.classList.add("deleted-for-everyone");
       msgEl.innerHTML = `<i class="deleted-text">This message was deleted by you</i>`;
     }
   });
+
+  // Save updated arrays to localStorage
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+  localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
 
   // Cleanup
   selectedMessages.clear();
