@@ -486,6 +486,24 @@ body {
     opacity: 1;
   }
 }
+#message-menu {
+  position: absolute;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+  font-size: 14px;
+  z-index: 100;
+  overflow: hidden;
+}
+
+.menu-item {
+  padding: 10px 14px;
+  cursor: pointer;
+}
+
+.menu-item:hover {
+  background: #f1f1f1;
+}
 </style>
 </head>
 
@@ -530,6 +548,11 @@ body {
     </button>
 
   </div>
+</div>
+// Left Click Menu For PC
+<div id="message-menu" style="display:none;">
+  <div class="menu-item" id="menu-reply">Reply</div>
+  <div class="menu-item" id="menu-select">Select</div>
 </div>
 
 <div id="chat-body"></div>
@@ -624,6 +647,17 @@ const selectionBoard = document.getElementById("selection-board");
 const boardBackBtn = document.getElementById("board-back-btn");
 const deleteForMeBtn = document.querySelector(".delete-me");
 const deleteForEveryoneBtn = document.querySelector(".delete-everyone");
+const messageMenu = document.getElementById("message-menu");
+const menuReply = document.getElementById("menu-reply");
+const menuSelect = document.getElementById("menu-select");
+
+let menuTargetMsg = null;
+let menuTargetEl = null;
+
+// Hide menu when clicking elsewhere
+document.addEventListener("click", () => {
+  messageMenu.style.display = "none";
+});
 
 // ===== DELETE FOR ME =====
 deleteForMeBtn.addEventListener("click", () => {
@@ -711,6 +745,22 @@ function clearSelection() {
   selectionMode = false;
   updateSelectionBoard();
 }
+// Menu For PC
+menuReply.onclick = () => {
+  if (!menuTargetMsg) return;
+
+  showReplyPreview(menuTargetMsg);
+  messageMenu.style.display = "none";
+};
+
+menuSelect.onclick = () => {
+  if (!menuTargetMsg || !menuTargetEl) return;
+
+  selectionMode = true;
+  toggleSelectMessage(menuTargetEl, menuTargetMsg);
+
+  messageMenu.style.display = "none";
+};
 // Add message function
 function addMessage(msgObj) {
   const msg = document.createElement("div");
@@ -834,6 +884,30 @@ if (msgObj.linked) {
 }
 }
   chatBody.appendChild(msg);
+  // Desktop left-click menu
+msg.addEventListener("click", e => {
+  if (selectionMode) return; // already handled
+  if (e.pointerType === "touch") return; // ignore mobile
+
+  e.stopPropagation();
+
+  menuTargetMsg = msgObj;
+  menuTargetEl = msg;
+
+  const rect = msg.getBoundingClientRect();
+
+  const isSent = msg.classList.contains("sent");
+
+  messageMenu.style.top = window.scrollY + rect.top + rect.height / 2 + "px";
+
+  if (isSent) {
+    messageMenu.style.left = rect.left - 120 + "px"; // left side
+  } else {
+    messageMenu.style.left = rect.right + 10 + "px"; // right side
+  }
+
+  messageMenu.style.display = "block";
+});
   // ===== LONG PRESS MULTI SELECT =====
 msg.addEventListener("touchstart", e => {
   if (e.target.closest(".reply-bubble")) return; // don't hijack reply clicks
@@ -889,8 +963,8 @@ function updateTimeline() {
 // Read more, Read less logic
 function applyReadMore(container, fullText) {
   const lines = fullText.split("\n");
-  const MAX_LINES = 10;
-  const STEP = 15;
+  const MAX_LINES = 15;
+  const STEP = 30;
 
   if (lines.length <= MAX_LINES) {
     container.innerHTML = fullText.replace(/\n/g, "<br>");
