@@ -1,0 +1,507 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: white;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+#chat-header {
+  position: sticky;
+  top: 0;
+  background: white;
+  border-bottom: 1px solid #ddd;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 10;
+}
+
+#left-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+#back-btn {
+  font-size: 22px;
+  cursor: pointer;
+  user-select: none;
+}
+
+#profile-pic {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: black;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+#center-info {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+}
+
+#chat-username {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+#chat-id {
+  font-size: 12px;
+  color: #555;
+}
+
+#chat-body {
+  flex: 1;
+  padding: 14px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+.message {
+  max-width: 75%;
+  min-width: 60%;
+  padding: 10px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  font-size: 14px;
+  position: relative;
+}
+
+.sent {
+  background: black;
+  color: white;
+  margin-left: auto;
+}
+
+.received {
+  background: #eee;
+  color: black;
+}
+.message::before,
+.poll-wrapper::before {
+  content: "";
+  display: block;
+  min-height: 17px;
+}
+.message-text {
+  white-space: pre-wrap;      /* preserves \n AND wraps */
+  word-wrap: break-word;      /* legacy */
+  overflow-wrap: break-word;  /* modern */
+}
+
+#chat-input {
+  position: sticky;
+  bottom: 0;
+  background: white;
+  border-top: 1px solid #ddd;
+  padding: 12px;
+  display: flex;
+  gap: 8px;
+}
+
+#messageInput {
+  flex: 1;
+  padding: 10px;
+  font-size: 15px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  resize: none;
+  overflow-y: auto;
+  line-height: 1.4;
+  max-height: 120px;
+  overflow-x: hidden;
+}
+
+#sendBtn {
+  padding: 10px 16px;
+  border: none;
+  background: black;
+  color: white;
+  font-size: 14px;
+  border-radius: 6px;
+}
+
+/* POLL STYLES */
+.poll-wrapper {
+  width: 75%;              /* match .message max-width */
+  min-width: 250px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  margin: 8px 0;
+  cursor: default;
+  transition: background 0.2s;
+}
+
+/* Sent vs Received Alignment */
+.poll-wrapper.sent {
+  align-self: flex-end;    /* right side */
+  background: black;
+  color: white;
+}
+
+.poll-wrapper.received {
+  align-self: flex-start;  /* left side */
+  background: #eee;
+  color: black;
+}
+
+/* Poll content */
+.poll-question {
+  font-weight: bold;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.poll-option {
+  margin-bottom: 12px;
+  cursor: pointer;
+}
+
+.poll-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.poll-circle {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid #aaa;
+  transition: 0.2s;
+}
+
+.poll-circle.selected {
+  background: #2196f3;
+  border-color: #2196f3;
+}
+
+.poll-text {
+  font-size: 14px;
+}
+
+.poll-bar-container {
+  width: 100%;
+  height: 6px;
+  background: #222;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.poll-bar {
+  height: 100%;
+  width: 0;
+  background: #2196f3;
+  transition: width 0.35s ease;
+}
+
+.poll-status {
+  font-size: 11px;
+  opacity: 0.6;
+  position: absolute;
+  bottom: 6px;
+  right: 10px;
+}
+.message-meta {
+  font-size: 11px;
+  opacity: 0.6;
+  margin-top: 4px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.message.received .message-meta {
+  justify-content: flex-start;
+}
+.date-divider {
+  text-align: center;
+  margin: 12px 0;
+  font-size: 12px;
+  color: #666;
+  position: relative;
+}
+
+.date-divider::before,
+.date-divider::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 30%;
+  height: 1px;
+  background: #ddd;
+}
+
+.date-divider::before {
+  left: 0;
+}
+
+.date-divider::after {
+  right: 0;
+}
+/* REPLY PREVIEW */
+#reply-preview {
+  position: sticky;
+  bottom: 60px;
+  background: #f1f1f1;
+  border-top: 1px solid #ddd;
+  padding: 10px 14px;
+  font-size: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  animation: slideUp 0.2s ease;
+}
+
+#reply-text {
+  max-width: 85%;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#close-reply {
+  font-size: 18px;
+  cursor: pointer;
+  padding-left: 10px;
+}
+
+/* animation */
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Swipe indicator (optional feedback) */
+.message {
+  transition: transform 0.2s ease;
+}
+.reply-bubble {
+  background: #eee;
+  padding: 6px 10px;
+  border-left: 3px solid #2196f3;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #333;
+  margin-bottom: 4px;
+  max-width: 90%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.sent .reply-bubble {
+  background: #333;
+  color: #fff;
+  border-left-color: #2196f3;
+}
+.read-toggle {
+  color: #2196f3;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 6px;
+  display: inline-block;
+}
+
+.read-toggle:hover {
+  text-decoration: underline;
+}
+/* Glow/flash for linked messages on tap */
+.highlight-message {
+  animation: megaGlow 2s ease-out 1;
+}
+
+@keyframes megaGlow {
+  0% {
+    box-shadow:
+      0 0 0 4px #1e88e5,
+      0 0 25px 10px rgba(30,136,229,1),
+      0 0 50px 18px rgba(30,136,229,0.9),
+      0 0 80px 30px rgba(30,136,229,0.7);
+  }
+  100% { box-shadow: none; }
+}
+/* ===== MULTI SELECT ===== */
+
+.message.selected,
+.poll-wrapper.selected {
+  opacity: 0.55; /* faint like WhatsApp */
+}
+
+/* reuse your glow */
+.message.selected.highlight-message,
+.poll-wrapper.selected.highlight-message {
+  animation: megaGlow 2s ease-out 1;
+}
+#selection-board {
+  position: sticky; /* sticks to top */
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: white; /* board background */
+  border-bottom: 1px solid #ddd;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 12px;
+  z-index: 20; /* above chat header */
+  font-family: Arial, sans-serif;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#board-back-btn {
+  font-size: 22px;
+  cursor: pointer;
+  user-select: none;
+}
+
+#board-title {
+  font-size: 16px;
+  font-weight: bold;
+}
+/* ===== SELECTION BOARD DELETE BUTTON ===== */
+#board-delete-btn {
+  margin-left: auto;           /* pushes it to the far right */
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+
+  border-radius: 20px;
+  border: 1px solid #e53935;
+
+  color: #e53935;
+  background: rgba(229, 57, 53, 0.08);
+
+  cursor: pointer;
+  user-select: none;
+
+  transition: all 0.2s ease;
+}
+
+/* hover / active feedback */
+#board-delete-btn:hover {
+  background: #e53935;
+  color: white;
+}
+
+#board-delete-btn:active {
+  transform: scale(0.96);
+}
+/* ===== DELETE MODAL ===== */
+#delete-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+/* Modal box */
+.delete-box {
+  width: 90%;
+  max-width: 320px;
+  background: white;
+  border-radius: 14px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: popIn 0.15s ease;
+}
+
+/* shared button style */
+.delete-option,
+.delete-cancel {
+  padding: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+}
+
+/* Option 1 */
+.delete-me {
+  background: white;
+  color: black;
+  border: 1px solid #ddd;
+}
+
+/* Option 2 */
+.delete-everyone {
+  background: white;
+  color: #e53935;
+  border: 1px solid #e53935;
+}
+
+/* Cancel */
+.delete-cancel {
+  background: #e53935;
+  color: black;
+}
+
+/* subtle animation */
+@keyframes popIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+#message-menu {
+  position: absolute;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+  font-size: 14px;
+  z-index: 100;
+  overflow: hidden;
+}
+
+.menu-item {
+  padding: 10px 14px;
+  cursor: pointer;
+}
+
+.menu-item:hover {
+  background: #f1f1f1;
+}
+.deleted-text {
+  color: red;
+  font-style: italic;
+}
+.deleted-for-everyone {
+  background-color: #fdd; /* optional light red background */
+  border-radius: 5px;
+  padding: 2px 5px;
+}
