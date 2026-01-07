@@ -575,15 +575,15 @@ function syncPolls() {
   polls.forEach(p => {
     if(!fchatMessages.some(fm => fm.id===p.id)) {
       fchatMessages.push({
-        id: p.id,
-        type: "sent",
-        isPoll: true,
-        pollData: p.pollData,
-        status: p.status,
-        sender_id: p.sender_id,
-        receiver_id: chatWith.id,
-        sent_at: p.sent_at
-      });
+  id: p.id,
+  type: "sent",
+  isPoll: true,
+  pollData: p.pollData,
+  status: p.status,
+  sender_id: p.sender_id,
+  receiver_id: chatWith.id,
+  sent_at: p.sent_at || new Date().toISOString() // ensure valid date
+});
     }
   });
 
