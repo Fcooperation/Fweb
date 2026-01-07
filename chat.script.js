@@ -504,7 +504,12 @@ function updateTimeline() {
   let lastDate = null;
 
   chatItems.forEach(msg => {
-    const msgDate = new Date(msg.sent_at).toDateString();
+    let msgDate;
+try {
+  msgDate = new Date(msg.sent_at).toDateString();
+} catch {
+  msgDate = "Unknown Date";
+}
 
     if (msgDate !== lastDate) {
       const dateDivider = document.createElement("div");
