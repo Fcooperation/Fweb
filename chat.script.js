@@ -310,7 +310,12 @@ function addMessage(msgObj) {
 
   if (msgObj.isPoll && msgObj.pollData) {
   msg.className = `poll-wrapper ${alignmentClass}`;
-  msg.pollData = msgObj.pollData; // attach poll JSON
+  msg.pollData = msgObj.pollData;
+  msg.dataset.id = msgObj.id;
+msg.dataset.senderId = msgObj.sender_id;
+msg.dataset.receiverId = msgObj.receiver_id;
+msg.dataset.sentAt = msgObj.sent_at;
+msg.dataset.status = msgObj.status;
 
   const instructionText = msgObj.pollData.allowMultiple
     ? "Select one or more"
@@ -781,20 +786,22 @@ chatBody.addEventListener("click", (e) => {
   let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
 
   // Check if poll already exists
-  const existingIndex = polls.findIndex(p => p.id === msgObj.id);
-  if (existingIndex >= 0) {
-    polls[existingIndex].votes = selectedIndices;
-  } else {
-    polls.push({
-      id: msgObj.id,
-      pollData,
-      votes: selectedIndices,
-      sender_id: msgObj.sender_id,
-      receiver_id: msgObj.receiver_id,
-      sent_at: msgObj.sent_at,
-      status: msgObj.status
-    });
-  }
+  const pollId = pollWrapper.dataset.id;
+
+const existingIndex = polls.findIndex(p => p.id === pollId);
+if (existingIndex >= 0) {
+  polls[existingIndex].votes = selectedIndices;
+} else {
+  polls.push({
+    id: pollId,
+    pollData,
+    votes: selectedIndices,
+    sender_id: pollWrapper.dataset.senderId,
+    receiver_id: pollWrapper.dataset.receiverId,
+    sent_at: pollWrapper.dataset.sentAt,
+    status: pollWrapper.dataset.status
+  });
+}
 
   localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
   alert("Vote submitted!");
