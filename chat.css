@@ -512,3 +512,28 @@ body {
   margin-top: 4px;
   margin-bottom: 8px; /* space before options */
 }
+.poll-submit-btn {
+  margin-top: 8px;
+  padding: 8px 12px;
+  width: 100%;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.poll-wrapper.sent .poll-submit-btn {
+  background: black;
+  color: black;
+}
+
+.poll-wrapper.received .poll-submit-btn {
+  background: #eee;
+  color: black;
+}
+
+.poll-submit-btn:hover {
+  opacity: 0.85;
+}
