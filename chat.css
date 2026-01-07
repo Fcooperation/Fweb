@@ -525,7 +525,7 @@ body {
 }
 
 .poll-wrapper.sent .poll-submit-btn {
-  background: black;
+  background: #eee;
   color: black;
 }
 
