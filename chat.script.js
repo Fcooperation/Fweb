@@ -716,7 +716,7 @@ textarea.addEventListener("input", () => {
   textarea.style.height = "auto";
   textarea.style.height = Math.min(textarea.scrollHeight, 120) + "px";
 });
-// ===== POLL CLICK WITH MULTI-SELECT SUPPORT (CONFIRMED SAVE) =====
+// ===== POLL CLICK WITH MULTI-SELECT SUPPORT =====
 chatBody.addEventListener("click", (e) => {
   const optionEl = e.target.closest(".poll-option");
   if (!optionEl) return;
@@ -724,87 +724,42 @@ chatBody.addEventListener("click", (e) => {
   const pollWrapper = optionEl.closest(".poll-wrapper");
   if (!pollWrapper) return;
 
-  const pollId = Number(
-    pollWrapper.querySelector(".poll-question")?.dataset.pollId
-  );
-  if (Number.isNaN(pollId)) return;
+  // Get poll object from DOM
+  const pollId = Number(pollWrapper.querySelector(".poll-question")?.dataset.pollId);
+  if (pollId === undefined) return;
 
-  const pollData = pollWrapper.pollData;
+  // For now, assume the poll data is stored on the element (we can attach it when rendering)
+  const pollData = pollWrapper.pollData; // set this when generating the poll in addMessage()
   if (!pollData) return;
 
-  // ---------- STORAGE ----------
-  const VOTE_STORAGE_KEY = `poll_votes_${account.email}_${chatWith.id}`;
-  let votes = JSON.parse(localStorage.getItem(VOTE_STORAGE_KEY)) || [];
+  const optionIndex = Number(optionEl.dataset.index);
 
-  // ---------- CALCULATE NEW SELECTION (NO UI CHANGE YET) ----------
-  let selectedIndexes = [];
+  if (pollData.allowMultiple) {
+    // Toggle selection for this option only
+    const circle = optionEl.querySelector(".poll-circle");
+    const bar = optionEl.querySelector(".poll-bar");
+    const isSelected = circle.classList.contains("selected");
 
-  pollWrapper.querySelectorAll(".poll-option").forEach((opt, idx) => {
-    const circle = opt.querySelector(".poll-circle");
-
-    if (pollData.allowMultiple) {
-      if (opt === optionEl) {
-        // toggle only clicked option
-        const willSelect = !circle.classList.contains("selected");
-        if (willSelect) selectedIndexes.push(idx);
-      } else if (circle.classList.contains("selected")) {
-        selectedIndexes.push(idx);
-      }
+    if (isSelected) {
+      circle.classList.remove("selected");
+      bar.style.width = "0%";
     } else {
-      // single select
-      if (opt === optionEl) selectedIndexes = [idx];
+      circle.classList.add("selected");
+      bar.style.width = "100%";
     }
-  });
-
-  // ---------- BUILD VOTE JSON ----------
-  const voteJson = {
-    action: "vote_polls",
-    poll_id: pollId,
-    sender_id: account.id,
-    receiver_id: chatWith.id,
-    option_voted: selectedIndexes.map(i => i + 1).join(",")
-  };
-
-  // ---------- SEND TO BACKEND ----------
-  fetch(API_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(voteJson)
-  })
-    .then(res => res.json())
-    .then(data => {
-      if (!data?.success) throw new Error("Backend rejected vote");
-
-      // ✅ BACKEND CONFIRMED — APPLY UI CHANGES
-      pollWrapper.querySelectorAll(".poll-option").forEach((opt, idx) => {
-        const circle = opt.querySelector(".poll-circle");
-        const bar = opt.querySelector(".poll-bar");
-
-        if (selectedIndexes.includes(idx)) {
-          circle.classList.add("selected");
-          bar.style.width = "100%";
-        } else {
-          circle.classList.remove("selected");
-          bar.style.width = "0%";
-        }
-      });
-
-      // ---------- SAVE TO LOCAL STORAGE ----------
-      const existingIndex = votes.findIndex(
-        v => v.action === "vote_polls" && v.poll_id === pollId
-      );
-
-      if (existingIndex !== -1) {
-        votes[existingIndex] = voteJson;
-      } else {
-        votes.push(voteJson);
-      }
-
-      localStorage.setItem(VOTE_STORAGE_KEY, JSON.stringify(votes));
-    })
-    .catch(err => {
-      console.error("Vote failed, UI not updated:", err);
+  } else {
+    // Single selection mode: deselect all others
+    pollWrapper.querySelectorAll(".poll-option").forEach(opt => {
+      const c = opt.querySelector(".poll-circle");
+      const b = opt.querySelector(".poll-bar");
+      c.classList.remove("selected");
+      b.style.width = "0%";
     });
+
+    // Select the clicked option
+    optionEl.querySelector(".poll-circle").classList.add("selected");
+    optionEl.querySelector(".poll-bar").style.width = "100%";
+  }
 });
 // Initial load
 syncPolls();
