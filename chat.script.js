@@ -310,13 +310,9 @@ function addMessage(msgObj) {
 
   if (msgObj.isPoll && msgObj.pollData) {
   msg.className = `poll-wrapper ${alignmentClass}`;
-  msg.pollData = msgObj.pollData;
-  msg.dataset.id = msgObj.id;
-msg.dataset.senderId = msgObj.sender_id;
-msg.dataset.receiverId = msgObj.receiver_id;
-msg.dataset.sentAt = msgObj.sent_at;
-msg.dataset.status = msgObj.status;
+  msg.pollData = msgObj.pollData; // attach poll JSON
 
+  // Decide instruction text
   const instructionText = msgObj.pollData.allowMultiple
     ? "Select one or more"
     : "Select one";
@@ -336,8 +332,6 @@ msg.dataset.status = msgObj.status;
         </div>
       </div>
     `).join("")}
-
-    <button class="poll-submit-btn">Submit Vote</button>
 
     <div class="message-meta">
       ${time} ${isSent ? "• " + (msgObj.status || "sent") : ""}
@@ -725,86 +719,47 @@ textarea.addEventListener("input", () => {
 // ===== POLL CLICK WITH MULTI-SELECT SUPPORT =====
 chatBody.addEventListener("click", (e) => {
   const optionEl = e.target.closest(".poll-option");
-  if (optionEl) {
-    const pollWrapper = optionEl.closest(".poll-wrapper");
-    if (!pollWrapper) return;
+  if (!optionEl) return;
 
-    const pollData = pollWrapper.pollData;
-    if (!pollData) return;
-
-    const optionIndex = Number(optionEl.dataset.index);
-
-    if (pollData.allowMultiple) {
-      const circle = optionEl.querySelector(".poll-circle");
-      const bar = optionEl.querySelector(".poll-bar");
-      const isSelected = circle.classList.contains("selected");
-
-      if (isSelected) {
-        circle.classList.remove("selected");
-        bar.style.width = "0%";
-      } else {
-        circle.classList.add("selected");
-        bar.style.width = "100%";
-      }
-    } else {
-      pollWrapper.querySelectorAll(".poll-option").forEach(opt => {
-        const c = opt.querySelector(".poll-circle");
-        const b = opt.querySelector(".poll-bar");
-        c.classList.remove("selected");
-        b.style.width = "0%";
-      });
-
-      optionEl.querySelector(".poll-circle").classList.add("selected");
-      optionEl.querySelector(".poll-bar").style.width = "100%";
-    }
-  }
-
-  // ✅ Submit vote handler
-  const submitBtn = e.target.closest(".poll-submit-btn");
-  if (!submitBtn) return;
-
-  const pollWrapper = submitBtn.closest(".poll-wrapper");
+  const pollWrapper = optionEl.closest(".poll-wrapper");
   if (!pollWrapper) return;
 
-  const pollData = pollWrapper.pollData;
+  // Get poll object from DOM
+  const pollId = Number(pollWrapper.querySelector(".poll-question")?.dataset.pollId);
+  if (pollId === undefined) return;
+
+  // For now, assume the poll data is stored on the element (we can attach it when rendering)
+  const pollData = pollWrapper.pollData; // set this when generating the poll in addMessage()
   if (!pollData) return;
 
-  // Get selected options
-  const selectedIndices = Array.from(
-    pollWrapper.querySelectorAll(".poll-option .poll-circle.selected")
-  ).map((circle) =>
-    Number(circle.closest(".poll-option").dataset.index)
-  );
+  const optionIndex = Number(optionEl.dataset.index);
 
-  if (selectedIndices.length === 0) {
-    alert("Please select at least one option before submitting.");
-    return;
+  if (pollData.allowMultiple) {
+    // Toggle selection for this option only
+    const circle = optionEl.querySelector(".poll-circle");
+    const bar = optionEl.querySelector(".poll-bar");
+    const isSelected = circle.classList.contains("selected");
+
+    if (isSelected) {
+      circle.classList.remove("selected");
+      bar.style.width = "0%";
+    } else {
+      circle.classList.add("selected");
+      bar.style.width = "100%";
+    }
+  } else {
+    // Single selection mode: deselect all others
+    pollWrapper.querySelectorAll(".poll-option").forEach(opt => {
+      const c = opt.querySelector(".poll-circle");
+      const b = opt.querySelector(".poll-bar");
+      c.classList.remove("selected");
+      b.style.width = "0%";
+    });
+
+    // Select the clicked option
+    optionEl.querySelector(".poll-circle").classList.add("selected");
+    optionEl.querySelector(".poll-bar").style.width = "100%";
   }
-
-  // Save the vote in localStorage (or fchatMessages)
-  const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
-  let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
-
-  // Check if poll already exists
-  const pollId = pollWrapper.dataset.id;
-
-const existingIndex = polls.findIndex(p => p.id === pollId);
-if (existingIndex >= 0) {
-  polls[existingIndex].votes = selectedIndices;
-} else {
-  polls.push({
-    id: pollId,
-    pollData,
-    votes: selectedIndices,
-    sender_id: pollWrapper.dataset.senderId,
-    receiver_id: pollWrapper.dataset.receiverId,
-    sent_at: pollWrapper.dataset.sentAt,
-    status: pollWrapper.dataset.status
-  });
-}
-
-  localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
-  alert("Vote submitted!");
 });
 // Initial load
 syncPolls();
