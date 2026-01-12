@@ -440,16 +440,19 @@ if (msgObj.linked) {
 }
 }
   chatBody.appendChild(msg);
-  // ===== ADD POLL SUBMIT BUTTON (OUTSIDE POLL BOX) =====
+// ===== ADD POLL SUBMIT BUTTON (OUTSIDE POLL BOX) =====
 if (msgObj.isPoll && msgObj.pollData) {
   const submitBtn = document.createElement("button");
   submitBtn.textContent = "Submit vote";
   submitBtn.className = `poll-submit-btn ${alignmentClass}`;
 
-  // optional: prevent multiple submits
   submitBtn.onclick = () => {
+    // change button state
     submitBtn.disabled = true;
     submitBtn.textContent = "Submitting...";
+
+    // 🔥 DIM THE POLL THIS BUTTON BELONGS TO
+    pollWrapper.classList.add("poll-dimmed");
   };
 
   chatBody.appendChild(submitBtn);
