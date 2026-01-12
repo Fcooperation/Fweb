@@ -440,6 +440,20 @@ if (msgObj.linked) {
 }
 }
   chatBody.appendChild(msg);
+  // ===== ADD POLL SUBMIT BUTTON (OUTSIDE POLL BOX) =====
+if (msgObj.isPoll && msgObj.pollData) {
+  const submitBtn = document.createElement("button");
+  submitBtn.textContent = "Submit vote";
+  submitBtn.className = `poll-submit-btn ${alignmentClass}`;
+
+  // optional: prevent multiple submits
+  submitBtn.onclick = () => {
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Submitting...";
+  };
+
+  chatBody.appendChild(submitBtn);
+}
 // Desktop right-click menu
 msg.addEventListener("contextmenu", e => {
   e.preventDefault(); // ⛔ disable browser menu
