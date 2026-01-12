@@ -107,6 +107,17 @@
     cursor: pointer;
     font-size: 14px;
   }
+  /* ===== SENDING STATE ===== */
+body.sending {
+  pointer-events: none;       /* block clicks */
+  opacity: 0.55;              /* fade page */
+}
+
+#send-btn.sending {
+  pointer-events: none;
+  background: #444;
+  opacity: 0.8;
+}
 </style>
 </head>
 
@@ -165,6 +176,16 @@ optionsContainer.addEventListener("input", (e) => {
 
 // SEND POLL
 document.getElementById("send-btn").addEventListener("click", async () => {
+  const sendBtn = document.getElementById("send-btn");
+
+  // 🚫 Prevent double click
+  if (sendBtn.classList.contains("sending")) return;
+
+  // 🔒 Lock UI
+  sendBtn.classList.add("sending");
+  sendBtn.textContent = "Sending…";
+  sendBtn.disabled = true;
+  document.body.classList.add("sending");
   const question = document.getElementById("poll-question").value.trim();
 
   const options = [...document.querySelectorAll(".poll-option")]
