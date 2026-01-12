@@ -447,27 +447,35 @@ if (msgObj.isPoll && msgObj.pollData) {
   submitBtn.className = `poll-submit-btn ${alignmentClass}`;
 
   submitBtn.onclick = () => {
-    // 🔍 find the poll this button belongs to
-    const pollWrapper = submitBtn.previousElementSibling;
-    if (!pollWrapper || !pollWrapper.classList.contains("poll-wrapper")) return;
+  // 🔍 find the poll this button belongs to
+  const pollWrapper = submitBtn.previousElementSibling;
+  if (!pollWrapper || !pollWrapper.classList.contains("poll-wrapper")) return;
 
-    // 🔍 check if at least one option is selected
-    const selectedOptions = pollWrapper.querySelectorAll(
-      ".poll-circle.selected"
-    );
+  // 🔍 check if at least one option is selected
+  const selectedOptions = pollWrapper.querySelectorAll(
+    ".poll-circle.selected"
+  );
 
-    if (selectedOptions.length === 0) {
-      alert("Select an option please");
-      return;
-    }
+  if (selectedOptions.length === 0) {
+    alert("Select an option please");
+    return;
+  }
 
-    // ✅ valid vote → submit
-    submitBtn.disabled = true;
-    submitBtn.textContent = "Submitting...";
+  // ✅ button state
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Submitting...";
 
-    // 🔥 dim only THIS poll
-    pollWrapper.classList.add("poll-dimmed");
-  };
+  // 🔥 dim poll
+  pollWrapper.classList.add("poll-dimmed");
+
+  // 🔁 CHANGE POLL STATUS TO "sending"
+  const meta = pollWrapper.querySelector(".message-meta");
+  if (meta) {
+    meta.innerHTML = meta.innerHTML.replace(/sent|pending/, "sending");
+  }
+
+  // (later you’ll send to backend here)
+};
 
   chatBody.appendChild(submitBtn);
 }
