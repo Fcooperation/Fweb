@@ -447,11 +447,25 @@ if (msgObj.isPoll && msgObj.pollData) {
   submitBtn.className = `poll-submit-btn ${alignmentClass}`;
 
   submitBtn.onclick = () => {
-    // change button state
+    // 🔍 find the poll this button belongs to
+    const pollWrapper = submitBtn.previousElementSibling;
+    if (!pollWrapper || !pollWrapper.classList.contains("poll-wrapper")) return;
+
+    // 🔍 check if at least one option is selected
+    const selectedOptions = pollWrapper.querySelectorAll(
+      ".poll-circle.selected"
+    );
+
+    if (selectedOptions.length === 0) {
+      alert("Select an option please");
+      return;
+    }
+
+    // ✅ valid vote → submit
     submitBtn.disabled = true;
     submitBtn.textContent = "Submitting...";
 
-    // 🔥 DIM THE POLL THIS BUTTON BELONGS TO
+    // 🔥 dim only THIS poll
     pollWrapper.classList.add("poll-dimmed");
   };
 
