@@ -334,7 +334,7 @@ function addMessage(msgObj) {
     `).join("")}
 
     <div class="message-meta">
-      ${time} ${isSent ? "• " + (msgObj.status || "sent") : ""}
+      ${time} ${isSent ? "• " + (msgObj.poll_status || msgObj.status || "sent") : ""}
     </div>
   `;
 } else {
@@ -369,6 +369,9 @@ if (msgObj.deleted && msgObj.deleted_for === "everyone") {
       ${time} ${isSent ? "• " + (msgObj.status || "sent") : ""}
     </div>
   `;
+  if (msgObj.poll_status === "sending") {
+  msg.classList.add("poll-dimmed");
+}
   const textBox = msg.querySelector(".message-text");
   applyReadMore(textBox, msgObj.text);
 }
@@ -467,6 +470,19 @@ if (msgObj.isPoll && msgObj.pollData) {
 
   // 🔥 dim poll
   pollWrapper.classList.add("poll-dimmed");
+  // 🔐 SAVE POLL STATUS AS "sending" IN POLL STORAGE
+const account = JSON.parse(localStorage.getItem("faccount")) || {};
+const chatWith = JSON.parse(localStorage.getItem("chatting_with")) || {};
+
+const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
+const polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+
+// Update the poll with matching ID
+const updatedPolls = polls.map(p =>
+  p.id === msgObj.id ? { ...p, status: "sending" } : p
+);
+
+localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(updatedPolls));
 
   // 🔁 CHANGE POLL STATUS TO "sending"
   const meta = pollWrapper.querySelector(".message-meta");
