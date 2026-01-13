@@ -640,7 +640,10 @@ function updateTimeline() {
   chatBody.innerHTML = "";
 
   const chatItems = fchatMessages
-    .filter(m => m.receiver_id === chatWith.id || m.sender_id === chatWith.id)
+    .filter(m =>
+      (m.sender_id === chatWith.id && m.receiver_id === account.id) || // messages sent to me
+      (m.sender_id === account.id && m.receiver_id === chatWith.id)   // messages I sent to them
+    )
     .sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
 
   let lastDate = null;
