@@ -731,7 +731,7 @@ function syncPolls() {
   pollData: p.pollData,
   status: p.status,
   sender_id: p.sender_id,
-  receiver_id: chatWith.id,
+  receiver_id: p.receiver_id || chatWith.id,
   sent_at: p.sent_at || new Date().toISOString() // ensure valid date
 });
     }
