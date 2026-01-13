@@ -245,7 +245,7 @@ document.getElementById("send-btn").addEventListener("click", async () => {
     });
 
     if (res.ok) {
-      pollMessage.status = "sent";
+      pollMessage.status = "delivered";
       const stored = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
       const index = stored.findIndex(p => p.id === pollId);
       if (index !== -1) {
