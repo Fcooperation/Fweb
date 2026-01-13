@@ -449,49 +449,82 @@ if (msgObj.isPoll && msgObj.pollData) {
   submitBtn.textContent = "Submit vote";
   submitBtn.className = `poll-submit-btn ${alignmentClass}`;
 
-  submitBtn.onclick = () => {
-  // 🔍 find the poll this button belongs to
-  const pollWrapper = submitBtn.previousElementSibling;
-  if (!pollWrapper || !pollWrapper.classList.contains("poll-wrapper")) return;
+  submitBtn.onclick = async () => {
+    // 🔍 find the poll this button belongs to
+    const pollWrapper = submitBtn.previousElementSibling;
+    if (!pollWrapper || !pollWrapper.classList.contains("poll-wrapper")) return;
 
-  // 🔍 check if at least one option is selected
-  const selectedOptions = pollWrapper.querySelectorAll(
-    ".poll-circle.selected"
-  );
+    // 🔍 get selected options (1-based index)
+    const selectedOptions = [...pollWrapper.querySelectorAll(".poll-circle.selected")]
+      .map(c => Number(c.closest(".poll-option").dataset.index) + 1);
 
-  if (selectedOptions.length === 0) {
-    alert("Select an option please");
-    return;
-  }
+    if (selectedOptions.length === 0) {
+      alert("Select an option please");
+      return;
+    }
 
-  // ✅ button state
-  submitBtn.disabled = true;
-  submitBtn.textContent = "Submitting...";
+    // ✅ UI: submitting
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Submitting...";
+    pollWrapper.classList.add("poll-dimmed");
 
-  // 🔥 dim poll
-  pollWrapper.classList.add("poll-dimmed");
-  // 🔐 SAVE POLL STATUS AS "sending" IN POLL STORAGE
-const account = JSON.parse(localStorage.getItem("faccount")) || {};
-const chatWith = JSON.parse(localStorage.getItem("chatting_with")) || {};
+    // 🔐 SAVE POLL STATUS = sending
+    const account = JSON.parse(localStorage.getItem("faccount")) || {};
+    const chatWith = JSON.parse(localStorage.getItem("chatting_with")) || {};
 
-const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
-const polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+    const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
+    const polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
 
-// Update the poll with matching ID
-const updatedPolls = polls.map(p =>
-  p.id === msgObj.id ? { ...p, status: "sending" } : p
-);
+    const updatedPolls = polls.map(p =>
+      p.id === msgObj.id ? { ...p, status: "sending" } : p
+    );
 
-localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(updatedPolls));
+    localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(updatedPolls));
 
-  // 🔁 CHANGE POLL STATUS TO "sending"
-  const meta = pollWrapper.querySelector(".message-meta");
-  if (meta) {
-    meta.innerHTML = meta.innerHTML.replace(/sent|pending/, "sending");
-  }
+    // 🔁 update meta text
+    const meta = pollWrapper.querySelector(".message-meta");
+    if (meta) meta.innerHTML = meta.innerHTML.replace(/sent|pending/, "sending");
 
-  // (later you’ll send to backend here)
-};
+    // 🚀 SEND TO BACKEND
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "send_votes",
+          poll_id: msgObj.id,
+          sender_id: account.id,
+          receiver_id: chatWith.id,
+          options: selectedOptions
+        })
+      });
+
+      const data = await res.json();
+      if (!data.success) throw new Error("vote failed");
+
+      // ✅ SUCCESS
+      submitBtn.textContent = "Revote";
+      submitBtn.disabled = true;          // 🚫 stop spamming
+      submitBtn.style.display = "none";   // 🚫 hide after submit
+
+      const finalPolls = updatedPolls.map(p =>
+        p.id === msgObj.id
+          ? { ...p, status: "sent", voted_options: selectedOptions }
+          : p
+      );
+
+      localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(finalPolls));
+
+      if (meta) meta.innerHTML = meta.innerHTML.replace("sending", "sent");
+
+    } catch (err) {
+      console.error(err);
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Submit vote";
+      pollWrapper.classList.remove("poll-dimmed");
+      alert("Vote failed. Try again.");
+    }
+  };
 
   chatBody.appendChild(submitBtn);
 }
