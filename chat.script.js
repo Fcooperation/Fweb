@@ -463,13 +463,13 @@ if (msgObj.isPoll && msgObj.pollData) {
       return;
     }
 
-    // ✅ UI: show immediate success
-    submitBtn.textContent = "Revote";
-    submitBtn.disabled = true;           // prevent multiple clicks
-    pollWrapper.classList.add("poll-dimmed");
+    // ✅ UI: dim poll and show "Submitting..."
+    pollWrapper.classList.add("poll-dimmed");      // reduce opacity
+    submitBtn.textContent = "Submitting...";
+    submitBtn.disabled = true;
 
     const meta = pollWrapper.querySelector(".message-meta");
-    if (meta) meta.innerHTML = meta.innerHTML.replace(/sent|pending/, "sent");
+    if (meta) meta.innerHTML = meta.innerHTML.replace(/sent|pending/, "sending");
 
     // 🔐 update poll storage
     const account = JSON.parse(localStorage.getItem("faccount")) || {};
@@ -478,11 +478,11 @@ if (msgObj.isPoll && msgObj.pollData) {
     const polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
 
     const updatedPolls = polls.map(p =>
-      p.id === msgObj.id ? { ...p, status: "sent", voted_options: selectedOptions } : p
+      p.id === msgObj.id ? { ...p, status: "sending", voted_options: selectedOptions } : p
     );
     localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(updatedPolls));
 
-    // 🚀 FIRE-AND-FORGET: send to backend without waiting
+    // 🚀 FIRE-AND-FORGET: send to backend
     fetch(API_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -493,8 +493,20 @@ if (msgObj.isPoll && msgObj.pollData) {
         receiver_id: chatWith.id,
         options: selectedOptions
       })
-    }).catch(err => {
-      console.warn("Vote request failed (ignored):", err);
+    }).finally(() => {
+      // ✅ After "backend" send finishes (or fails), restore UI
+      submitBtn.textContent = "Revote";
+      submitBtn.disabled = false;                 // allow clicking if needed
+      pollWrapper.classList.remove("poll-dimmed"); // restore opacity
+
+      // Update meta text to "sent"
+      if (meta) meta.innerHTML = meta.innerHTML.replace("sending", "sent");
+
+      // Update poll storage status
+      const finalPolls = updatedPolls.map(p =>
+        p.id === msgObj.id ? { ...p, status: "sent" } : p
+      );
+      localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(finalPolls));
     });
   };
 
