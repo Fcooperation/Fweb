@@ -449,40 +449,26 @@ if (msgObj.isPoll && msgObj.pollData) {
   submitBtn.textContent = "Submit vote";
   submitBtn.className = `poll-submit-btn ${alignmentClass}`;
 
-  submitBtn.onclick = () => {
-    // 🔍 find the poll this button belongs to
-    const pollWrapper = submitBtn.previousElementSibling;
-    if (!pollWrapper || !pollWrapper.classList.contains("poll-wrapper")) return;
+  const account = JSON.parse(localStorage.getItem("faccount")) || {};
+  const chatWith = JSON.parse(localStorage.getItem("chatting_with")) || {};
+  const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
 
-    // 🔍 get selected options (1-based index)
-    const selectedOptions = [...pollWrapper.querySelectorAll(".poll-circle.selected")]
-      .map(c => Number(c.closest(".poll-option").dataset.index) + 1);
-
-    if (selectedOptions.length === 0) {
-      alert("Select an option please");
-      return;
-    }
-
-    // ✅ UI: dim poll and show "Submitting..."
-    pollWrapper.classList.add("poll-dimmed");      // reduce opacity
+  // Function to send vote to backend
+  const sendVote = (selectedOptions, pollWrapper, meta) => {
+    // dim poll & show submitting
+    pollWrapper.classList.add("poll-dimmed");
     submitBtn.textContent = "Submitting...";
     submitBtn.disabled = true;
-
-    const meta = pollWrapper.querySelector(".message-meta");
     if (meta) meta.innerHTML = meta.innerHTML.replace(/sent|pending/, "sending");
 
-    // 🔐 update poll storage
-    const account = JSON.parse(localStorage.getItem("faccount")) || {};
-    const chatWith = JSON.parse(localStorage.getItem("chatting_with")) || {};
-    const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
-    const polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
-
-    const updatedPolls = polls.map(p =>
+    // update poll storage status = sending
+    let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+    polls = polls.map(p =>
       p.id === msgObj.id ? { ...p, status: "sending", voted_options: selectedOptions } : p
     );
-    localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(updatedPolls));
+    localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
 
-    // 🚀 FIRE-AND-FORGET: send to backend
+    // send to backend (fire-and-forget)
     fetch(API_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -494,20 +480,59 @@ if (msgObj.isPoll && msgObj.pollData) {
         options: selectedOptions
       })
     }).finally(() => {
-      // ✅ After "backend" send finishes (or fails), restore UI
+      // restore UI after sending
       submitBtn.textContent = "Revote";
-      submitBtn.disabled = false;                 // allow clicking if needed
-      pollWrapper.classList.remove("poll-dimmed"); // restore opacity
-
-      // Update meta text to "sent"
+      submitBtn.disabled = false;
+      pollWrapper.classList.remove("poll-dimmed");
       if (meta) meta.innerHTML = meta.innerHTML.replace("sending", "sent");
 
-      // Update poll storage status
-      const finalPolls = updatedPolls.map(p =>
+      // update poll storage
+      let finalPolls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+      finalPolls = finalPolls.map(p =>
         p.id === msgObj.id ? { ...p, status: "sent" } : p
       );
       localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(finalPolls));
     });
+  };
+
+  submitBtn.onclick = () => {
+    const pollWrapper = submitBtn.previousElementSibling;
+    if (!pollWrapper || !pollWrapper.classList.contains("poll-wrapper")) return;
+
+    const selectedOptions = [...pollWrapper.querySelectorAll(".poll-circle.selected")]
+      .map(c => Number(c.closest(".poll-option").dataset.index) + 1);
+
+    if (selectedOptions.length === 0) {
+      alert("Select an option please");
+      return;
+    }
+
+    const meta = pollWrapper.querySelector(".message-meta");
+
+    if (!navigator.onLine) {
+      // OFFLINE: show Pending
+      submitBtn.textContent = "Pending";
+      submitBtn.disabled = true;
+      pollWrapper.classList.add("poll-dimmed");
+
+      // update poll storage
+      let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+      polls = polls.map(p =>
+        p.id === msgObj.id ? { ...p, status: "pending", voted_options: selectedOptions } : p
+      );
+      localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
+
+      // wait for online
+      const onlineListener = () => {
+        window.removeEventListener("online", onlineListener);
+        sendVote(selectedOptions, pollWrapper, meta);
+      };
+      window.addEventListener("online", onlineListener);
+
+    } else {
+      // ONLINE: send immediately
+      sendVote(selectedOptions, pollWrapper, meta);
+    }
   };
 
   chatBody.appendChild(submitBtn);
