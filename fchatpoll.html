@@ -249,7 +249,7 @@ document.getElementById("send-btn").addEventListener("click", async () => {
       const stored = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
       const index = stored.findIndex(p => p.id === pollId);
       if (index !== -1) {
-        stored[index].status = "sent";
+        stored[index].status = "delivered";
         localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(stored));
       }
     }
