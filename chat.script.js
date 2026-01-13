@@ -526,37 +526,59 @@ if (msgObj.isPoll && msgObj.pollData) {
   };
 
   submitBtn.onclick = () => {
-    const selectedOptions = [...pollWrapper.querySelectorAll(".poll-circle.selected")]
-      .map(c => Number(c.closest(".poll-option").dataset.index) + 1);
+  const selectedOptions = [...pollWrapper.querySelectorAll(".poll-circle.selected")]
+    .map(c => Number(c.closest(".poll-option").dataset.index) + 1);
 
-    if (selectedOptions.length === 0) {
-      alert("Select an option please");
-      return;
-    }
+  if (selectedOptions.length === 0) {
+    alert("Select an option please");
+    return;
+  }
 
-    const meta = pollWrapper.querySelector(".message-meta");
+  const meta = pollWrapper.querySelector(".message-meta");
 
-    if (!navigator.onLine) {
-      submitBtn.textContent = "Pending";
-      submitBtn.disabled = true;
-      pollWrapper.classList.add("poll-dimmed");
+  let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+  let currentPoll = polls.find(p => p.id === msgObj.id);
 
-      let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
-      polls = polls.map(p =>
-        p.id === msgObj.id ? { ...p, status: "pending", voted_options: selectedOptions } : p
+  // If offline, mark as pending
+  if (!navigator.onLine) {
+    submitBtn.textContent = "Pending";
+    submitBtn.disabled = true;
+    pollWrapper.classList.add("poll-dimmed");
+
+    // Update poll status in localStorage
+    polls = polls.map(p =>
+      p.id === msgObj.id
+        ? {
+            ...p,
+            status: currentPoll?.status === "sending" ? "pending" : "pending",
+            voted_options: selectedOptions
+          }
+        : p
+    );
+    localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
+
+    // Retry once online
+    const onlineListener = () => {
+      window.removeEventListener("online", onlineListener);
+
+      // Update status to sending before retry
+      let retryPolls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+      retryPolls = retryPolls.map(p =>
+        p.id === msgObj.id
+          ? { ...p, status: "sending", voted_options: selectedOptions }
+          : p
       );
-      localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
+      localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(retryPolls));
 
-      const onlineListener = () => {
-        window.removeEventListener("online", onlineListener);
-        sendVote(selectedOptions, pollWrapper, meta);
-      };
-      window.addEventListener("online", onlineListener);
-
-    } else {
       sendVote(selectedOptions, pollWrapper, meta);
-    }
-  };
+    };
+    window.addEventListener("online", onlineListener);
+
+  } else {
+    // Online: normal sending
+    sendVote(selectedOptions, pollWrapper, meta);
+  }
+};
 
   chatBody.appendChild(submitBtn);
 }
