@@ -318,7 +318,9 @@ function addMessage(msgObj) {
     : "Select one";
 
   msg.innerHTML = `
-    <div class="poll-question">${msgObj.pollData.question}</div>
+    <div class="poll-question" data-poll-id="${msgObj.id}">
+  ${msgObj.pollData.question}
+</div>
     <div class="poll-instruction">${instructionText}</div>
 
     ${msgObj.pollData.options.map((opt, i) => `
@@ -449,27 +451,94 @@ if (msgObj.isPoll && msgObj.pollData) {
   submitBtn.textContent = "Submit vote";
   submitBtn.className = `poll-submit-btn ${alignmentClass}`;
 
-  submitBtn.onclick = () => {
-  // 🔍 find the poll this button belongs to
+  submitBtn.onclick = async () => {
   const pollWrapper = submitBtn.previousElementSibling;
   if (!pollWrapper || !pollWrapper.classList.contains("poll-wrapper")) return;
 
-  // 🔍 check if at least one option is selected
-  const selectedOptions = pollWrapper.querySelectorAll(
-    ".poll-circle.selected"
-  );
+  const pollQuestion = pollWrapper.querySelector(".poll-question");
+  const pollId = Number(pollQuestion.dataset.pollId);
+
+  const selectedOptions = [...pollWrapper.querySelectorAll(".poll-circle.selected")]
+    .map(circle => {
+      const opt = circle.closest(".poll-option");
+      return Number(opt.dataset.index) + 1; // 🔥 1-based index
+    });
 
   if (selectedOptions.length === 0) {
     alert("Select an option please");
     return;
   }
 
-  // ✅ button state
+  // UI state → submitting
   submitBtn.disabled = true;
   submitBtn.textContent = "Submitting...";
-
-  // 🔥 dim poll
   pollWrapper.classList.add("poll-dimmed");
+
+  // 🔐 SAVE LOCAL STATUS
+  const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
+  const polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+
+  const updatedPolls = polls.map(p =>
+    p.id === pollId ? { ...p, vote_status: "sending" } : p
+  );
+
+  localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(updatedPolls));
+
+  // 🚀 SEND TO BACKEND
+  try {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "send_votes",
+        poll_id: pollId,
+        sender_id: account.id,
+        receiver_id: chatWith.id,
+        options: selectedOptions
+      })
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      // ✅ SUCCESS UI
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Revote";
+
+      const finalPolls = updatedPolls.map(p =>
+        p.id === pollId
+          ? { ...p, vote_status: "sent", voted_options: selectedOptions }
+          : p
+      );
+
+      localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(finalPolls));
+    } else {
+      throw new Error("Vote failed");
+    }
+  } catch (err) {
+    console.error(err);
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Submit vote";
+    pollWrapper.classList.remove("poll-dimmed");
+    alert("Vote failed. Try again.");
+  }
+};
+// 🔁 Restore vote state
+const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
+const polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+const savedPoll = polls.find(p => p.id === msgObj.id);
+
+if (savedPoll?.vote_status === "sending") {
+  submitBtn.textContent = "Submitting...";
+  submitBtn.disabled = true;
+  msg.classList.add("poll-dimmed");
+}
+
+if (savedPoll?.vote_status === "sent") {
+  submitBtn.textContent = "Revote";
+  submitBtn.disabled = false;
+  msg.classList.add("poll-dimmed");
+}
   // 🔐 SAVE POLL STATUS AS "sending" IN POLL STORAGE
 const account = JSON.parse(localStorage.getItem("faccount")) || {};
 const chatWith = JSON.parse(localStorage.getItem("chatting_with")) || {};
