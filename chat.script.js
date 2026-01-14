@@ -471,21 +471,39 @@ submitBtn.textContent = "Submit vote"; // ✅ DEFAULT TEXT (VERY IMPORTANT)
   // Set initial button text & selected options based on stored poll
   const pollWrapper = msg.querySelector(".poll-wrapper") || msg;
   if (storedPoll) {
-    markSelectedOptions(pollWrapper, storedPoll.voted_options || []);
-    if (storedPoll.status === "pending") {
+  const voted = Array.isArray(storedPoll.voted_options) && storedPoll.voted_options.length > 0;
+
+  markSelectedOptions(pollWrapper, voted ? storedPoll.voted_options : []);
+
+  if (storedPoll.status === "pending") {
+    if (voted) {
       submitBtn.textContent = "Pending";
       submitBtn.disabled = true;
       pollWrapper.classList.add("poll-dimmed");
-    } else if (storedPoll.status === "sending") {
-      submitBtn.textContent = "Submitting...";
-      submitBtn.disabled = true;
-      pollWrapper.classList.add("poll-dimmed");
-    } else if (storedPoll.status === "sent") {
-      submitBtn.textContent = "Revote";
+    } else {
+      // 👇 Fresh poll, no vote yet
+      submitBtn.textContent = "Submit vote";
       submitBtn.disabled = false;
       pollWrapper.classList.remove("poll-dimmed");
     }
-  } else {
+  }
+
+  else if (storedPoll.status === "sending") {
+    submitBtn.textContent = "Submitting...";
+    submitBtn.disabled = true;
+    pollWrapper.classList.add("poll-dimmed");
+  }
+
+  else if (storedPoll.status === "sent") {
+    if (voted) {
+      submitBtn.textContent = "Revote";
+    } else {
+      submitBtn.textContent = "Submit vote";
+    }
+    submitBtn.disabled = false;
+    pollWrapper.classList.remove("poll-dimmed");
+  }
+}else {
     submitBtn.textContent = "Submit vote";
   }
 
