@@ -545,3 +545,73 @@ body {
 .poll-submit-btn:hover {
   opacity: 0.85;
 }
+/* ----------------- POLL OPTION VOTES ----------------- */
+.poll-option {
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.poll-option .vote-avatars {
+  position: absolute;
+  left: 0; /* align to right */
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  gap: -8px; /* overlap avatars */
+  align-items: center;
+  pointer-events: none; /* so clicks go to option */
+}
+
+.poll-option .vote-avatars img {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid white;
+  object-fit: cover;
+  box-shadow: 0 0 1px rgba(0,0,0,0.3);
+}
+
+/* If more than 2 votes, hide extra with smaller indicator */
+.poll-option .vote-avatars img.extra {
+  width: 16px;
+  height: 16px;
+  opacity: 0.7;
+}
+
+/* ----------------- THREE DOT MENU ----------------- */
+.poll-wrapper {
+  position: relative;
+}
+
+.poll-menu-btn {
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-size: 18px;
+  cursor: pointer;
+  user-select: none;
+  padding: 0 5px;
+}
+
+.poll-menu-dropdown {
+  position: absolute;
+  top: 24px;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  min-width: 120px;
+  z-index: 100;
+  display: none;
+  flex-direction: column;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.poll-menu-dropdown .menu-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.poll-menu-dropdown .menu-item:hover {
+  background: #f1f1f1;
+}
