@@ -1023,7 +1023,6 @@ window.addEventListener("offline", () => {
 window.addEventListener("online", () => {
   retryPendingVotes();
 });
-window.addEventListener("online", retryPendingPolls);
 // Initial load
 syncPolls();
 syncToFChat();
