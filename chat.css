@@ -515,6 +515,7 @@ body {
 /* ===== POLL SUBMIT BUTTON (OUTSIDE BOX) ===== */
 .poll-submit-btn {
   margin-top: 5px;              /* space from poll box */
+  margin-bottom: 5px;
   padding: 8px 14px;
   min-width: 40%;
   min-height: 35px;
