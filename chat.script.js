@@ -708,112 +708,83 @@ try {
   });
 }
 // ===== Unified Retry Handler for Polls & Messages =====
-function retryAllPendingItems() {
-  // --- Polls ---
+async function retryAllPendingItems() {
   const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
-  let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
-
-  // --- Messages ---
   const MSG_STORAGE_KEY = `messages_${account.email}_${chatWith.id}`;
-  let messages = JSON.parse(localStorage.getItem(MSG_STORAGE_KEY)) || [];
+
+  let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+  let msgs = JSON.parse(localStorage.getItem(MSG_STORAGE_KEY)) || [];
 
   let changed = false;
 
-  // ===== OFFLINE HANDLING =====
   if (!navigator.onLine) {
-    // Downgrade sending → pending for polls
-    polls = polls.map(p => {
-      if (p.status === "sending") {
-        changed = true;
-        return { ...p, status: "pending" };
-      }
-      return p;
-    });
+    // Offline → downgrade sending → pending
+    polls = polls.map(p => (p.status === "sending" ? { ...p, status: "pending" } : p));
+    msgs = msgs.map(m => (m.status === "sending" ? { ...m, status: "pending" } : m));
 
-    // Downgrade sending → pending for messages
-    messages = messages.map(m => {
-      if (m.status === "sending") {
-        changed = true;
-        return { ...m, status: "pending" };
-      }
-      return m;
-    });
-
-    if (changed) {
-      localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
-      localStorage.setItem(MSG_STORAGE_KEY, JSON.stringify(messages));
-      updateTimeline(); // refresh UI for polls & messages
-    }
-    return; // stop retrying while offline
+    localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
+    localStorage.setItem(MSG_STORAGE_KEY, JSON.stringify(msgs));
+    updateTimeline();
+    return;
   }
 
-  // ===== ONLINE HANDLING =====
-  // Retry polls
-  polls.forEach(p => {
+  // Online → retry pending/sending polls
+  const pollPromises = polls.map(async (p) => {
     if (!["pending", "sending"].includes(p.status)) return;
-
     p.status = "sending";
     changed = true;
 
-    fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "send_votes",
-        poll_id: p.id,
-        sender_id: p.sender_id || account.id,
-        receiver_id: p.receiver_id || chatWith.id,
-        options: p.voted_options
-      })
-    })
-    .then(res => {
-      p.status = res.ok ? "sent" : "pending";
-    })
-    .catch(() => {
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "send_votes",
+          poll_id: p.id,
+          sender_id: p.sender_id || account.id,
+          receiver_id: p.receiver_id || chatWith.id,
+          options: p.voted_options
+        })
+      });
+      p.status = res.ok ? "delivered" : "pending"; // polls delivered
+    } catch {
       p.status = "pending";
-    })
-    .finally(() => {
-      localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
-      updateTimeline();
-    });
+    }
   });
 
-  // Retry messages
-  messages.forEach(m => {
+  // Online → retry pending/sending messages
+  const msgPromises = msgs.map(async (m) => {
     if (!["pending", "sending"].includes(m.status)) return;
-
     m.status = "sending";
     changed = true;
 
-    fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "send_message",
-        message_id: m.id,
-        sender_id: m.sender_id || account.id,
-        receiver_id: m.receiver_id || chatWith.id,
-        content: m.content
-      })
-    })
-    .then(res => {
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "send_message",
+          message_id: m.id,
+          sender_id: m.sender_id || account.id,
+          receiver_id: m.receiver_id || chatWith.id,
+          content: m.content
+        })
+      });
       m.status = res.ok ? "sent" : "pending";
-    })
-    .catch(() => {
+    } catch {
       m.status = "pending";
-    })
-    .finally(() => {
-      localStorage.setItem(MSG_STORAGE_KEY, JSON.stringify(messages));
-      updateTimeline();
-    });
+    }
   });
 
-  // Final save if anything changed
-  if (changed) {
-    localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
-    localStorage.setItem(MSG_STORAGE_KEY, JSON.stringify(messages));
-    updateTimeline();
-  }
+  await Promise.all([...pollPromises, ...msgPromises]);
+
+  // Save after all retries
+  localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
+  localStorage.setItem(MSG_STORAGE_KEY, JSON.stringify(msgs));
+
+  // Sync to fchatMessages for UI
+  syncToFChat(); 
+  updateTimeline();
 }
 
 // Read more, Read less logic
