@@ -535,10 +535,10 @@ submitBtn.textContent = "Submit vote"; // ✅ DEFAULT TEXT (VERY IMPORTANT)
   submitBtn.disabled = true;
 })
   };
+submitBtn.onclick = () => {
 
-  submitBtn.onclick = () => {
-
-  // 🚫 BLOCK voting if poll message itself is not sent
+  // 🚫 BLOCK voting if poll MESSAGE itself is not sent
+  // (this is NOT the vote status, this is the poll message status)
   if (msgObj.status !== "sent") {
     alert("You cannot submit a vote until this poll has been sent.");
     return;
@@ -557,7 +557,7 @@ submitBtn.textContent = "Submit vote"; // ✅ DEFAULT TEXT (VERY IMPORTANT)
   let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
   let currentPoll = polls.find(p => p.id === msgObj.id);
 
-  // If offline, mark as pending
+  // 🔌 OFFLINE → mark vote as pending
   if (!navigator.onLine) {
     submitBtn.textContent = "Pending";
     submitBtn.disabled = true;
@@ -565,23 +565,19 @@ submitBtn.textContent = "Submit vote"; // ✅ DEFAULT TEXT (VERY IMPORTANT)
 
     polls = polls.map(p =>
       p.id === msgObj.id
-        ? { ...p, status: "pending", voted_options: selectedOptions }
+        ? {
+            ...p,
+            status: "pending",
+            voted_options: selectedOptions
+          }
         : p
     );
     localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
 
-    return;
-  }
-
-  // Online: normal sending
-  sendVote(selectedOptions, pollWrapper, meta);
-};
-
-    // Retry once online
+    // 🔁 Retry automatically once online
     const onlineListener = () => {
       window.removeEventListener("online", onlineListener);
 
-      // Update status to sending before retry
       let retryPolls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
       retryPolls = retryPolls.map(p =>
         p.id === msgObj.id
@@ -592,14 +588,15 @@ submitBtn.textContent = "Submit vote"; // ✅ DEFAULT TEXT (VERY IMPORTANT)
 
       sendVote(selectedOptions, pollWrapper, meta);
     };
+
     window.addEventListener("online", onlineListener);
-
-  } else {
-    // Online: normal sending
-    sendVote(selectedOptions, pollWrapper, meta);
+    return;
   }
-};
 
+  // 🌐 ONLINE → send immediately
+  sendVote(selectedOptions, pollWrapper, meta);
+};
+  
   chatBody.appendChild(submitBtn);
 }
 // Desktop right-click menu
