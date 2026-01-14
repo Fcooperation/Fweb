@@ -512,18 +512,28 @@ submitBtn.textContent = "Submit vote"; // ✅ DEFAULT TEXT (VERY IMPORTANT)
         receiver_id: chatWith.id,
         options: selectedOptions
       })
-    }).finally(() => {
-      submitBtn.textContent = "Revote";
-      submitBtn.disabled = false;
-      pollWrapper.classList.remove("poll-dimmed");
-      if (meta) meta.innerHTML = meta.innerHTML.replace("sending", "sent");
+    }).then(() => {
+  submitBtn.textContent = "Revote";
+  submitBtn.disabled = false;
+  pollWrapper.classList.remove("poll-dimmed");
 
-      let finalPolls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
-      finalPolls = finalPolls.map(p =>
-        p.id === msgObj.id ? { ...p, status: "sent" } : p
-      );
-      localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(finalPolls));
-    });
+  let finalPolls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+  finalPolls = finalPolls.map(p =>
+    p.id === msgObj.id ? { ...p, status: "sent" } : p
+  );
+  localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(finalPolls));
+})
+.catch(() => {
+  // 👇 CRITICAL FALLBACK
+  let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+  polls = polls.map(p =>
+    p.id === msgObj.id ? { ...p, status: "pending" } : p
+  );
+  localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
+
+  submitBtn.textContent = "Pending";
+  submitBtn.disabled = true;
+})
   };
 
   submitBtn.onclick = () => {
@@ -667,6 +677,64 @@ try {
     }
 
     addMessage(msg);
+  });
+}
+// Retry stucked sending votes 
+function reconcilePollStatuses() {
+  const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
+  let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+  let changed = false;
+
+  // If offline → downgrade sending → pending
+  if (!navigator.onLine) {
+    polls = polls.map(p => {
+      if (p.status === "sending") {
+        changed = true;
+        return { ...p, status: "pending" };
+      }
+      return p;
+    });
+  }
+
+  if (changed) {
+    localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
+    updateTimeline(); // refresh UI
+  }
+}
+// Retry pending votes 
+function retryPendingPolls() {
+  if (!navigator.onLine) return;
+
+  const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
+  let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+
+  polls.forEach(poll => {
+    if (poll.status !== "pending") return;
+
+    // Mark as sending
+    poll.status = "sending";
+
+    fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "send_votes",
+        poll_id: poll.id,
+        sender_id: poll.sender_id,
+        receiver_id: poll.receiver_id,
+        options: poll.voted_options
+      })
+    })
+    .then(() => {
+      poll.status = "sent";
+    })
+    .catch(() => {
+      poll.status = "pending";
+    })
+    .finally(() => {
+      localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
+      updateTimeline();
+    });
   });
 }
 // Read more, Read less logic
@@ -912,6 +980,17 @@ chatBody.addEventListener("click", (e) => {
     optionEl.querySelector(".poll-bar").style.width = "100%";
   }
 });
+// When network goes OFFLINE
+window.addEventListener("offline", () => {
+  reconcilePollStatuses();
+});
+
+// When network comes ONLINE
+window.addEventListener("online", () => {
+  retryPendingPolls();
+});
 // Initial load
 syncPolls();
 syncToFChat();
+reconcilePollStatuses();
+retryPendingPolls();
