@@ -329,17 +329,20 @@ function addMessage(msgObj) {
   <div class="poll-instruction">${instructionText}</div>
 
   ${msgObj.pollData.options.map((opt, i) => `
-    <div class="poll-option" data-index="${i}">
-      <div class="poll-row">
-        <div class="poll-circle"></div>
-        <div class="poll-text">${opt}</div>
-        <div class="vote-avatars"></div>
-      </div>
-      <div class="poll-bar-container">
-        <div class="poll-bar"></div>
-      </div>
+  <div class="poll-option" data-index="${i}">
+    <div class="poll-row">
+      <div class="poll-circle"></div>
+      <div class="poll-text">${opt}</div>
+
+      <!-- ✅ AVATARS GO HERE -->
+      <div class="vote-avatars"></div>
     </div>
-  `).join("")}
+
+    <div class="poll-bar-container">
+      <div class="poll-bar"></div>
+    </div>
+  </div>
+`).join("")}
 
   <div class="message-meta">
     ${time} ${isSent ? "• " + (msgObj.poll_status || msgObj.status || "sent") : ""}
@@ -451,6 +454,9 @@ if (msgObj.linked) {
 }
 }
   chatBody.appendChild(msg);
+  if (msgObj.isPoll) {
+  updatePollVotes(msgObj, msg);
+}
   // Initialize vote avatars
 const pollWrapper = msg.querySelector(".poll-wrapper") || msg;
 updatePollVotes(msgObj, pollWrapper);
@@ -560,6 +566,7 @@ submitBtn.textContent = "Submit vote"; // ✅ DEFAULT TEXT (VERY IMPORTANT)
         p.id === msgObj.id ? { ...p, status: "sent" } : p
       );
       localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(finalPolls));
+      updatePollVotes(msgObj, pollWrapper);
     });
   };
 

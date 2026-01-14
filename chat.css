@@ -615,3 +615,14 @@ body {
 .poll-menu-dropdown .menu-item:hover {
   background: #f1f1f1;
 }
+.poll-option .vote-avatars img {
+  margin-left: -8px;
+}
+
+.poll-option .vote-avatars img:first-child {
+  z-index: 2;
+}
+
+.poll-option .vote-avatars img:nth-child(2) {
+  z-index: 1;
+}
