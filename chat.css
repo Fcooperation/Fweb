@@ -517,7 +517,7 @@ body {
   margin-top: 5px;              /* space from poll box */
   padding: 8px 14px;
   min-width: 40%;
-  min-height: 50px;
+  min-height: 35px;
   border: none;
   border-radius: 6px;
   font-weight: bold;
