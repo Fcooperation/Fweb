@@ -446,7 +446,8 @@ if (msgObj.linked) {
 // ===== ADD POLL SUBMIT BUTTON (OUTSIDE POLL BOX) =====
 if (msgObj.isPoll && msgObj.pollData) {
   const submitBtn = document.createElement("button");
-  submitBtn.className = `poll-submit-btn ${alignmentClass}`;
+submitBtn.className = `poll-submit-btn ${alignmentClass}`;
+submitBtn.textContent = "Submit vote"; // ✅ DEFAULT TEXT (VERY IMPORTANT)
 
   const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
   const polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
