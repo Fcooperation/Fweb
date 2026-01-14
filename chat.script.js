@@ -537,6 +537,13 @@ submitBtn.textContent = "Submit vote"; // ✅ DEFAULT TEXT (VERY IMPORTANT)
   };
 
   submitBtn.onclick = () => {
+
+  // 🚫 BLOCK voting if poll message itself is not sent
+  if (msgObj.status !== "sent") {
+    alert("You cannot submit a vote until this poll has been sent.");
+    return;
+  }
+
   const selectedOptions = [...pollWrapper.querySelectorAll(".poll-circle.selected")]
     .map(c => Number(c.closest(".poll-option").dataset.index) + 1);
 
@@ -556,17 +563,19 @@ submitBtn.textContent = "Submit vote"; // ✅ DEFAULT TEXT (VERY IMPORTANT)
     submitBtn.disabled = true;
     pollWrapper.classList.add("poll-dimmed");
 
-    // Update poll status in localStorage
     polls = polls.map(p =>
       p.id === msgObj.id
-        ? {
-            ...p,
-            status: currentPoll?.status === "sending" ? "pending" : "pending",
-            voted_options: selectedOptions
-          }
+        ? { ...p, status: "pending", voted_options: selectedOptions }
         : p
     );
     localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
+
+    return;
+  }
+
+  // Online: normal sending
+  sendVote(selectedOptions, pollWrapper, meta);
+};
 
     // Retry once online
     const onlineListener = () => {
