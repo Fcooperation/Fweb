@@ -481,19 +481,23 @@ submitBtn.textContent = "Submit vote"; // ✅ DEFAULT TEXT (VERY IMPORTANT)
       submitBtn.disabled = true;
       pollWrapper.classList.add("poll-dimmed");
     } else {
-      // 👇 Fresh poll, no vote yet
       submitBtn.textContent = "Submit vote";
       submitBtn.disabled = false;
       pollWrapper.classList.remove("poll-dimmed");
     }
   }
-
   else if (storedPoll.status === "sending") {
-    submitBtn.textContent = "Submitting...";
-    submitBtn.disabled = true;
-    pollWrapper.classList.add("poll-dimmed");
+    if (voted) {
+      submitBtn.textContent = "Submitting...";
+      submitBtn.disabled = true;
+      pollWrapper.classList.add("poll-dimmed");
+    } else {
+      // 👈 important: no vote yet, show normal button
+      submitBtn.textContent = "Submit vote";
+      submitBtn.disabled = false;
+      pollWrapper.classList.remove("poll-dimmed");
+    }
   }
-
   else if (storedPoll.status === "sent") {
     if (voted) {
       submitBtn.textContent = "Revote";
