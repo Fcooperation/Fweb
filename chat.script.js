@@ -707,15 +707,21 @@ try {
     addMessage(msg);
   });
 }
-// ===== Unified Poll Retry Handler =====
-function retryAllPolls() {
+// ===== Unified Retry Handler for Polls & Messages =====
+function retryAllPendingItems() {
+  // --- Polls ---
   const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
   let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+
+  // --- Messages ---
+  const MSG_STORAGE_KEY = `messages_${account.email}_${chatWith.id}`;
+  let messages = JSON.parse(localStorage.getItem(MSG_STORAGE_KEY)) || [];
+
   let changed = false;
 
   // ===== OFFLINE HANDLING =====
   if (!navigator.onLine) {
-    // Any poll stuck at "sending" → downgrade to "pending"
+    // Downgrade sending → pending for polls
     polls = polls.map(p => {
       if (p.status === "sending") {
         changed = true;
@@ -724,18 +730,28 @@ function retryAllPolls() {
       return p;
     });
 
+    // Downgrade sending → pending for messages
+    messages = messages.map(m => {
+      if (m.status === "sending") {
+        changed = true;
+        return { ...m, status: "pending" };
+      }
+      return m;
+    });
+
     if (changed) {
       localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
-      updateTimeline(); // refresh UI so buttons reflect "Pending"
+      localStorage.setItem(MSG_STORAGE_KEY, JSON.stringify(messages));
+      updateTimeline(); // refresh UI for polls & messages
     }
-    return; // exit, no sending while offline
+    return; // stop retrying while offline
   }
 
   // ===== ONLINE HANDLING =====
+  // Retry polls
   polls.forEach(p => {
     if (!["pending", "sending"].includes(p.status)) return;
 
-    // mark as sending
     p.status = "sending";
     changed = true;
 
@@ -751,27 +767,55 @@ function retryAllPolls() {
       })
     })
     .then(res => {
-      if (res.ok) {
-        p.status = "sent"; // successfully sent
-      } else {
-        p.status = "pending"; // backend rejected
-      }
+      p.status = res.ok ? "sent" : "pending";
     })
     .catch(() => {
-      p.status = "pending"; // network failed, mark pending
+      p.status = "pending";
     })
     .finally(() => {
       localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
-      updateTimeline(); // refresh UI states for buttons
+      updateTimeline();
     });
   });
 
-  // Save and refresh UI if anything changed
+  // Retry messages
+  messages.forEach(m => {
+    if (!["pending", "sending"].includes(m.status)) return;
+
+    m.status = "sending";
+    changed = true;
+
+    fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "send_message",
+        message_id: m.id,
+        sender_id: m.sender_id || account.id,
+        receiver_id: m.receiver_id || chatWith.id,
+        content: m.content
+      })
+    })
+    .then(res => {
+      m.status = res.ok ? "sent" : "pending";
+    })
+    .catch(() => {
+      m.status = "pending";
+    })
+    .finally(() => {
+      localStorage.setItem(MSG_STORAGE_KEY, JSON.stringify(messages));
+      updateTimeline();
+    });
+  });
+
+  // Final save if anything changed
   if (changed) {
     localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
+    localStorage.setItem(MSG_STORAGE_KEY, JSON.stringify(messages));
     updateTimeline();
   }
 }
+
 // Read more, Read less logic
 function applyReadMore(container, fullText) {
   const lines = fullText.split("\n");
@@ -1016,10 +1060,10 @@ chatBody.addEventListener("click", (e) => {
   }
 });
 // ===== Event Listeners =====
-window.addEventListener("online", retryAllPolls);  // retry pending polls once online
-window.addEventListener("offline", retryAllPolls); // mark sending → pending when offline
+window.addEventListener("online", retryAllPendingItems);
+window.addEventListener("offline", retryAllPendingItems);
 
 // Initial load
 syncPolls();
 syncToFChat();
-retryAllPolls();
+retryAllPendingItems();
