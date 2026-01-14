@@ -843,64 +843,6 @@ function syncPolls() {
   fchatMessages.sort((a,b)=>new Date(a.sent_at)-new Date(b.sent_at));
   localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
 }
-// Retry Pending Polls 
-function retryPendingPolls() {
-  const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
-  let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
-
-  if (!navigator.onLine) {
-    // Offline → downgrade sending → pending
-    let changed = false;
-    polls = polls.map(p => {
-      if (p.status === "sending") {
-        changed = true;
-        return { ...p, status: "pending" };
-      }
-      return p;
-    });
-    if (changed) {
-      localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
-      updateTimeline(); // refresh UI
-    }
-    return;
-  }
-
-  // Online → retry pending and sending polls
-  let updated = false;
-  polls.forEach(poll => {
-    if (poll.status === "pending" || poll.status === "sending") {
-      poll.status = "sending";
-      updated = true;
-
-      fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "send_votes",
-          poll_id: poll.id,
-          sender_id: poll.sender_id || account.id,
-          receiver_id: poll.receiver_id || chatWith.id,
-          options: poll.voted_options
-        })
-      })
-      .then(() => {
-        poll.status = "sent"; // or "delivered" if you track that separately
-        localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
-        updateTimeline();
-      })
-      .catch(() => {
-        poll.status = "pending"; // failed again, mark pending
-        localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
-        updateTimeline();
-      });
-    }
-  });
-
-  if (updated) {
-    localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
-    updateTimeline();
-  }
-}
 
 // Send message
 async function sendToBackend(msgObj) {
