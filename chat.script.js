@@ -318,25 +318,33 @@ function addMessage(msgObj) {
     : "Select one";
 
   msg.innerHTML = `
+  <div class="poll-header">
     <div class="poll-question">${msgObj.pollData.question}</div>
-    <div class="poll-instruction">${instructionText}</div>
-
-    ${msgObj.pollData.options.map((opt, i) => `
-      <div class="poll-option" data-index="${i}">
-        <div class="poll-row">
-          <div class="poll-circle"></div>
-          <div class="poll-text">${opt}</div>
-        </div>
-        <div class="poll-bar-container">
-          <div class="poll-bar"></div>
-        </div>
-      </div>
-    `).join("")}
-
-    <div class="message-meta">
-      ${time} ${isSent ? "• " + (msgObj.poll_status || msgObj.status || "sent") : ""}
+    <div class="poll-menu-btn">⋮</div>
+    <div class="poll-menu-dropdown">
+      <div class="menu-item view-votes">View Votes</div>
     </div>
-  `;
+  </div>
+
+  <div class="poll-instruction">${instructionText}</div>
+
+  ${msgObj.pollData.options.map((opt, i) => `
+    <div class="poll-option" data-index="${i}">
+      <div class="poll-row">
+        <div class="poll-circle"></div>
+        <div class="poll-text">${opt}</div>
+        <div class="vote-avatars"></div>
+      </div>
+      <div class="poll-bar-container">
+        <div class="poll-bar"></div>
+      </div>
+    </div>
+  `).join("")}
+
+  <div class="message-meta">
+    ${time} ${isSent ? "• " + (msgObj.poll_status || msgObj.status || "sent") : ""}
+  </div>
+`;
 } else {
   msg.className = `message ${alignmentClass}`;
 
@@ -443,6 +451,35 @@ if (msgObj.linked) {
 }
 }
   chatBody.appendChild(msg);
+  // Initialize vote avatars
+const pollWrapper = msg.querySelector(".poll-wrapper") || msg;
+updatePollVotes(msgObj, pollWrapper);
+// Setup three-dot menu
+msg.querySelectorAll(".poll-menu-btn").forEach(btn => {
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const dropdown = btn.nextElementSibling;
+    dropdown.style.display = dropdown.style.display === "flex" ? "none" : "flex";
+
+    // Align menu based on sent/received
+    const isSent = msg.classList.contains("sent");
+    dropdown.style.right = isSent ? "0" : "auto";
+    dropdown.style.left = isSent ? "auto" : "0";
+  });
+});
+
+// View votes action
+msg.querySelectorAll(".view-votes").forEach(item => {
+  item.addEventListener("click", () => {
+    localStorage.setItem("viewpollvotes", msgObj.id);
+    window.location.href = "viewpollvotes.html";
+  });
+});
+
+// Close menu when clicking outside
+document.addEventListener("click", () => {
+  msg.querySelectorAll(".poll-menu-dropdown").forEach(d => d.style.display = "none");
+});
 // ===== ADD POLL SUBMIT BUTTON (OUTSIDE POLL BOX) =====
 if (msgObj.isPoll && msgObj.pollData) {
   const submitBtn = document.createElement("button");
@@ -667,6 +704,39 @@ try {
     }
 
     addMessage(msg);
+  });
+}
+// POLL VOTES HELPER 
+function updatePollVotes(msgObj, pollWrapper) {
+  const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
+  const polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+  const storedPoll = polls.find(p => p.id === msgObj.id);
+  if (!storedPoll) return;
+
+  msgObj.pollData.options.forEach((opt, i) => {
+    const optionEl = pollWrapper.querySelector(`.poll-option[data-index='${i}']`);
+    const avatarsContainer = optionEl.querySelector(".vote-avatars");
+    avatarsContainer.innerHTML = "";
+
+    const votes = storedPoll.votes?.filter(v => v.option === i) || [];
+    if (votes.length === 0) return;
+
+    // First two voters
+    votes.slice(0, 2).forEach((voter, idx) => {
+      const img = document.createElement("img");
+      img.src = voter.profile_pic;
+      if (idx === 1) img.style.zIndex = "1"; // second avatar behind
+      avatarsContainer.appendChild(img);
+    });
+
+    // If more than 2 voters, show small "extra"
+    if (votes.length > 2) {
+      const extra = document.createElement("img");
+      extra.className = "extra";
+      extra.title = `${votes.length - 2} more`;
+      extra.src = votes[2].profile_pic || ""; // show third as small
+      avatarsContainer.appendChild(extra);
+    }
   });
 }
 // Read more, Read less logic
