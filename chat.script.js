@@ -318,37 +318,48 @@ function addMessage(msgObj) {
     : "Select one";
 
   msg.innerHTML = `
-  <div class="poll-header">
-    <div class="poll-question">${msgObj.pollData.question}</div>
-    <div class="poll-menu-btn">⋮</div>
-    <div class="poll-menu-dropdown">
-      <div class="menu-item view-votes">View Votes</div>
-    </div>
-  </div>
-
+  <div class="poll-question">${msgObj.pollData.question}</div>
   <div class="poll-instruction">${instructionText}</div>
 
   ${msgObj.pollData.options.map((opt, i) => `
-  <div class="poll-option" data-index="${i}">
-    <div class="poll-row">
-      <div class="poll-circle"></div>
-      <div class="poll-text">${opt}</div>
-
-      <!-- ✅ AVATARS GO HERE -->
-      <div class="vote-avatars"></div>
+    <div class="poll-option" data-index="${i}">
+      <div class="poll-row">
+        <div class="poll-circle"></div>
+        <div class="poll-text">${opt}</div>
+      </div>
+      <div class="poll-bar-container">
+        <div class="poll-bar"></div>
+      </div>
     </div>
-
-    <div class="poll-bar-container">
-      <div class="poll-bar"></div>
-    </div>
-  </div>
-`).join("")}
+  `).join("")}
 
   <div class="message-meta">
-    ${time} ${isSent ? "• " + (msgObj.poll_status || msgObj.status || "sent") : ""}
+    ${time} ${isSent ? "• " + (msgObj.status || "sent") : ""}
   </div>
 `;
-} else {
+
+// ==== LOAD PREVIOUS VOTES ====
+const VOTE_STORAGE_KEY = `poll_votes_${account.email}_${chatWith.id}`;
+const votes = JSON.parse(localStorage.getItem(VOTE_STORAGE_KEY)) || [];
+
+// Find vote for this poll
+const savedVote = votes.find(v => v.action === "vote_polls" && v.poll_id === pollId);
+
+// If found, mark the selected options
+if (savedVote && savedVote.option_voted) {
+  const votedOptions = savedVote.option_voted.split(",").map(v => Number(v) - 1); // convert to 0-indexed
+
+  votedOptions.forEach(idx => {
+    const optEl = msg.querySelector(`.poll-option[data-index='${idx}']`);
+    if (optEl) {
+      const circle = optEl.querySelector(".poll-circle");
+      const bar = optEl.querySelector(".poll-bar");
+      circle.classList.add("selected");
+      bar.style.width = "100%";
+    }
+  });
+}
+}else {
   msg.className = `message ${alignmentClass}`;
 
 let replyHTML = "";
@@ -380,9 +391,6 @@ if (msgObj.deleted && msgObj.deleted_for === "everyone") {
       ${time} ${isSent ? "• " + (msgObj.status || "sent") : ""}
     </div>
   `;
-  if (msgObj.poll_status === "sending") {
-  msg.classList.add("poll-dimmed");
-}
   const textBox = msg.querySelector(".message-text");
   applyReadMore(textBox, msgObj.text);
 }
@@ -454,179 +462,6 @@ if (msgObj.linked) {
 }
 }
   chatBody.appendChild(msg);
-  if (msgObj.isPoll) {
-  updatePollVotes(msgObj, msg);
-}
-  // Initialize vote avatars
-const pollWrapper = msg.querySelector(".poll-wrapper") || msg;
-updatePollVotes(msgObj, pollWrapper);
-// Setup three-dot menu
-msg.querySelectorAll(".poll-menu-btn").forEach(btn => {
-  btn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    const dropdown = btn.nextElementSibling;
-    dropdown.style.display = dropdown.style.display === "flex" ? "none" : "flex";
-
-    // Align menu based on sent/received
-    const isSent = msg.classList.contains("sent");
-    dropdown.style.right = isSent ? "0" : "auto";
-    dropdown.style.left = isSent ? "auto" : "0";
-  });
-});
-
-// View votes action
-msg.querySelectorAll(".view-votes").forEach(item => {
-  item.addEventListener("click", () => {
-    localStorage.setItem("viewpollvotes", msgObj.id);
-    window.location.href = "viewpollvotes.html";
-  });
-});
-
-// Close menu when clicking outside
-document.addEventListener("click", () => {
-  msg.querySelectorAll(".poll-menu-dropdown").forEach(d => d.style.display = "none");
-});
-// ===== ADD POLL SUBMIT BUTTON (OUTSIDE POLL BOX) =====
-if (msgObj.isPoll && msgObj.pollData) {
-  const submitBtn = document.createElement("button");
-submitBtn.className = `poll-submit-btn ${alignmentClass}`;
-submitBtn.textContent = "Submit vote"; // ✅ DEFAULT TEXT (VERY IMPORTANT)
-
-  const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
-  const polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
-  const storedPoll = polls.find(p => p.id === msgObj.id);
-
-  // Function to mark selected options in the UI
-  const markSelectedOptions = (pollWrapper, votedOptions) => {
-    pollWrapper.querySelectorAll(".poll-option").forEach((opt, i) => {
-      const circle = opt.querySelector(".poll-circle");
-      const bar = opt.querySelector(".poll-bar");
-      if (votedOptions.includes(i + 1)) {
-        circle.classList.add("selected");
-        bar.style.width = "100%";
-      } else {
-        circle.classList.remove("selected");
-        bar.style.width = "0%";
-      }
-    });
-  };
-
-  // Set initial button text & selected options based on stored poll
-  const pollWrapper = msg.querySelector(".poll-wrapper") || msg;
-  if (storedPoll) {
-    markSelectedOptions(pollWrapper, storedPoll.voted_options || []);
-    if (storedPoll.status === "pending") {
-      submitBtn.textContent = "Pending";
-      submitBtn.disabled = true;
-      pollWrapper.classList.add("poll-dimmed");
-    } else if (storedPoll.status === "sending") {
-      submitBtn.textContent = "Submitting...";
-      submitBtn.disabled = true;
-      pollWrapper.classList.add("poll-dimmed");
-    } else if (storedPoll.status === "sent") {
-      submitBtn.textContent = "Revote";
-      submitBtn.disabled = false;
-      pollWrapper.classList.remove("poll-dimmed");
-    }
-  } else {
-    submitBtn.textContent = "Submit vote";
-  }
-
-  // Send vote function
-  const sendVote = (selectedOptions, pollWrapper, meta) => {
-    pollWrapper.classList.add("poll-dimmed");
-    submitBtn.textContent = "Submitting...";
-    submitBtn.disabled = true;
-    if (meta) meta.innerHTML = meta.innerHTML.replace(/sent|pending/, "sending");
-
-    let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
-    polls = polls.map(p =>
-      p.id === msgObj.id ? { ...p, status: "sending", voted_options: selectedOptions } : p
-    );
-    localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
-
-    fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "send_votes",
-        poll_id: msgObj.id,
-        sender_id: account.id,
-        receiver_id: chatWith.id,
-        options: selectedOptions
-      })
-    }).finally(() => {
-      submitBtn.textContent = "Revote";
-      submitBtn.disabled = false;
-      pollWrapper.classList.remove("poll-dimmed");
-      if (meta) meta.innerHTML = meta.innerHTML.replace("sending", "sent");
-
-      let finalPolls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
-      finalPolls = finalPolls.map(p =>
-        p.id === msgObj.id ? { ...p, status: "sent" } : p
-      );
-      localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(finalPolls));
-      updatePollVotes(msgObj, pollWrapper);
-    });
-  };
-
-  submitBtn.onclick = () => {
-  const selectedOptions = [...pollWrapper.querySelectorAll(".poll-circle.selected")]
-    .map(c => Number(c.closest(".poll-option").dataset.index) + 1);
-
-  if (selectedOptions.length === 0) {
-    alert("Select an option please");
-    return;
-  }
-
-  const meta = pollWrapper.querySelector(".message-meta");
-
-  let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
-  let currentPoll = polls.find(p => p.id === msgObj.id);
-
-  // If offline, mark as pending
-  if (!navigator.onLine) {
-    submitBtn.textContent = "Pending";
-    submitBtn.disabled = true;
-    pollWrapper.classList.add("poll-dimmed");
-
-    // Update poll status in localStorage
-    polls = polls.map(p =>
-      p.id === msgObj.id
-        ? {
-            ...p,
-            status: currentPoll?.status === "sending" ? "pending" : "pending",
-            voted_options: selectedOptions
-          }
-        : p
-    );
-    localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
-
-    // Retry once online
-    const onlineListener = () => {
-      window.removeEventListener("online", onlineListener);
-
-      // Update status to sending before retry
-      let retryPolls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
-      retryPolls = retryPolls.map(p =>
-        p.id === msgObj.id
-          ? { ...p, status: "sending", voted_options: selectedOptions }
-          : p
-      );
-      localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(retryPolls));
-
-      sendVote(selectedOptions, pollWrapper, meta);
-    };
-    window.addEventListener("online", onlineListener);
-
-  } else {
-    // Online: normal sending
-    sendVote(selectedOptions, pollWrapper, meta);
-  }
-};
-
-  chatBody.appendChild(submitBtn);
-}
 // Desktop right-click menu
 msg.addEventListener("contextmenu", e => {
   e.preventDefault(); // ⛔ disable browser menu
@@ -685,21 +520,13 @@ function updateTimeline() {
   chatBody.innerHTML = "";
 
   const chatItems = fchatMessages
-    .filter(m =>
-      (m.sender_id === chatWith.id && m.receiver_id === account.id) || // messages sent to me
-      (m.sender_id === account.id && m.receiver_id === chatWith.id)   // messages I sent to them
-    )
+    .filter(m => m.receiver_id === chatWith.id || m.sender_id === chatWith.id)
     .sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
 
   let lastDate = null;
 
   chatItems.forEach(msg => {
-    let msgDate;
-try {
-  msgDate = new Date(msg.sent_at).toDateString();
-} catch {
-  msgDate = "Unknown Date";
-}
+    const msgDate = new Date(msg.sent_at).toDateString();
 
     if (msgDate !== lastDate) {
       const dateDivider = document.createElement("div");
@@ -711,39 +538,6 @@ try {
     }
 
     addMessage(msg);
-  });
-}
-// POLL VOTES HELPER 
-function updatePollVotes(msgObj, pollWrapper) {
-  const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
-  const polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
-  const storedPoll = polls.find(p => p.id === msgObj.id);
-  if (!storedPoll) return;
-
-  msgObj.pollData.options.forEach((opt, i) => {
-    const optionEl = pollWrapper.querySelector(`.poll-option[data-index='${i}']`);
-    const avatarsContainer = optionEl.querySelector(".vote-avatars");
-    avatarsContainer.innerHTML = "";
-
-    const votes = storedPoll.votes?.filter(v => v.option === i) || [];
-    if (votes.length === 0) return;
-
-    // First two voters
-    votes.slice(0, 2).forEach((voter, idx) => {
-      const img = document.createElement("img");
-      img.src = voter.profile_pic;
-      if (idx === 1) img.style.zIndex = "1"; // second avatar behind
-      avatarsContainer.appendChild(img);
-    });
-
-    // If more than 2 voters, show small "extra"
-    if (votes.length > 2) {
-      const extra = document.createElement("img");
-      extra.className = "extra";
-      extra.title = `${votes.length - 2} more`;
-      extra.src = votes[2].profile_pic || ""; // show third as small
-      avatarsContainer.appendChild(extra);
-    }
   });
 }
 // Read more, Read less logic
@@ -803,15 +597,15 @@ function syncPolls() {
   polls.forEach(p => {
     if(!fchatMessages.some(fm => fm.id===p.id)) {
       fchatMessages.push({
-  id: p.id,
-  type: "sent",
-  isPoll: true,
-  pollData: p.pollData,
-  status: p.status,
-  sender_id: p.sender_id,
-  receiver_id: p.receiver_id || chatWith.id,
-  sent_at: p.sent_at || new Date().toISOString() // ensure valid date
-});
+        id: p.id,
+        type: "sent",
+        isPoll: true,
+        pollData: p.pollData,
+        status: p.status,
+        sender_id: p.sender_id,
+        receiver_id: chatWith.id,
+        sent_at: p.sent_at
+      });
     }
   });
 
@@ -952,18 +746,19 @@ chatBody.addEventListener("click", (e) => {
   const pollWrapper = optionEl.closest(".poll-wrapper");
   if (!pollWrapper) return;
 
-  // Get poll object from DOM
   const pollId = Number(pollWrapper.querySelector(".poll-question")?.dataset.pollId);
   if (pollId === undefined) return;
 
-  // For now, assume the poll data is stored on the element (we can attach it when rendering)
-  const pollData = pollWrapper.pollData; // set this when generating the poll in addMessage()
+  const pollData = pollWrapper.pollData; // attached in addMessage()
   if (!pollData) return;
 
   const optionIndex = Number(optionEl.dataset.index);
 
+  // Prepare localStorage key for votes
+  const VOTE_STORAGE_KEY = `poll_votes_${account.email}_${chatWith.id}`;
+  let votes = JSON.parse(localStorage.getItem(VOTE_STORAGE_KEY)) || [];
+
   if (pollData.allowMultiple) {
-    // Toggle selection for this option only
     const circle = optionEl.querySelector(".poll-circle");
     const bar = optionEl.querySelector(".poll-bar");
     const isSelected = circle.classList.contains("selected");
@@ -988,6 +783,32 @@ chatBody.addEventListener("click", (e) => {
     optionEl.querySelector(".poll-circle").classList.add("selected");
     optionEl.querySelector(".poll-bar").style.width = "100%";
   }
+
+  // ==== UPDATE LOCAL STORAGE WITH VOTE ====
+  const selectedOptions = Array.from(pollWrapper.querySelectorAll(".poll-option"))
+    .map((opt, idx) => {
+      const c = opt.querySelector(".poll-circle");
+      return c.classList.contains("selected") ? idx + 1 : null; // option number
+    })
+    .filter(v => v !== null);
+
+  const voteJson = {
+    action: "vote_polls",
+    poll_id: pollId,
+    sender_id: account.id,
+    receiver_id: chatWith.id,
+    option_voted: selectedOptions.join(",") // multiple allowed
+  };
+
+  // Check if vote for this poll already exists
+  const existingIndex = votes.findIndex(v => v.action === "vote_polls" && v.poll_id === pollId);
+  if (existingIndex !== -1) {
+    votes[existingIndex] = voteJson; // replace
+  } else {
+    votes.push(voteJson); // add new
+  }
+
+  localStorage.setItem(VOTE_STORAGE_KEY, JSON.stringify(votes));
 });
 // Initial load
 syncPolls();
