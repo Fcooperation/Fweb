@@ -707,45 +707,78 @@ try {
     addMessage(msg);
   });
 }
-// ===== Minimal Poll Status Updater with UI Dim =====
-function retryAllPolls() {
+// ===== Poll Retry + Send Handler (FINAL) =====
+async function retryAllPolls() {
   const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
   let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
   let changed = false;
 
-  polls = polls.map(p => {
+  for (const p of polls) {
     let newStatus = p.status;
 
+    // ===== OFFLINE HANDLING =====
     if (!navigator.onLine && p.status === "sending") {
       newStatus = "pending";
       changed = true;
     }
 
+    // ===== ONLINE RETRY =====
     if (navigator.onLine && p.status === "pending") {
       newStatus = "sending";
       changed = true;
-    }
 
-    // Update DOM if the poll exists
-    const pollEl = document.querySelector(`.poll-wrapper[data-poll-id='${p.id}']`);
-    const btnEl = pollEl?.querySelector(".poll-submit-btn");
+      // Try sending to backend
+      try {
+        const res = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "send_votes",
+            poll_id: p.id,
+            sender_id: p.sender_id || account.id,
+            receiver_id: p.receiver_id || chatWith.id,
+            options: p.voted_options
+          })
+        });
 
-    if (pollEl) {
-      if (newStatus === "pending" || newStatus === "sending") {
-        pollEl.style.opacity = "0.5"; // dim poll
-        if (btnEl) btnEl.style.opacity = "0.5";
-      } else {
-        pollEl.style.opacity = "1"; // restore
-        if (btnEl) btnEl.style.opacity = "1";
+        if (res.ok) {
+          newStatus = "sent"; // ✅ ONLY HERE WE ALLOW REVOTE
+        } else {
+          newStatus = "pending";
+        }
+      } catch {
+        newStatus = "pending";
       }
     }
 
-    return { ...p, status: newStatus };
-  });
+    // ===== UPDATE DOM =====
+    const pollEl = document.querySelector(
+      `.poll-wrapper[data-poll-id='${p.id}']`
+    );
+    const btnEl = pollEl?.querySelector(".poll-submit-btn");
+
+    if (pollEl && btnEl) {
+      if (newStatus === "pending") {
+        pollEl.style.opacity = "0.5";
+        btnEl.textContent = "Pending";
+        btnEl.disabled = true;
+      } else if (newStatus === "sending") {
+        pollEl.style.opacity = "0.5";
+        btnEl.textContent = "Submitting...";
+        btnEl.disabled = true;
+      } else if (newStatus === "sent") {
+        pollEl.style.opacity = "1";
+        btnEl.textContent = "Revote";
+        btnEl.disabled = false;
+      }
+    }
+
+    p.status = newStatus;
+  }
 
   if (changed) {
     localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
-    updateTimeline(); // refresh buttons/status if needed
+    updateTimeline();
   }
 }
 // Read more, Read less logic
