@@ -707,63 +707,29 @@ try {
     addMessage(msg);
   });
 }
-// ===== Unified Poll Retry Handler =====
-async function retryAllPolls() {
+// ===== Minimal Poll Status Updater =====
+function retryAllPolls() {
   const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
   let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+  let changed = false;
 
-  // ===== OFFLINE =====
-  if (!navigator.onLine) {
-    let changed = false;
-
-    polls = polls.map(p => {
-      if (p.status === "sending") {
-        changed = true;
-        return { ...p, status: "pending" };
-      }
-      return p;
-    });
-
-    if (changed) {
-      localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
-      syncPolls();      // 🔥 CRITICAL
-      updateTimeline();
+  polls = polls.map(p => {
+    if (!navigator.onLine && p.status === "sending") {
+      changed = true;
+      return { ...p, status: "pending" };
     }
-    return;
-  }
 
-  // ===== ONLINE =====
-  let didRetry = false;
-
-  for (const p of polls) {
-    if (!["pending", "sending"].includes(p.status)) continue;
-
-    p.status = "sending";
-    didRetry = true;
-
-    try {
-      const res = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "send_votes",
-          poll_id: p.id,
-          sender_id: p.sender_id || account.id,
-          receiver_id: p.receiver_id || chatWith.id,
-          options: p.voted_options
-        })
-      });
-
-      p.status = res.ok ? "sent" : "pending";
-    } catch {
-      p.status = "pending";
+    if (navigator.onLine && p.status === "pending") {
+      changed = true;
+      return { ...p, status: "sending" };
     }
-  }
 
-  if (didRetry) {
+    return p;
+  });
+
+  if (changed) {
     localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
-    syncPolls();       // 🔥 PUSH STATUS INTO fchatMessages
-    updateTimeline();  // 🔥 UI UPDATES CORRECTLY
+    updateTimeline(); // optional: refresh buttons/status
   }
 }
 // Read more, Read less logic
