@@ -707,29 +707,45 @@ try {
     addMessage(msg);
   });
 }
-// ===== Minimal Poll Status Updater =====
+// ===== Minimal Poll Status Updater with UI Dim =====
 function retryAllPolls() {
   const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
   let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
   let changed = false;
 
   polls = polls.map(p => {
+    let newStatus = p.status;
+
     if (!navigator.onLine && p.status === "sending") {
+      newStatus = "pending";
       changed = true;
-      return { ...p, status: "pending" };
     }
 
     if (navigator.onLine && p.status === "pending") {
+      newStatus = "sending";
       changed = true;
-      return { ...p, status: "sending" };
     }
 
-    return p;
+    // Update DOM if the poll exists
+    const pollEl = document.querySelector(`.poll-wrapper[data-poll-id='${p.id}']`);
+    const btnEl = pollEl?.querySelector(".poll-submit-btn");
+
+    if (pollEl) {
+      if (newStatus === "pending" || newStatus === "sending") {
+        pollEl.style.opacity = "0.5"; // dim poll
+        if (btnEl) btnEl.style.opacity = "0.5";
+      } else {
+        pollEl.style.opacity = "1"; // restore
+        if (btnEl) btnEl.style.opacity = "1";
+      }
+    }
+
+    return { ...p, status: newStatus };
   });
 
   if (changed) {
     localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
-    updateTimeline(); // optional: refresh buttons/status
+    updateTimeline(); // refresh buttons/status if needed
   }
 }
 // Read more, Read less logic
