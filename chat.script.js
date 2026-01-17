@@ -510,6 +510,26 @@ submitBtn.textContent = "Submit vote"; // ✅ DEFAULT TEXT (VERY IMPORTANT)
 }else {
     submitBtn.textContent = "Submit vote";
   }
+  // When rendering poll buttons in addMessage()
+if (storedPoll) {
+  const submitBtn = msg.querySelector(".poll-submit-btn");
+  const pollWrapper = msg.querySelector(".poll-wrapper") || msg;
+
+  // Update button text based on current status
+  if (storedPoll.status === "pending") {
+    submitBtn.textContent = "Pending";
+    submitBtn.disabled = true;
+    pollWrapper.style.opacity = "0.5";
+  } else if (storedPoll.status === "sending") {
+    submitBtn.textContent = "Submitting...";
+    submitBtn.disabled = true;
+    pollWrapper.style.opacity = "0.5";
+  } else if (storedPoll.status === "sent") {
+    submitBtn.textContent = storedPoll.voted_options?.length > 0 ? "Revote" : "Submit vote";
+    submitBtn.disabled = false;
+    pollWrapper.style.opacity = "1";
+  }
+}
 
   // Send vote function
   const sendVote = (selectedOptions, pollWrapper, meta) => {
@@ -706,8 +726,7 @@ try {
 
     addMessage(msg);
   });
-}
-// ===== Minimal Poll Status Updater with UI Dim =====
+}// ===== Minimal Poll Status Updater with UI Dim =====
 function retryAllPolls() {
   const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
   let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
@@ -748,6 +767,7 @@ function retryAllPolls() {
     updateTimeline(); // refresh buttons/status if needed
   }
 }
+
 // Read more, Read less logic
 function applyReadMore(container, fullText) {
   const lines = fullText.split("\n");
