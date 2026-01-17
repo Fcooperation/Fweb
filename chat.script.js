@@ -708,14 +708,14 @@ try {
   });
 }
 // ===== Unified Poll Retry Handler =====
-function retryAllPolls() {
+async function retryAllPolls() {
   const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
   let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
-  let changed = false;
 
-  // ===== OFFLINE HANDLING =====
+  // ===== OFFLINE =====
   if (!navigator.onLine) {
-    // Any poll stuck at "sending" → downgrade to "pending"
+    let changed = false;
+
     polls = polls.map(p => {
       if (p.status === "sending") {
         changed = true;
@@ -726,50 +726,44 @@ function retryAllPolls() {
 
     if (changed) {
       localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
-      updateTimeline(); // refresh UI so buttons reflect "Pending"
+      syncPolls();      // 🔥 CRITICAL
+      updateTimeline();
     }
-    return; // exit, no sending while offline
+    return;
   }
 
-  // ===== ONLINE HANDLING =====
-  polls.forEach(p => {
-    if (!["pending", "sending"].includes(p.status)) return;
+  // ===== ONLINE =====
+  let didRetry = false;
 
-    // mark as sending
+  for (const p of polls) {
+    if (!["pending", "sending"].includes(p.status)) continue;
+
     p.status = "sending";
-    changed = true;
+    didRetry = true;
 
-    fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "send_votes",
-        poll_id: p.id,
-        sender_id: p.sender_id || account.id,
-        receiver_id: p.receiver_id || chatWith.id,
-        options: p.voted_options
-      })
-    })
-    .then(res => {
-      if (res.ok) {
-        p.status = "sent"; // successfully sent
-      } else {
-        p.status = "pending"; // backend rejected
-      }
-    })
-    .catch(() => {
-      p.status = "pending"; // network failed, mark pending
-    })
-    .finally(() => {
-      localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
-      updateTimeline(); // refresh UI states for buttons
-    });
-  });
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "send_votes",
+          poll_id: p.id,
+          sender_id: p.sender_id || account.id,
+          receiver_id: p.receiver_id || chatWith.id,
+          options: p.voted_options
+        })
+      });
 
-  // Save and refresh UI if anything changed
-  if (changed) {
+      p.status = res.ok ? "sent" : "pending";
+    } catch {
+      p.status = "pending";
+    }
+  }
+
+  if (didRetry) {
     localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
-    updateTimeline();
+    syncPolls();       // 🔥 PUSH STATUS INTO fchatMessages
+    updateTimeline();  // 🔥 UI UPDATES CORRECTLY
   }
 }
 // Read more, Read less logic
