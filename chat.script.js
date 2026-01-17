@@ -707,7 +707,7 @@ try {
     addMessage(msg);
   });
 }
-// ===== Poll Retry + Send Handler (FINAL) =====
+// ===== Poll Retry + Send Handler (FINAL – FIXED) =====
 async function retryAllPolls() {
   const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
   let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
@@ -722,12 +722,10 @@ async function retryAllPolls() {
       changed = true;
     }
 
-    // ===== ONLINE RETRY =====
-    if (navigator.onLine && p.status === "pending") {
-      newStatus = "sending";
+    // ===== ONLINE SEND / RETRY =====
+    if (navigator.onLine && p.status === "sending") {
       changed = true;
 
-      // Try sending to backend
       try {
         const res = await fetch(API_URL, {
           method: "POST",
@@ -742,12 +740,12 @@ async function retryAllPolls() {
         });
 
         if (res.ok) {
-          newStatus = "sent"; // ✅ ONLY HERE WE ALLOW REVOTE
+          newStatus = "sent";     // ✅ ONLY success unlocks Revote
         } else {
-          newStatus = "pending";
+          newStatus = "pending"; // ❌ backend rejected
         }
       } catch {
-        newStatus = "pending";
+        newStatus = "pending";   // ❌ network failure
       }
     }
 
@@ -762,11 +760,13 @@ async function retryAllPolls() {
         pollEl.style.opacity = "0.5";
         btnEl.textContent = "Pending";
         btnEl.disabled = true;
-      } else if (newStatus === "sending") {
+      } 
+      else if (newStatus === "sending") {
         pollEl.style.opacity = "0.5";
         btnEl.textContent = "Submitting...";
         btnEl.disabled = true;
-      } else if (newStatus === "sent") {
+      } 
+      else if (newStatus === "sent") {
         pollEl.style.opacity = "1";
         btnEl.textContent = "Revote";
         btnEl.disabled = false;
