@@ -772,14 +772,14 @@ function retryAllPolls() {
     updateTimeline();
   }
 }
-// Retry Pending Messages
+// Retry function (your existing code)
 function retryPendingMessages() {
   messages = messages.map(msg => {
     const msgEl = chatBody.querySelector(`[data-id='${msg.id}']`);
     const meta = msgEl?.querySelector(".message-meta");
 
     if (!navigator.onLine) {
-      // 👇 If offline, downgrade any "sending" message to "pending"
+      // 👇 downgrade any "sending" to "pending" when offline
       if (msg.status === "sending") {
         msg.status = "pending";
         if (meta) meta.textContent =
@@ -788,7 +788,7 @@ function retryPendingMessages() {
         if (msgEl) msgEl.style.opacity = "1"; // remove dim
       }
     } else {
-      // 👆 If online, retry any "pending" message
+      // 👆 retry any "pending" message when online
       if (msg.status === "pending") {
         msg.status = "sending"; // mark as sending
         if (meta) meta.textContent =
@@ -806,6 +806,9 @@ function retryPendingMessages() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   updateTimeline();
 }
+
+// ✅ Auto retry every 1 second
+setInterval(retryPendingMessages, 1000);
 // Read more, Read less logic
 function applyReadMore(container, fullText) {
   const lines = fullText.split("\n");
