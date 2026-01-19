@@ -60,18 +60,16 @@ function toggleSelectMessage(el, msgObj) {
   if (selectedMessages.has(id)) {
     selectedMessages.delete(id);
     el.classList.remove("selected", "highlight-message");
+    el.style.opacity = "1"; // remove faint
   } else {
     selectedMessages.add(id);
     el.classList.add("selected", "highlight-message");
+    el.style.opacity = "0.7"; // faint/dim effect
   }
 
-  // enter selection mode if at least one message selected
   selectionMode = selectedMessages.size > 0;
-
-  // Refresh the selection board visibility
   updateSelectionBoard();
 }
-
 // Selection board elements
 const selectionBoard = document.getElementById("selection-board");
 const boardBackBtn = document.getElementById("board-back-btn");
