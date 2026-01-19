@@ -774,29 +774,37 @@ function retryAllPolls() {
 }
 // Retry Pending Messages
 function retryPendingMessages() {
-  if (!navigator.onLine) return; // only retry if online
-
   messages = messages.map(msg => {
-    if (msg.status === "pending") {
-      msg.status = "sending"; // mark as sending
+    const msgEl = chatBody.querySelector(`[data-id='${msg.id}']`);
+    const meta = msgEl?.querySelector(".message-meta");
 
-      // Update UI immediately
-      const msgEl = chatBody.querySelector(`[data-id='${msg.id}']`);
-      if (msgEl) {
-        const meta = msgEl.querySelector(".message-meta");
+    if (!navigator.onLine) {
+      // 👇 If offline, downgrade any "sending" message to "pending"
+      if (msg.status === "sending") {
+        msg.status = "pending";
+        if (meta) meta.textContent =
+          new Date(msg.sent_at).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}) +
+          " • pending";
+        if (msgEl) msgEl.style.opacity = "1"; // remove dim
+      }
+    } else {
+      // 👆 If online, retry any "pending" message
+      if (msg.status === "pending") {
+        msg.status = "sending"; // mark as sending
         if (meta) meta.textContent =
           new Date(msg.sent_at).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}) +
           " • sending...";
-        msgEl.style.opacity = "0.5"; // optional dim effect
-      }
+        if (msgEl) msgEl.style.opacity = "0.5"; // dim while sending
 
-      sendToBackend(msg); // try sending to backend
+        sendToBackend(msg); // retry sending
+      }
     }
+
     return msg;
   });
 
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-  updateTimeline(); // refresh UI for any other changes
+  updateTimeline();
 }
 // Read more, Read less logic
 function applyReadMore(container, fullText) {
@@ -1045,6 +1053,7 @@ chatBody.addEventListener("click", (e) => {
 window.addEventListener("online", retryAllPolls);  // retry pending polls once online
 window.addEventListener("offline", retryAllPolls); // mark sending → pending when offline
 window.addEventListener("online", retryPendingMessages);
+window.addEventListener("offline", retryPendingMessages);
 
 // Initial load
 syncPolls();
