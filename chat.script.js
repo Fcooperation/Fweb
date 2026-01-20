@@ -774,6 +774,40 @@ function retryAllPolls() {
     updateTimeline();
   }
 }
+// Retry Pending Messages
+function retryPendingMessages() {
+  messages = messages.map(msg => {
+    const msgEl = chatBody.querySelector(`[data-id='${msg.id}']`);
+    const meta = msgEl?.querySelector(".message-meta");
+
+    if (!navigator.onLine) {
+      // 👇 If offline, downgrade any "sending" message to "pending"
+      if (msg.status === "sending") {
+        msg.status = "pending";
+        if (meta) meta.textContent =
+          new Date(msg.sent_at).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}) +
+          " • pending";
+        if (msgEl) msgEl.style.opacity = "1"; // remove dim
+      }
+    } else {
+      // 👆 If online, retry any "pending" message
+      if (msg.status === "pending") {
+        msg.status = "sending"; // mark as sending
+        if (meta) meta.textContent =
+          new Date(msg.sent_at).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}) +
+          " • sending...";
+        if (msgEl) msgEl.style.opacity = "0.5"; // dim while sending
+
+        sendToBackend(msg); // retry sending
+      }
+    }
+
+    return msg;
+  });
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+  updateTimeline();
+}
 // Read more, Read less logic
 function applyReadMore(container, fullText) {
   const lines = fullText.split("\n");
@@ -1025,3 +1059,4 @@ window.addEventListener("offline", retryAllPolls); // mark sending → pending w
 syncPolls();
 syncToFChat();
 retryAllPolls();
+retryPendingMessages();
