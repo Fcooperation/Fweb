@@ -674,7 +674,7 @@ msg.addEventListener("click", e => {
 });
   chatBody.scrollTop = chatBody.scrollHeight;
 }
-// Update timeline
+// Update timeline without auto-scroll
 function updateTimeline() {
   chatBody.innerHTML = "";
 
@@ -689,11 +689,11 @@ function updateTimeline() {
 
   chatItems.forEach(msg => {
     let msgDate;
-try {
-  msgDate = new Date(msg.sent_at).toDateString();
-} catch {
-  msgDate = "Unknown Date";
-}
+    try {
+      msgDate = new Date(msg.sent_at).toDateString();
+    } catch {
+      msgDate = "Unknown Date";
+    }
 
     if (msgDate !== lastDate) {
       const dateDivider = document.createElement("div");
@@ -706,6 +706,8 @@ try {
 
     addMessage(msg);
   });
+
+  // ✅ No scroll adjustment here
 }
 // ===== Unified Poll Retry Handler =====
 function retryAllPolls() {
