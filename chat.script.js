@@ -60,28 +60,18 @@ function toggleSelectMessage(el, msgObj) {
   if (selectedMessages.has(id)) {
     selectedMessages.delete(id);
     el.classList.remove("selected", "highlight-message");
-
-    // Only restore opacity when exiting selection mode
-    el.style.opacity = "1";
   } else {
     selectedMessages.add(id);
     el.classList.add("selected", "highlight-message");
-
-    // Dim only because we are entering selection mode
-    el.style.opacity = "0.7";
   }
 
-  // Update selection mode
+  // enter selection mode if at least one message selected
   selectionMode = selectedMessages.size > 0;
-  updateSelectionBoard();
 
-  // 👇 SAFETY: when selection mode ends, restore opacity everywhere
-  if (!selectionMode) {
-    document
-      .querySelectorAll(".message")
-      .forEach(m => (m.style.opacity = "1"));
-  }
+  // Refresh the selection board visibility
+  updateSelectionBoard();
 }
+
 // Selection board elements
 const selectionBoard = document.getElementById("selection-board");
 const boardBackBtn = document.getElementById("board-back-btn");
@@ -686,14 +676,12 @@ msg.addEventListener("click", e => {
 }
 // Update timeline
 function updateTimeline() {
-  const shouldAutoScroll = isUserNearBottom();
-
   chatBody.innerHTML = "";
 
   const chatItems = fchatMessages
     .filter(m =>
-      (m.sender_id === chatWith.id && m.receiver_id === account.id) ||
-      (m.sender_id === account.id && m.receiver_id === chatWith.id)
+      (m.sender_id === chatWith.id && m.receiver_id === account.id) || // messages sent to me
+      (m.sender_id === account.id && m.receiver_id === chatWith.id)   // messages I sent to them
     )
     .sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
 
@@ -701,27 +689,23 @@ function updateTimeline() {
 
   chatItems.forEach(msg => {
     let msgDate;
-    try {
-      msgDate = new Date(msg.sent_at).toDateString();
-    } catch {
-      msgDate = "Unknown Date";
-    }
+try {
+  msgDate = new Date(msg.sent_at).toDateString();
+} catch {
+  msgDate = "Unknown Date";
+}
 
     if (msgDate !== lastDate) {
       const dateDivider = document.createElement("div");
       dateDivider.className = "date-divider";
       dateDivider.textContent = formatDateLabel(msg.sent_at);
       chatBody.appendChild(dateDivider);
+
       lastDate = msgDate;
     }
 
     addMessage(msg);
   });
-
-  // ✅ Only scroll if user was already at bottom
-  if (shouldAutoScroll) {
-    chatBody.scrollTop = chatBody.scrollHeight;
-  }
 }
 // ===== Unified Poll Retry Handler =====
 function retryAllPolls() {
@@ -788,43 +772,6 @@ function retryAllPolls() {
     updateTimeline();
   }
 }
-// Retry function (your existing code)
-function retryPendingMessages() {
-  messages = messages.map(msg => {
-    const msgEl = chatBody.querySelector(`[data-id='${msg.id}']`);
-    const meta = msgEl?.querySelector(".message-meta");
-
-    if (!navigator.onLine) {
-      // 👇 downgrade any "sending" to "pending" when offline
-      if (msg.status === "sending") {
-        msg.status = "pending";
-        if (meta) meta.textContent =
-          new Date(msg.sent_at).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}) +
-          " • pending";
-        if (msgEl) msgEl.style.opacity = "1"; // remove dim
-      }
-    } else {
-      // 👆 retry any "pending" message when online
-      if (msg.status === "pending") {
-        msg.status = "sending"; // mark as sending
-        if (meta) meta.textContent =
-          new Date(msg.sent_at).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}) +
-          " • sending...";
-        if (msgEl) msgEl.style.opacity = "0.5"; // dim while sending
-
-        sendToBackend(msg); // retry sending
-      }
-    }
-
-    return msg;
-  });
-
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-  updateTimeline();
-}
-
-// ✅ Auto retry every 1 second
-setInterval(retryPendingMessages, 1000);
 // Read more, Read less logic
 function applyReadMore(container, fullText) {
   const lines = fullText.split("\n");
@@ -1071,20 +1018,8 @@ chatBody.addEventListener("click", (e) => {
 // ===== Event Listeners =====
 window.addEventListener("online", retryAllPolls);  // retry pending polls once online
 window.addEventListener("offline", retryAllPolls); // mark sending → pending when offline
-window.addEventListener("online", retryPendingMessages);
-window.addEventListener("offline", retryPendingMessages);
-
-function isUserNearBottom() {
-  const threshold = 80; // px
-  return (
-    chatBody.scrollHeight -
-    chatBody.scrollTop -
-    chatBody.clientHeight
-  ) < threshold;
-}
 
 // Initial load
 syncPolls();
 syncToFChat();
 retryAllPolls();
-retryPendingMessages();
