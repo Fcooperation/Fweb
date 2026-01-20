@@ -1054,6 +1054,8 @@ chatBody.addEventListener("click", (e) => {
 // ===== Event Listeners =====
 window.addEventListener("online", retryAllPolls);  // retry pending polls once online
 window.addEventListener("offline", retryAllPolls); // mark sending → pending when offline
+window.addEventListener("online", retryPendingMessages);
+window.addEventListener("offline", retryPendingMessages);
 
 // Initial load
 syncPolls();
