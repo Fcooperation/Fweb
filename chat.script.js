@@ -686,12 +686,14 @@ msg.addEventListener("click", e => {
 }
 // Update timeline
 function updateTimeline() {
+  const shouldAutoScroll = isUserNearBottom();
+
   chatBody.innerHTML = "";
 
   const chatItems = fchatMessages
     .filter(m =>
-      (m.sender_id === chatWith.id && m.receiver_id === account.id) || // messages sent to me
-      (m.sender_id === account.id && m.receiver_id === chatWith.id)   // messages I sent to them
+      (m.sender_id === chatWith.id && m.receiver_id === account.id) ||
+      (m.sender_id === account.id && m.receiver_id === chatWith.id)
     )
     .sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
 
@@ -699,23 +701,27 @@ function updateTimeline() {
 
   chatItems.forEach(msg => {
     let msgDate;
-try {
-  msgDate = new Date(msg.sent_at).toDateString();
-} catch {
-  msgDate = "Unknown Date";
-}
+    try {
+      msgDate = new Date(msg.sent_at).toDateString();
+    } catch {
+      msgDate = "Unknown Date";
+    }
 
     if (msgDate !== lastDate) {
       const dateDivider = document.createElement("div");
       dateDivider.className = "date-divider";
       dateDivider.textContent = formatDateLabel(msg.sent_at);
       chatBody.appendChild(dateDivider);
-
       lastDate = msgDate;
     }
 
     addMessage(msg);
   });
+
+  // ✅ Only scroll if user was already at bottom
+  if (shouldAutoScroll) {
+    chatBody.scrollTop = chatBody.scrollHeight;
+  }
 }
 // ===== Unified Poll Retry Handler =====
 function retryAllPolls() {
@@ -1067,6 +1073,15 @@ window.addEventListener("online", retryAllPolls);  // retry pending polls once o
 window.addEventListener("offline", retryAllPolls); // mark sending → pending when offline
 window.addEventListener("online", retryPendingMessages);
 window.addEventListener("offline", retryPendingMessages);
+
+function isUserNearBottom() {
+  const threshold = 80; // px
+  return (
+    chatBody.scrollHeight -
+    chatBody.scrollTop -
+    chatBody.clientHeight
+  ) < threshold;
+}
 
 // Initial load
 syncPolls();
