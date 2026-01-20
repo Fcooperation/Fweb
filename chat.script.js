@@ -60,15 +60,27 @@ function toggleSelectMessage(el, msgObj) {
   if (selectedMessages.has(id)) {
     selectedMessages.delete(id);
     el.classList.remove("selected", "highlight-message");
-    el.style.opacity = "1"; // remove faint
+
+    // Only restore opacity when exiting selection mode
+    el.style.opacity = "1";
   } else {
     selectedMessages.add(id);
     el.classList.add("selected", "highlight-message");
-    el.style.opacity = "0.7"; // faint/dim effect
+
+    // Dim only because we are entering selection mode
+    el.style.opacity = "0.7";
   }
 
+  // Update selection mode
   selectionMode = selectedMessages.size > 0;
   updateSelectionBoard();
+
+  // 👇 SAFETY: when selection mode ends, restore opacity everywhere
+  if (!selectionMode) {
+    document
+      .querySelectorAll(".message")
+      .forEach(m => (m.style.opacity = "1"));
+  }
 }
 // Selection board elements
 const selectionBoard = document.getElementById("selection-board");
