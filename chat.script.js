@@ -801,6 +801,49 @@ function retryPendingMessages() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   updateTimeline();
 }
+// Retry Pending Polls 
+function retryPendingPolls() {
+  const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
+  const polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+  let changed = false;
+
+  // Loop through all polls
+  polls.forEach(poll => {
+    if (navigator.onLine && poll.status === "pending") {
+      // Promote pending → sending
+      poll.status = "sending";
+
+      // Update fchatMessages too
+      const msg = fchatMessages.find(m => m.id === poll.id);
+      if (msg) msg.poll_status = "sending";
+
+      // Retry sending vote if it exists
+      if (poll.voted_options?.length) sendPollToBackend(poll);
+
+      changed = true;
+    }
+
+    // If offline, downgrade sending → pending
+    if (!navigator.onLine && poll.status === "sending") {
+      poll.status = "pending";
+
+      const msg = fchatMessages.find(m => m.id === poll.id);
+      if (msg) msg.poll_status = "pending";
+
+      changed = true;
+    }
+  });
+
+  // Save updates back to localStorage if any changes
+  if (changed) {
+    localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
+    updateTimeline(); // rerender UI so all polls reflect new status
+  }
+}
+
+// ✅ Call on page load and when coming online
+window.addEventListener("online", retryPendingPolls);
+retryPendingPolls();
 // Read more, Read less logic
 function applyReadMore(container, fullText) {
   const lines = fullText.split("\n");
