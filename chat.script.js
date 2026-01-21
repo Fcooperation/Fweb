@@ -309,97 +309,140 @@ function addMessage(msgObj) {
   });
 
   if (msgObj.isPoll && msgObj.pollData) {
-    msg.className = `poll-wrapper ${alignmentClass}`;
-    msg.pollData = msgObj.pollData;
+  msg.className = `poll-wrapper ${alignmentClass}`;
+  msg.pollData = msgObj.pollData; // attach poll JSON
 
-    // Decide instruction text
-    const instructionText = msgObj.pollData.allowMultiple ? "Select one or more" : "Select one";
+  // Decide instruction text
+  const instructionText = msgObj.pollData.allowMultiple
+    ? "Select one or more"
+    : "Select one";
 
-    msg.innerHTML = `
-      <div class="poll-question">${msgObj.pollData.question}</div>
-      <div class="poll-instruction">${instructionText}</div>
+  msg.innerHTML = `
+    <div class="poll-question">${msgObj.pollData.question}</div>
+    <div class="poll-instruction">${instructionText}</div>
 
-      ${msgObj.pollData.options.map((opt, i) => `
-        <div class="poll-option" data-index="${i}">
-          <div class="poll-row">
-            <div class="poll-circle"></div>
-            <div class="poll-text">${opt}</div>
-          </div>
-          <div class="poll-bar-container">
-            <div class="poll-bar"></div>
-          </div>
+    ${msgObj.pollData.options.map((opt, i) => `
+      <div class="poll-option" data-index="${i}">
+        <div class="poll-row">
+          <div class="poll-circle"></div>
+          <div class="poll-text">${opt}</div>
         </div>
-      `).join("")}
-
-      <div class="message-meta">
-        ${time} ${isSent ? "• " + (msgObj.poll_status || msgObj.status || "sent") : ""}
+        <div class="poll-bar-container">
+          <div class="poll-bar"></div>
+        </div>
       </div>
-    `;
+    `).join("")}
 
-    // ✅ NEW: check ALL stored polls in localStorage
-    const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
-    const polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
-    const storedPoll = polls.find(p => p.id === msgObj.id);
+    <div class="message-meta">
+      ${time} ${isSent ? "• " + (msgObj.poll_status || msgObj.status || "sent") : ""}
+    </div>
+  `;
+} else {
+  msg.className = `message ${alignmentClass}`;
 
-    if (storedPoll) {
-      // Promote pending → sending automatically if online
-      if (navigator.onLine && storedPoll.status === "pending") {
-        storedPoll.status = "sending";
-        localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
+let replyHTML = "";
+if (msgObj.replyTo && !(msgObj.deleted && msgObj.deleted_for === "everyone")) {
+  replyHTML = `
+    <div class="reply-bubble">
+      ${msgObj.replyTo.text}
+    </div>
+  `;
+}
 
-        // Update fchatMessages
-        const msgIndex = fchatMessages.find(m => m.id === storedPoll.id);
-        if (msgIndex) msgIndex.poll_status = "sending";
+// ✅ Handle deleted-for-everyone
+if (msgObj.deleted && msgObj.deleted_for === "everyone") {
+  msg.className = `message ${alignmentClass} deleted-for-everyone`;
+  msg.innerHTML = `
+    ${replyHTML}
+    <i class="deleted-text">
+      This message was deleted by ${msgObj.requested_by === account.id ? "you" : "someone"}
+    </i>
+    <div class="message-meta">
+      ${time}
+    </div>
+  `;
+} else {
+  msg.innerHTML = `
+    ${replyHTML}
+    <div class="message-text"></div>
+    <div class="message-meta">
+      ${time} ${isSent ? "• " + (msgObj.status || "sent") : ""}
+    </div>
+  `;
+  if (msgObj.poll_status === "sending") {
+  msg.classList.add("poll-dimmed");
+}
+  const textBox = msg.querySelector(".message-text");
+  applyReadMore(textBox, msgObj.text);
+}
 
-        // Retry sending vote
-        if (storedPoll.voted_options?.length) sendPollToBackend(storedPoll);
-      }
+  enableSwipe(msg, msgObj); // full object
+// Glow ONLY when clicking the reply preview bubble
+if (msgObj.linked) {
+  const replyBubble = msg.querySelector(".reply-bubble");
+  if (!replyBubble) return;
 
-      // Handle UI for poll
-      const pollWrapper = msg.querySelector(".poll-wrapper") || msg;
-      const voted = Array.isArray(storedPoll.voted_options) && storedPoll.voted_options.length > 0;
+  replyBubble.style.cursor = "pointer";
 
-      // mark selected options visually
-      pollWrapper.querySelectorAll(".poll-option").forEach((opt, i) => {
-        const circle = opt.querySelector(".poll-circle");
-        const bar = opt.querySelector(".poll-bar");
-        if (voted && storedPoll.voted_options.includes(i + 1)) {
-          circle.classList.add("selected");
-          bar.style.width = "100%";
-        } else {
-          circle.classList.remove("selected");
-          bar.style.width = "0%";
-        }
-      });
+  replyBubble.addEventListener("click", (e) => {
+  if (selectionMode) return; // 🚫 ignore reply click when selecting
+  e.stopPropagation();
 
-      // Set submit button text
-      const submitBtn = document.createElement("button");
-      submitBtn.className = `poll-submit-btn ${alignmentClass}`;
+  const linkedMsgId = msgObj.linked_message_id;
+  const originalMsg = chatBody.querySelector(
+    `[data-id='${linkedMsgId}']`
+  );
+  if (!originalMsg) return;
 
-      if (storedPoll.status === "pending") {
-        submitBtn.textContent = voted ? "Pending" : "Submit vote";
-        submitBtn.disabled = voted;
-        if (voted) pollWrapper.classList.add("poll-dimmed");
-      } else if (storedPoll.status === "sending") {
-        submitBtn.textContent = voted ? "Submitting..." : "Submit vote";
-        submitBtn.disabled = voted;
-        pollWrapper.classList.add("poll-dimmed");
-      } else if (storedPoll.status === "sent") {
-        submitBtn.textContent = voted ? "Revote" : "Submit vote";
-        submitBtn.disabled = false;
-        pollWrapper.classList.remove("poll-dimmed");
-      }
+    let cancelScroll = false;
 
-      msg.appendChild(submitBtn);
+    const stopScroll = () => { cancelScroll = true; };
+    document.addEventListener("click", stopScroll, {
+      once: true,
+      capture: true
+    });
+
+    const startScrollTop = chatBody.scrollTop;
+    const targetTop =
+      originalMsg.offsetTop -
+      chatBody.offsetHeight / 2 +
+      originalMsg.offsetHeight / 2;
+
+    const duration = 400;
+    const startTime = performance.now();
+
+    function easeInOutQuad(t) {
+      return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
     }
 
-  } else {
-    msg.className = `message ${alignmentClass}`;
-    // ... rest of your normal message handling
-  }
+    function smoothScroll(currentTime) {
+      if (cancelScroll) return;
 
-  chatBody.appendChild(msg);
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      chatBody.scrollTop =
+        startScrollTop +
+        (targetTop - startScrollTop) * easeInOutQuad(progress);
+
+      if (progress < 1) {
+        requestAnimationFrame(smoothScroll);
+      } else {
+        triggerGlow();
+      }
+    }
+
+    function triggerGlow() {
+      originalMsg.classList.remove("highlight-message");
+      void originalMsg.offsetWidth;
+      originalMsg.classList.add("highlight-message");
+    }
+
+    requestAnimationFrame(smoothScroll);
+  });
 }
+}
+  chatBody.appendChild(msg);
 // ===== ADD POLL SUBMIT BUTTON (OUTSIDE POLL BOX) =====
 if (msgObj.isPoll && msgObj.pollData) {
   const submitBtn = document.createElement("button");
@@ -409,42 +452,6 @@ submitBtn.textContent = "Submit vote"; // ✅ DEFAULT TEXT (VERY IMPORTANT)
   const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
   const polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
   const storedPoll = polls.find(p => p.id === msgObj.id);
-  
-  //Retry pending polls 
-  if (storedPoll) {
-  // 🌐 If we are online and poll is stuck in pending → promote to sending
-  if (navigator.onLine && storedPoll.status === "pending") {
-    storedPoll.status = "sending";
-
-    // save back to localStorage
-    const updated = polls.map(p =>
-      p.id === storedPoll.id ? storedPoll : p
-    );
-    localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(updated));
-
-    // also sync into fchatMessages
-    const msg = fchatMessages.find(m => m.id === storedPoll.id);
-    if (msg) msg.poll_status = "sending";
-
-    // actually retry sending vote
-    if (storedPoll.voted_options?.length) {
-      sendPollToBackend(storedPoll);
-    }
-  }
-
-  // 📴 If offline and poll was sending → downgrade
-  if (!navigator.onLine && storedPoll.status === "sending") {
-    storedPoll.status = "pending";
-
-    const updated = polls.map(p =>
-      p.id === storedPoll.id ? storedPoll : p
-    );
-    localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(updated));
-
-    const msg = fchatMessages.find(m => m.id === storedPoll.id);
-    if (msg) msg.poll_status = "pending";
-  }
-}
 
   // Function to mark selected options in the UI
   const markSelectedOptions = (pollWrapper, votedOptions) => {
@@ -1092,8 +1099,6 @@ window.addEventListener("online", retryAllPolls);  // retry pending polls once o
 window.addEventListener("offline", retryAllPolls); // mark sending → pending when offline
 window.addEventListener("online", retryPendingMessages);
 window.addEventListener("offline", retryPendingMessages);
-retryPendingPolls(); // on page load
-window.addEventListener("online", retryPendingPolls);
 
 // Initial load
 syncPolls();
