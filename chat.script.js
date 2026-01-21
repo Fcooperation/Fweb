@@ -810,23 +810,43 @@ function retryPendingMessages() {
 }
 //Retry Pending polls 
 function retryPendingPolls() {
+  // 1️⃣ Load all chat messages from localStorage first
+  const FCHAT_STORAGE_KEY = `fchat_messages_${account.email}`;
+  fchatMessages = JSON.parse(localStorage.getItem(FCHAT_STORAGE_KEY)) || [];
+
+  // 2️⃣ Load all polls for this chat
   const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
   const polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
   let changed = false;
 
-  polls.forEach(p => {
-    if (p.status === "pending") {
-      p.status = "sending";
-      const msg = fchatMessages.find(m => m.id === p.id);
-      if (msg) msg.poll_status = "sending";
-      if (p.voted_options?.length) sendPollToBackend(p);
-      changed = true;
+  polls.forEach(poll => {
+    // Only process polls that are currently pending
+    if (poll.status === "pending") {
+      // ✅ Promote to "sending" if online
+      if (navigator.onLine) {
+        poll.status = "sending";
+
+        // Update the corresponding message in fchatMessages
+        const msg = fchatMessages.find(m => m.id === poll.id);
+        if (msg) msg.poll_status = "sending";
+
+        // If user had already voted, retry sending to backend
+        if (poll.voted_options?.length) {
+          sendPollToBackend(poll);
+        }
+
+        changed = true;
+      }
     }
   });
 
+  // 3️⃣ Save updates back to localStorage if anything changed
   if (changed) {
     localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
-    updateTimeline(); // rerender so UI reflects new status
+    localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
+
+    // 4️⃣ Rerender timeline so UI reflects new poll status
+    updateTimeline();
   }
 }
 // Read more, Read less logic
