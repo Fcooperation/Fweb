@@ -1115,12 +1115,12 @@ window.addEventListener("online", retryAllPolls);  // retry pending polls once o
 window.addEventListener("offline", retryAllPolls); // mark sending → pending when offline
 window.addEventListener("online", retryPendingMessages);
 window.addEventListener("offline", retryPendingMessages);
-setInterval(syncPollStatuses, 1500);
 window.addEventListener("online", syncPollStatuses);
 window.addEventListener("offline", syncPollStatuses);
 
 // Initial load
 syncPolls();
+syncPollStatuses();
 syncToFChat();
 retryAllPolls();
 retryPendingMessages();
