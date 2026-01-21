@@ -816,7 +816,7 @@ function syncPollStatuses() {
   let changed = false;
 
   polls = polls.map(poll => {
-    const msg = fchatMessages.find(m => m.id === poll.message_id);
+    const msg = fchatMessages.find(m => m.id === poll.id);
     let newStatus = poll.status;
 
     // 📴 OFFLINE: sending → pending
@@ -841,7 +841,7 @@ function syncPollStatuses() {
 
       // Sync UI immediately
       const pollEl = document.querySelector(
-        `.poll-wrapper[data-poll-id='${poll.poll_id}']`
+        `.poll-wrapper[data-id='${poll.id}']`
       );
       const btn = pollEl?.querySelector(".poll-submit-btn");
 
