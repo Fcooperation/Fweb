@@ -808,65 +808,6 @@ function retryPendingMessages() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   updateTimeline();
 }
-// Retry logics for polls
-function syncPollStatuses() {
-  const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
-
-  let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
-  let changed = false;
-
-  polls = polls.map(poll => {
-    const msg = fchatMessages.find(m => m.id === poll.id);
-    let newStatus = poll.status;
-
-    // 📴 OFFLINE: sending → pending
-    if (!navigator.onLine && poll.status === "sending") {
-      newStatus = "pending";
-    }
-
-    // 🌐 ONLINE: pending → sending
-    if (navigator.onLine && poll.status === "pending") {
-      newStatus = "sending";
-      sendPollToBackend(poll); // retry send
-    }
-
-    if (newStatus !== poll.status) {
-      poll.status = newStatus;
-      changed = true;
-
-      // Sync into message object
-      if (msg) {
-        msg.poll_status = newStatus;
-      }
-
-      // Sync UI immediately
-      const pollEl = document.querySelector(
-        `.poll-wrapper[data-id='${poll.id}']`
-      );
-      const btn = pollEl?.querySelector(".poll-submit-btn");
-
-      if (pollEl && btn) {
-        if (newStatus === "pending") {
-          btn.textContent = "Pending";
-          btn.disabled = true;
-          pollEl.style.opacity = "0.6";
-        }
-        if (newStatus === "sending") {
-          btn.textContent = "Submitting...";
-          btn.disabled = true;
-          pollEl.style.opacity = "0.6";
-        }
-      }
-    }
-
-    return poll;
-  });
-
-  if (changed) {
-    localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
-    updateTimeline();
-  }
-}
 // Read more, Read less logic
 function applyReadMore(container, fullText) {
   const lines = fullText.split("\n");
@@ -1115,12 +1056,9 @@ window.addEventListener("online", retryAllPolls);  // retry pending polls once o
 window.addEventListener("offline", retryAllPolls); // mark sending → pending when offline
 window.addEventListener("online", retryPendingMessages);
 window.addEventListener("offline", retryPendingMessages);
-window.addEventListener("online", syncPollStatuses);
-window.addEventListener("offline", syncPollStatuses);
 
 // Initial load
 syncPolls();
-syncPollStatuses();
 syncToFChat();
 retryAllPolls();
 retryPendingMessages();
