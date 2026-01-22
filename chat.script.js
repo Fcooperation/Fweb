@@ -339,7 +339,7 @@ function addMessage(msgObj) {
     isSent
       ? "• " + (msgObj.poll_status || msgObj.status || "sent") +
         (msgObj.poll_status === "pending"
-          ? ' <span class="poll-retry" data-id="' + msgObj.id + '">Retry</span>'
+          ? ' <span class="poll-retry">Retry</span>'
           : "")
       : ""
   }
@@ -816,18 +816,6 @@ function retryPendingMessages() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   updateTimeline();
 }
-// Retry pending poll text logic
-<div class="message-meta">
-  ${time}
-  ${
-    isSent
-      ? "• " + (msgObj.poll_status || msgObj.status || "sent") +
-        (msgObj.poll_status === "pending"
-          ? ` <span class="poll-retry" data-id="${msgObj.id}">Retry</span>`
-          : "")
-      : ""
-  }
-</div>
 // Read more, Read less logic
 function applyReadMore(container, fullText) {
   const lines = fullText.split("\n");
