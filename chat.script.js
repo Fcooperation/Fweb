@@ -334,16 +334,8 @@ function addMessage(msgObj) {
     `).join("")}
 
     <div class="message-meta">
-  ${time}
-  ${
-    isSent
-      ? "• " + (msgObj.status || "sent") +
-        (msgObj.status === "pending"
-          ? ' <span class="poll-retry">Retry</span>'
-          : "")
-      : ""
-  }
-</div>
+      ${time} ${isSent ? "• " + (msgObj.poll_status || msgObj.status || "sent") : ""}
+    </div>
   `;
 } else {
   msg.className = `message ${alignmentClass}`;
@@ -782,6 +774,55 @@ function retryAllPolls() {
     updateTimeline();
   }
 }
+//Retry Pending Polls 
+function retryPendingPollMessages() {
+  if (!navigator.onLine) return;
+
+  // 1️⃣ All polls in fchatMessages that are pending
+  const pendingPolls = fchatMessages.filter(
+    p => p.isPoll && p.status === "pending" && p.sender_id === account.id
+  );
+
+  if (!pendingPolls.length) return;
+
+  pendingPolls.forEach(poll => {
+    poll.status = "sending"; // mark as sending
+    updateTimeline(); // UI shows "sending..." if you already handle that
+
+    // ✅ Send poll as a message, similar to text
+    sendPollToBackend(poll).then(success => {
+      poll.status = success ? "sent" : "pending";
+      localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
+      updateTimeline();
+    });
+  });
+}
+
+// helper to send poll message to backend
+async function sendPollToBackend(pollObj) {
+  try {
+    const payload = {
+      action: "send_poll_message",
+      poll_id: pollObj.id,
+      sender_id: pollObj.sender_id,
+      receiver_id: pollObj.receiver_id,
+      pollData: pollObj.pollData,
+      sent_at: pollObj.sent_at
+    };
+
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    return data.success;
+  } catch (e) {
+    console.warn("Failed to send poll message", e);
+    return false;
+  }
+}
 // Retry Pending Messages
 function retryPendingMessages() {
   messages = messages.map(msg => {
@@ -815,36 +856,6 @@ function retryPendingMessages() {
 
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   updateTimeline();
-}
-// Retry pending polls 
-function retryPendingPollsWhenOnline() {
-  if (!navigator.onLine) return;
-
-  const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
-  const polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
-
-  let changed = false;
-
-  polls.forEach(poll => {
-    if (poll.status === "pending") {
-      poll.status = "sending";
-      changed = true;
-
-      // Update timeline copy
-      const msg = fchatMessages.find(m => m.id === poll.id);
-      if (msg) msg.status = "sending";
-
-      // Resend to backend if it has votes
-      if (poll.voted_options?.length) {
-        sendPollToBackend(poll);
-      }
-    }
-  });
-
-  if (changed) {
-    localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
-    updateTimeline(); // re-render → Retry disappears → status becomes "sending"
-  }
 }
 // Read more, Read less logic
 function applyReadMore(container, fullText) {
@@ -1094,12 +1105,11 @@ window.addEventListener("online", retryAllPolls);  // retry pending polls once o
 window.addEventListener("offline", retryAllPolls); // mark sending → pending when offline
 window.addEventListener("online", retryPendingMessages);
 window.addEventListener("offline", retryPendingMessages);
-window.addEventListener("online", () => {
-  retryPendingPollsWhenOnline();
-});
+window.addEventListener("online", retryPendingPollMessages);
+
 // Initial load
 syncPolls();
 syncToFChat();
 retryAllPolls();
 retryPendingMessages();
-retryPendingPollsWhenOnline();
+retryPendingPollMessages();
