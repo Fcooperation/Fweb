@@ -816,6 +816,36 @@ function retryPendingMessages() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   updateTimeline();
 }
+// Retry pending polls 
+function retryPendingPollsWhenOnline() {
+  if (!navigator.onLine) return;
+
+  const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
+  const polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+
+  let changed = false;
+
+  polls.forEach(poll => {
+    if (poll.status === "pending") {
+      poll.status = "sending";
+      changed = true;
+
+      // Update timeline copy
+      const msg = fchatMessages.find(m => m.id === poll.id);
+      if (msg) msg.status = "sending";
+
+      // Resend to backend if it has votes
+      if (poll.voted_options?.length) {
+        sendPollToBackend(poll);
+      }
+    }
+  });
+
+  if (changed) {
+    localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
+    updateTimeline(); // re-render → Retry disappears → status becomes "sending"
+  }
+}
 // Read more, Read less logic
 function applyReadMore(container, fullText) {
   const lines = fullText.split("\n");
@@ -1064,9 +1094,12 @@ window.addEventListener("online", retryAllPolls);  // retry pending polls once o
 window.addEventListener("offline", retryAllPolls); // mark sending → pending when offline
 window.addEventListener("online", retryPendingMessages);
 window.addEventListener("offline", retryPendingMessages);
-
+window.addEventListener("online", () => {
+  retryPendingPollsWhenOnline();
+});
 // Initial load
 syncPolls();
 syncToFChat();
 retryAllPolls();
 retryPendingMessages();
+retryPendingPollsWhenOnline();
