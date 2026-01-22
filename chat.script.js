@@ -337,8 +337,8 @@ function addMessage(msgObj) {
   ${time}
   ${
     isSent
-      ? "• " + (msgObj.poll_status || msgObj.status || "sent") +
-        (msgObj.poll_status === "pending"
+      ? "• " + (msgObj.status || "sent") +
+        (msgObj.status === "pending"
           ? ' <span class="poll-retry">Retry</span>'
           : "")
       : ""
