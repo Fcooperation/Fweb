@@ -935,23 +935,8 @@ function syncPolls() {
 
   polls.forEach(p => {
     const existing = fchatMessages.find(fm => fm.id === p.id);
-
-    if (!existing) {
-      // create poll message entry
-      fchatMessages.push({
-        id: p.id,
-        type: "sent",
-        isPoll: true,
-        pollData: p.pollData,
-        status: "pending",            // poll message delivery
-        vote_status: p.status,        // poll vote delivery
-        sender_id: p.sender_id,
-        receiver_id: p.receiver_id || chatWith.id,
-        sent_at: p.sent_at || new Date().toISOString()
-      });
-    } else {
-      // only update vote status — NEVER overwrite message status
-      existing.vote_status = p.status;
+    if (existing) {
+      existing.vote_status = p.status;   // only votes
     }
   });
 
