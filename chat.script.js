@@ -455,18 +455,27 @@ submitBtn.textContent = "Submit vote"; // ✅ DEFAULT TEXT (VERY IMPORTANT)
 
   // Function to mark selected options in the UI
   const markSelectedOptions = (pollWrapper, votedOptions) => {
-    pollWrapper.querySelectorAll(".poll-option").forEach((opt, i) => {
-      const circle = opt.querySelector(".poll-circle");
-      const bar = opt.querySelector(".poll-bar");
-      if (votedOptions.includes(i + 1)) {
-        circle.classList.add("selected");
-        bar.style.width = "100%";
-      } else {
-        circle.classList.remove("selected");
-        bar.style.width = "0%";
-      }
-    });
-  };
+  const pollData = pollWrapper.pollData;
+
+  // Calculate total votes
+  const totalVotes = pollData.votes.reduce((sum, v) => sum + v, 0);
+
+  pollWrapper.querySelectorAll(".poll-option").forEach((opt, i) => {
+    const circle = opt.querySelector(".poll-circle");
+    const bar = opt.querySelector(".poll-bar");
+
+    // Mark selected options visually
+    if (votedOptions.includes(i + 1)) {
+      circle.classList.add("selected");
+    } else {
+      circle.classList.remove("selected");
+    }
+
+    // Calculate bar width based on percentage of total votes
+    const percent = totalVotes ? (pollData.votes[i] / totalVotes) * 100 : 0;
+    bar.style.width = percent + "%";
+  });
+};
 
   // Set initial button text & selected options based on stored poll
   const pollWrapper = msg.querySelector(".poll-wrapper") || msg;
@@ -552,6 +561,13 @@ submitBtn.textContent = "Submit vote"; // ✅ DEFAULT TEXT (VERY IMPORTANT)
     p.id === msgObj.id ? { ...p, status: "pending" } : p
   );
   localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
+  // Update the pollData.votes array locally
+selectedOptions.forEach(optIndex => {
+  pollWrapper.pollData.votes[optIndex - 1] += 1; // increment the count for each selected option
+});
+
+// Immediately update the UI bars
+markSelectedOptions(pollWrapper, selectedOptions);
 
   submitBtn.textContent = "Pending";
   submitBtn.disabled = true;
