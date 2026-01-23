@@ -808,7 +808,7 @@ function retryPendingMessages() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   updateTimeline();
 }
-// Retry Pending polls 
+// Retry Pending polls with optimistic delivery
 function retryPendingPollMessages() {
   const FCHAT_STORAGE_KEY = `fchat_${account.email}`;
 
@@ -841,41 +841,36 @@ function retryPendingPollMessages() {
     poll.status = "sending";
     changed = true;
 
-    sendPollToBackend(poll).then(success => {
-      poll.status = success ? "delivered" : "pending";
-      localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
-      updateTimeline();
-    });
+    // Optimistic send
+    fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "send_poll_message",
+        poll_id: poll.id,
+        sender_id: poll.sender_id,
+        receiver_id: poll.receiver_id,
+        pollData: poll.pollData,
+        sent_at: poll.sent_at
+      })
+    })
+      .then(() => {
+        // We assume it’s delivered as long as fetch didn’t fail
+        poll.status = "delivered";
+        localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
+        updateTimeline();
+      })
+      .catch(err => {
+        console.warn("Poll send failed:", err);
+        poll.status = "pending"; // retry later
+        localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
+        updateTimeline();
+      });
   });
 
   if (changed) {
     localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
     updateTimeline();
-  }
-}
-//backend retry for pending polls
-async function sendPollToBackend(pollObj) {
-  try {
-    const payload = {
-      action: "send_poll_message",
-      poll_id: pollObj.id,
-      sender_id: pollObj.sender_id,
-      receiver_id: pollObj.receiver_id,
-      pollData: pollObj.pollData,
-      sent_at: pollObj.sent_at
-    };
-
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-
-    const data = await res.json();
-    return data.success === true;
-  } catch (err) {
-    console.warn("Poll send failed:", err);
-    return false;
   }
 }
 // Read more, Read less logic
