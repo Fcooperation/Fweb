@@ -776,26 +776,48 @@ function retryAllPolls() {
 }
 //Retry Pending Polls 
 function retryPendingPollMessages() {
-  if (!navigator.onLine) return;
+  const FCHAT_STORAGE_KEY = `fchat_${account.email}`;
 
-  // 1️⃣ All polls in fchatMessages that are pending
-  const pendingPolls = fchatMessages.filter(
-    p => p.isPoll && p.status === "pending" && p.sender_id === account.id
-  );
+  if (!Array.isArray(fchatMessages)) return;
 
-  if (!pendingPolls.length) return;
+  let changed = false;
 
-  pendingPolls.forEach(poll => {
-    poll.status = "sending"; // mark as sending
-    updateTimeline(); // UI shows "sending..." if you already handle that
+  // 📴 If offline → downgrade sending → pending
+  if (!navigator.onLine) {
+    fchatMessages.forEach(m => {
+      if (m.isPoll && m.status === "sending") {
+        m.status = "pending";
+        changed = true;
+      }
+    });
 
-    // ✅ Send poll as a message, similar to text
+    if (changed) {
+      localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
+      updateTimeline();
+    }
+    return;
+  }
+
+  // 🌐 If online → retry pending & sending
+  fchatMessages.forEach(poll => {
+    if (!poll.isPoll) return;
+    if (!["pending", "sending"].includes(poll.status)) return;
+    if (poll.sender_id !== account.id) return;
+
+    poll.status = "sending";
+    changed = true;
+
     sendPollToBackend(poll).then(success => {
-      poll.status = success ? "sent" : "pending";
+      poll.status = success ? "delivered" : "pending";
       localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
       updateTimeline();
     });
   });
+
+  if (changed) {
+    localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
+    updateTimeline();
+  }
 }
 
 // helper to send poll message to backend
@@ -817,9 +839,9 @@ async function sendPollToBackend(pollObj) {
     });
 
     const data = await res.json();
-    return data.success;
-  } catch (e) {
-    console.warn("Failed to send poll message", e);
+    return data.success === true;
+  } catch (err) {
+    console.warn("Poll send failed:", err);
     return false;
   }
 }
@@ -1106,6 +1128,7 @@ window.addEventListener("offline", retryAllPolls); // mark sending → pending w
 window.addEventListener("online", retryPendingMessages);
 window.addEventListener("offline", retryPendingMessages);
 window.addEventListener("online", retryPendingPollMessages);
+window.addEventListener("offline", retryPendingPollMessages);
 
 // Initial load
 syncPolls();
