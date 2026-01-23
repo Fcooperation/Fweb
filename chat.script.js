@@ -334,7 +334,7 @@ function addMessage(msgObj) {
     `).join("")}
 
     <div class="message-meta">
-      ${time} ${isSent ? "• " + (msgObj.status || "sent") : ""}
+      ${time} ${isSent ? "• " + (msgObj.poll_status || msgObj.status || "sent") : ""}
     </div>
   `;
 } else {
@@ -774,7 +774,41 @@ function retryAllPolls() {
     updateTimeline();
   }
 }
-//Retry Pending Polls 
+// Retry Pending Messages
+function retryPendingMessages() {
+  messages = messages.map(msg => {
+    const msgEl = chatBody.querySelector(`[data-id='${msg.id}']`);
+    const meta = msgEl?.querySelector(".message-meta");
+
+    if (!navigator.onLine) {
+      // 👇 If offline, downgrade any "sending" message to "pending"
+      if (msg.status === "sending") {
+        msg.status = "pending";
+        if (meta) meta.textContent =
+          new Date(msg.sent_at).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}) +
+          " • pending";
+        if (msgEl) msgEl.style.opacity = "1"; // remove dim
+      }
+    } else {
+      // 👆 If online, retry any "pending" message
+      if (msg.status === "pending") {
+        msg.status = "sending"; // mark as sending
+        if (meta) meta.textContent =
+          new Date(msg.sent_at).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}) +
+          " • sending...";
+        if (msgEl) msgEl.style.opacity = "0.5"; // dim while sending
+
+        sendToBackend(msg); // retry sending
+      }
+    }
+
+    return msg;
+  });
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+  updateTimeline();
+}
+// Retry Pending polls 
 function retryPendingPollMessages() {
   const FCHAT_STORAGE_KEY = `fchat_${account.email}`;
 
@@ -819,8 +853,7 @@ function retryPendingPollMessages() {
     updateTimeline();
   }
 }
-
-// helper to send poll message to backend
+//backend retry for pending polls
 async function sendPollToBackend(pollObj) {
   try {
     const payload = {
@@ -844,40 +877,6 @@ async function sendPollToBackend(pollObj) {
     console.warn("Poll send failed:", err);
     return false;
   }
-}
-// Retry Pending Messages
-function retryPendingMessages() {
-  messages = messages.map(msg => {
-    const msgEl = chatBody.querySelector(`[data-id='${msg.id}']`);
-    const meta = msgEl?.querySelector(".message-meta");
-
-    if (!navigator.onLine) {
-      // 👇 If offline, downgrade any "sending" message to "pending"
-      if (msg.status === "sending") {
-        msg.status = "pending";
-        if (meta) meta.textContent =
-          new Date(msg.sent_at).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}) +
-          " • pending";
-        if (msgEl) msgEl.style.opacity = "1"; // remove dim
-      }
-    } else {
-      // 👆 If online, retry any "pending" message
-      if (msg.status === "pending") {
-        msg.status = "sending"; // mark as sending
-        if (meta) meta.textContent =
-          new Date(msg.sent_at).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}) +
-          " • sending...";
-        if (msgEl) msgEl.style.opacity = "0.5"; // dim while sending
-
-        sendToBackend(msg); // retry sending
-      }
-    }
-
-    return msg;
-  });
-
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-  updateTimeline();
 }
 // Read more, Read less logic
 function applyReadMore(container, fullText) {
@@ -934,12 +933,21 @@ function syncPolls() {
   const polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
 
   polls.forEach(p => {
-    const existing = fchatMessages.find(fm => fm.id === p.id);
-    if (existing) {
-      existing.vote_status = p.status;   // only votes
+    if(!fchatMessages.some(fm => fm.id===p.id)) {
+      fchatMessages.push({
+  id: p.id,
+  type: "sent",
+  isPoll: true,
+  pollData: p.pollData,
+  status: p.status,
+  sender_id: p.sender_id,
+  receiver_id: p.receiver_id || chatWith.id,
+  sent_at: p.sent_at || new Date().toISOString() // ensure valid date
+});
     }
   });
 
+  fchatMessages.sort((a,b)=>new Date(a.sent_at)-new Date(b.sent_at));
   localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
 }
 
