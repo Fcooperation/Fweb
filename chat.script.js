@@ -334,7 +334,7 @@ function addMessage(msgObj) {
     `).join("")}
 
     <div class="message-meta">
-      ${time} ${isSent ? "• " + (msgObj.poll_status || msgObj.status || "sent") : ""}
+      ${time} ${isSent ? "• " + (msgObj.status || "sent") : ""}
     </div>
   `;
 } else {
@@ -934,21 +934,27 @@ function syncPolls() {
   const polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
 
   polls.forEach(p => {
-    if(!fchatMessages.some(fm => fm.id===p.id)) {
+    const existing = fchatMessages.find(fm => fm.id === p.id);
+
+    if (!existing) {
+      // create poll message entry
       fchatMessages.push({
-  id: p.id,
-  type: "sent",
-  isPoll: true,
-  pollData: p.pollData,
-  status: p.status,
-  sender_id: p.sender_id,
-  receiver_id: p.receiver_id || chatWith.id,
-  sent_at: p.sent_at || new Date().toISOString() // ensure valid date
-});
+        id: p.id,
+        type: "sent",
+        isPoll: true,
+        pollData: p.pollData,
+        status: "pending",            // poll message delivery
+        vote_status: p.status,        // poll vote delivery
+        sender_id: p.sender_id,
+        receiver_id: p.receiver_id || chatWith.id,
+        sent_at: p.sent_at || new Date().toISOString()
+      });
+    } else {
+      // only update vote status — NEVER overwrite message status
+      existing.vote_status = p.status;
     }
   });
 
-  fchatMessages.sort((a,b)=>new Date(a.sent_at)-new Date(b.sent_at));
   localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
 }
 
