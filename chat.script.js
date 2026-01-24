@@ -452,21 +452,25 @@ submitBtn.textContent = "Submit vote"; // ✅ DEFAULT TEXT (VERY IMPORTANT)
   const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
   const polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
   const storedPoll = polls.find(p => p.id === msgObj.id);
+// Function to mark selected options in the UI
+const markSelectedOptions = (pollWrapper, votedOptions) => {
+  const totalSelected = votedOptions.length || 1; // avoid divide by zero
+  const percentPerOption = 100 / totalSelected;
 
-  // Function to mark selected options in the UI
-  const markSelectedOptions = (pollWrapper, votedOptions) => {
-    pollWrapper.querySelectorAll(".poll-option").forEach((opt, i) => {
-      const circle = opt.querySelector(".poll-circle");
-      const bar = opt.querySelector(".poll-bar");
-      if (votedOptions.includes(i + 1)) {
-        circle.classList.add("selected");
-        bar.style.width = "100%";
-      } else {
-        circle.classList.remove("selected");
-        bar.style.width = "0%";
-      }
-    });
-  };
+  pollWrapper.querySelectorAll(".poll-option").forEach((opt, i) => {
+    const circle = opt.querySelector(".poll-circle");
+    const bar = opt.querySelector(".poll-bar");
+
+    if (votedOptions.includes(i + 1)) {
+      circle.classList.add("selected");
+      bar.style.width = percentPerOption + "%";   // 👈 THIS is the magic
+    } else {
+      circle.classList.remove("selected");
+      bar.style.width = "0%";
+    }
+  });
+};
+
 
   // Set initial button text & selected options based on stored poll
   const pollWrapper = msg.querySelector(".poll-wrapper") || msg;
