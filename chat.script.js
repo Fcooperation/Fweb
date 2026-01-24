@@ -527,6 +527,8 @@ const markSelectedOptions = (pollWrapper, votedOptions) => {
       p.id === msgObj.id ? { ...p, status: "sending", voted_options: selectedOptions } : p
     );
     localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
+    // 🔥 Update UI instantly
+markSelectedOptions(pollWrapper, selectedOptions);
 
     fetch(API_URL, {
       method: "POST",
@@ -599,6 +601,8 @@ submitBtn.onclick = () => {
         : p
     );
     localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
+    // 🔥 Show bars immediately even offline
+markSelectedOptions(pollWrapper, selectedOptions);
 
     // 🔁 Retry once online
     const onlineListener = () => {
