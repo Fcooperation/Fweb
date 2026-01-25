@@ -1,54 +1,55 @@
-// ================================  
-// FCHAT RECEIVER & SYNC ENGINE  
-// ================================  
+// ================================
+// FCHAT RECEIVER & SYNC ENGINE
+// ================================
 
 if (!window.API_URL || !window.account || !window.chatWith) {
   console.warn("Chat core not loaded yet");
 }
 
+const FCHAT_STORAGE_KEY = `fchat_${account.email}`;
+const indicator = document.getElementById("newMessagesIndicator");
+
 /**
- * Vibrate sequence for a single message:
- * - vibrate 200ms
- * - wait 200ms
- * - vibrate 200ms
+ * Show new messages indicator
  */
-function vibrateMessageSequence(delayBefore = 0) {
-  if (!navigator.vibrate) return;
+function showNewMessageIndicator(count) {
+  if (!indicator) return;
+
+  indicator.textContent = `📩 ${count} new message${count > 1 ? "s" : ""}`;
+  indicator.classList.remove("hidden");
 
   setTimeout(() => {
-    navigator.vibrate([200, 200, 200]);
-  }, delayBefore);
+    indicator.classList.add("hidden");
+  }, 2500);
 }
 
 /**
  * Merge incoming backend messages into fchatMessages safely
- * Double vibration per message, staggered if multiple messages
  */
 function mergeIncomingMessages(incoming) {
   if (!Array.isArray(incoming)) return;
 
-  let changed = false;
-  let newMessagesCount = 0;
+  let newCount = 0;
 
-  incoming.forEach((msg, index) => {
+  incoming.forEach(msg => {
     const exists = fchatMessages.some(m => m.id === msg.id);
     if (!exists) {
       fchatMessages.push(msg);
-      changed = true;
-      newMessagesCount++;
-
-      // Optional: vibrate
-      const delay = index * 300;
-      setTimeout(() => vibrateMessageSequence(), delay);
+      newCount++;
     }
   });
 
-  if (changed) {
-    // Sort and save
+  if (newCount > 0) {
+    // sort messages chronologically
     fchatMessages.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
+
+    // save to localStorage
     localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
 
-    // ✅ UPDATE THE TIMELINE TO SHOW RECEIVED MESSAGES
+    // show visual confirmation
+    showNewMessageIndicator(newCount);
+
+    // render messages
     updateTimeline();
   }
 }
@@ -97,7 +98,6 @@ function markIncomingDelivered() {
   });
 
   if (changed) {
-    const FCHAT_STORAGE_KEY = `fchat_${account.email}`;
     localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
     updateTimeline();
   }
