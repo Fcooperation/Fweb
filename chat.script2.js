@@ -7,24 +7,42 @@ if (!window.API_URL || !window.account || !window.chatWith) {
 }
 
 /**
+ * Vibrate sequence for a single message:
+ * - vibrate 200ms
+ * - wait 200ms
+ * - vibrate 200ms
+ */
+function vibrateMessageSequence(delayBefore = 0) {
+  if (!navigator.vibrate) return;
+
+  setTimeout(() => {
+    navigator.vibrate([200, 200, 200]);
+  }, delayBefore);
+}
+
+/**
  * Merge incoming backend messages into fchatMessages safely
- * Vibrates briefly for each new message
+ * Double vibration per message, staggered if multiple messages
  */
 function mergeIncomingMessages(incoming) {
   if (!Array.isArray(incoming)) return;
 
   let changed = false;
+  let newMessagesCount = 0;
 
-  incoming.forEach(msg => {
+  incoming.forEach((msg, index) => {
     const exists = fchatMessages.some(m => m.id === msg.id);
     if (!exists) {
       fchatMessages.push(msg);
       changed = true;
+      newMessagesCount++;
 
-      // 🔔 Vibrate once for 200ms for this new message
-      if (navigator.vibrate) {
-        navigator.vibrate(200);
-      }
+      // Calculate delay for this message:
+      // Each previous message adds 300ms delay
+      const delay = index * 300;
+
+      // Trigger double vibration for this message with delay
+      vibrateMessageSequence(delay);
     }
   });
 
@@ -37,7 +55,6 @@ function mergeIncomingMessages(incoming) {
 
 /**
  * Ask backend for chat logs
- * Optimistic: If request reaches backend → we treat it as success
  */
 function fetchChatLogs() {
   if (!navigator.onLine) return;
@@ -54,7 +71,6 @@ function fetchChatLogs() {
     .then(res => res.json())
     .then(data => {
       if (!data || !Array.isArray(data.messages)) return;
-
       mergeIncomingMessages(data.messages);
     })
     .catch(err => {
@@ -63,7 +79,7 @@ function fetchChatLogs() {
 }
 
 /**
- * Mark messages as delivered when they appear on screen
+ * Mark messages as delivered
  */
 function markIncomingDelivered() {
   let changed = false;
