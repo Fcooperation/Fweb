@@ -37,18 +37,18 @@ function mergeIncomingMessages(incoming) {
       changed = true;
       newMessagesCount++;
 
-      // Calculate delay for this message:
-      // Each previous message adds 300ms delay
+      // Optional: vibrate
       const delay = index * 300;
-
-      // Trigger double vibration for this message with delay
-      vibrateMessageSequence(delay);
+      setTimeout(() => vibrateMessageSequence(), delay);
     }
   });
 
   if (changed) {
-    const FCHAT_STORAGE_KEY = `fchat_${account.email}`;
+    // Sort and save
+    fchatMessages.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
     localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
+
+    // ✅ UPDATE THE TIMELINE TO SHOW RECEIVED MESSAGES
     updateTimeline();
   }
 }
