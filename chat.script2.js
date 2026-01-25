@@ -1,6 +1,6 @@
-// ================================
-// FCHAT RECEIVER & SYNC ENGINE
-// ================================
+// ================================  
+// FCHAT RECEIVER & SYNC ENGINE  
+// ================================  
 
 if (!window.API_URL || !window.account || !window.chatWith) {
   console.warn("Chat core not loaded yet");
@@ -8,6 +8,7 @@ if (!window.API_URL || !window.account || !window.chatWith) {
 
 /**
  * Merge incoming backend messages into fchatMessages safely
+ * Vibrates for 5 seconds when new message arrives
  */
 function mergeIncomingMessages(incoming) {
   if (!Array.isArray(incoming)) return;
@@ -25,6 +26,12 @@ function mergeIncomingMessages(incoming) {
   if (changed) {
     const FCHAT_STORAGE_KEY = `fchat_${account.email}`;
     localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
+
+    // 🔔 Vibrate for 5 seconds (5000ms)
+    if (navigator.vibrate) {
+      navigator.vibrate(5000);
+    }
+
     updateTimeline();
   }
 }
