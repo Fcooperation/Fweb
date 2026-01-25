@@ -1141,3 +1141,4 @@ syncToFChat();
 retryAllPolls();
 retryPendingMessages();
 retryPendingPollMessages();
+setNoNewMessages();

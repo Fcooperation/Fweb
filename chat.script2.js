@@ -10,17 +10,29 @@ const FCHAT_STORAGE_KEY = `fchat_${account.email}`;
 const indicator = document.getElementById("newMessagesIndicator");
 
 /**
- * Show new messages indicator
+ * Set indicator to idle state
+ */
+function setNoNewMessages() {
+  if (!indicator) return;
+  indicator.textContent = "No new messages";
+  indicator.classList.add("idle");
+  indicator.classList.remove("show");
+}
+
+/**
+ * Show new messages count
  */
 function showNewMessageIndicator(count) {
   if (!indicator) return;
 
   indicator.textContent = `📩 ${count} new message${count > 1 ? "s" : ""}`;
-  indicator.classList.remove("hidden");
+  indicator.classList.remove("idle");
+  indicator.classList.add("show");
 
+  // after 3 seconds, go back to idle
   setTimeout(() => {
-    indicator.classList.add("hidden");
-  }, 2500);
+    setNoNewMessages();
+  }, 3000);
 }
 
 /**

@@ -638,26 +638,23 @@ body {
   opacity: 0.7;
 }
 .new-messages-indicator {
-  position: fixed;
-  top: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #1a73e8;
-  color: white;
-  padding: 8px 14px;
-  border-radius: 20px;
   font-size: 13px;
-  font-weight: 500;
-  z-index: 9999;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-  animation: fadeIn 0.25s ease-out;
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: #1e88ff;
+  color: white;
+  margin-top: 4px;
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: 0.3s ease;
 }
 
-.new-messages-indicator.hidden {
-  display: none;
+.new-messages-indicator.show {
+  opacity: 1;
+  transform: translateY(0);
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
-  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+.new-messages-indicator.idle {
+  background: #999;
 }
