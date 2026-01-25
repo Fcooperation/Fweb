@@ -854,7 +854,7 @@ function retryPendingPollMessages() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        action: "send_poll_message",
+        action: "send_polls",
         poll_id: poll.id,
         sender_id: poll.sender_id,
         receiver_id: poll.receiver_id,
