@@ -696,6 +696,9 @@ function updateTimeline() {
   let lastDate = null;
 
   chatItems.forEach(msg => {
+    // Determine if the message is sent or received
+    msg.isSent = String(msg.sender_id) === String(account.id);
+
     let msgDate;
     try {
       msgDate = new Date(msg.sent_at).toDateString();
@@ -712,7 +715,7 @@ function updateTimeline() {
       lastDate = msgDate;
     }
 
-    addMessage(msg);
+    addMessage(msg); // addMessage now knows if it's sent or received via msg.isSent
   });
 
   // ✅ No scroll adjustment here
