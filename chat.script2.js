@@ -8,7 +8,7 @@ if (!window.API_URL || !window.account || !window.chatWith) {
 
 /**
  * Merge incoming backend messages into fchatMessages safely
- * Vibrates for 5 seconds when new message arrives
+ * Vibrates briefly for each new message
  */
 function mergeIncomingMessages(incoming) {
   if (!Array.isArray(incoming)) return;
@@ -20,18 +20,17 @@ function mergeIncomingMessages(incoming) {
     if (!exists) {
       fchatMessages.push(msg);
       changed = true;
+
+      // 🔔 Vibrate once for 200ms for this new message
+      if (navigator.vibrate) {
+        navigator.vibrate(200);
+      }
     }
   });
 
   if (changed) {
     const FCHAT_STORAGE_KEY = `fchat_${account.email}`;
     localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
-
-    // 🔔 Vibrate for 5 seconds (5000ms)
-    if (navigator.vibrate) {
-      navigator.vibrate(5000);
-    }
-
     updateTimeline();
   }
 }
