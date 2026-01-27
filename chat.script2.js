@@ -36,40 +36,30 @@ function showNewMessageIndicator(count) {
 }
 
 /**
- * Merge incoming backend messages into fchatMessages safely
+ * Merge incoming backend messages into fchatMessages WITHOUT duplicate check
  */
 function mergeIncomingMessages(incoming) {
   if (!Array.isArray(incoming)) return;
 
-  let newCount = 0;
+  // Push all messages directly
+  fchatMessages.push(...incoming);
 
-  incoming.forEach(msg => {
-    const exists = fchatMessages.some(m => m.id === msg.id);
-    if (!exists) {
-      // Just push the message as-is
-      fchatMessages.push(msg);
-      newCount++;
-    }
-  });
+  // Sort messages chronologically
+  fchatMessages.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
 
-  if (newCount > 0) {
-    // Sort messages chronologically
-    fchatMessages.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
+  // Save to localStorage
+  localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
 
-    // Save to localStorage
-    localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
+  // Show visual confirmation
+  showNewMessageIndicator(incoming.length);
 
-    // Show visual confirmation
-    showNewMessageIndicator(newCount);
-
-    // 🔔 Small vibration
-    if (navigator.vibrate) {
-      navigator.vibrate(50); // vibrate for 50ms
-    }
-
-    // Render messages
-    updateTimeline();
+  // 🔔 Small vibration
+  if (navigator.vibrate) {
+    navigator.vibrate(50); // vibrate for 50ms
   }
+
+  // Render messages
+  updateTimeline();
 }
 
 /**
