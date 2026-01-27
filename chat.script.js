@@ -683,6 +683,7 @@ msg.addEventListener("click", e => {
   chatBody.scrollTop = chatBody.scrollHeight;
 }
 // Update timeline without auto-scroll — treat all messages as sent
+// Update timeline without auto-scroll — sent vs received
 function updateTimeline() {
   chatBody.innerHTML = "";
 
@@ -710,8 +711,11 @@ function updateTimeline() {
       lastDate = msgDate;
     }
 
-    // Force treat as sent
-    addMessage({ ...msg, sender_id: account.id });
+    // Determine if sent or received
+    const isSent = msg.sender_id === account.id;
+
+    // Call addMessage with forced alignment based on sent/received
+    addMessage({ ...msg, sender_id: isSent ? account.id : "received" });
   });
 
   // ✅ No scroll adjustment here
