@@ -682,18 +682,18 @@ msg.addEventListener("click", e => {
 });
   chatBody.scrollTop = chatBody.scrollHeight;
 }
-// Update timeline without auto-scroll — only sent messages
+// Update timeline without auto-scroll — only received messages
 function updateTimeline() {
   chatBody.innerHTML = ""; // clear chat
 
-  // Only keep messages sent by the current account
-  const sentMessages = fchatMessages
-    .filter(msg => String(msg.sender_id) === String(account.id))
+  // Only keep messages NOT sent by the current account
+  const receivedMessages = fchatMessages
+    .filter(msg => String(msg.sender_id) !== String(account.id))
     .sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
 
   let lastDate = null;
 
-  sentMessages.forEach(msg => {
+  receivedMessages.forEach(msg => {
     let msgDate;
     try {
       msgDate = new Date(msg.sent_at).toDateString();
@@ -711,7 +711,7 @@ function updateTimeline() {
       lastDate = msgDate;
     }
 
-    // ✅ Only sent messages are passed as-is
+    // ✅ Only received messages are passed as-is
     addMessage(msg);
   });
 
