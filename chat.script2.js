@@ -46,6 +46,11 @@ function mergeIncomingMessages(incoming) {
   incoming.forEach(msg => {
     const exists = fchatMessages.some(m => m.id === msg.id);
     if (!exists) {
+      // 🔥 Rewrite receiver_id to be the current account
+      if (msg.receiver_id !== account.id) {
+        msg.receiver_id = account.id;
+      }
+
       fchatMessages.push(msg);
       newCount++;
     }
