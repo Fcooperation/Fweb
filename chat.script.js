@@ -682,7 +682,6 @@ msg.addEventListener("click", e => {
 });
   chatBody.scrollTop = chatBody.scrollHeight;
 }
-// Update timeline without auto-scroll — treat all messages as sent
 // Update timeline without auto-scroll — sent vs received
 function updateTimeline() {
   chatBody.innerHTML = "";
