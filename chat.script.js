@@ -299,7 +299,7 @@ function addMessage(msgObj) {
   const msg = document.createElement("div");
   msg.dataset.id = msgObj.id;
 
-  const isSent = String(msgObj.sender_id) === String(account.id);
+  const isSent = msgObj._isSent ?? (String(msgObj.sender_id) === String(account.id));
   const alignmentClass = isSent ? "sent" : "received";
 
   // Format time
@@ -710,10 +710,10 @@ function updateTimeline() {
       lastDate = msgDate;
     }
 
-    // Force sent vs received based on sender
+    // ✅ Keep sender_id intact, pass isSent flag
     const displayMsg = { 
       ...msg, 
-      sender_id: msg.sender_id === account.id ? account.id : "received" 
+      _isSent: msg.sender_id === account.id // custom flag for addMessage
     };
 
     addMessage(displayMsg);
