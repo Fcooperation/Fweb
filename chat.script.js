@@ -682,20 +682,18 @@ msg.addEventListener("click", e => {
 });
   chatBody.scrollTop = chatBody.scrollHeight;
 }
-// Update timeline without auto-scroll
+// Update timeline without auto-scroll — only sent messages
 function updateTimeline() {
-  chatBody.innerHTML = "";
+  chatBody.innerHTML = ""; // clear chat
 
-  const chatItems = fchatMessages
-    .filter(m =>
-      (m.sender_id === chatWith.id && m.receiver_id === account.id) || // messages sent to me
-      (m.sender_id === account.id && m.receiver_id === chatWith.id)   // messages I sent to them
-    )
+  // Only keep messages sent by the current account
+  const sentMessages = fchatMessages
+    .filter(msg => String(msg.sender_id) === String(account.id))
     .sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
 
   let lastDate = null;
 
-  chatItems.forEach(msg => {
+  sentMessages.forEach(msg => {
     let msgDate;
     try {
       msgDate = new Date(msg.sent_at).toDateString();
@@ -703,6 +701,7 @@ function updateTimeline() {
       msgDate = "Unknown Date";
     }
 
+    // Add a date divider if needed
     if (msgDate !== lastDate) {
       const dateDivider = document.createElement("div");
       dateDivider.className = "date-divider";
@@ -712,10 +711,11 @@ function updateTimeline() {
       lastDate = msgDate;
     }
 
+    // ✅ Only sent messages are passed as-is
     addMessage(msg);
   });
 
-  // ✅ No scroll adjustment here
+  // No scroll adjustment here
 }
 // ===== Unified Poll Retry Handler =====
 function retryAllPolls() {
