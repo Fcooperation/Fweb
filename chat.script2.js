@@ -1,6 +1,6 @@
-// ================================
-// FCHAT RECEIVER & SYNC ENGINE
-// ================================
+// ================================  
+// FCHAT RECEIVER & SYNC ENGINE — ONE-TIME FETCH  
+// ================================  
 
 if (!window.API_URL || !window.account || !window.chatWith) {
   console.warn("Chat core not loaded yet");
@@ -9,8 +9,8 @@ if (!window.API_URL || !window.account || !window.chatWith) {
 const FCHAT_STORAGE_KEY = `fchat_${account.email}`;
 const indicator = document.getElementById("newMessagesIndicator");
 
-/**
- * Set indicator to idle state
+/**  
+ * Set indicator to idle state  
  */
 function setNoNewMessages() {
   if (!indicator) return;
@@ -19,8 +19,8 @@ function setNoNewMessages() {
   indicator.classList.remove("show");
 }
 
-/**
- * Show new messages count
+/**  
+ * Show new messages count  
  */
 function showNewMessageIndicator(count) {
   if (!indicator) return;
@@ -35,8 +35,8 @@ function showNewMessageIndicator(count) {
   }, 3000);
 }
 
-/**
- * Merge incoming backend messages into fchatMessages WITHOUT duplicate check
+/**  
+ * Merge incoming backend messages into fchatMessages WITHOUT duplicate check  
  */
 function mergeIncomingMessages(incoming) {
   if (!Array.isArray(incoming)) return;
@@ -62,71 +62,41 @@ function mergeIncomingMessages(incoming) {
   updateTimeline();
 }
 
-/**
- * Ask backend for chat logs
+/**  
+ * One-time fetch of all existing chat logs from backend  
  */
-function fetchChatLogs() {
+async function fetchAllChatLogsOnce() {
   if (!navigator.onLine) return;
 
-  fetch(API_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      action: "get_all_fchatlogs",
-      id: account.id,
-      chatwithid: chatWith.id
-    })
-  })
-    .then(res => res.json())
-    .then(data => {
-      if (!data || !Array.isArray(data.messages)) return;
-      mergeIncomingMessages(data.messages);
-    })
-    .catch(err => {
-      console.warn("Fetch chat logs failed:", err);
+  try {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "get_all_fchatlogs",
+        id: account.id,
+        chatwithid: chatWith.id
+      })
     });
-}
 
-/**
- * Mark messages as delivered
- */
-function markIncomingDelivered() {
-  let changed = false;
+    const data = await res.json();
+    if (!data || !Array.isArray(data.messages)) return;
 
-  fchatMessages.forEach(m => {
-    if (
-      m.receiver_id === account.id &&
-      m.sender_id === chatWith.id &&
-      m.status !== "seen" &&
-      m.status !== "delivered"
-    ) {
-      m.status = "delivered";
-      changed = true;
-    }
-  });
-
-  if (changed) {
-    localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
-    updateTimeline();
+    // Push everything into fchatMessages and render
+    mergeIncomingMessages(data.messages);
+  } catch (err) {
+    console.warn("Fetch chat logs failed:", err);
   }
 }
 
-/**
- * Poll backend every 4 seconds
- */
-setInterval(() => {
-  fetchChatLogs();
-  markIncomingDelivered();
-}, 4000);
-
-/**
- * Instant fetch when user comes online
+/**  
+ * Instant fetch when user comes online  
  */
 window.addEventListener("online", () => {
-  fetchChatLogs();
+  fetchAllChatLogsOnce();
 });
 
-/**
- * Initial fetch on page load
+/**  
+ * Initial one-time fetch on page load  
  */
-fetchChatLogs();
+fetchAllChatLogsOnce();
