@@ -1124,6 +1124,62 @@ chatBody.addEventListener("click", (e) => {
     optionEl.querySelector(".poll-bar").style.width = "100%";
   }
 });
+// Receiving logic
+async function fetchAllFChatLogs() {
+  if (!navigator.onLine) return; // offline, skip
+
+  try {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "get_all_fchatlogs",
+        id: account.id,
+        chatwithid: chatWith.id
+      })
+    });
+
+    const data = await res.json();
+    if (!data || !Array.isArray(data.messages)) return;
+
+    // Parse messages
+    const newMessages = [];
+    data.messages.forEach(msg => {
+      // Skip duplicates
+      if (!fchatMessages.some(fm => fm.id === msg.id)) {
+        // Ensure required fields exist
+        const parsedMsg = {
+          id: msg.id,
+          sender_id: msg.sender_id,
+          receiver_id: msg.receiver_id,
+          text: msg.text || "",
+          sent_at: msg.sent_at || new Date().toISOString(),
+          status: "delivered",  // assume these are already delivered
+          isPoll: msg.isPoll || false,
+          pollData: msg.pollData || null,
+          deleted: msg.deleted || false,
+          deleted_for: msg.deleted_for || null,
+          requested_by: msg.requested_by || null,
+          linked: msg.linked || false,
+          linked_message_id: msg.linked_message_id || null
+        };
+
+        newMessages.push(parsedMsg);
+      }
+    });
+
+    if (newMessages.length > 0) {
+      fchatMessages.push(...newMessages);
+      fchatMessages.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
+      localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
+
+      updateTimeline();
+    }
+
+  } catch (err) {
+    console.warn("Failed to fetch FChat logs:", err);
+  }
+}
 // ===== Event Listeners =====
 window.addEventListener("online", retryAllPolls);  // retry pending polls once online
 window.addEventListener("offline", retryAllPolls); // mark sending → pending when offline
@@ -1131,6 +1187,8 @@ window.addEventListener("online", retryPendingMessages);
 window.addEventListener("offline", retryPendingMessages);
 window.addEventListener("online", retryPendingPollMessages);
 window.addEventListener("offline", retryPendingPollMessages);
+// Re-fetch when coming online
+window.addEventListener("online", fetchAllFChatLogs);
 
 // Initial load
 syncPolls();
@@ -1138,3 +1196,4 @@ syncToFChat();
 retryAllPolls();
 retryPendingMessages();
 retryPendingPollMessages();
+fetchAllFChatLogs();
