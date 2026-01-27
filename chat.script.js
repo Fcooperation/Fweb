@@ -380,7 +380,19 @@ if (msgObj.deleted && msgObj.deleted_for === "everyone") {
 // Glow ONLY when clicking the reply preview bubble
 if (msgObj.linked) {
   const replyBubble = msg.querySelector(".reply-bubble");
-  if (!replyBubble) return;
+
+  if (!replyBubble) {
+    // build reply bubble from linked_message_id
+    const original = fchatMessages.find(m => m.id === msgObj.linked_message_id);
+    if (original) {
+      const bubble = document.createElement("div");
+      bubble.className = "reply-bubble";
+      bubble.textContent = original.text.slice(0,120);
+      msg.insertBefore(bubble, msg.firstChild);
+    } else {
+      return; // only cancel if original truly doesn't exist
+    }
+  }
 
   replyBubble.style.cursor = "pointer";
 
