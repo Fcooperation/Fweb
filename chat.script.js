@@ -385,17 +385,22 @@ if (msgObj.linked) {
   replyBubble.style.cursor = "pointer";
 
   replyBubble.addEventListener("click", (e) => {
-  if (selectionMode) return; // 🚫 ignore reply click when selecting
-  e.stopPropagation();
+    if (selectionMode) return;
+    e.stopPropagation();
 
-  const linkedMsgId = msgObj.linked_message_id;
-  const originalMsg = chatBody.querySelector(
-    `[data-id='${linkedMsgId}']`
-  );
-  if (!originalMsg) return;
+    const linkedMsgId = msgObj.linked_message_id;
+
+    // 🔥 Find target ONLY when clicked
+    const originalMsg = chatBody.querySelector(
+      `[data-id='${linkedMsgId}']`
+    );
+
+    if (!originalMsg) {
+      console.warn("Linked message not yet in DOM:", linkedMsgId);
+      return;
+    }
 
     let cancelScroll = false;
-
     const stopScroll = () => { cancelScroll = true; };
     document.addEventListener("click", stopScroll, {
       once: true,
@@ -415,11 +420,10 @@ if (msgObj.linked) {
       return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
     }
 
-    function smoothScroll(currentTime) {
+    function smoothScroll(time) {
       if (cancelScroll) return;
 
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / duration, 1);
+      const progress = Math.min((time - startTime) / duration, 1);
 
       chatBody.scrollTop =
         startScrollTop +
@@ -428,14 +432,11 @@ if (msgObj.linked) {
       if (progress < 1) {
         requestAnimationFrame(smoothScroll);
       } else {
-        triggerGlow();
+        // ✨ glow
+        originalMsg.classList.remove("highlight-message");
+        void originalMsg.offsetWidth;
+        originalMsg.classList.add("highlight-message");
       }
-    }
-
-    function triggerGlow() {
-      originalMsg.classList.remove("highlight-message");
-      void originalMsg.offsetWidth;
-      originalMsg.classList.add("highlight-message");
     }
 
     requestAnimationFrame(smoothScroll);
