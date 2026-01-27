@@ -296,6 +296,7 @@ menuSelect.onclick = () => {
 };
 // Add message function
 function addMessage(msgObj) {
+  if (String(msgObj.sender_id) !== String(account.id)) return;
   const msg = document.createElement("div");
   msg.dataset.id = msgObj.id;
 
