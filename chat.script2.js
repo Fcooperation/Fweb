@@ -46,27 +46,28 @@ function mergeIncomingMessages(incoming) {
   incoming.forEach(msg => {
     const exists = fchatMessages.some(m => m.id === msg.id);
     if (!exists) {
-      // 🔥 Rewrite receiver_id to be the current account
-      if (msg.receiver_id !== account.id) {
-        msg.receiver_id = account.id;
-      }
-
+      // Just push the message as-is
       fchatMessages.push(msg);
       newCount++;
     }
   });
 
   if (newCount > 0) {
-    // sort messages chronologically
+    // Sort messages chronologically
     fchatMessages.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
 
-    // save to localStorage
+    // Save to localStorage
     localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
 
-    // show visual confirmation
+    // Show visual confirmation
     showNewMessageIndicator(newCount);
 
-    // render messages
+    // 🔔 Small vibration
+    if (navigator.vibrate) {
+      navigator.vibrate(50); // vibrate for 50ms
+    }
+
+    // Render messages
     updateTimeline();
   }
 }

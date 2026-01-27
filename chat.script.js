@@ -682,16 +682,14 @@ msg.addEventListener("click", e => {
 });
   chatBody.scrollTop = chatBody.scrollHeight;
 }
-// Update timeline without auto-scroll
+// Update timeline without auto-scroll — treat all messages as sent
 function updateTimeline() {
   chatBody.innerHTML = "";
 
-  const chatItems = fchatMessages
-    .filter(m =>
-      (m.sender_id === chatWith.id && m.receiver_id === account.id) || // messages sent to me
-      (m.sender_id === account.id && m.receiver_id === chatWith.id)   // messages I sent to them
-    )
-    .sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
+  // Sort all messages chronologically
+  const chatItems = fchatMessages.sort(
+    (a, b) => new Date(a.sent_at) - new Date(b.sent_at)
+  );
 
   let lastDate = null;
 
@@ -712,7 +710,8 @@ function updateTimeline() {
       lastDate = msgDate;
     }
 
-    addMessage(msg);
+    // Force treat as sent
+    addMessage({ ...msg, sender_id: account.id });
   });
 
   // ✅ No scroll adjustment here
