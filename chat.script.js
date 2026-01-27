@@ -299,7 +299,7 @@ function addMessage(msgObj) {
   const msg = document.createElement("div");
   msg.dataset.id = msgObj.id;
 
-  const isSent = msgObj._isSent ?? (String(msgObj.sender_id) === String(account.id));
+  const isSent = String(msgObj.sender_id) === String(account.id);
   const alignmentClass = isSent ? "sent" : "received";
 
   // Format time
@@ -682,14 +682,16 @@ msg.addEventListener("click", e => {
 });
   chatBody.scrollTop = chatBody.scrollHeight;
 }
-// Update timeline without auto-scroll — sent vs received
+// Update timeline without auto-scroll
 function updateTimeline() {
   chatBody.innerHTML = "";
 
-  // Sort all messages chronologically
-  const chatItems = fchatMessages.sort(
-    (a, b) => new Date(a.sent_at) - new Date(b.sent_at)
-  );
+  const chatItems = fchatMessages
+    .filter(m =>
+      (m.sender_id === chatWith.id && m.receiver_id === account.id) || // messages sent to me
+      (m.sender_id === account.id && m.receiver_id === chatWith.id)   // messages I sent to them
+    )
+    .sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
 
   let lastDate = null;
 
@@ -710,13 +712,7 @@ function updateTimeline() {
       lastDate = msgDate;
     }
 
-    // ✅ Keep sender_id intact, pass isSent flag
-    const displayMsg = { 
-      ...msg, 
-      _isSent: msg.sender_id === account.id // custom flag for addMessage
-    };
-
-    addMessage(displayMsg);
+    addMessage(msg);
   });
 
   // ✅ No scroll adjustment here
