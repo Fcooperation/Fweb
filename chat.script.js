@@ -1192,6 +1192,11 @@ window.addEventListener("online", retryPendingPollMessages);
 window.addEventListener("offline", retryPendingPollMessages);
 window.addEventListener("online", fetchAllFChatLogs);
 
+// Run fetchAllFChatLogs every 2 seconds (2000 ms)
+setInterval(() => {
+  fetchAllFChatLogs();
+}, 2000);
+
 // Initial load
 syncPolls();
 syncToFChat();
