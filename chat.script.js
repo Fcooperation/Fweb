@@ -380,39 +380,22 @@ if (msgObj.deleted && msgObj.deleted_for === "everyone") {
 // Glow ONLY when clicking the reply preview bubble
 if (msgObj.linked) {
   const replyBubble = msg.querySelector(".reply-bubble");
-
-  if (!replyBubble) {
-    // build reply bubble from linked_message_id
-    const original = fchatMessages.find(m => m.id === msgObj.linked_message_id);
-    if (original) {
-      const bubble = document.createElement("div");
-      bubble.className = "reply-bubble";
-      bubble.textContent = original.text.slice(0,120);
-      msg.insertBefore(bubble, msg.firstChild);
-    } else {
-      return; // only cancel if original truly doesn't exist
-    }
-  }
+  if (!replyBubble) return;
 
   replyBubble.style.cursor = "pointer";
 
   replyBubble.addEventListener("click", (e) => {
-    if (selectionMode) return;
-    e.stopPropagation();
+  if (selectionMode) return; // 🚫 ignore reply click when selecting
+  e.stopPropagation();
 
-    const linkedMsgId = msgObj.linked_message_id;
-
-    // 🔥 Find target ONLY when clicked
-    const originalMsg = chatBody.querySelector(
-      `[data-id='${linkedMsgId}']`
-    );
-
-    if (!originalMsg) {
-      console.warn("Linked message not yet in DOM:", linkedMsgId);
-      return;
-    }
+  const linkedMsgId = msgObj.linked_message_id;
+  const originalMsg = chatBody.querySelector(
+    `[data-id='${linkedMsgId}']`
+  );
+  if (!originalMsg) return;
 
     let cancelScroll = false;
+
     const stopScroll = () => { cancelScroll = true; };
     document.addEventListener("click", stopScroll, {
       once: true,
@@ -432,10 +415,11 @@ if (msgObj.linked) {
       return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
     }
 
-    function smoothScroll(time) {
+    function smoothScroll(currentTime) {
       if (cancelScroll) return;
 
-      const progress = Math.min((time - startTime) / duration, 1);
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
 
       chatBody.scrollTop =
         startScrollTop +
@@ -444,11 +428,14 @@ if (msgObj.linked) {
       if (progress < 1) {
         requestAnimationFrame(smoothScroll);
       } else {
-        // ✨ glow
-        originalMsg.classList.remove("highlight-message");
-        void originalMsg.offsetWidth;
-        originalMsg.classList.add("highlight-message");
+        triggerGlow();
       }
+    }
+
+    function triggerGlow() {
+      originalMsg.classList.remove("highlight-message");
+      void originalMsg.offsetWidth;
+      originalMsg.classList.add("highlight-message");
     }
 
     requestAnimationFrame(smoothScroll);
@@ -1137,62 +1124,6 @@ chatBody.addEventListener("click", (e) => {
     optionEl.querySelector(".poll-bar").style.width = "100%";
   }
 });
-// Receiving logic
-async function fetchAllFChatLogs() {
-  if (!navigator.onLine) return; // offline, skip
-
-  try {
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "get_all_fchatlogs",
-        id: account.id,
-        chatwithid: chatWith.id
-      })
-    });
-
-    const data = await res.json();
-    if (!data || !Array.isArray(data.messages)) return;
-
-    // Parse messages
-    const newMessages = [];
-    data.messages.forEach(msg => {
-      // Skip duplicates
-      if (!fchatMessages.some(fm => fm.id === msg.id)) {
-        // Ensure required fields exist
-        const parsedMsg = {
-          id: msg.id,
-          sender_id: msg.sender_id,
-          receiver_id: msg.receiver_id,
-          text: msg.text || "",
-          sent_at: msg.sent_at || new Date().toISOString(),
-          status: "delivered",  // assume these are already delivered
-          isPoll: msg.isPoll || false,
-          pollData: msg.pollData || null,
-          deleted: msg.deleted || false,
-          deleted_for: msg.deleted_for || null,
-          requested_by: msg.requested_by || null,
-          linked: msg.linked || false,
-          linked_message_id: msg.linked_message_id || null
-        };
-
-        newMessages.push(parsedMsg);
-      }
-    });
-
-    if (newMessages.length > 0) {
-      fchatMessages.push(...newMessages);
-      fchatMessages.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
-      localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
-
-      updateTimeline();
-    }
-
-  } catch (err) {
-    console.warn("Failed to fetch FChat logs:", err);
-  }
-}
 // ===== Event Listeners =====
 window.addEventListener("online", retryAllPolls);  // retry pending polls once online
 window.addEventListener("offline", retryAllPolls); // mark sending → pending when offline
