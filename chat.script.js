@@ -696,6 +696,9 @@ function updateTimeline() {
   let lastDate = null;
 
   chatItems.forEach(msg => {
+    // Determine if the message is sent or received
+    msg.isSent = String(msg.sender_id) === String(account.id);
+
     let msgDate;
     try {
       msgDate = new Date(msg.sent_at).toDateString();
@@ -712,7 +715,7 @@ function updateTimeline() {
       lastDate = msgDate;
     }
 
-    addMessage(msg);
+    addMessage(msg); // addMessage now knows if it's sent or received via msg.isSent
   });
 
   // ✅ No scroll adjustment here
@@ -1131,8 +1134,6 @@ window.addEventListener("online", retryPendingMessages);
 window.addEventListener("offline", retryPendingMessages);
 window.addEventListener("online", retryPendingPollMessages);
 window.addEventListener("offline", retryPendingPollMessages);
-// Re-fetch when coming online
-window.addEventListener("online", fetchAllFChatLogs);
 
 // Initial load
 syncPolls();
@@ -1140,4 +1141,3 @@ syncToFChat();
 retryAllPolls();
 retryPendingMessages();
 retryPendingPollMessages();
-fetchAllFChatLogs();
