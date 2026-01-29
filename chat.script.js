@@ -682,21 +682,27 @@ msg.addEventListener("click", e => {
 });
   chatBody.scrollTop = chatBody.scrollHeight;
 }
+let vibratedMessageIds = new Set();
 // Update timeline without auto-scroll
-function updateTimeline() {
+async function updateTimeline() {
   chatBody.innerHTML = "";
 
   const chatItems = fchatMessages
     .filter(m =>
-      (m.sender_id === chatWith.id && m.receiver_id === account.id) || // messages sent to me
-      (m.sender_id === account.id && m.receiver_id === chatWith.id)   // messages I sent to them
+      (m.sender_id === chatWith.id && m.receiver_id === account.id) || // received
+      (m.sender_id === account.id && m.receiver_id === chatWith.id)    // sent
     )
     .sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
+
+  // 🔔 Get NEW received messages (not vibrated before)
+  const newReceivedMessages = chatItems.filter(m =>
+    String(m.sender_id) === String(chatWith.id) &&
+    !vibratedMessageIds.has(m.id)
+  );
 
   let lastDate = null;
 
   chatItems.forEach(msg => {
-    // Determine if the message is sent or received
     msg.isSent = String(msg.sender_id) === String(account.id);
 
     let msgDate;
@@ -711,12 +717,26 @@ function updateTimeline() {
       dateDivider.className = "date-divider";
       dateDivider.textContent = formatDateLabel(msg.sent_at);
       chatBody.appendChild(dateDivider);
-
       lastDate = msgDate;
     }
 
-    addMessage(msg); // addMessage now knows if it's sent or received via msg.isSent
+    addMessage(msg);
   });
+
+  // 🔔 VIBRATION LOGIC
+  if ("vibrate" in navigator && newReceivedMessages.length > 0) {
+    const messagesToVibrate = newReceivedMessages.slice(0, 3); // max 3 messages
+
+    for (const msg of messagesToVibrate) {
+      vibratedMessageIds.add(msg.id);
+
+      navigator.vibrate(40);           // first vibration
+      await new Promise(r => setTimeout(r, 200));
+
+      navigator.vibrate(40);           // second vibration
+      await new Promise(r => setTimeout(r, 300)); // wait before next message
+    }
+  }
 
   // ✅ No scroll adjustment here
 }
