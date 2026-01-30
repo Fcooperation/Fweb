@@ -1127,7 +1127,7 @@ chatBody.addEventListener("click", (e) => {
     optionEl.querySelector(".poll-bar").style.width = "100%";
   }
 });
-// Receiving logic
+// Receiving logic (FIXED: linked messages now render correctly)
 async function fetchAllFChatLogs() {
   if (!navigator.onLine) return; // offline, skip
 
@@ -1145,58 +1145,84 @@ async function fetchAllFChatLogs() {
     const data = await res.json();
     if (!data || !Array.isArray(data.messages)) return;
 
-    // Parse messages
     const newMessages = [];
-    data.messages.forEach(msg => {
-      // Skip duplicates
-      if (!fchatMessages.some(fm => fm.id === msg.id)) {
-        // Ensure required fields exist
-        const parsedMsg = {
-          id: msg.id,
-          sender_id: msg.sender_id,
-          receiver_id: msg.receiver_id,
-          text: msg.text || "",
-          sent_at: msg.sent_at || new Date().toISOString(),
-          status: "delivered",  // assume these are already delivered
-          isPoll: msg.isPoll || false,
-          pollData: msg.pollData || null,
-          deleted: msg.deleted || false,
-          deleted_for: msg.deleted_for || null,
-          requested_by: msg.requested_by || null,
-          linked: msg.linked || false,
-          linked_message_id: msg.linked_message_id || null
-        };
 
-        newMessages.push(parsedMsg);
+    data.messages.forEach(msg => {
+      // ⛔ skip duplicates
+      if (fchatMessages.some(fm => fm.id === msg.id)) return;
+
+      // 🔗 reconstruct replyTo for linked messages
+      let replyTo = null;
+      if (msg.linked && msg.linked_message_id) {
+        const original =
+          fchatMessages.find(m => m.id === msg.linked_message_id) ||
+          data.messages.find(m => m.id === msg.linked_message_id);
+
+        if (original) {
+          replyTo = {
+            id: original.id,
+            text:
+              (original.text || "").slice(0, 120) +
+              ((original.text || "").length > 120 ? "…" : ""),
+            sender: original.sender_id
+          };
+        }
       }
+
+      const parsedMsg = {
+        id: msg.id,
+        sender_id: msg.sender_id,
+        receiver_id: msg.receiver_id,
+        text: msg.text || "",
+        sent_at: msg.sent_at || new Date().toISOString(),
+        status: "delivered",
+
+        // polls
+        isPoll: msg.isPoll || false,
+        pollData: msg.pollData || null,
+
+        // deletion
+        deleted: msg.deleted || false,
+        deleted_for: msg.deleted_for || null,
+        requested_by: msg.requested_by || null,
+
+        // 🔗 linking
+        linked: msg.linked || false,
+        linked_message_id: msg.linked_message_id || null,
+        replyTo // ✅ THIS WAS THE MISSING PIECE
+      };
+
+      newMessages.push(parsedMsg);
     });
 
-    if (newMessages.length > 0) {
-  // 🔔 detect NEW RECEIVED messages only
-  const receivedNew = newMessages.filter(m =>
-    String(m.sender_id) === String(chatWith.id)
-  );
+    if (newMessages.length === 0) return;
 
-  fchatMessages.push(...newMessages);
-  fchatMessages.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
-  localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
+    // 🔔 detect NEW received messages only
+    const receivedNew = newMessages.filter(
+      m => String(m.sender_id) === String(chatWith.id)
+    );
 
-  updateTimeline();
+    // store + sort
+    fchatMessages.push(...newMessages);
+    fchatMessages.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
+    localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
 
-  // 🔔 VIBRATE AFTER NEW MESSAGES ARRIVE
-  if ("vibrate" in navigator && receivedNew.length > 0) {
-    const toVibrate = receivedNew.slice(0, 3);
+    // render
+    updateTimeline();
 
-    (async () => {
-      for (const msg of toVibrate) {
-        navigator.vibrate(40);
-        await new Promise(r => setTimeout(r, 200));
-        navigator.vibrate(40);
-        await new Promise(r => setTimeout(r, 300));
-      }
-    })();
-  }
-}
+    // 🔔 vibration (max 3 messages)
+    if ("vibrate" in navigator && receivedNew.length > 0) {
+      const toVibrate = receivedNew.slice(0, 3);
+
+      (async () => {
+        for (const _ of toVibrate) {
+          navigator.vibrate(40);
+          await new Promise(r => setTimeout(r, 200));
+          navigator.vibrate(40);
+          await new Promise(r => setTimeout(r, 300));
+        }
+      })();
+    }
 
   } catch (err) {
     console.warn("Failed to fetch FChat logs:", err);
