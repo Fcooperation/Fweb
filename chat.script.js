@@ -342,9 +342,14 @@ function addMessage(msgObj) {
 
 let replyHTML = "";
 if (msgObj.replyTo && !(msgObj.deleted && msgObj.deleted_for === "everyone")) {
+
+  const isYou = String(msgObj.replyTo.sender) === String(account.id);
+  const senderLabel = isYou ? "You" : (chatWith.username || "User");
+
   replyHTML = `
-    <div class="reply-bubble">
-      ${msgObj.replyTo.text}
+    <div class="reply-bubble linked-preview">
+      <div class="linked-sender">${senderLabel}</div>
+      <div class="linked-text">${msgObj.replyTo.text}</div>
     </div>
   `;
 }
