@@ -658,3 +658,24 @@ body {
 .new-messages-indicator.idle {
   background: #999;
 }
+.linked-preview {
+  padding: 6px 8px;
+  border-left: 3px solid #1e88ff;
+  background: rgba(30, 136, 255, 0.08);
+  margin-bottom: 6px;
+  border-radius: 6px;
+}
+
+.linked-sender {
+  font-weight: bold;
+  color: #1e88ff;
+  font-size: 13px;
+}
+
+.linked-text {
+  font-size: 13px;
+  opacity: 0.85;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
