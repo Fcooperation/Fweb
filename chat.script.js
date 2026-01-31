@@ -687,13 +687,12 @@ msg.addEventListener("click", e => {
 });
   chatBody.scrollTop = chatBody.scrollHeight;
 }
-// Update timeline without auto-scroll, now includes polls
+// Update timeline without auto-scroll
 function updateTimeline() {
   chatBody.innerHTML = "";
 
   const chatItems = fchatMessages
     .filter(m =>
-      m.isPoll || // ✅ include all polls
       (m.sender_id === chatWith.id && m.receiver_id === account.id) || // messages sent to me
       (m.sender_id === account.id && m.receiver_id === chatWith.id)   // messages I sent to them
     )
@@ -702,6 +701,9 @@ function updateTimeline() {
   let lastDate = null;
 
   chatItems.forEach(msg => {
+    // Determine if the message is sent or received
+    msg.isSent = String(msg.sender_id) === String(account.id);
+
     let msgDate;
     try {
       msgDate = new Date(msg.sent_at).toDateString();
@@ -718,13 +720,7 @@ function updateTimeline() {
       lastDate = msgDate;
     }
 
-    if (msg.isPoll) {
-      addPoll(msg); // ✅ render poll separately
-    } else {
-      // Determine if the message is sent or received
-      msg.isSent = String(msg.sender_id) === String(account.id);
-      addMessage(msg);
-    }
+    addMessage(msg); // addMessage now knows if it's sent or received via msg.isSent
   });
 
   // ✅ No scroll adjustment here
