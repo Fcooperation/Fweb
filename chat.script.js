@@ -1134,7 +1134,7 @@ chatBody.addEventListener("click", (e) => {
 });
 // Receiving logic (FIXED: linked messages now render correctly)
 async function fetchAllFChatLogs() {
-  if (!navigator.onLine) return; // offline, skip
+  if (!navigator.onLine) return;
 
   try {
     const res = await fetch(API_URL, {
@@ -1148,75 +1148,94 @@ async function fetchAllFChatLogs() {
     });
 
     const data = await res.json();
-    if (!data || !Array.isArray(data.messages)) return;
+    if (!data) return;
 
-    const newMessages = [];
+    const newItems = [];
 
-    data.messages.forEach(msg => {
-      // ⛔ skip duplicates
-      if (fchatMessages.some(fm => fm.id === msg.id)) return;
+    // 🔹 Process messages
+    if (Array.isArray(data.messages)) {
+      data.messages.forEach(msg => {
+        if (fchatMessages.some(fm => fm.id === msg.id)) return;
 
-      // 🔗 reconstruct replyTo for linked messages
-      let replyTo = null;
-      if (msg.linked && msg.linked_message_id) {
-        const original =
-          fchatMessages.find(m => m.id === msg.linked_message_id) ||
-          data.messages.find(m => m.id === msg.linked_message_id);
-
-        if (original) {
-          replyTo = {
-            id: original.id,
-            text:
-              (original.text || "").slice(0, 120) +
-              ((original.text || "").length > 120 ? "…" : ""),
-            sender: original.sender_id
-          };
+        let replyTo = null;
+        if (msg.linked && msg.linked_message_id) {
+          const original =
+            fchatMessages.find(m => m.id === msg.linked_message_id) ||
+            data.messages.find(m => m.id === msg.linked_message_id);
+          if (original) {
+            replyTo = {
+              id: original.id,
+              text:
+                (original.text || "").slice(0, 120) +
+                ((original.text || "").length > 120 ? "…" : ""),
+              sender: original.sender_id
+            };
+          }
         }
-      }
 
-      const parsedMsg = {
-        id: msg.id,
-        sender_id: msg.sender_id,
-        receiver_id: msg.receiver_id,
-        text: msg.text || "",
-        sent_at: msg.sent_at || new Date().toISOString(),
-        status: "delivered",
+        const parsedMsg = {
+          id: msg.id,
+          sender_id: msg.sender_id,
+          receiver_id: msg.receiver_id,
+          text: msg.text || "",
+          sent_at: msg.sent_at || new Date().toISOString(),
+          status: "delivered",
+          isPoll: false,
+          pollData: null,
+          deleted: msg.deleted || false,
+          deleted_for: msg.deleted_for || null,
+          requested_by: msg.requested_by || null,
+          linked: msg.linked || false,
+          linked_message_id: msg.linked_message_id || null,
+          replyTo
+        };
 
-        // polls
-        isPoll: msg.isPoll || false,
-        pollData: msg.pollData || null,
+        newItems.push(parsedMsg);
+      });
+    }
 
-        // deletion
-        deleted: msg.deleted || false,
-        deleted_for: msg.deleted_for || null,
-        requested_by: msg.requested_by || null,
+    // 🔹 Process polls
+    if (Array.isArray(data.polls)) {
+      data.polls.forEach(poll => {
+        if (fchatMessages.some(fm => fm.id === poll.id)) return;
 
-        // 🔗 linking
-        linked: msg.linked || false,
-        linked_message_id: msg.linked_message_id || null,
-        replyTo // ✅ THIS WAS THE MISSING PIECE
-      };
+        const parsedPoll = {
+          id: poll.id,
+          sender_id: poll.senderId,
+          receiver_id: null,
+          text: poll.question,
+          sent_at: poll.sent_at || new Date().toISOString(),
+          status: "delivered",
+          isPoll: true,
+          pollData: {
+            options: poll.options,
+            allowMultiple: poll.allowMultiple
+          },
+          deleted: false,
+          deleted_for: null,
+          requested_by: null,
+          linked: false,
+          linked_message_id: null,
+          replyTo: null
+        };
 
-      newMessages.push(parsedMsg);
-    });
+        newItems.push(parsedPoll);
+      });
+    }
 
-    if (newMessages.length === 0) return;
-
-    // 🔔 vibrate for ANY new message (remove sender filter)
-    const receivedNew = newMessages; // now includes all new JSON received
+    if (newItems.length === 0) return;
 
     // store + sort
-    fchatMessages.push(...newMessages);
+    fchatMessages.push(...newItems);
     fchatMessages.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
     localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
 
     // render
     updateTimeline();
 
-    // 🔔 vibration (max 3 messages)
-    if ("vibrate" in navigator && receivedNew.length > 0) {
-      const toVibrate = receivedNew.slice(0, 3);
-
+    // 🔔 vibration (max 3 items)
+    if ("vibrate" in navigator && newItems.length > 0) {
+      const toVibrate = newItems.slice(0, 3);
       (async () => {
         for (const _ of toVibrate) {
           navigator.vibrate(40);
