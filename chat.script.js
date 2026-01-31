@@ -1202,7 +1202,7 @@ async function fetchAllFChatLogs() {
         const parsedPoll = {
           id: poll.id,
           sender_id: poll.senderId,
-          receiver_id: null,
+          receiver_id: chatWith.id,
           text: poll.question,
           sent_at: poll.sent_at || new Date().toISOString(),
           status: "delivered",
@@ -1231,7 +1231,9 @@ async function fetchAllFChatLogs() {
     localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
 
     // render
-    updateTimeline();
+    await fetchAllFChatLogs();
+syncPolls(); // <- merge polls into fchatMessages
+updateTimeline();
 
     // 🔔 vibration (max 3 items)
     if ("vibrate" in navigator && newItems.length > 0) {
