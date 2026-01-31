@@ -1202,10 +1202,8 @@ async function fetchAllFChatLogs() {
 
     if (newMessages.length === 0) return;
 
-    // 🔔 detect NEW received messages only
-    const receivedNew = newMessages.filter(
-      m => String(m.sender_id) === String(chatWith.id)
-    );
+    // 🔔 vibrate for ANY new message (remove sender filter)
+    const receivedNew = newMessages; // now includes all new JSON received
 
     // store + sort
     fchatMessages.push(...newMessages);
