@@ -1174,21 +1174,21 @@ async function fetchAllFChatLogs() {
         }
 
         const parsedMsg = {
-          id: msg.id,
-          sender_id: msg.sender_id,
-          receiver_id: msg.receiver_id,
-          text: msg.text || "",
-          sent_at: msg.sent_at || new Date().toISOString(),
-          status: "delivered",
-          isPoll: false,
-          pollData: null,
-          deleted: msg.deleted || false,
-          deleted_for: msg.deleted_for || null,
-          requested_by: msg.requested_by || null,
-          linked: msg.linked || false,
-          linked_message_id: msg.linked_message_id || null,
-          replyTo
-        };
+  id: msg.id,
+  sender_id: msg.sender_id,
+  receiver_id: msg.receiver_id,
+  text: msg.text || "",
+  sent_at: msg.sent_at || new Date().toISOString(),
+  status: "delivered",
+  isPoll: !!msg.pollData,             // ✅ mark as poll if pollData exists
+  pollData: msg.pollData || null,     // ✅ attach the poll JSON
+  deleted: msg.deleted || false,
+  deleted_for: msg.deleted_for || null,
+  requested_by: msg.requested_by || null,
+  linked: msg.linked || false,
+  linked_message_id: msg.linked_message_id || null,
+  replyTo
+};
 
         newItems.push(parsedMsg);
       });
