@@ -201,18 +201,14 @@ document.getElementById("send-btn").addEventListener("click", async () => {
 
   const pollId = Date.now();
 
+  // ✅ MESSAGE-SHAPED POLL
   const pollMessage = {
     id: pollId,
-    type: "sent",
-    status: "pending",
-    isPoll: true,
-
-    // ✅ REQUIRED FOR updateTimeline()
     sender_id: account.id,
     receiver_id: chatWith.id,
-
     sent_at: new Date().toISOString(),
-
+    status: "pending",
+    isPoll: true,
     pollData: {
       id: pollId,
       question,
@@ -221,22 +217,33 @@ document.getElementById("send-btn").addEventListener("click", async () => {
     }
   };
 
+  // Save locally
   const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
   const polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
   polls.push(pollMessage);
   localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
 
+  // Send to backend
   try {
     const res = await fetch("https://fweb-backend.onrender.com/fchat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         action: "send_polls",
-        ...pollMessage.pollData,
-        senderId: account.id,
-        receiverId: chatWith.id,   // ✅ ADDED
-        email: account.email,
-        chatWithId: chatWith.id
+
+        // ✅ REQUIRED FOR TIMELINE
+        id: pollId,
+        sender_id: account.id,
+        receiver_id: chatWith.id,
+        sent_at: pollMessage.sent_at,
+
+        // poll content
+        question,
+        options,
+        allowMultiple,
+
+        isPoll: true,
+        email: account.email
       })
     });
 
