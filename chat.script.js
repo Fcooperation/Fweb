@@ -1202,32 +1202,31 @@ async function fetchAllFChatLogs() {
 
     if (newMessages.length === 0) return;
 
-    // 🔔 detect NEW received messages only
-    const receivedNew = newMessages.filter(
-      m => String(m.sender_id) === String(chatWith.id)
-    );
+// 🔔 detect NEW received messages and polls only
+const receivedNew = newMessages.filter(
+  m => String(m.sender_id) === String(chatWith.id) && !m.deleted
+);
 
-    // store + sort
-    fchatMessages.push(...newMessages);
-    fchatMessages.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
-    localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
+// include polls received from chatWith
+const receivedNewPolls = newMessages.filter(
+  m => m.isPoll && String(m.sender_id) === String(chatWith.id) && !m.deleted
+);
 
-    // render
-    updateTimeline();
+// combine both
+const itemsToNotify = [...receivedNew, ...receivedNewPolls];
 
-    // 🔔 vibration (max 3 messages)
-    if ("vibrate" in navigator && receivedNew.length > 0) {
-      const toVibrate = receivedNew.slice(0, 3);
+if ("vibrate" in navigator && itemsToNotify.length > 0) {
+  const toVibrate = itemsToNotify.slice(0, 3);
 
-      (async () => {
-        for (const _ of toVibrate) {
-          navigator.vibrate(40);
-          await new Promise(r => setTimeout(r, 200));
-          navigator.vibrate(40);
-          await new Promise(r => setTimeout(r, 300));
-        }
-      })();
+  (async () => {
+    for (const _ of toVibrate) {
+      navigator.vibrate(40);
+      await new Promise(r => setTimeout(r, 200));
+      navigator.vibrate(40);
+      await new Promise(r => setTimeout(r, 300));
     }
+  })();
+}
 
   } catch (err) {
     console.warn("Failed to fetch FChat logs:", err);
