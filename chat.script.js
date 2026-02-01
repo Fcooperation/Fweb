@@ -1132,7 +1132,7 @@ chatBody.addEventListener("click", (e) => {
     optionEl.querySelector(".poll-bar").style.width = "100%";
   }
 });
-// ====== Your FULL updated fetchAllFChatLogs (unchanged) ======
+// Receiving logic (FIXED: linked messages now render correctly)
 async function fetchAllFChatLogs() {
   if (!navigator.onLine) return; // offline, skip
 
@@ -1233,47 +1233,6 @@ async function fetchAllFChatLogs() {
     console.warn("Failed to fetch FChat logs:", err);
   }
 }
-
-// ====== TEST: Inject a received poll and sync ======
-function testReceivedPoll() {
-  const testPoll = {
-    id: "test-poll-001",
-    sender_id: "583484738838768",
-    receiver_id: "741831129802402",
-    text: "Which fruit do you like most?",
-    sent_at: new Date().toISOString(),
-    status: "delivered",
-    isPoll: true,
-    pollData: {
-      question: "Which fruit do you like most?",
-      options: ["Apple", "Banana", "Mango", "Orange"],
-      allowMultiple: false
-    },
-    deleted: false,
-    deleted_for: null,
-    requested_by: null,
-    linked: false,
-    linked_message_id: null,
-    replyTo: null
-  };
-
-  // Push to fchatMessages if not exists
-  if (!fchatMessages.some(m => m.id === testPoll.id)) {
-    fchatMessages.push(testPoll);
-    fchatMessages.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
-    localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
-  }
-
-  // Call syncPolls to render
-  if (typeof syncPolls === "function") {
-    syncPolls();
-  } else {
-    console.warn("syncPolls() is not defined!");
-  }
-}
-
-// Run the test
-testReceivedPoll();
 // ===== Event Listeners =====
 window.addEventListener("online", retryAllPolls);  // retry pending polls once online
 window.addEventListener("offline", retryAllPolls); // mark sending → pending when offline
