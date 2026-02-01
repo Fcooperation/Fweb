@@ -1132,53 +1132,11 @@ chatBody.addEventListener("click", (e) => {
     optionEl.querySelector(".poll-bar").style.width = "100%";
   }
 });
-// Receiving logic + TEST POLL INJECTION
+// ====== Your FULL updated fetchAllFChatLogs (unchanged) ======
 async function fetchAllFChatLogs() {
-  if (!navigator.onLine) return;
+  if (!navigator.onLine) return; // offline, skip
 
   try {
-    // =========================
-    // 🧪 TEST POLL (PAGE LOAD)
-    // =========================
-    const testExists = fchatMessages.some(m => m.id === 999999001);
-
-    if (!testExists) {
-      const testPoll = {
-        id: 999999001,
-        sender_id: "583484738838768",
-        receiver_id: "741831129802402",
-        sent_at: new Date().toISOString(),
-        status: "delivered",
-
-        isPoll: true,
-        pollData: {
-          question: "Which stack do you prefer for FCHAT?",
-          options: ["Vanilla JS", "React", "Vue", "Svelte"],
-          allowMultiple: false
-        },
-
-        linked: false,
-        linked_message_id: null,
-        deleted: false
-      };
-
-      fchatMessages.push(testPoll);
-      fchatMessages.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
-      localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
-
-      updateTimeline();
-
-      // 🔔 vibrate for 5 seconds (5000ms)
-      if ("vibrate" in navigator) {
-        navigator.vibrate(5000);
-      }
-
-      return; // ⛔ stop here for test
-    }
-
-    // =========================
-    // 🌐 NORMAL BACKEND FETCH
-    // =========================
     const res = await fetch(API_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -1195,8 +1153,10 @@ async function fetchAllFChatLogs() {
     const newMessages = [];
 
     data.messages.forEach(msg => {
+      // ⛔ skip duplicates
       if (fchatMessages.some(fm => fm.id === msg.id)) return;
 
+      // 🔗 reconstruct replyTo for linked messages
       let replyTo = null;
       if (msg.linked && msg.linked_message_id) {
         const original =
@@ -1214,10 +1174,6 @@ async function fetchAllFChatLogs() {
         }
       }
 
-      // ✅ NORMALIZE POLL
-      const isPoll = !!msg.isPoll;
-      const pollData = msg.pollData || null;
-
       const parsedMsg = {
         id: msg.id,
         sender_id: msg.sender_id,
@@ -1226,16 +1182,19 @@ async function fetchAllFChatLogs() {
         sent_at: msg.sent_at || new Date().toISOString(),
         status: "delivered",
 
-        isPoll,
-        pollData,
+        // polls
+        isPoll: msg.isPoll || false,
+        pollData: msg.pollData || null,
 
+        // deletion
         deleted: msg.deleted || false,
         deleted_for: msg.deleted_for || null,
         requested_by: msg.requested_by || null,
 
+        // 🔗 linking
         linked: msg.linked || false,
         linked_message_id: msg.linked_message_id || null,
-        replyTo
+        replyTo // ✅ THIS WAS THE MISSING PIECE
       };
 
       newMessages.push(parsedMsg);
@@ -1243,16 +1202,78 @@ async function fetchAllFChatLogs() {
 
     if (newMessages.length === 0) return;
 
+    // 🔔 detect NEW received messages only
+    const receivedNew = newMessages.filter(
+      m => String(m.sender_id) === String(chatWith.id)
+    );
+
+    // store + sort
     fchatMessages.push(...newMessages);
     fchatMessages.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
     localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
 
+    // render
     updateTimeline();
+
+    // 🔔 vibration (max 3 messages)
+    if ("vibrate" in navigator && receivedNew.length > 0) {
+      const toVibrate = receivedNew.slice(0, 3);
+
+      (async () => {
+        for (const _ of toVibrate) {
+          navigator.vibrate(40);
+          await new Promise(r => setTimeout(r, 200));
+          navigator.vibrate(40);
+          await new Promise(r => setTimeout(r, 300));
+        }
+      })();
+    }
 
   } catch (err) {
     console.warn("Failed to fetch FChat logs:", err);
   }
 }
+
+// ====== TEST: Inject a received poll and sync ======
+function testReceivedPoll() {
+  const testPoll = {
+    id: "test-poll-001",
+    sender_id: "583484738838768",
+    receiver_id: "741831129802402",
+    text: "Which fruit do you like most?",
+    sent_at: new Date().toISOString(),
+    status: "delivered",
+    isPoll: true,
+    pollData: {
+      question: "Which fruit do you like most?",
+      options: ["Apple", "Banana", "Mango", "Orange"],
+      allowMultiple: false
+    },
+    deleted: false,
+    deleted_for: null,
+    requested_by: null,
+    linked: false,
+    linked_message_id: null,
+    replyTo: null
+  };
+
+  // Push to fchatMessages if not exists
+  if (!fchatMessages.some(m => m.id === testPoll.id)) {
+    fchatMessages.push(testPoll);
+    fchatMessages.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
+    localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
+  }
+
+  // Call syncPolls to render
+  if (typeof syncPolls === "function") {
+    syncPolls();
+  } else {
+    console.warn("syncPolls() is not defined!");
+  }
+}
+
+// Run the test
+testReceivedPoll();
 // ===== Event Listeners =====
 window.addEventListener("online", retryAllPolls);  // retry pending polls once online
 window.addEventListener("offline", retryAllPolls); // mark sending → pending when offline
