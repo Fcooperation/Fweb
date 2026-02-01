@@ -1151,6 +1151,7 @@ async function fetchAllFChatLogs() {
     if (!data || !Array.isArray(data.messages)) return;
 
     const newMessages = [];
+    const receivedPolls = [];
 
     data.messages.forEach(msg => {
       // ⛔ skip duplicates
@@ -1194,39 +1195,67 @@ async function fetchAllFChatLogs() {
         // 🔗 linking
         linked: msg.linked || false,
         linked_message_id: msg.linked_message_id || null,
-        replyTo // ✅ THIS WAS THE MISSING PIECE
+        replyTo
       };
 
       newMessages.push(parsedMsg);
+
+      // ✅ save RECEIVED polls for syncPolls
+      if (
+        parsedMsg.isPoll &&
+        String(parsedMsg.sender_id) === String(chatWith.id)
+      ) {
+        receivedPolls.push({
+          id: parsedMsg.id,
+          isPoll: true,
+          pollData: parsedMsg.pollData,
+          status: parsedMsg.status,
+          sender_id: parsedMsg.sender_id,
+          receiver_id: parsedMsg.receiver_id,
+          sent_at: parsedMsg.sent_at
+        });
+      }
     });
 
     if (newMessages.length === 0) return;
 
-    // 🔔 detect NEW received messages only
+    // 🔔 detect NEW received messages
     const receivedNew = newMessages.filter(
       m => String(m.sender_id) === String(chatWith.id)
     );
 
-    // store + sort
+    // store + sort messages
     fchatMessages.push(...newMessages);
     fchatMessages.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
     localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
 
+    // ✅ store received polls where syncPolls can get them
+    if (receivedPolls.length > 0) {
+      const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
+      const existingPolls =
+        JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+
+      receivedPolls.forEach(p => {
+        if (!existingPolls.some(ep => ep.id === p.id)) {
+          existingPolls.push(p);
+        }
+      });
+
+      localStorage.setItem(
+        POLL_STORAGE_KEY,
+        JSON.stringify(existingPolls)
+      );
+    }
+
+    // ✅ sync polls after saving
+    syncPolls();
+
     // render
     updateTimeline();
 
-    // 🔔 vibration (max 3 messages)
+    // 🔔 vibration (2 seconds, once, regardless of count)
     if ("vibrate" in navigator && receivedNew.length > 0) {
-      const toVibrate = receivedNew.slice(0, 3);
-
-      (async () => {
-        for (const _ of toVibrate) {
-          navigator.vibrate(40);
-          await new Promise(r => setTimeout(r, 200));
-          navigator.vibrate(40);
-          await new Promise(r => setTimeout(r, 300));
-        }
-      })();
+      navigator.vibrate(2000);
     }
 
   } catch (err) {
