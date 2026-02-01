@@ -1200,11 +1200,8 @@ async function fetchAllFChatLogs() {
 
       newMessages.push(parsedMsg);
 
-      // ✅ save RECEIVED polls for syncPolls
-      if (
-        parsedMsg.isPoll &&
-        String(parsedMsg.sender_id) === String(chatWith.id)
-      ) {
+      // ✅ ANY poll JSON goes to poll storage
+      if (parsedMsg.isPoll && parsedMsg.pollData) {
         receivedPolls.push({
           id: parsedMsg.id,
           isPoll: true,
@@ -1219,17 +1216,12 @@ async function fetchAllFChatLogs() {
 
     if (newMessages.length === 0) return;
 
-    // 🔔 detect NEW received messages
-    const receivedNew = newMessages.filter(
-      m => String(m.sender_id) === String(chatWith.id)
-    );
-
     // store + sort messages
     fchatMessages.push(...newMessages);
     fchatMessages.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
     localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
 
-    // ✅ store received polls where syncPolls can get them
+    // ✅ store polls where syncPolls can get them
     if (receivedPolls.length > 0) {
       const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
       const existingPolls =
@@ -1247,14 +1239,14 @@ async function fetchAllFChatLogs() {
       );
     }
 
-    // ✅ sync polls after saving
+    // ✅ always sync polls after receiving
     syncPolls();
 
     // render
     updateTimeline();
 
-    // 🔔 vibration (2 seconds, once, regardless of count)
-    if ("vibrate" in navigator && receivedNew.length > 0) {
+    // 🔔 vibration — ANY new JSON received
+    if ("vibrate" in navigator && newMessages.length > 0) {
       navigator.vibrate(2000);
     }
 
