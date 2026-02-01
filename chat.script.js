@@ -1238,10 +1238,6 @@ async function fetchAllFChatLogs() {
         JSON.stringify(existingPolls)
       );
     }
-
-    // ✅ always sync polls after receiving
-    syncPolls();
-
     // render
     updateTimeline();
 
