@@ -1150,9 +1150,10 @@ async function fetchAllFChatLogs() {
     const data = await res.json();
     if (!data) return;
 
-    const newItems = [];
+    let newItems = [];
+    let newPolls = [];
 
-    // 🔹 Process messages
+    // ===== MESSAGES =====
     if (Array.isArray(data.messages)) {
       data.messages.forEach(msg => {
         if (fchatMessages.some(fm => fm.id === msg.id)) return;
@@ -1162,6 +1163,7 @@ async function fetchAllFChatLogs() {
           const original =
             fchatMessages.find(m => m.id === msg.linked_message_id) ||
             data.messages.find(m => m.id === msg.linked_message_id);
+
           if (original) {
             replyTo = {
               id: original.id,
@@ -1173,79 +1175,79 @@ async function fetchAllFChatLogs() {
           }
         }
 
-        const parsedMsg = {
-  id: msg.id,
-  sender_id: msg.sender_id,
-  receiver_id: msg.receiver_id,
-  text: msg.text || "",
-  sent_at: msg.sent_at || new Date().toISOString(),
-  status: "delivered",
-  isPoll: !!msg.pollData,             // ✅ mark as poll if pollData exists
-  pollData: msg.pollData || null,     // ✅ attach the poll JSON
-  deleted: msg.deleted || false,
-  deleted_for: msg.deleted_for || null,
-  requested_by: msg.requested_by || null,
-  linked: msg.linked || false,
-  linked_message_id: msg.linked_message_id || null,
-  replyTo
-};
-
-        newItems.push(parsedMsg);
+        newItems.push({
+          id: msg.id,
+          sender_id: msg.sender_id,
+          receiver_id: msg.receiver_id,
+          text: msg.text || "",
+          sent_at: msg.sent_at || new Date().toISOString(),
+          status: "delivered",
+          isPoll: false,
+          pollData: null,
+          deleted: msg.deleted || false,
+          deleted_for: msg.deleted_for || null,
+          requested_by: msg.requested_by || null,
+          linked: msg.linked || false,
+          linked_message_id: msg.linked_message_id || null,
+          replyTo
+        });
       });
     }
 
-    // 🔹 Process polls
+    // ===== POLLS =====
     if (Array.isArray(data.polls)) {
-      data.polls.forEach(poll => {
-        if (fchatMessages.some(fm => fm.id === poll.id)) return;
+      const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
+      let storedPolls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
 
-        const parsedPoll = {
+      data.polls.forEach(poll => {
+        if (storedPolls.some(p => p.id === poll.id)) return;
+
+        const pollObj = {
           id: poll.id,
           sender_id: poll.senderId,
           receiver_id: chatWith.id,
-          text: poll.question,
-          sent_at: poll.sent_at || new Date().toISOString(),
-          status: "delivered",
-          isPoll: true,
           pollData: {
+            question: poll.question,
             options: poll.options,
             allowMultiple: poll.allowMultiple
           },
-          deleted: false,
-          deleted_for: null,
-          requested_by: null,
-          linked: false,
-          linked_message_id: null,
-          replyTo: null
+          status: "sent",
+          voted_options: [],
+          sent_at: poll.sent_at || new Date().toISOString()
         };
 
-        newItems.push(parsedPoll);
+        storedPolls.push(pollObj);
+        newPolls.push(pollObj);
       });
+
+      // ✅ SAVE POLLS FIRST (THIS WAS MISSING)
+      localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(storedPolls));
     }
 
-    if (newItems.length === 0) return;
+    // ===== SAVE CHAT MESSAGES =====
+    if (newItems.length > 0) {
+      fchatMessages.push(...newItems);
+      fchatMessages.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
+      localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
+    }
 
-    // store + sort
-    fchatMessages.push(...newItems);
-    fchatMessages.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
-    localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
+    // ===== NOW MERGE POLLS INTO CHAT =====
+    if (newPolls.length > 0) {
+      syncPolls();   // ✅ NOW IT CAN SEE THE POLLS
+    }
 
-    // render
-    await fetchAllFChatLogs();
-syncPolls(); // <- merge polls into fchatMessages
-updateTimeline();
+    // ===== RENDER =====
+    if (newItems.length > 0 || newPolls.length > 0) {
+      updateTimeline();
+    }
 
-    // 🔔 vibration (max 3 items)
-    if ("vibrate" in navigator && newItems.length > 0) {
-      const toVibrate = newItems.slice(0, 3);
-      (async () => {
-        for (const _ of toVibrate) {
-          navigator.vibrate(40);
-          await new Promise(r => setTimeout(r, 200));
-          navigator.vibrate(40);
-          await new Promise(r => setTimeout(r, 300));
-        }
-      })();
+    // ===== VIBRATION =====
+    if ("vibrate" in navigator && (newItems.length || newPolls.length)) {
+      const count = Math.min(3, newItems.length + newPolls.length);
+      for (let i = 0; i < count; i++) {
+        navigator.vibrate(40);
+        await new Promise(r => setTimeout(r, 250));
+      }
     }
 
   } catch (err) {
