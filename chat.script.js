@@ -1132,12 +1132,13 @@ chatBody.addEventListener("click", (e) => {
     optionEl.querySelector(".poll-bar").style.width = "100%";
   }
 });
-// -------------------------------
+// ------------------------------------
 // Receiving logic
-// Vibrate for ANY received JSON
-// -------------------------------
+// Normalize messages + polls
+// Detect NEW items
+// ------------------------------------
 async function fetchAllFChatLogs() {
-  if (!navigator.onLine) return; // offline, skip
+  if (!navigator.onLine) return;
 
   try {
     const res = await fetch(API_URL, {
@@ -1153,90 +1154,90 @@ async function fetchAllFChatLogs() {
     const data = await res.json();
     if (!data) return;
 
-    // 🔔 VIBRATE IF *ANY* DATA EXISTS (messages, polls, anything)
-    const hasAnything =
-      (Array.isArray(data.messages) && data.messages.length > 0) ||
-      (Array.isArray(data.polls) && data.polls.length > 0) ||
-      Object.keys(data).length > 0;
+    const newItems = [];
 
-    if (hasAnything && "vibrate" in navigator) {
-      navigator.vibrate(2000); // 2 seconds straight
-    }
-
-    const newMessages = [];
-
-    // --------------------
-    // Process messages ONLY
-    // --------------------
+    // ------------------------
+    // NORMALIZE MESSAGES
+    // ------------------------
     if (Array.isArray(data.messages)) {
       data.messages.forEach(msg => {
-        // ⛔ Skip duplicates
-        if (fchatMessages.some(fm => fm.id === msg.id)) return;
+        if (fchatMessages.some(m => m.id === msg.id)) return;
 
-        // 🔗 Rebuild replyTo
-        let replyTo = null;
-        if (msg.linked && msg.linked_message_id) {
-          const original =
-            fchatMessages.find(m => m.id === msg.linked_message_id) ||
-            data.messages.find(m => m.id === msg.linked_message_id);
-
-          if (original) {
-            replyTo = {
-              id: original.id,
-              text:
-                (original.text || "").slice(0, 120) +
-                ((original.text || "").length > 120 ? "…" : ""),
-              sender: original.sender_id
-            };
-          }
-        }
-
-        const parsedMsg = {
+        newItems.push({
           id: msg.id,
           sender_id: msg.sender_id,
           receiver_id: msg.receiver_id,
           text: msg.text || "",
-          sent_at: msg.sent_at || new Date().toISOString(),
-          status: "delivered",
-
-          // polls ignored for now
+          sent_at: msg.sent_at,
           isPoll: false,
           pollData: null,
-
-          deleted: msg.deleted || false,
-          deleted_for: msg.deleted_for || null,
-          requested_by: msg.requested_by || null,
-
           linked: msg.linked || false,
-          linked_message_id: msg.linked_message_id || null,
-          replyTo
-        };
-
-        newMessages.push(parsedMsg);
+          linked_message_id: msg.linked_message_id || null
+        });
       });
     }
 
-    // --------------------
-    // Store + render messages
-    // --------------------
-    if (newMessages.length > 0) {
-      fchatMessages.push(...newMessages);
-      fchatMessages.sort(
-        (a, b) => new Date(a.sent_at) - new Date(b.sent_at)
-      );
+    // ------------------------
+    // NORMALIZE POLLS
+    // ------------------------
+    if (Array.isArray(data.polls)) {
+      data.polls.forEach(poll => {
+        if (fchatMessages.some(m => m.id === poll.id)) return;
 
-      localStorage.setItem(
-        FCHAT_STORAGE_KEY,
-        JSON.stringify(fchatMessages)
-      );
-
-      updateTimeline();
+        newItems.push({
+          id: poll.id,
+          sender_id: poll.sender_id,
+          receiver_id: poll.receiver_id,
+          text: poll.pollData?.question || "",
+          sent_at: poll.sent_at,
+          isPoll: true,
+          pollData: poll.pollData,
+          linked: false,
+          linked_message_id: null
+        });
+      });
     }
+
+    // ------------------------
+    // NO NEW DATA → STOP
+    // ------------------------
+    if (newItems.length === 0) return;
+
+    // ------------------------
+    // STORE + SORT
+    // ------------------------
+    fchatMessages.push(...newItems);
+    fchatMessages.sort(
+      (a, b) => new Date(a.sent_at) - new Date(b.sent_at)
+    );
+
+    localStorage.setItem(
+      FCHAT_STORAGE_KEY,
+      JSON.stringify(fchatMessages)
+    );
+
+    // ------------------------
+    // UI SIGNAL
+    // ------------------------
+    newMessagesFound(newItems.length);
+
+    updateTimeline();
 
   } catch (err) {
     console.warn("Failed to fetch FChat logs:", err);
   }
 }
+// new messages text function 
+function newMessagesFound(count) {
+  const box = document.getElementById("new-msg-box");
+  box.textContent = `New messages found (${count})`;
+  box.classList.add("show");
+
+  setTimeout(() => {
+    box.classList.remove("show");
+  }, 3000);
+}
+
 // ===== Event Listeners =====
 window.addEventListener("online", retryAllPolls);  // retry pending polls once online
 window.addEventListener("offline", retryAllPolls); // mark sending → pending when offline
