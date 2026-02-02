@@ -1132,7 +1132,10 @@ chatBody.addEventListener("click", (e) => {
     optionEl.querySelector(".poll-bar").style.width = "100%";
   }
 });
-// Receiving logic (FIXED: linked messages now render correctly)
+// -------------------------------
+// Receiving logic
+// Vibrate for ANY received data
+// -------------------------------
 async function fetchAllFChatLogs() {
   if (!navigator.onLine) return; // offline, skip
 
@@ -1148,101 +1151,86 @@ async function fetchAllFChatLogs() {
     });
 
     const data = await res.json();
-    if (!data || !Array.isArray(data.messages)) return;
+    if (!data) return;
 
     const newMessages = [];
-    const receivedPolls = [];
 
-    data.messages.forEach(msg => {
-      // ⛔ skip duplicates
-      if (fchatMessages.some(fm => fm.id === msg.id)) return;
+    // --------------------
+    // Process messages ONLY
+    // --------------------
+    if (Array.isArray(data.messages)) {
+      data.messages.forEach(msg => {
+        // ⛔ Skip duplicates
+        if (fchatMessages.some(fm => fm.id === msg.id)) return;
 
-      // 🔗 reconstruct replyTo for linked messages
-      let replyTo = null;
-      if (msg.linked && msg.linked_message_id) {
-        const original =
-          fchatMessages.find(m => m.id === msg.linked_message_id) ||
-          data.messages.find(m => m.id === msg.linked_message_id);
+        // 🔗 Rebuild replyTo
+        let replyTo = null;
+        if (msg.linked && msg.linked_message_id) {
+          const original =
+            fchatMessages.find(m => m.id === msg.linked_message_id) ||
+            data.messages.find(m => m.id === msg.linked_message_id);
 
-        if (original) {
-          replyTo = {
-            id: original.id,
-            text:
-              (original.text || "").slice(0, 120) +
-              ((original.text || "").length > 120 ? "…" : ""),
-            sender: original.sender_id
-          };
+          if (original) {
+            replyTo = {
+              id: original.id,
+              text:
+                (original.text || "").slice(0, 120) +
+                ((original.text || "").length > 120 ? "…" : ""),
+              sender: original.sender_id
+            };
+          }
         }
-      }
 
-      const parsedMsg = {
-        id: msg.id,
-        sender_id: msg.sender_id,
-        receiver_id: msg.receiver_id,
-        text: msg.text || "",
-        sent_at: msg.sent_at || new Date().toISOString(),
-        status: "delivered",
+        const parsedMsg = {
+          id: msg.id,
+          sender_id: msg.sender_id,
+          receiver_id: msg.receiver_id,
+          text: msg.text || "",
+          sent_at: msg.sent_at || new Date().toISOString(),
+          status: "delivered",
 
-        // polls
-        isPoll: msg.isPoll || false,
-        pollData: msg.pollData || null,
+          // ❗ Leave polls untouched for now
+          isPoll: false,
+          pollData: null,
 
-        // deletion
-        deleted: msg.deleted || false,
-        deleted_for: msg.deleted_for || null,
-        requested_by: msg.requested_by || null,
+          deleted: msg.deleted || false,
+          deleted_for: msg.deleted_for || null,
+          requested_by: msg.requested_by || null,
 
-        // 🔗 linking
-        linked: msg.linked || false,
-        linked_message_id: msg.linked_message_id || null,
-        replyTo
-      };
+          linked: msg.linked || false,
+          linked_message_id: msg.linked_message_id || null,
+          replyTo
+        };
 
-      newMessages.push(parsedMsg);
+        newMessages.push(parsedMsg);
+      });
+    }
 
-      // ✅ ANY poll JSON goes to poll storage
-      if (parsedMsg.isPoll && parsedMsg.pollData) {
-        receivedPolls.push({
-          id: parsedMsg.id,
-          isPoll: true,
-          pollData: parsedMsg.pollData,
-          status: parsedMsg.status,
-          sender_id: parsedMsg.sender_id,
-          receiver_id: parsedMsg.receiver_id,
-          sent_at: parsedMsg.sent_at
-        });
-      }
-    });
-
+    // ⛔ No new messages → no vibration
     if (newMessages.length === 0) return;
 
-    // store + sort messages
+    // --------------------
+    // Store + sort
+    // --------------------
     fchatMessages.push(...newMessages);
-    fchatMessages.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
-    localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
+    fchatMessages.sort(
+      (a, b) => new Date(a.sent_at) - new Date(b.sent_at)
+    );
+    localStorage.setItem(
+      FCHAT_STORAGE_KEY,
+      JSON.stringify(fchatMessages)
+    );
 
-    // ✅ store polls where syncPolls can get them
-    if (receivedPolls.length > 0) {
-      const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
-      const existingPolls =
-        JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
-
-      receivedPolls.forEach(p => {
-        if (!existingPolls.some(ep => ep.id === p.id)) {
-          existingPolls.push(p);
-        }
-      });
-
-      localStorage.setItem(
-        POLL_STORAGE_KEY,
-        JSON.stringify(existingPolls)
-      );
-    }
-    // render
+    // --------------------
+    // Render timeline
+    // --------------------
     updateTimeline();
 
-    // 🔔 vibration — ANY new JSON received
-    if ("vibrate" in navigator && newMessages.length > 0) {
+    // --------------------
+    // 🔔 VIBRATION RULE
+    // --------------------
+    // ANY received data → vibrate 2 seconds straight
+    if ("vibrate" in navigator) {
       navigator.vibrate(2000);
     }
 
