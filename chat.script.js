@@ -1134,7 +1134,7 @@ chatBody.addEventListener("click", (e) => {
 });
 // -------------------------------
 // Receiving logic
-// Vibrate for ANY received data
+// Vibrate for ANY received JSON
 // -------------------------------
 async function fetchAllFChatLogs() {
   if (!navigator.onLine) return; // offline, skip
@@ -1152,6 +1152,16 @@ async function fetchAllFChatLogs() {
 
     const data = await res.json();
     if (!data) return;
+
+    // 🔔 VIBRATE IF *ANY* DATA EXISTS (messages, polls, anything)
+    const hasAnything =
+      (Array.isArray(data.messages) && data.messages.length > 0) ||
+      (Array.isArray(data.polls) && data.polls.length > 0) ||
+      Object.keys(data).length > 0;
+
+    if (hasAnything && "vibrate" in navigator) {
+      navigator.vibrate(2000); // 2 seconds straight
+    }
 
     const newMessages = [];
 
@@ -1189,7 +1199,7 @@ async function fetchAllFChatLogs() {
           sent_at: msg.sent_at || new Date().toISOString(),
           status: "delivered",
 
-          // ❗ Leave polls untouched for now
+          // polls ignored for now
           isPoll: false,
           pollData: null,
 
@@ -1206,32 +1216,21 @@ async function fetchAllFChatLogs() {
       });
     }
 
-    // ⛔ No new messages → no vibration
-    if (newMessages.length === 0) return;
+    // --------------------
+    // Store + render messages
+    // --------------------
+    if (newMessages.length > 0) {
+      fchatMessages.push(...newMessages);
+      fchatMessages.sort(
+        (a, b) => new Date(a.sent_at) - new Date(b.sent_at)
+      );
 
-    // --------------------
-    // Store + sort
-    // --------------------
-    fchatMessages.push(...newMessages);
-    fchatMessages.sort(
-      (a, b) => new Date(a.sent_at) - new Date(b.sent_at)
-    );
-    localStorage.setItem(
-      FCHAT_STORAGE_KEY,
-      JSON.stringify(fchatMessages)
-    );
+      localStorage.setItem(
+        FCHAT_STORAGE_KEY,
+        JSON.stringify(fchatMessages)
+      );
 
-    // --------------------
-    // Render timeline
-    // --------------------
-    updateTimeline();
-
-    // --------------------
-    // 🔔 VIBRATION RULE
-    // --------------------
-    // ANY received data → vibrate 2 seconds straight
-    if ("vibrate" in navigator) {
-      navigator.vibrate(2000);
+      updateTimeline();
     }
 
   } catch (err) {
