@@ -1136,6 +1136,7 @@ chatBody.addEventListener("click", (e) => {
 // Receiving logic
 // Normalize messages + polls
 // Detect NEW items
+// Handle linked messages
 // ------------------------------------
 async function fetchAllFChatLogs() {
   if (!navigator.onLine) return;
@@ -1163,6 +1164,24 @@ async function fetchAllFChatLogs() {
       data.messages.forEach(msg => {
         if (fchatMessages.some(m => m.id === msg.id)) return;
 
+        // 🔗 Build replyTo for linked messages
+        let replyTo = null;
+        if (msg.linked && msg.linked_message_id) {
+          const original =
+            fchatMessages.find(m => m.id === msg.linked_message_id) ||
+            data.messages.find(m => m.id === msg.linked_message_id);
+
+          if (original) {
+            replyTo = {
+              id: original.id,
+              text:
+                (original.text || "").slice(0, 120) +
+                ((original.text || "").length > 120 ? "…" : ""),
+              sender: original.sender_id
+            };
+          }
+        }
+
         newItems.push({
           id: msg.id,
           sender_id: msg.sender_id,
@@ -1172,7 +1191,8 @@ async function fetchAllFChatLogs() {
           isPoll: false,
           pollData: null,
           linked: msg.linked || false,
-          linked_message_id: msg.linked_message_id || null
+          linked_message_id: msg.linked_message_id || null,
+          replyTo
         });
       });
     }
@@ -1193,7 +1213,8 @@ async function fetchAllFChatLogs() {
           isPoll: true,
           pollData: poll.pollData,
           linked: false,
-          linked_message_id: null
+          linked_message_id: null,
+          replyTo: null
         });
       });
     }
@@ -1210,11 +1231,7 @@ async function fetchAllFChatLogs() {
     fchatMessages.sort(
       (a, b) => new Date(a.sent_at) - new Date(b.sent_at)
     );
-
-    localStorage.setItem(
-      FCHAT_STORAGE_KEY,
-      JSON.stringify(fchatMessages)
-    );
+    localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
 
     // ------------------------
     // UI SIGNAL
@@ -1226,16 +1243,6 @@ async function fetchAllFChatLogs() {
   } catch (err) {
     console.warn("Failed to fetch FChat logs:", err);
   }
-}
-// new messages text function 
-function newMessagesFound(count) {
-  const box = document.getElementById("new-msg-box");
-  box.textContent = `New messages found (${count})`;
-  box.classList.add("show");
-
-  setTimeout(() => {
-    box.classList.remove("show");
-  }, 3000);
 }
 
 // ===== Event Listeners =====
