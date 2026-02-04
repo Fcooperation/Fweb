@@ -1136,7 +1136,7 @@ chatBody.addEventListener("click", (e) => {
 // Receiving logic
 // Normalize messages + polls
 // Detect NEW items
-// Handle linked messages
+// Handle linked messages correctly
 // ------------------------------------
 async function fetchAllFChatLogs() {
   if (!navigator.onLine) return;
@@ -1164,7 +1164,7 @@ async function fetchAllFChatLogs() {
       data.messages.forEach(msg => {
         if (fchatMessages.some(m => m.id === msg.id)) return;
 
-        // 🔗 Build replyTo for linked messages
+        // 🔗 Resolve linked message
         let replyTo = null;
         if (msg.linked && msg.linked_message_id) {
           const original =
@@ -1174,10 +1174,8 @@ async function fetchAllFChatLogs() {
           if (original) {
             replyTo = {
               id: original.id,
-              text:
-                (original.text || "").slice(0, 120) +
-                ((original.text || "").length > 120 ? "…" : ""),
-              sender: original.sender_id
+              text: (original.text || "").slice(0, 100),
+              sender_id: original.sender_id
             };
           }
         }
@@ -1231,13 +1229,16 @@ async function fetchAllFChatLogs() {
     fchatMessages.sort(
       (a, b) => new Date(a.sent_at) - new Date(b.sent_at)
     );
-    localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
+
+    localStorage.setItem(
+      FCHAT_STORAGE_KEY,
+      JSON.stringify(fchatMessages)
+    );
 
     // ------------------------
     // UI SIGNAL
     // ------------------------
     newMessagesFound(newItems.length);
-
     updateTimeline();
 
   } catch (err) {
@@ -1245,6 +1246,18 @@ async function fetchAllFChatLogs() {
   }
 }
 
+// ------------------------------------
+// New messages UI indicator
+// ------------------------------------
+function newMessagesFound(count) {
+  const box = document.getElementById("new-msg-box");
+  box.textContent = `New messages found (${count})`;
+  box.classList.add("show");
+
+  setTimeout(() => {
+    box.classList.remove("show");
+  }, 3000);
+}
 // ===== Event Listeners =====
 window.addEventListener("online", retryAllPolls);  // retry pending polls once online
 window.addEventListener("offline", retryAllPolls); // mark sending → pending when offline
