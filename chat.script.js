@@ -570,12 +570,16 @@ markSelectedOptions(pollWrapper, selectedOptions);
   };
 submitBtn.onclick = () => {
 
-  // 🚫 BLOCK voting if POLL MESSAGE is not yet sent/delivered/seen
+  const isSender = msgObj.sender_id === account.id;
+
+// 🚫 Block ONLY if it's YOUR poll and not yet sent
+if (isSender) {
   const allowedStatuses = ["sent", "delivered", "seen"];
   if (!allowedStatuses.includes(msgObj.status)) {
     alert("You cannot submit a vote until this poll has been sent.");
     return;
   }
+}
 
   const selectedOptions = [...pollWrapper.querySelectorAll(".poll-circle.selected")]
     .map(c => Number(c.closest(".poll-option").dataset.index) + 1);
