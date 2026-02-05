@@ -570,16 +570,12 @@ markSelectedOptions(pollWrapper, selectedOptions);
   };
 submitBtn.onclick = () => {
 
-  const isSender = msgObj.sender_id === account.id;
-
-// 🚫 Block ONLY if it's YOUR poll and not yet sent
-if (isSender) {
+  // 🚫 BLOCK voting if POLL MESSAGE is not yet sent/delivered/seen
   const allowedStatuses = ["sent", "delivered", "seen"];
   if (!allowedStatuses.includes(msgObj.status)) {
     alert("You cannot submit a vote until this poll has been sent.");
     return;
   }
-}
 
   const selectedOptions = [...pollWrapper.querySelectorAll(".poll-circle.selected")]
     .map(c => Number(c.closest(".poll-option").dataset.index) + 1);
@@ -1200,45 +1196,26 @@ async function fetchAllFChatLogs() {
     }
 
     // ------------------------
-// NORMALIZE POLLS + SAVE TO POLL_STORAGE_KEY
-// ------------------------
-if (Array.isArray(data.polls)) {
-  // Get current polls from localStorage
-  let storedPolls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+    // NORMALIZE POLLS
+    // ------------------------
+    if (Array.isArray(data.polls)) {
+      data.polls.forEach(poll => {
+        if (fchatMessages.some(m => m.id === poll.id)) return;
 
-  data.polls.forEach(poll => {
-    if (fchatMessages.some(m => m.id === poll.id)) {
-      return; // already in messages
-    }
-
-    // Push into fchatMessages
-    newItems.push({
-      id: poll.id,
-      sender_id: poll.sender_id,
-      receiver_id: poll.receiver_id,
-      text: poll.pollData?.question || "",
-      sent_at: poll.sent_at,
-      isPoll: true,
-      pollData: poll.pollData,
-      linked: false,
-      linked_message_id: null,
-      replyTo: null
-    });
-
-    // 🔑 Save to POLL_STORAGE_KEY if not already there
-    if (!storedPolls.some(p => p.id === poll.id)) {
-      storedPolls.push({
-        id: poll.id,
-        status: "received",        // default status for received polls
-        voted_options: [],         // no votes yet
-        pollData: poll.pollData
+        newItems.push({
+          id: poll.id,
+          sender_id: poll.sender_id,
+          receiver_id: poll.receiver_id,
+          text: poll.pollData?.question || "",
+          sent_at: poll.sent_at,
+          isPoll: true,
+          pollData: poll.pollData,
+          linked: false,
+          linked_message_id: null,
+          replyTo: null
+        });
       });
     }
-  });
-
-  // Save back to localStorage
-  localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(storedPolls));
-}
 
     // ------------------------
     // NO NEW DATA → STOP
