@@ -1195,45 +1195,44 @@ async function fetchAllFChatLogs() {
       });
     }
 
-    // ------------------------
-    // NORMALIZE POLLS
-    // ------------------------
-    if (Array.isArray(data.polls)) {
-      data.polls.forEach(poll => {
-        if (fchatMessages.some(m => m.id === poll.id)) return;
+    // ------------------------  
+// NORMALIZE POLLS  
+// ------------------------  
+if (Array.isArray(data.polls)) {  
+  data.polls.forEach(poll => {  
+    if (fchatMessages.some(m => m.id === poll.id)) return;  
 
-        newItems.push({
-          id: poll.id,
-          sender_id: poll.sender_id,
-          receiver_id: poll.receiver_id,
-          text: poll.pollData?.question || "",
-          sent_at: poll.sent_at,
-          isPoll: true,
-          pollData: poll.pollData,
-          linked: false,
-          linked_message_id: null,
-          replyTo: null
-        });
+    newItems.push({  
+      id: poll.id,  
+      sender_id: poll.sender_id,  
+      receiver_id: poll.receiver_id,  
+      text: poll.pollData?.question || "",  
+      sent_at: poll.sent_at,  
+      isPoll: true,  
+      pollData: poll.pollData,  
+      linked: false,  
+      linked_message_id: null,  
+      replyTo: null  
+    });  
+
+    // ------------------------
+    // SAVE RECEIVED POLL TO POLL STORAGE
+    // ------------------------
+    const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
+    let storedPolls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+    if (!storedPolls.some(p => p.id === poll.id)) {
+      storedPolls.push({
+        id: poll.id,
+        sender_id: poll.sender_id,
+        receiver_id: poll.receiver_id,
+        pollData: poll.pollData,
+        status: "sent", // received polls are considered sent
+        sent_at: poll.sent_at
       });
+      localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(storedPolls));
     }
-
-    // ------------------------
-    // NO NEW DATA → STOP
-    // ------------------------
-    if (newItems.length === 0) return;
-
-    // ------------------------
-    // STORE + SORT
-    // ------------------------
-    fchatMessages.push(...newItems);
-    fchatMessages.sort(
-      (a, b) => new Date(a.sent_at) - new Date(b.sent_at)
-    );
-
-    localStorage.setItem(
-      FCHAT_STORAGE_KEY,
-      JSON.stringify(fchatMessages)
-    );
+  });  
+}
 
     // ------------------------
     // UI SIGNAL
