@@ -1266,6 +1266,34 @@ async function fetchAllFChatLogs() {
         }
       });
     }
+    
+    // ------------------------
+// MERGE INCOMING VOTES INTO LOCALSTORAGE
+// ------------------------
+function mergeVoteToPoll(vote) {
+  const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
+  let storedPolls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+
+  // Find poll with matching id
+  storedPolls = storedPolls.map(p => {
+    if (p.id === vote.poll_id) {
+      // Ensure votes object exists
+      const votes = p.votes || {};
+
+      // Add/overwrite the vote for this sender
+      votes[vote.sender_id] = {
+        options: vote.options,
+        voted_at: vote.voted_at
+      };
+
+      return { ...p, votes };
+    }
+    return p;
+  });
+
+  localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(storedPolls));
+  console.log("✅ Vote merged to poll:", vote.poll_id, "sender:", vote.sender_id);
+}
 
     // ------------------------
     // NO NEW DATA → STOP
