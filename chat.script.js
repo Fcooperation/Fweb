@@ -1252,38 +1252,20 @@ async function fetchAllFChatLogs() {
         // SAVE RECEIVED POLL TO POLL STORAGE
         // ------------------------
         const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
-let storedPolls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
-
-// Add poll if it doesn’t exist
-if (!storedPolls.some(p => p.id === poll.id)) {
-  storedPolls.push({
-    id: poll.id,
-    sender_id: poll.sender_id,
-    receiver_id: poll.receiver_id,
-    pollData: poll.pollData,
-    status: "sent",
-    sent_at: poll.sent_at
-  });
-}
-
-// Merge any incoming votes JSON
-if (Array.isArray(data.incomingVotes)) {
-  data.incomingVotes.forEach(vote => {
-    const pollIndex = storedPolls.findIndex(p => p.id === vote.poll_id);
-    if (pollIndex !== -1) {
-      const pollItem = storedPolls[pollIndex];
-      pollItem.votes = pollItem.votes || {};
-      pollItem.votes[vote.sender_id] = {
-        options: vote.options,
-        voted_at: vote.voted_at
-      };
-      storedPolls[pollIndex] = pollItem;
+        let storedPolls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+        if (!storedPolls.some(p => p.id === poll.id)) {
+          storedPolls.push({
+            id: poll.id,
+            sender_id: poll.sender_id,
+            receiver_id: poll.receiver_id,
+            pollData: poll.pollData,
+            status: "sent", // received polls are considered sent
+            sent_at: poll.sent_at
+          });
+          localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(storedPolls));
+        }
+      });
     }
-  });
-}
-
-// Save updated polls to localStorage
-localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(storedPolls));
 
     // ------------------------
     // NO NEW DATA → STOP
