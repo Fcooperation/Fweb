@@ -1220,93 +1220,44 @@ async function fetchAllFChatLogs() {
       });
     }
 
-// ------------------------
-// NORMALIZE POLLS (MERGE POLL + VOTES)
-// ------------------------
-if (Array.isArray(data.polls)) {
+    // ------------------------
+    // NORMALIZE POLLS
+    // ------------------------
+    if (Array.isArray(data.polls)) {
+      data.polls.forEach(poll => {
+        if (fchatMessages.some(m => m.id === poll.id)) return;
 
-  const pollMap = {};
+        newItems.push({
+          id: poll.id,
+          sender_id: poll.sender_id,
+          receiver_id: poll.receiver_id,
+          text: poll.pollData?.question || "",
+          sent_at: poll.sent_at,
+          isPoll: true,
+          pollData: poll.pollData,
+          linked: false,
+          linked_message_id: null,
+          replyTo: null
+        });
 
-  data.polls.forEach(item => {
-    // 🗳️ VOTE OBJECT
-    if (item.poll_id) {
-      const pid = item.poll_id;
-
-      if (!pollMap[pid]) {
-        pollMap[pid] = {
-          id: pid,
-          votes: {}
-        };
-      }
-
-      pollMap[pid].votes[item.sender_id] = {
-        options: item.options,
-        voted_at: item.voted_at
-      };
-    }
-
-    // 📊 POLL OBJECT
-    if (item.isPoll && item.id) {
-      const pid = item.id;
-
-      if (!pollMap[pid]) {
-        pollMap[pid] = { id: pid };
-      }
-
-      Object.assign(pollMap[pid], {
-        id: pid,
-        sender_id: item.sender_id,
-        receiver_id: item.receiver_id,
-        pollData: item.pollData,
-        sent_at: item.sent_at,
-        status: "sent",
-        votes: pollMap[pid].votes || {}
+        // ------------------------
+        // SAVE RECEIVED POLL TO POLL STORAGE
+        // ------------------------
+        const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
+        let storedPolls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+        if (!storedPolls.some(p => p.id === poll.id)) {
+          storedPolls.push({
+            id: poll.id,
+            sender_id: poll.sender_id,
+            receiver_id: poll.receiver_id,
+            pollData: poll.pollData,
+            status: "sent", // received polls are considered sent
+            sent_at: poll.sent_at
+          });
+          localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(storedPolls));
+        }
       });
     }
-  });
-
-  // ------------------------
-  // SAVE NORMALIZED POLLS
-  // ------------------------
-  const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
-  let storedPolls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
-
-  Object.values(pollMap).forEach(poll => {
-    if (!poll.pollData) return; // skip incomplete polls
-
-    const existingIndex = storedPolls.findIndex(p => p.id === poll.id);
-
-    if (existingIndex === -1) {
-      storedPolls.push(poll);
-    } else {
-      // 🔁 merge votes safely
-      storedPolls[existingIndex].votes = {
-        ...(storedPolls[existingIndex].votes || {}),
-        ...(poll.votes || {})
-      };
-    }
-
-    // ------------------------
-    // PUSH TO CHAT MESSAGES
-    // ------------------------
-    if (!fchatMessages.some(m => m.id === poll.id)) {
-      newItems.push({
-        id: poll.id,
-        sender_id: poll.sender_id,
-        receiver_id: poll.receiver_id,
-        text: poll.pollData?.question || "",
-        sent_at: poll.sent_at,
-        isPoll: true,
-        pollData: poll.pollData,
-        linked: false,
-        linked_message_id: null,
-        replyTo: null
-      });
-    }
-  });
-
-  localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(storedPolls));
-}
 
     // ------------------------
     // NO NEW DATA → STOP
