@@ -520,54 +520,71 @@ const markSelectedOptions = (pollWrapper, votedOptions) => {
     submitBtn.textContent = "Submit vote";
   }
 
-  // Send vote function
-  const sendVote = (selectedOptions, pollWrapper, meta) => {
-    pollWrapper.classList.add("poll-dimmed");
-    submitBtn.textContent = "Submitting...";
-    submitBtn.disabled = true;
-    if (meta) meta.innerHTML = meta.innerHTML.replace(/sent|pending/, "sending");
+  // --------------------
+// Send vote function
+// --------------------
+const sendVote = (selectedOptions, pollWrapper, meta) => {
+  pollWrapper.classList.add("poll-dimmed");
+  submitBtn.textContent = "Submitting...";
+  submitBtn.disabled = true;
+  if (meta) meta.innerHTML = meta.innerHTML.replace(/sent|pending/, "sending");
 
-    let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
-    polls = polls.map(p =>
-      p.id === msgObj.id ? { ...p, status: "sending", voted_options: selectedOptions } : p
-    );
-    localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
-    // 🔥 Update UI instantly
-markSelectedOptions(pollWrapper, selectedOptions);
-
-    fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "send_votes",
-        poll_id: msgObj.id,
-        sender_id: account.id,
-        receiver_id: chatWith.id,
-        options: selectedOptions
-      })
-    }).then(() => {
-  submitBtn.textContent = "Revote";
-  submitBtn.disabled = false;
-  pollWrapper.classList.remove("poll-dimmed");
-
-  let finalPolls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
-  finalPolls = finalPolls.map(p =>
-    p.id === msgObj.id ? { ...p, status: "sent" } : p
-  );
-  localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(finalPolls));
-})
-.catch(() => {
-  // 👇 CRITICAL FALLBACK
   let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
-  polls = polls.map(p =>
-    p.id === msgObj.id ? { ...p, status: "pending" } : p
-  );
+
+  polls = polls.map(p => {
+    if (p.id !== msgObj.id) return p;
+
+    return {
+      ...p,
+      status: "sending",
+      votes: {
+        ...(p.votes || {}),
+        [account.id]: {
+          options: selectedOptions,
+          voted_at: new Date().toISOString()
+        }
+      }
+    };
+  });
+
   localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
 
-  submitBtn.textContent = "Pending";
-  submitBtn.disabled = true;
-})
-  };
+  // 🔥 Update UI instantly
+  markSelectedOptions(pollWrapper, selectedOptions);
+
+  fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      action: "send_votes",
+      poll_id: msgObj.id,
+      sender_id: account.id,
+      receiver_id: chatWith.id,
+      options: selectedOptions
+    })
+  })
+    .then(() => {
+      submitBtn.textContent = "Revote";
+      submitBtn.disabled = false;
+      pollWrapper.classList.remove("poll-dimmed");
+
+      let finalPolls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+      finalPolls = finalPolls.map(p =>
+        p.id === msgObj.id ? { ...p, status: "sent" } : p
+      );
+      localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(finalPolls));
+    })
+    .catch(() => {
+      let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+      polls = polls.map(p =>
+        p.id === msgObj.id ? { ...p, status: "pending" } : p
+      );
+      localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
+
+      submitBtn.textContent = "Pending";
+      submitBtn.disabled = true;
+    });
+};
 submitBtn.onclick = () => {
 
   const isSender = msgObj.sender_id === account.id;
@@ -595,23 +612,32 @@ if (isSender) {
   let currentPoll = polls.find(p => p.id === msgObj.id);
 
   // 🔌 OFFLINE → mark vote as pending
-  if (!navigator.onLine) {
-    submitBtn.textContent = "Pending";
-    submitBtn.disabled = true;
-    pollWrapper.classList.add("poll-dimmed");
+if (!navigator.onLine) {
+  submitBtn.textContent = "Pending";
+  submitBtn.disabled = true;
+  pollWrapper.classList.add("poll-dimmed");
 
-    polls = polls.map(p =>
-      p.id === msgObj.id
-        ? {
-            ...p,
-            status: "pending",
-            voted_options: selectedOptions
+  polls = polls.map(p =>
+    p.id === msgObj.id
+      ? {
+          ...p,
+          status: "pending",
+          votes: {
+            ...(p.votes || {}),
+            [account.id]: {
+              options: selectedOptions,
+              voted_at: new Date().toISOString()
+            }
           }
-        : p
-    );
-    localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
-    // 🔥 Show bars immediately even offline
-markSelectedOptions(pollWrapper, selectedOptions);
+        }
+      : p
+  );
+
+  localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
+
+  markSelectedOptions(pollWrapper, selectedOptions);
+  return;
+}
 
     // 🔁 Retry once online
     const onlineListener = () => {
