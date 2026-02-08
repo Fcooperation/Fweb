@@ -521,7 +521,7 @@ const markSelectedOptions = (pollWrapper, votedOptions) => {
   }
 
   // --------------------
-// Send vote function
+// SEND VOTE FUNCTION
 // --------------------
 const sendVote = (selectedOptions, pollWrapper, meta) => {
   pollWrapper.classList.add("poll-dimmed");
@@ -572,6 +572,7 @@ const sendVote = (selectedOptions, pollWrapper, meta) => {
       finalPolls = finalPolls.map(p =>
         p.id === msgObj.id ? { ...p, status: "sent" } : p
       );
+
       localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(finalPolls));
     })
     .catch(() => {
@@ -579,24 +580,28 @@ const sendVote = (selectedOptions, pollWrapper, meta) => {
       polls = polls.map(p =>
         p.id === msgObj.id ? { ...p, status: "pending" } : p
       );
+
       localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
 
       submitBtn.textContent = "Pending";
       submitBtn.disabled = true;
     });
 };
-submitBtn.onclick = () => {
 
+// --------------------
+// CLICK HANDLER
+// --------------------
+submitBtn.onclick = () => {
   const isSender = msgObj.sender_id === account.id;
 
-// 🚫 Block ONLY if it's YOUR poll and not yet sent
-if (isSender) {
-  const allowedStatuses = ["sent", "delivered", "seen"];
-  if (!allowedStatuses.includes(msgObj.status)) {
-    alert("You cannot submit a vote until this poll has been sent.");
-    return;
+  // 🚫 Block ONLY if it's YOUR poll and not yet sent
+  if (isSender) {
+    const allowedStatuses = ["sent", "delivered", "seen"];
+    if (!allowedStatuses.includes(msgObj.status)) {
+      alert("You cannot submit a vote until this poll has been sent.");
+      return;
+    }
   }
-}
 
   const selectedOptions = [...pollWrapper.querySelectorAll(".poll-circle.selected")]
     .map(c => Number(c.closest(".poll-option").dataset.index) + 1);
@@ -609,48 +614,37 @@ if (isSender) {
   const meta = pollWrapper.querySelector(".message-meta");
 
   let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
-  let currentPoll = polls.find(p => p.id === msgObj.id);
 
-  // 🔌 OFFLINE → mark vote as pending
-if (!navigator.onLine) {
-  submitBtn.textContent = "Pending";
-  submitBtn.disabled = true;
-  pollWrapper.classList.add("poll-dimmed");
+  // 🔌 OFFLINE MODE
+  if (!navigator.onLine) {
+    submitBtn.textContent = "Pending";
+    submitBtn.disabled = true;
+    pollWrapper.classList.add("poll-dimmed");
 
-  polls = polls.map(p =>
-    p.id === msgObj.id
-      ? {
-          ...p,
-          status: "pending",
-          votes: {
-            ...(p.votes || {}),
-            [account.id]: {
-              options: selectedOptions,
-              voted_at: new Date().toISOString()
-            }
+    polls = polls.map(p => {
+      if (p.id !== msgObj.id) return p;
+
+      return {
+        ...p,
+        status: "pending",
+        votes: {
+          ...(p.votes || {}),
+          [account.id]: {
+            options: selectedOptions,
+            voted_at: new Date().toISOString()
           }
         }
-      : p
-  );
+      };
+    });
 
-  localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
+    localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
 
-  markSelectedOptions(pollWrapper, selectedOptions);
-  return;
-}
+    // 🔥 UI feedback even offline
+    markSelectedOptions(pollWrapper, selectedOptions);
 
     // 🔁 Retry once online
     const onlineListener = () => {
       window.removeEventListener("online", onlineListener);
-
-      let retryPolls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
-      retryPolls = retryPolls.map(p =>
-        p.id === msgObj.id
-          ? { ...p, status: "sending", voted_options: selectedOptions }
-          : p
-      );
-      localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(retryPolls));
-
       sendVote(selectedOptions, pollWrapper, meta);
     };
 
@@ -658,12 +652,11 @@ if (!navigator.onLine) {
     return;
   }
 
-  // 🌐 ONLINE → normal send
+  // 🌐 ONLINE
   sendVote(selectedOptions, pollWrapper, meta);
 };
-  
-  chatBody.appendChild(submitBtn);
-}
+
+chatBody.appendChild(submitBtn);
 // Desktop right-click menu
 msg.addEventListener("contextmenu", e => {
   e.preventDefault(); // ⛔ disable browser menu
