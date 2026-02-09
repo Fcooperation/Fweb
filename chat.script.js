@@ -1238,8 +1238,6 @@ async function fetchAllFChatLogs() {
       });
     }
     
-// 1️⃣ Normalize messages (push to newItems)
-// 2️⃣ Normalize polls (push to newItems & update poll storage)
 // ------------------------
 // HANDLE NEW VOTES
 // ------------------------
@@ -1249,15 +1247,21 @@ if (Array.isArray(data.votes)) {
   let storedPolls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
 
   data.votes.forEach(vote => {
+    // Find the poll in localStorage
     const pollIndex = storedPolls.findIndex(p => p.id === vote.poll_id);
     if (pollIndex !== -1) {
+      // Ensure votes object exists
       storedPolls[pollIndex].votes = storedPolls[pollIndex].votes || {};
+
+      // Only add if this sender hasn't voted yet (or always overwrite)
       const isNew = !storedPolls[pollIndex].votes[vote.sender_id];
       storedPolls[pollIndex].votes[vote.sender_id] = vote;
+
       if (isNew) newVotes.push(vote);
     }
   });
 
+  // Save back to localStorage
   localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(storedPolls));
 }
 
@@ -1266,14 +1270,6 @@ if (Array.isArray(data.votes)) {
 // ------------------------
 const totalNew = newItems.length + newVotes.length;
 if (totalNew > 0) newMessagesFound(totalNew);
-
-// 3️⃣ STORE + SORT
-fchatMessages.push(...newItems);
-fchatMessages.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
-localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
-
-// 4️⃣ UPDATE TIMELINE/UI
-updateTimeline();
 
     // ------------------------
     // NO NEW DATA → STOP
