@@ -529,18 +529,7 @@ const markSelectedOptions = (pollWrapper, votedOptions) => {
 
     let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
     polls = polls.map(p =>
-      p.id === msgObj.id ? {
-  ...p,
-  status: "sending",
-  votes: {
-    ...(p.votes || {}),
-    [account.id]: {
-      sender_id: account.id,
-      options: selectedOptions,
-      voted_at: new Date().toISOString()
-    }
-  }
-} : p
+      p.id === msgObj.id ? { ...p, status: "sending", voted_options: selectedOptions } : p
     );
     localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
     // 🔥 Update UI instantly
@@ -612,21 +601,14 @@ if (isSender) {
     pollWrapper.classList.add("poll-dimmed");
 
     polls = polls.map(p =>
-  p.id === msgObj.id
-    ? {
-        ...p,
-        status: "pending",
-        votes: {
-          ...(p.votes || {}),
-          [account.id]: {
-            sender_id: account.id,
-            options: selectedOptions,
-            voted_at: new Date().toISOString()
+      p.id === msgObj.id
+        ? {
+            ...p,
+            status: "pending",
+            voted_options: selectedOptions
           }
-        }
-      }
-    : p
-);
+        : p
+    );
     localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
     // 🔥 Show bars immediately even offline
 markSelectedOptions(pollWrapper, selectedOptions);
@@ -637,21 +619,10 @@ markSelectedOptions(pollWrapper, selectedOptions);
 
       let retryPolls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
       retryPolls = retryPolls.map(p =>
-  p.id === msgObj.id
-    ? {
-        ...p,
-        status: "sending",
-        votes: {
-          ...(p.votes || {}),
-          [account.id]: {
-            sender_id: account.id,
-            options: selectedOptions,
-            voted_at: new Date().toISOString()
-          }
-        }
-      }
-    : p
-);
+        p.id === msgObj.id
+          ? { ...p, status: "sending", voted_options: selectedOptions }
+          : p
+      );
       localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(retryPolls));
 
       sendVote(selectedOptions, pollWrapper, meta);
@@ -1266,34 +1237,6 @@ async function fetchAllFChatLogs() {
         }
       });
     }
-    
-    // ------------------------
-// MERGE INCOMING VOTES INTO LOCALSTORAGE
-// ------------------------
-function mergeVoteToPoll(vote) {
-  const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
-  let storedPolls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
-
-  // Find poll with matching id
-  storedPolls = storedPolls.map(p => {
-    if (p.id === vote.poll_id) {
-      // Ensure votes object exists
-      const votes = p.votes || {};
-
-      // Add/overwrite the vote for this sender
-      votes[vote.sender_id] = {
-        options: vote.options,
-        voted_at: vote.voted_at
-      };
-
-      return { ...p, votes };
-    }
-    return p;
-  });
-
-  localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(storedPolls));
-  console.log("✅ Vote merged to poll:", vote.poll_id, "sender:", vote.sender_id);
-}
 
     // ------------------------
     // NO NEW DATA → STOP
