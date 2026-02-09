@@ -1238,7 +1238,7 @@ async function fetchAllFChatLogs() {
       });
     }
     
-// ------------------------
+    // ------------------------
 // HANDLE NEW VOTES
 // ------------------------
 let newVotes = [];
