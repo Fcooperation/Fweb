@@ -1237,6 +1237,39 @@ async function fetchAllFChatLogs() {
         }
       });
     }
+    
+    // ------------------------
+// HANDLE NEW VOTES
+// ------------------------
+let newVotes = [];
+if (Array.isArray(data.votes)) {
+  const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
+  let storedPolls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+
+  data.votes.forEach(vote => {
+    // Find the poll in localStorage
+    const pollIndex = storedPolls.findIndex(p => p.id === vote.poll_id);
+    if (pollIndex !== -1) {
+      // Ensure votes object exists
+      storedPolls[pollIndex].votes = storedPolls[pollIndex].votes || {};
+
+      // Only add if this sender hasn't voted yet (or always overwrite)
+      const isNew = !storedPolls[pollIndex].votes[vote.sender_id];
+      storedPolls[pollIndex].votes[vote.sender_id] = vote;
+
+      if (isNew) newVotes.push(vote);
+    }
+  });
+
+  // Save back to localStorage
+  localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(storedPolls));
+}
+
+// ------------------------
+// TRIGGER NEW MESSAGE INDICATOR
+// ------------------------
+const totalNew = newItems.length + newVotes.length;
+if (totalNew > 0) newMessagesFound(totalNew);
 
     // ------------------------
     // NO NEW DATA → STOP
