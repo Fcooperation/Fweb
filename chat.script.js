@@ -528,10 +528,17 @@ const markSelectedOptions = (pollWrapper, votedOptions) => {
     if (meta) meta.innerHTML = meta.innerHTML.replace(/sent|pending/, "sending");
 
     let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
-    polls = polls.map(p =>
-      p.id === msgObj.id ? { ...p, status: "sending", voted_options: selectedOptions } : p
-    );
-    localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
+polls = polls.map(p =>
+  p.id === msgObj.id
+    ? {
+        ...p,
+        status: "sending",
+        voted_options: selectedOptions,  // keep as-is for markSelectedOptions
+        voter_id: account.id             // add the voter ID
+      }
+    : p
+);
+localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
     // 🔥 Update UI instantly
 markSelectedOptions(pollWrapper, selectedOptions);
 
