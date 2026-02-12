@@ -493,7 +493,11 @@ const markSelectedOptions = (pollWrapper, votedOptionsByUser, allVotes = {}) => 
   if (storedPoll) {
   const voted = Array.isArray(storedPoll.voted_options) && storedPoll.voted_options.length > 0;
 
-  markSelectedOptions(pollWrapper, voted ? storedPoll.voted_options : []);
+  markSelectedOptions(
+  pollWrapper,
+  voted ? storedPoll.voted_options : [],
+  storedPoll.votes || {}
+);
 
   if (storedPoll.status === "pending") {
     if (voted) {
@@ -560,7 +564,13 @@ polls = polls.map(p => {
 localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
 
     // 🔥 Update UI instantly
-markSelectedOptions(pollWrapper, selectedOptions);
+const updatedPoll = polls.find(p => p.id === msgObj.id);
+
+markSelectedOptions(
+  pollWrapper,
+  selectedOptions,
+  updatedPoll.votes || {}
+);
 
     fetch(API_URL, {
       method: "POST",
@@ -638,7 +648,13 @@ if (isSender) {
     );
     localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
     // 🔥 Show bars immediately even offline
-markSelectedOptions(pollWrapper, selectedOptions);
+let updatedPoll = polls.find(p => p.id === msgObj.id);
+
+markSelectedOptions(
+  pollWrapper,
+  selectedOptions,
+  updatedPoll?.votes || {}
+);
 
     // 🔁 Retry once online
     const onlineListener = () => {
