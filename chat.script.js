@@ -528,23 +528,10 @@ const markSelectedOptions = (pollWrapper, votedOptions) => {
     if (meta) meta.innerHTML = meta.innerHTML.replace(/sent|pending/, "sending");
 
     let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
-polls = polls.map(p => {
-  if (p.id === msgObj.id) {
-    // Ensure we have a votes object
-    p.votes = p.votes || {};
-
-    // Add or overwrite the vote for the current user
-    p.votes[account.id] = selectedOptions;
-
-    return {
-      ...p,
-      status: "sending",
-      votes: p.votes // store the votes object
-    };
-  }
-  return p;
-});
-localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
+    polls = polls.map(p =>
+      p.id === msgObj.id ? { ...p, status: "sending", voted_options: selectedOptions } : p
+    );
+    localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
     // 🔥 Update UI instantly
 markSelectedOptions(pollWrapper, selectedOptions);
 
@@ -1250,22 +1237,6 @@ async function fetchAllFChatLogs() {
         }
       });
     }
-    
-    // ------------------------
-// HANDLE VOTES
-// ------------------------
-if (Array.isArray(data.votes)) {
-  const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
-  let storedPolls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
-
-  data.votes.forEach(vote => {
-    // Call your mergeVotes function (which merges a vote into the correct poll)
-    mergeVoteToPoll(vote, storedPolls);
-  });
-
-  // Save back the updated polls storage
-  localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(storedPolls));
-}
 
     // ------------------------
     // NO NEW DATA → STOP
