@@ -458,37 +458,25 @@ submitBtn.textContent = "Submit vote"; // ✅ DEFAULT TEXT (VERY IMPORTANT)
   const polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
   const storedPoll = polls.find(p => p.id === msgObj.id);
 // Function to mark selected options in the UI
-const markSelectedOptions = (pollWrapper, poll) => {
-  // poll.votes is an object: { userId: [options] }
-  const allVotes = Object.values(poll.votes || []).flat(); // all voted options
-  const userVotedOptions = poll.votes?.[account.id] || []; // only current user's vote
-
-  // Count how many times each option was voted
-  const optionCounts = {};
-  allVotes.forEach(opt => {
-    optionCounts[opt] = (optionCounts[opt] || 0) + 1;
-  });
-
-  const totalVotes = allVotes.length || 1; // avoid divide by zero
+const markSelectedOptions = (pollWrapper, votedOptions) => {
+  const totalSelected = votedOptions.length || 1; // avoid divide by zero
+  const percentPerOption = 100 / totalSelected;
 
   pollWrapper.querySelectorAll(".poll-option").forEach((opt, i) => {
     const circle = opt.querySelector(".poll-circle");
     const bar = opt.querySelector(".poll-bar");
 
-    const optionIndex = i + 1;
-
-    // Fill bar based on all votes
-    const percent = ((optionCounts[optionIndex] || 0) / totalVotes) * 100;
-    bar.style.width = percent + "%";
-
-    // Highlight circle only if current user voted for it
-    if (userVotedOptions.includes(optionIndex)) {
+    if (votedOptions.includes(i + 1)) {
       circle.classList.add("selected");
+      bar.style.width = percentPerOption + "%";   // 👈 THIS is the magic
     } else {
       circle.classList.remove("selected");
+      bar.style.width = "0%";
     }
   });
 };
+
+
   // Set initial button text & selected options based on stored poll
   const pollWrapper = msg.querySelector(".poll-wrapper") || msg;
   if (storedPoll) {
@@ -540,23 +528,10 @@ const markSelectedOptions = (pollWrapper, poll) => {
     if (meta) meta.innerHTML = meta.innerHTML.replace(/sent|pending/, "sending");
 
     let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
-polls = polls.map(p => {
-  if (p.id === msgObj.id) {
-    // Ensure we have a votes object
-    p.votes = p.votes || {};
-
-    // Add or overwrite the vote for the current user
-    p.votes[account.id] = selectedOptions;
-
-    return {
-      ...p,
-      status: "sending",
-      votes: p.votes // store the votes object
-    };
-  }
-  return p;
-});
-localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
+    polls = polls.map(p =>
+      p.id === msgObj.id ? { ...p, status: "sending", voted_options: selectedOptions } : p
+    );
+    localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
     // 🔥 Update UI instantly
 markSelectedOptions(pollWrapper, selectedOptions);
 
@@ -1262,22 +1237,6 @@ async function fetchAllFChatLogs() {
         }
       });
     }
-    
-    // ------------------------
-// HANDLE VOTES
-// ------------------------
-if (Array.isArray(data.votes)) {
-  const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
-  let storedPolls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
-
-  data.votes.forEach(vote => {
-    // Call your mergeVotes function (which merges a vote into the correct poll)
-    mergeVoteToPoll(vote, storedPolls);
-  });
-
-  // Save back the updated polls storage
-  localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(storedPolls));
-}
 
     // ------------------------
     // NO NEW DATA → STOP
