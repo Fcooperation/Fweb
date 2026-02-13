@@ -169,6 +169,40 @@ body {
   font-size:14px;
   color:#555;
 }
+/* ----------------- THREE DOTS MENU ----------------- */
+#menu-btn {
+  cursor: pointer;
+  font-size: 24px;
+  padding: 4px 8px;
+  border: none;
+  background: none;
+}
+
+#menu-dropdown {
+  position: absolute;
+  top: 50px; /* below the top bar */
+  left: 16px; /* aligned with button */
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  display: none;
+  flex-direction: column;
+  min-width: 160px;
+  z-index: 3000;
+}
+
+.menu-item {
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #333;
+  transition: background 0.2s;
+}
+
+.menu-item:hover {
+  background: #f0f0f0;
+}
 </style>
 </head>
 <body>
@@ -181,7 +215,12 @@ body {
 
 <!-- MAIN UI -->
 <div id="main-ui">
-  <div id="top-bar">FCHAT</div>
+  <div id="top-bar">FCHAT
+  <button id="menu-btn">⋮</button>
+<div id="menu-dropdown">
+  <div class="menu-item" onclick="location.href='fchatsetting.html'">Fchat Settings</div>
+  <div class="menu-item" onclick="location.href='friendrequest.html'">Friend Requests</div>
+</div></div>
   <input type="text" id="search-bar" placeholder="Search users...">
   <div id="users-list"></div>
   <div id="update-log"></div>
@@ -333,6 +372,19 @@ document.getElementById("profile-modal").onclick = ()=>{
 runLoadingSequence();
 setInterval(fetchAndRenderFchatters,5000);
 
+// ----------------- THREE DOTS MENU -----------------
+const menuBtn = document.getElementById("menu-btn");
+const menuDropdown = document.getElementById("menu-dropdown");
+
+menuBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+  menuDropdown.style.display = menuDropdown.style.display === "flex" ? "none" : "flex";
+});
+
+// Hide menu if clicking outside
+document.addEventListener("click", () => {
+  menuDropdown.style.display = "none";
+});
 </script>
 </body>
   </html>
