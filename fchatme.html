@@ -180,7 +180,7 @@
 
 <script>
   const account = JSON.parse(localStorage.getItem("faccount")) || {};
-  
+  // Broadcast endpoint
   async function updateBroadcastOnServer(newBroadcastValue) {
   const payload = {
     action: "update_broadcast",
@@ -201,6 +201,30 @@
 
   if (!res.ok || data.error) {
     throw new Error(data.error || "Failed to update broadcast");
+  }
+
+  return data;
+}
+
+// status text endpoint 
+async function updateStatusTextOnServer(newStatus) {
+  const payload = {
+    action: "update_status_text",
+    email: account.email,
+    password: account.password,
+    status_text: newStatus
+  };
+
+  const res = await fetch("https://fweb-backend.onrender.com/fchat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+
+  const data = await res.json();
+
+  if (!res.ok || data.error) {
+    throw new Error(data.error || "Failed to update status text");
   }
 
   return data;
@@ -274,15 +298,22 @@
   const statusText = document.getElementById("status-text");
   statusText.textContent = account.status_text || "No status set";
 
-  document.querySelector(".pen-icon").addEventListener("click", () => {
-    const newStatus = prompt("Edit your status:", account.status_text || "");
-    if(newStatus !== null){
-      statusText.textContent = newStatus;
+  document.querySelector(".pen-icon").addEventListener("click", async () => {
+  const newStatus = prompt("Edit your status:", account.status_text || "");
+  if (newStatus !== null) {
+    const originalText = statusText.textContent;
+    statusText.textContent = "Sending..."; // block UI/spam
+    try {
+      await updateStatusTextOnServer(newStatus);
       account.status_text = newStatus;
       localStorage.setItem("faccount", JSON.stringify(account));
+      statusText.textContent = newStatus;
+    } catch (err) {
+      alert(err.message);
+      statusText.textContent = originalText; // revert if failed
     }
-  });
-
+  }
+});
   // ---------- Welcome text ----------
   const welcomeUsername = document.querySelector("#welcome .username");
   welcomeUsername.textContent = account.username || "User";
