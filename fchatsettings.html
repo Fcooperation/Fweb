@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fchat Settings</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin:0;
+    padding:0;
+    background:#f5f7fa;
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+    min-height:100vh;
+  }
+
+  .settings-box {
+    background:#fff;
+    margin-top:40px;
+    padding:30px;
+    border-radius:12px;
+    width:90%;
+    max-width:500px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.1);
+  }
+
+  h2 {
+    text-align:center;
+    margin-bottom:20px;
+  }
+
+  .setting-item {
+    margin-bottom:15px;
+  }
+
+  .setting-item label {
+    display:block;
+    font-weight:bold;
+    margin-bottom:5px;
+    font-size:14px;
+  }
+
+  .setting-item div {
+    background:#eee;
+    padding:10px;
+    border-radius:8px;
+    font-size:14px;
+  }
+
+  #back-btn {
+    display:block;
+    margin:20px auto 0 auto;
+    padding:12px 20px;
+    background:#007bff;
+    color:#fff;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:14px;
+  }
+
+  #back-btn:hover {
+    background:#0056b3;
+  }
+</style>
+</head>
+<body>
+
+<div class="settings-box">
+  <h2>Account Settings</h2>
+
+  <div class="setting-item">
+    <label>Email:</label>
+    <div id="account-email">Loading...</div>
+  </div>
+
+  <div class="setting-item">
+    <label>Username:</label>
+    <div id="account-username">Loading...</div>
+  </div>
+
+  <div class="setting-item">
+    <label>Profile Picture:</label>
+    <div id="account-pfp">Loading...</div>
+  </div>
+
+  <div class="setting-item">
+    <label>Status:</label>
+    <div id="account-status">Loading...</div>
+  </div>
+
+  <button id="back-btn">Back to Fchat</button>
+</div>
+
+<script>
+  // Load account details from localStorage
+  const account = JSON.parse(localStorage.getItem("faccount")) || {};
+
+  document.getElementById("account-email").textContent = account.email || "Not set";
+  document.getElementById("account-username").textContent = account.username || "Not set";
+
+  const pfpDiv = document.getElementById("account-pfp");
+  if(account.profile_pic){
+    const img = document.createElement("img");
+    img.src = account.profile_pic;
+    img.style.width = "100px";
+    img.style.height = "100px";
+    img.style.borderRadius = "50%";
+    img.style.objectFit = "cover";
+    pfpDiv.innerHTML = "";
+    pfpDiv.appendChild(img);
+  } else {
+    pfpDiv.textContent = "No profile picture";
+  }
+
+  document.getElementById("account-status").textContent = account.status || "Not set";
+
+  // Back button
+  document.getElementById("back-btn").addEventListener("click", () => {
+    window.location.href = "fchat.html";
+  });
+</script>
+
+</body>
+</html>
