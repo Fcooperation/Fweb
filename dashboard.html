@@ -99,26 +99,39 @@
     }
 
     async function uploadImage() {
-      const fileInput = document.getElementById("file-input");
-      if (!fileInput.files.length) return alert("Select an image first.");
-      const file = fileInput.files[0];
-      try {
-        const base64 = await compressImage(file, 800, 0.6);
-        const result = await callFWebBackend("update_pic", { profile_pic: base64 });
-        if (result.error) return alert("Error: " + result.error);
-        if (result.success) {
-          faccount.profile_pic = base64;
-          localStorage.setItem("faccount", JSON.stringify(faccount));
-          document.getElementById("profile-pic").src = base64;
-          alert(result.message || "Profile picture updated!");
-        } else {
-          alert(result.message || "Failed to update profile picture.");
-        }
-      } catch(err) {
-        console.error("Image compression/upload failed:", err);
-        alert("Failed to compress or upload image.");
-      }
+  const fileInput = document.getElementById("file-input");
+  const uploadBtn = document.querySelector(".upload-box button"); // get the button
+  if (!fileInput.files.length) return alert("Select an image first.");
+  
+  const file = fileInput.files[0];
+
+  try {
+    // Disable button & show uploading
+    uploadBtn.disabled = true;
+    uploadBtn.textContent = "Uploading...";
+
+    const base64 = await compressImage(file, 800, 0.6);
+    const result = await callFWebBackend("update_pic", { profile_pic: base64 });
+
+    if (result.error) return alert("Error: " + result.error);
+    if (result.success) {
+      faccount.profile_pic = base64;
+      localStorage.setItem("faccount", JSON.stringify(faccount));
+      document.getElementById("profile-pic").src = base64;
+      alert(result.message || "Profile picture updated!");
+    } else {
+      alert(result.message || "Failed to update profile picture.");
     }
+
+  } catch(err) {
+    console.error("Image compression/upload failed:", err);
+    alert("Failed to compress or upload image.");
+  } finally {
+    // Re-enable button & restore text
+    uploadBtn.disabled = false;
+    uploadBtn.textContent = "Upload";
+  }
+}
 
     async function updateDetails() {
       const newName = document.getElementById("new-name").value;
