@@ -60,8 +60,8 @@
   #profile-pic {
     display: block;
     margin: 80px auto 20px;
-    width: 120px;
-    height: 120px;
+    width: 320px;
+    height: 320px;
     border-radius: 50%;
     object-fit: cover;
     border: 3px solid #007bff;
@@ -189,11 +189,11 @@
 
   function updateBroadcastUI() {
     if(account.broadcast && account.broadcast.toLowerCase() === "yes"){
-      broadcastBox.textContent = "broadcast";
+      broadcastBox.textContent = "Broadcast";
       broadcastTick.textContent = "✔";
       privateTick.textContent = "";
     }else{
-      broadcastBox.textContent = "private";
+      broadcastBox.textContent = "Private";
       privateTick.textContent = "✔";
       broadcastTick.textContent = "";
     }
