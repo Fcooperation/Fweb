@@ -180,6 +180,31 @@
 
 <script>
   const account = JSON.parse(localStorage.getItem("faccount")) || {};
+  
+  async function updateBroadcastOnServer(newBroadcastValue) {
+  const payload = {
+    action: "update_broadcast",
+    email: account.email,
+    password: account.password,
+    broadcast: newBroadcastValue
+  };
+
+  const res = await fetch("https://fweb-backend.onrender.com/fchat", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+
+  const data = await res.json();
+
+  if (!res.ok || data.error) {
+    throw new Error(data.error || "Failed to update broadcast");
+  }
+
+  return data;
+}
 
   // ---------- Broadcast / Private ----------
   const broadcastBox = document.getElementById("broadcast-box");
@@ -205,19 +230,31 @@
     broadcastMenu.style.display = broadcastMenu.style.display === "flex" ? "none" : "flex";
   });
 
-  document.getElementById("private-option").addEventListener("click", () => {
-    account.broadcast = "no";
+  document.getElementById("private-option").addEventListener("click", async () => {
+  try {
+    await updateBroadcastOnServer(null);
+
+    account.broadcast = null;
     localStorage.setItem("faccount", JSON.stringify(account));
     updateBroadcastUI();
     broadcastMenu.style.display = "none";
-  });
+  } catch (err) {
+    alert(err.message);
+  }
+});
 
-  document.getElementById("broadcast-option").addEventListener("click", () => {
+  document.getElementById("broadcast-option").addEventListener("click", async () => {
+  try {
+    await updateBroadcastOnServer("yes");
+
     account.broadcast = "yes";
     localStorage.setItem("faccount", JSON.stringify(account));
     updateBroadcastUI();
     broadcastMenu.style.display = "none";
-  });
+  } catch (err) {
+    alert(err.message);
+  }
+});
 
   // ---------- Profile picture ----------
   const profilePic = document.getElementById("profile-pic");
