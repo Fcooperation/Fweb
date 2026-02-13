@@ -115,11 +115,15 @@
 
     if (result.error) return alert("Error: " + result.error);
     if (result.success) {
-      faccount.profile_pic = base64;
-      localStorage.setItem("faccount", JSON.stringify(faccount));
-      document.getElementById("profile-pic").src = base64;
-      alert(result.message || "Profile picture updated!");
-    } else {
+  faccount.profile_pic = base64;
+  localStorage.setItem("faccount", JSON.stringify(faccount));
+  document.getElementById("profile-pic").src = base64;
+
+  // ✅ Clear file input so filename disappears
+  fileInput.value = "";
+
+  alert(result.message || "Profile picture updated!");
+} else {
       alert(result.message || "Failed to update profile picture.");
     }
 
