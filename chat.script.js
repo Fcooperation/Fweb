@@ -1253,6 +1253,36 @@ async function fetchAllFChatLogs() {
         }
       });
     }
+    
+    // ------------------------
+// NORMALIZE VOTES
+// ------------------------
+if (Array.isArray(data.votes)) {
+  const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
+  let storedPolls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+
+  data.votes.forEach(vote => {
+    const pollIndex = storedPolls.findIndex(p => p.id === vote.poll_id);
+    if (pollIndex === -1) return;
+
+    const poll = storedPolls[pollIndex];
+
+    // Ensure votes object exists
+    poll.votes = poll.votes || {};
+
+    // Save vote by voter ID
+    poll.votes[vote.sender_id] = vote.options;
+
+    // If THIS account voted, store voted_options for UI
+    if (vote.sender_id === account.id) {
+      poll.voted_options = vote.options;
+    }
+
+    storedPolls[pollIndex] = poll;
+  });
+
+  localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(storedPolls));
+}
 
     // ------------------------
     // NO NEW DATA → STOP
