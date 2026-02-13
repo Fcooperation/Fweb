@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fchat Settings</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #f5f7fa;
+    margin: 0;
+    padding: 20px;
+  }
+
+  /* Top right broadcast/private box */
+  #broadcast-box {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: white;
+    color: #007bff;
+    padding: 8px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  /* Dropdown menu for broadcast/private */
+  #broadcast-menu {
+    position: absolute;
+    top: 50px;
+    right: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    display: none;
+    flex-direction: column;
+    width: 120px;
+    z-index: 100;
+  }
+
+  #broadcast-menu div {
+    padding: 8px 12px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  #broadcast-menu div:hover {
+    background: #f0f0f0;
+  }
+
+  .tick {
+    color: #007bff;
+    font-weight: bold;
+  }
+
+  /* Profile pic circular */
+  #profile-pic {
+    display: block;
+    margin: 80px auto 20px;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #007bff;
+    cursor: pointer;
+  }
+
+  /* Profile modal */
+  #profile-modal {
+    position: fixed;
+    top:0; left:0;
+    width:100%; height:100%;
+    background: rgba(0,0,0,0.85);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+  }
+
+  #profile-modal img {
+    max-width: 80%;
+    max-height: 80%;
+    border-radius: 50%;
+  }
+
+  /* Status box */
+  #status-box {
+    background: white;
+    color: #007bff;
+    padding: 12px 16px;
+    border-radius: 12px;
+    width: calc(100% - 40px);
+    max-width: 500px;
+    margin: 0 auto 20px auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 14px;
+  }
+
+  .pen-icon {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+  }
+
+  /* Welcome text */
+  #welcome {
+    text-align: center;
+    font-size: 16px;
+    margin-bottom: 20px;
+  }
+
+  #welcome span.welcome-text {
+    color: #007bff;
+  }
+
+  #welcome span.username {
+    color: black;
+    font-weight: bold;
+  }
+
+  /* Chat settings card */
+  #chat-settings-card {
+    background: white;
+    color: #007bff;
+    padding: 16px;
+    border-radius: 12px;
+    width: calc(100% - 40px);
+    max-width: 500px;
+    margin: 0 auto;
+    text-align: center;
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  }
+
+  #chat-settings-card:hover {
+    background: #f0f8ff;
+  }
+
+</style>
+</head>
+<body>
+
+<!-- Broadcast / Private box -->
+<div id="broadcast-box">Loading...</div>
+<div id="broadcast-menu">
+  <div id="private-option">Private <span class="tick" id="private-tick"></span></div>
+  <div id="broadcast-option">Broadcast <span class="tick" id="broadcast-tick"></span></div>
+</div>
+
+<!-- Profile picture -->
+<img id="profile-pic" src="" alt="Profile Picture">
+
+<!-- Profile modal -->
+<div id="profile-modal">
+  <img id="modal-img" src="" alt="Profile Picture">
+</div>
+
+<!-- Status box -->
+<div id="status-box">
+  <span id="status-text">Loading...</span>
+  <svg class="pen-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5h6m2 2l-7 7-4 1 1-4 7-7z"/>
+  </svg>
+</div>
+
+<!-- Welcome text -->
+<div id="welcome">
+  <span class="welcome-text">Welcome, </span>
+  <span class="username">Loading...</span>
+</div>
+
+<!-- Chat Settings Card -->
+<div id="chat-settings-card">Chat Settings</div>
+
+<script>
+  const account = JSON.parse(localStorage.getItem("faccount")) || {};
+
+  // ---------- Broadcast / Private ----------
+  const broadcastBox = document.getElementById("broadcast-box");
+  const broadcastMenu = document.getElementById("broadcast-menu");
+  const privateTick = document.getElementById("private-tick");
+  const broadcastTick = document.getElementById("broadcast-tick");
+
+  function updateBroadcastUI() {
+    if(account.broadcast && account.broadcast.toLowerCase() === "yes"){
+      broadcastBox.textContent = "broadcast";
+      broadcastTick.textContent = "✔";
+      privateTick.textContent = "";
+    }else{
+      broadcastBox.textContent = "private";
+      privateTick.textContent = "✔";
+      broadcastTick.textContent = "";
+    }
+  }
+
+  updateBroadcastUI();
+
+  broadcastBox.addEventListener("click", () => {
+    broadcastMenu.style.display = broadcastMenu.style.display === "flex" ? "none" : "flex";
+  });
+
+  document.getElementById("private-option").addEventListener("click", () => {
+    account.broadcast = "no";
+    localStorage.setItem("faccount", JSON.stringify(account));
+    updateBroadcastUI();
+    broadcastMenu.style.display = "none";
+  });
+
+  document.getElementById("broadcast-option").addEventListener("click", () => {
+    account.broadcast = "yes";
+    localStorage.setItem("faccount", JSON.stringify(account));
+    updateBroadcastUI();
+    broadcastMenu.style.display = "none";
+  });
+
+  // ---------- Profile picture ----------
+  const profilePic = document.getElementById("profile-pic");
+  profilePic.src = account.profile_pic || "https://via.placeholder.com/120";
+
+  const profileModal = document.getElementById("profile-modal");
+  const modalImg = document.getElementById("modal-img");
+  profilePic.addEventListener("click", () => {
+    modalImg.src = profilePic.src;
+    profileModal.style.display = "flex";
+  });
+  profileModal.addEventListener("click", () => {
+    profileModal.style.display = "none";
+  });
+
+  // ---------- Status box ----------
+  const statusText = document.getElementById("status-text");
+  statusText.textContent = account.status_text || "No status set";
+
+  document.querySelector(".pen-icon").addEventListener("click", () => {
+    const newStatus = prompt("Edit your status:", account.status_text || "");
+    if(newStatus !== null){
+      statusText.textContent = newStatus;
+      account.status_text = newStatus;
+      localStorage.setItem("faccount", JSON.stringify(account));
+    }
+  });
+
+  // ---------- Welcome text ----------
+  const welcomeUsername = document.querySelector("#welcome .username");
+  welcomeUsername.textContent = account.username || "User";
+
+  // ---------- Chat Settings card ----------
+  const chatCard = document.getElementById("chat-settings-card");
+  chatCard.addEventListener("click", () => {
+    window.location.href = "chatsettings.html";
+  });
+
+  // Close dropdown if clicked outside
+  document.addEventListener("click", function(e){
+    if(!broadcastBox.contains(e.target) && !broadcastMenu.contains(e.target)){
+      broadcastMenu.style.display = "none";
+    }
+  });
+</script>
+
+</body>
+</html>
