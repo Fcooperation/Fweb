@@ -1350,7 +1350,25 @@ const defaultStyles = {
 };
 
 // Load from localStorage
-let chatStyles = JSON.parse(localStorage.getItem('chatStyles')) || defaultStyles;
+let rawStyles = JSON.parse(localStorage.getItem('chatStyles'));
+
+let chatStyles = {
+  sent: typeof rawStyles?.sent === 'string'
+    ? { type: 'color', value: rawStyles.sent }
+    : rawStyles?.sent || defaultStyles.sent,
+
+  received: typeof rawStyles?.received === 'string'
+    ? { type: 'color', value: rawStyles.received }
+    : rawStyles?.received || defaultStyles.received,
+
+  background: typeof rawStyles?.background === 'string'
+    ? { type: 'color', value: rawStyles.background }
+    : rawStyles?.background || defaultStyles.background,
+
+  others: typeof rawStyles?.others === 'string'
+    ? { type: 'color', value: rawStyles.others }
+    : rawStyles?.others || defaultStyles.others
+};
 
 // Apply styles to chat
 function applyChatStyles() {
