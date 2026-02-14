@@ -1462,27 +1462,40 @@ document.querySelectorAll('.file-input').forEach(input => {
     previewBox.innerHTML = ''; // Clear previous preview
 
     if(file) {
-      const url = URL.createObjectURL(file);
-      let element;
-      if(file.type.startsWith('image')) {
-        element = document.createElement('img');
-      } else if(file.type.startsWith('video')) {
-        element = document.createElement('video');
-        element.controls = true;
-        element.loop = true;
-        element.muted = true;
-      }
-      if(element) {
-        element.src = url;
-        previewBox.appendChild(element);
-      }
+      const reader = new FileReader();
 
-      // Mark preview as selectable
-      previewBox.dataset.selected = 'true';
-      chatStyles[section] = { type: 'file', value: url };
-      localStorage.setItem('chatStyles', JSON.stringify(chatStyles));
-      applyChatStyles();
-      updateTicks();
+reader.onload = () => {
+  const dataUrl = reader.result;
+
+  let element;
+  if (file.type.startsWith('image')) {
+    element = document.createElement('img');
+  } else if (file.type.startsWith('video')) {
+    element = document.createElement('video');
+    element.controls = true;
+    element.loop = true;
+    element.muted = true;
+  }
+
+  if (element) {
+    element.src = dataUrl;
+    previewBox.innerHTML = '';
+    previewBox.appendChild(element);
+  }
+
+  previewBox.dataset.selected = 'true';
+
+  chatStyles[section] = {
+    type: 'file',
+    value: dataUrl
+  };
+
+  localStorage.setItem('chatStyles', JSON.stringify(chatStyles));
+  applyChatStyles();
+  updateTicks();
+};
+
+reader.readAsDataURL(file);
     }
   });
 });
