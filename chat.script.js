@@ -1339,6 +1339,144 @@ setInterval(() => {
   fetchAllFChatLogs();
 }, 2000);
 
+/* ======================== CHAT STYLE & PREVIEW MANAGEMENT ======================== */
+
+// Default styles if nothing saved yet
+const defaultStyles = {
+  sent: { type: 'color', value: 'black' },
+  received: { type: 'color', value: 'white' },
+  background: { type: 'color', value: 'white' },
+  others: { type: 'color', value: 'blue' }
+};
+
+// Load from localStorage
+let chatStyles = JSON.parse(localStorage.getItem('chatStyles')) || defaultStyles;
+
+// Apply styles to chat
+function applyChatStyles() {
+  const chatBody = document.getElementById('chat-body');
+
+  // Background
+  if(chatStyles.background.type === 'color') {
+    chatBody.style.background = chatStyles.background.value;
+  } else if(chatStyles.background.type === 'file') {
+    chatBody.style.background = `url(${chatStyles.background.value}) center/cover no-repeat`;
+  }
+
+  // Sent/Received messages
+  document.querySelectorAll('.sent').forEach(el => {
+    if(chatStyles.sent.type === 'color') {
+      el.style.background = chatStyles.sent.value;
+      el.style.color = chatStyles.sent.value === 'black' ? 'white' : 'black';
+    } else if(chatStyles.sent.type === 'file') {
+      el.style.background = `url(${chatStyles.sent.value}) center/cover no-repeat`;
+      el.style.color = 'white';
+    }
+  });
+
+  document.querySelectorAll('.received').forEach(el => {
+    if(chatStyles.received.type === 'color') {
+      el.style.background = chatStyles.received.value;
+      el.style.color = chatStyles.received.value === 'black' ? 'white' : 'black';
+    } else if(chatStyles.received.type === 'file') {
+      el.style.background = `url(${chatStyles.received.value}) center/cover no-repeat`;
+      el.style.color = 'black';
+    }
+  });
+
+  // Others (you can apply to buttons, icons, etc.)
+  document.querySelectorAll('.others').forEach(el => {
+    if(chatStyles.others.type === 'color') {
+      el.style.background = chatStyles.others.value;
+    } else if(chatStyles.others.type === 'file') {
+      el.style.background = `url(${chatStyles.others.value}) center/cover no-repeat`;
+    }
+  });
+}
+
+// ======================== UPDATE TICKS ========================
+function updateTicks() {
+  document.querySelectorAll('.color-box, .preview-box').forEach(box => {
+    const section = box.closest('.message-style-section')?.dataset.section;
+    if(!section) return;
+    box.querySelector('.tick')?.remove();
+
+    let saved = chatStyles[section];
+    if(saved.type === 'color' && box.dataset.color === saved.value) {
+      const tick = document.createElement('div');
+      tick.classList.add('tick');
+      tick.textContent = '✔';
+      box.appendChild(tick);
+    }
+
+    if(saved.type === 'file' && box.tagName === 'DIV' && box.classList.contains('preview-box') && box.dataset.selected === 'true') {
+      const tick = document.createElement('div');
+      tick.classList.add('tick');
+      tick.textContent = '✔';
+      box.appendChild(tick);
+    }
+  });
+}
+
+// ======================== COLOR SELECTION ========================
+document.querySelectorAll('.color-box').forEach(box => {
+  box.addEventListener('click', () => {
+    const section = box.closest('.message-style-section').dataset.section;
+    chatStyles[section] = { type: 'color', value: box.dataset.color };
+    localStorage.setItem('chatStyles', JSON.stringify(chatStyles));
+    applyChatStyles();
+    updateTicks();
+  });
+});
+
+// ======================== FILE PREVIEW SELECTION ========================
+document.querySelectorAll('.file-input').forEach(input => {
+  input.addEventListener('change', (e) => {
+    const section = input.dataset.section;
+    const file = e.target.files[0];
+    const previewBox = document.getElementById(`${section}-preview`);
+    previewBox.innerHTML = ''; // Clear previous preview
+
+    if(file) {
+      const url = URL.createObjectURL(file);
+      let element;
+      if(file.type.startsWith('image')) {
+        element = document.createElement('img');
+      } else if(file.type.startsWith('video')) {
+        element = document.createElement('video');
+        element.controls = true;
+        element.loop = true;
+        element.muted = true;
+      }
+      if(element) {
+        element.src = url;
+        previewBox.appendChild(element);
+      }
+
+      // Mark preview as selectable
+      previewBox.dataset.selected = 'true';
+      chatStyles[section] = { type: 'file', value: url };
+      localStorage.setItem('chatStyles', JSON.stringify(chatStyles));
+      applyChatStyles();
+      updateTicks();
+    }
+  });
+});
+
+// ======================== PREVIEW BOX SELECTION ========================
+document.querySelectorAll('.preview-box').forEach(box => {
+  box.addEventListener('click', () => {
+    const section = box.closest('.message-style-section').dataset.section;
+    if(chatStyles[section]?.type === 'file') {
+      // toggle selection
+      const currentlySelected = box.dataset.selected === 'true';
+      document.querySelectorAll(`#${section}-preview`).forEach(b => b.dataset.selected = 'false');
+      box.dataset.selected = currentlySelected ? 'false' : 'true';
+      updateTicks();
+    }
+  });
+});
+
 // Initial load
 syncPolls();
 syncToFChat();
@@ -1346,3 +1484,5 @@ retryAllPolls();
 retryPendingMessages();
 retryPendingPollMessages();
 fetchAllFChatLogs();
+applyChatStyles();
+updateTicks();

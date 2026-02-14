@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fchat Chat Settings</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #f5f7fa;
+    margin: 0;
+    padding: 20px;
+  }
+
+  /* Header */
+  #chat-settings-header {
+    font-size: 32px;
+    font-weight: bold;
+    color: black;
+    margin-bottom: 10px;
+  }
+
+  /* Subtext */
+  #chat-settings-subtext {
+    font-size: 14px;
+    color: #007bff;
+    margin-bottom: 20px;
+  }
+
+  /* Card for message styling */
+  #message-styling-card {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    max-width: 500px;
+    margin: 0 auto;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  }
+
+  #message-styling-card:hover {
+    background: #f0f8ff;
+  }
+
+  /* Dropdown */
+  #message-styling-dropdown {
+    display: none;
+    flex-direction: column;
+    margin-top: 16px;
+    gap: 16px;
+  }
+
+  .message-style-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .section-label {
+    font-size: 16px;
+    font-weight: bold;
+    color: black;
+  }
+
+  .color-options {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .color-box, .preview-box {
+    width: 40px;
+    height: 24px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    cursor: pointer;
+    opacity: 0.5;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .color-box {
+    transition: opacity 0.2s;
+  }
+
+  .color-box.selected, .preview-box.selected {
+    opacity: 1;
+  }
+
+  /* Tick overlay */
+  .tick {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: #007bff;
+    color: white;
+    font-size: 12px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+  }
+
+  .preview-box img, .preview-box video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* Default colors */
+  #sent-message-black { background: black; opacity: 1; }
+  #sent-message-blue { background: #007bff; }
+  #sent-message-pink { background: pink; }
+
+  #received-message-white { background: white; border: 1px solid #aaa; opacity: 1; }
+  #received-message-blue { background: #007bff; }
+  #received-message-pink { background: pink; }
+
+  #background-white { background: white; border: 1px solid #aaa; opacity: 1; }
+  #background-blue { background: #007bff; }
+  #background-pink { background: pink; }
+
+  #others-blue { background: #007bff; opacity: 1; }
+  #others-black { background: black; }
+  #others-pink { background: pink; }
+
+</style>
+</head>
+<body>
+
+<div id="chat-settings-header">Chat Settings</div>
+<div id="chat-settings-subtext">Customize your chat appearance here</div>
+
+<div id="message-styling-card">
+  Message Styling
+  <div id="message-styling-dropdown">
+
+    <!-- Sent Messages -->
+    <div class="message-style-section" data-section="sent">
+      <div class="section-label">Sent Messages</div>
+      <div class="color-options">
+        <div class="color-box" id="sent-message-black" data-color="black"></div>
+        <div class="color-box" id="sent-message-blue" data-color="blue"></div>
+        <div class="color-box" id="sent-message-pink" data-color="pink"></div>
+        <div class="preview-box" id="sent-preview"></div>
+      </div>
+      <input type="file" class="file-input" data-section="sent" accept="image/*,video/*">
+    </div>
+
+    <!-- Received Messages -->
+    <div class="message-style-section" data-section="received">
+      <div class="section-label">Received Messages</div>
+      <div class="color-options">
+        <div class="color-box" id="received-message-white" data-color="white"></div>
+        <div class="color-box" id="received-message-blue" data-color="blue"></div>
+        <div class="color-box" id="received-message-pink" data-color="pink"></div>
+        <div class="preview-box" id="received-preview"></div>
+      </div>
+      <input type="file" class="file-input" data-section="received" accept="image/*,video/*">
+    </div>
+
+    <!-- Background -->
+    <div class="message-style-section" data-section="background">
+      <div class="section-label">Background</div>
+      <div class="color-options">
+        <div class="color-box" id="background-white" data-color="white"></div>
+        <div class="color-box" id="background-blue" data-color="blue"></div>
+        <div class="color-box" id="background-pink" data-color="pink"></div>
+        <div class="preview-box" id="background-preview"></div>
+      </div>
+      <input type="file" class="file-input" data-section="background" accept="image/*,video/*">
+    </div>
+
+    <!-- Others -->
+    <div class="message-style-section" data-section="others">
+      <div class="section-label">Others</div>
+      <div class="color-options">
+        <div class="color-box" id="others-blue" data-color="blue"></div>
+        <div class="color-box" id="others-black" data-color="black"></div>
+        <div class="color-box" id="others-pink" data-color="pink"></div>
+        <div class="preview-box" id="others-preview"></div>
+      </div>
+      <input type="file" class="file-input" data-section="others" accept="image/*,video/*">
+    </div>
+
+  </div>
+</div>
+
+<script>
+const card = document.getElementById("message-styling-card");
+const dropdown = document.getElementById("message-styling-dropdown");
+
+// Toggle dropdown
+card.addEventListener("click", (e) => {
+  if(e.target === card) {
+    dropdown.style.display = dropdown.style.display === "flex" ? "none" : "flex";
+  }
+});
+
+// Load saved styles and previews
+const savedStyles = JSON.parse(localStorage.getItem("chatStyles")) || {
+  sent: "black",
+  received: "white",
+  background: "white",
+  others: "blue"
+};
+
+const savedPreviews = JSON.parse(localStorage.getItem("chatPreviews")) || {};
+
+function updateTicks() {
+  document.querySelectorAll(".color-box, .preview-box").forEach(box => {
+    const section = box.closest(".message-style-section").dataset.section;
+    const color = box.dataset.color || box.dataset.preview;
+    box.classList.remove("selected");
+    box.querySelector(".tick")?.remove();
+    if(savedStyles[section] === color) {
+      box.classList.add("selected");
+      const tick = document.createElement("div");
+      tick.classList.add("tick");
+      tick.textContent = "✔";
+      box.appendChild(tick);
+    }
+  });
+}
+
+// Load previews from localStorage
+Object.keys(savedPreviews).forEach(section => {
+  const previewBox = document.getElementById(`${section}-preview`);
+  const data = savedPreviews[section];
+  if(data) {
+    let element;
+    if(data.type.startsWith("image")) element = document.createElement("img");
+    else if(data.type.startsWith("video")) {
+      element = document.createElement("video");
+      element.loop = true; element.muted = true; element.controls = true;
+    }
+    if(element) {
+      element.src = data.dataUrl;
+      element.dataset.preview = data.dataUrl;
+      previewBox.appendChild(element);
+      previewBox.dataset.preview = data.dataUrl;
+    }
+  }
+});
+
+updateTicks();
+
+// Color selection
+document.querySelectorAll(".color-box").forEach(box => {
+  box.addEventListener("click", () => {
+    const section = box.closest(".message-style-section").dataset.section;
+    savedStyles[section] = box.dataset.color;
+    localStorage.setItem("chatStyles", JSON.stringify(savedStyles));
+    updateTicks();
+  });
+});
+
+// Preview selection
+document.querySelectorAll(".preview-box").forEach(box => {
+  box.addEventListener("click", () => {
+    const section = box.closest(".message-style-section").dataset.section;
+    if(box.children.length) {
+      savedStyles[section] = box.children[0].src; // use dataUrl as "color"
+      localStorage.setItem("chatStyles", JSON.stringify(savedStyles));
+      updateTicks();
+    }
+  });
+});
+
+// File input and preview handling
+document.querySelectorAll(".file-input").forEach(input => {
+  input.addEventListener("change", async (e) => {
+    const section = input.dataset.section;
+    const file = e.target.files[0];
+    const previewBox = document.getElementById(`${section}-preview`);
+    previewBox.innerHTML = "";
+
+    if(file) {
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const dataUrl = event.target.result;
+        let element;
+        if(file.type.startsWith("image")) element = document.createElement("img");
+        else if(file.type.startsWith("video")) {
+          element = document.createElement("video");
+          element.loop = true; element.muted = true; element.controls = true;
+        }
+        if(element) {
+          element.src = dataUrl;
+          element.dataset.preview = dataUrl;
+          previewBox.appendChild(element);
+          previewBox.dataset.preview = dataUrl;
+
+          // Save to localStorage
+          savedPreviews[section] = { type: file.type, dataUrl };
+          localStorage.setItem("chatPreviews", JSON.stringify(savedPreviews));
+
+          // Auto-select uploaded preview
+          savedStyles[section] = dataUrl;
+          localStorage.setItem("chatStyles", JSON.stringify(savedStyles));
+          updateTicks();
+        }
+      }
+      reader.readAsDataURL(file);
+    }
+  });
+});
+
+</script>
+</body>
+</html>
