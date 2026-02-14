@@ -1375,17 +1375,23 @@ function applyChatStyles() {
   const chatBody = document.getElementById('chat-body');
 
   // Background
-  if(chatStyles.background.type === 'color') {
-    chatBody.style.background = chatStyles.background.value;
-  } else if(chatStyles.background.type === 'file') {
-    chatBody.style.background = `url(${chatStyles.background.value}) center/cover no-repeat`;
-  }
+if (chatStyles.background.type === 'color') {
+  let bgColor = chatStyles.background.value;
+
+  if (bgColor === 'blue') bgColor = '#87CEEB';     // sky blue
+  if (bgColor === 'pink') bgColor = '#FFB6C1';     // light pink
+
+  chatBody.style.background = bgColor;
+} 
+else if (chatStyles.background.type === 'file') {
+  chatBody.style.background = `url(${chatStyles.background.value}) center/cover no-repeat`;
+}
 
   // Sent/Received messages
   document.querySelectorAll('.sent').forEach(el => {
     if(chatStyles.sent.type === 'color') {
       el.style.background = chatStyles.sent.value;
-      el.style.color = chatStyles.sent.value === 'black' ? 'white' : 'black';
+      el.style.color = chatStyles.sent.value === 'blue' ? 'white' : 'black';
     } else if(chatStyles.sent.type === 'file') {
       el.style.background = `url(${chatStyles.sent.value}) center/cover no-repeat`;
       el.style.color = 'white';
@@ -1395,7 +1401,7 @@ function applyChatStyles() {
   document.querySelectorAll('.received').forEach(el => {
     if(chatStyles.received.type === 'color') {
       el.style.background = chatStyles.received.value;
-      el.style.color = chatStyles.received.value === 'black' ? 'white' : 'black';
+      el.style.color = chatStyles.received.value === 'blue' ? 'white' : 'black';
     } else if(chatStyles.received.type === 'file') {
       el.style.background = `url(${chatStyles.received.value}) center/cover no-repeat`;
       el.style.color = 'black';
