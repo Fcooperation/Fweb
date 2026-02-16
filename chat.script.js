@@ -1295,6 +1295,33 @@ function newMessagesFound(count) {
     box.classList.remove("show");
   }, 3000);
 }
+
+const themeColors = {
+  black: "#000000",
+  pink: "#ff69b4",
+  green: "#25d366",
+  skyblue: "#87ceeb",
+  purple: "#9b59b6"
+};
+
+const chatBody = document.querySelector(".chat-body"); // your chat container
+const sentBubble = document.querySelector(".message.sent"); // outgoing message
+
+/* LOAD THEME */
+const savedTheme = localStorage.getItem("chatTheme") || "black";
+sentBubble.style.background = themeColors[savedTheme];
+
+/* LOAD WALLPAPER */
+const savedWallpaper = localStorage.getItem("chatWallpaper");
+
+if (savedWallpaper) {
+  chatBody.style.backgroundImage = `url(${savedWallpaper})`;
+  chatBody.style.backgroundSize = "cover";
+  chatBody.style.backgroundPosition = "center";
+} else {
+  chatBody.style.backgroundImage = "";
+  chatBody.style.backgroundColor = "#fff";
+}
 // ===== Event Listeners =====
 window.addEventListener("online", retryAllPolls);  // retry pending polls once online
 window.addEventListener("offline", retryAllPolls); // mark sending → pending when offline
