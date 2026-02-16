@@ -742,7 +742,7 @@ function updateTimeline() {
 
     addMessage(msg); // addMessage now knows if it's sent or received via msg.isSent
   });
-
+    applyChatSettings();
   // ✅ No scroll adjustment here
 }
 // ===== Unified Poll Retry Handler =====
