@@ -1296,32 +1296,37 @@ function newMessagesFound(count) {
   }, 3000);
 }
 
-const themeColors = {
-  black: "#000000",
-  pink: "#ff69b4",
-  green: "#25d366",
-  skyblue: "#87ceeb",
-  purple: "#9b59b6"
-};
+/* ===================== LOAD CHAT SETTINGS ===================== */
+function loadChatSettings() {
+  // Load theme
+  const savedTheme = localStorage.getItem("chatTheme");
+  if (savedTheme) {
+    // Sent messages
+    document.querySelectorAll(".sent").forEach(el => {
+      el.style.background = themeColors[savedTheme];
+      el.style.color = "white";
+    });
 
-const chatBody = document.querySelector(".chat-body"); // your chat container
-const sentBubble = document.querySelector(".message.sent"); // outgoing message
+    // Sent message preview
+    const sentPreview = document.getElementById("sent-preview");
+    if (sentPreview) sentPreview.style.background = themeColors[savedTheme];
+  }
 
-/* LOAD THEME */
-const savedTheme = localStorage.getItem("chatTheme") || "black";
-sentBubble.style.background = themeColors[savedTheme];
-
-/* LOAD WALLPAPER */
-const savedWallpaper = localStorage.getItem("chatWallpaper");
-
-if (savedWallpaper) {
-  chatBody.style.backgroundImage = `url(${savedWallpaper})`;
-  chatBody.style.backgroundSize = "cover";
-  chatBody.style.backgroundPosition = "center";
-} else {
-  chatBody.style.backgroundImage = "";
-  chatBody.style.backgroundColor = "#fff";
+  // Load wallpaper
+  const savedWallpaper = localStorage.getItem("chatWallpaper");
+  const chatBody = document.getElementById("chat-body");
+  if (chatBody) {
+    if (savedWallpaper) {
+      chatBody.style.backgroundImage = `url(${savedWallpaper})`;
+      chatBody.style.backgroundSize = "cover";
+      chatBody.style.backgroundPosition = "center";
+    } else {
+      chatBody.style.backgroundImage = "";
+      chatBody.style.backgroundColor = "white";
+    }
+  }
 }
+
 // ===== Event Listeners =====
 window.addEventListener("online", retryAllPolls);  // retry pending polls once online
 window.addEventListener("offline", retryAllPolls); // mark sending → pending when offline
@@ -1343,3 +1348,4 @@ retryAllPolls();
 retryPendingMessages();
 retryPendingPollMessages();
 fetchAllFChatLogs();
+loadChatSettings();
