@@ -27,11 +27,28 @@
 
   .section-title { font-size: 18px; font-weight: bold; margin-bottom: 12px; }
 
-  /* Themes */
   .themes { display: flex; gap: 12px; flex-wrap: wrap; }
-  .theme-box { width: 100px; height: 60px; border-radius: 10px; cursor: pointer; position: relative; border: 2px solid transparent; }
+  .theme-box {
+    width: 100px;
+    height: 60px;
+    border-radius: 10px;
+    cursor: pointer;
+    position: relative;
+    border: 2px solid transparent;
+  }
   .theme-box.selected { border-color: #007bff; }
-  .theme-name { position: absolute; bottom: 6px; left: 0; right: 0; text-align: center; font-size: 12px; font-weight: bold; color: white; text-shadow: 0 1px 2px black; }
+
+  .theme-name {
+    position: absolute;
+    bottom: 6px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 12px;
+    font-weight: bold;
+    color: white;
+    text-shadow: 0 1px 2px black;
+  }
 
   .black { background: #000; }
   .pink { background: #ff69b4; }
@@ -39,13 +56,12 @@
   .skyblue { background: #87ceeb; }
   .purple { background: #9b59b6; }
 
-  /* Chat Preview */
   .chat-preview {
     margin-top: 12px;
     width: 100%;
     height: 180px;
     border-radius: 12px;
-    background: white; /* default */
+    background: white;
     position: relative;
     overflow: hidden;
     padding: 10px;
@@ -68,7 +84,6 @@
 
   input[type="file"] { margin-top: 10px; }
 
-  /* Wallpaper Previews */
   .wallpaper-previews {
     margin-top: 10px;
     display: flex;
@@ -85,9 +100,28 @@
     cursor: pointer;
     background-size: cover;
     background-position: center;
+    position: relative;
   }
 
-  .wallpaper-preview-square.selected { border-color: #007bff; }
+  .wallpaper-preview-square.selected {
+    border-color: #007bff;
+  }
+
+  /* DELETE BUTTON */
+  .delete-btn {
+    position: absolute;
+    top: 2px;
+    right: 4px;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    font-size: 12px;
+    line-height: 14px;
+    cursor: pointer;
+  }
 </style>
 </head>
 
@@ -96,7 +130,6 @@
 <h1>Chat Settings</h1>
 <div class="subtext">Choose how your chats look</div>
 
-<!-- THEME CARD -->
 <div class="card">
   <div class="section-title">Theme</div>
   <div class="themes">
@@ -108,20 +141,13 @@
   </div>
 </div>
 
-<!-- WALLPAPER + CHAT BACKGROUND -->
 <div class="card">
   <div class="section-title">Chat Background</div>
 
-  <!-- File input to add images -->
   <input type="file" id="wallpaper-input" accept="image/*">
 
-  <!-- Previews row -->
-  <div class="wallpaper-previews" id="wallpaper-previews">
-    <!-- White default square -->
-    <div class="wallpaper-preview-square" id="white-background" style="background:white;" title="Default White"></div>
-  </div>
+  <div class="wallpaper-previews" id="wallpaper-previews"></div>
 
-  <!-- Mock chat preview -->
   <div class="chat-preview" id="chat-preview">
     <div class="sent-preview" id="sent-preview">
       Customize your chat theme
@@ -149,85 +175,151 @@ let currentTheme = localStorage.getItem("chatTheme") || "black";
 let savedWallpapers = JSON.parse(localStorage.getItem("chatWallpapers") || "[]");
 let currentWallpaper = localStorage.getItem("chatWallpaper") || null;
 
+/* ===================== IMAGE COMPRESSION ===================== */
+function compressImage(file, callback) {
+  const reader = new FileReader();
+  const img = new Image();
+
+  reader.onload = () => img.src = reader.result;
+
+  img.onload = () => {
+    const canvas = document.createElement("canvas");
+    const maxWidth = 720;
+    const scale = Math.min(1, maxWidth / img.width);
+
+    canvas.width = img.width * scale;
+    canvas.height = img.height * scale;
+
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+    callback(canvas.toDataURL("image/jpeg", 0.7));
+  };
+
+  reader.readAsDataURL(file);
+}
+
 /* ===================== THEME ===================== */
 function updateThemeUI() {
-  themeBoxes.forEach(box => {
-    box.classList.toggle("selected", box.dataset.theme === currentTheme);
-  });
+  themeBoxes.forEach(box =>
+    box.classList.toggle("selected", box.dataset.theme === currentTheme)
+  );
   sentPreview.style.background = themeColors[currentTheme];
 }
 
 themeBoxes.forEach(box => {
-  box.addEventListener("click", () => {
+  box.onclick = () => {
     currentTheme = box.dataset.theme;
     localStorage.setItem("chatTheme", currentTheme);
     updateThemeUI();
-  });
+  };
 });
 
-/* ===================== WALLPAPER / BACKGROUND ===================== */
+/* ===================== WALLPAPERS ===================== */
 function renderWallpaperPreviews() {
-  // always keep the white default first
-  wallpaperPreviews.innerHTML = `<div class="wallpaper-preview-square" id="white-background" style="background:white;" title="Default White"></div>`;
+  wallpaperPreviews.innerHTML = "";
 
-  // add saved wallpapers
-  savedWallpapers.forEach((dataUrl) => {
+  // White default
+  const white = document.createElement("div");
+  white.className = "wallpaper-preview-square";
+  white.style.background = "white";
+  if (!currentWallpaper) white.classList.add("selected");
+
+  white.onclick = () => {
+    currentWallpaper = null;
+    chatPreview.style.backgroundImage = "";
+    chatPreview.style.backgroundColor = "white";
+    localStorage.setItem("chatWallpaper", "");
+    renderWallpaperPreviews();
+  };
+
+  wallpaperPreviews.appendChild(white);
+
+  savedWallpapers.forEach((dataUrl, index) => {
     const square = document.createElement("div");
     square.className = "wallpaper-preview-square";
     square.style.backgroundImage = `url(${dataUrl})`;
-    square.title = "Custom Wallpaper";
     if (currentWallpaper === dataUrl) square.classList.add("selected");
-    square.addEventListener("click", () => {
+
+    square.onclick = () => {
       currentWallpaper = dataUrl;
       chatPreview.style.backgroundImage = `url(${dataUrl})`;
-      chatPreview.style.backgroundColor = ''; // remove solid color
+      chatPreview.style.backgroundColor = "";
+      localStorage.setItem("chatWallpaper", dataUrl);
+      renderWallpaperPreviews();
+    };
+
+    const del = document.createElement("button");
+    del.className = "delete-btn";
+    del.textContent = "×";
+    del.onclick = (e) => {
+  e.stopPropagation();
+
+  const wasSelected = currentWallpaper === dataUrl;
+
+  // Remove wallpaper
+  savedWallpapers.splice(index, 1);
+  localStorage.setItem("chatWallpapers", JSON.stringify(savedWallpapers));
+
+  if (wasSelected) {
+    // Pick previous, or next, or default
+    if (savedWallpapers[index - 1]) {
+      currentWallpaper = savedWallpapers[index - 1];
+    } else if (savedWallpapers[index]) {
+      currentWallpaper = savedWallpapers[index];
+    } else {
+      currentWallpaper = null;
+    }
+
+    // Apply to preview
+    if (currentWallpaper) {
+      chatPreview.style.backgroundImage = `url(${currentWallpaper})`;
+      chatPreview.style.backgroundColor = "";
       localStorage.setItem("chatWallpaper", currentWallpaper);
-      document.querySelectorAll(".wallpaper-preview-square").forEach(sq => sq.classList.remove("selected"));
-      square.classList.add("selected");
-    });
+    } else {
+      chatPreview.style.backgroundImage = "";
+      chatPreview.style.backgroundColor = "white";
+      localStorage.setItem("chatWallpaper", "");
+    }
+  }
+
+  renderWallpaperPreviews();
+};
+
+    square.appendChild(del);
     wallpaperPreviews.appendChild(square);
   });
-
-  // White default click
-  const whiteSquare = document.getElementById("white-background");
-  whiteSquare.addEventListener("click", () => {
-    currentWallpaper = null;
-    chatPreview.style.backgroundImage = '';
-    chatPreview.style.backgroundColor = 'white';
-    localStorage.setItem("chatWallpaper", '');
-    document.querySelectorAll(".wallpaper-preview-square").forEach(sq => sq.classList.remove("selected"));
-    whiteSquare.classList.add("selected");
-  });
-
-  // highlight default if no wallpaper selected
-  if (!currentWallpaper) whiteSquare.classList.add("selected");
 }
 
-renderWallpaperPreviews();
-
-// Upload new wallpaper
+/* Upload wallpaper (limit 10) */
 wallpaperInput.addEventListener("change", () => {
+  if (savedWallpapers.length >= 10) {
+    alert("You can only save up to 10 wallpapers");
+    wallpaperInput.value = "";
+    return;
+  }
+
   const file = wallpaperInput.files[0];
   if (!file) return;
 
-  const reader = new FileReader();
-  reader.onload = () => {
-    const dataUrl = reader.result;
+  compressImage(file, (dataUrl) => {
     savedWallpapers.push(dataUrl);
     localStorage.setItem("chatWallpapers", JSON.stringify(savedWallpapers));
     currentWallpaper = dataUrl;
-    localStorage.setItem("chatWallpaper", currentWallpaper);
+    localStorage.setItem("chatWallpaper", dataUrl);
     chatPreview.style.backgroundImage = `url(${dataUrl})`;
-    chatPreview.style.backgroundColor = '';
+    chatPreview.style.backgroundColor = "";
     renderWallpaperPreviews();
-  };
-  reader.readAsDataURL(file);
+  });
 });
 
 /* INIT */
 updateThemeUI();
-if(currentWallpaper) chatPreview.style.backgroundImage = `url(${currentWallpaper})`;
-else chatPreview.style.backgroundColor = 'white';
+renderWallpaperPreviews();
+if (currentWallpaper)
+  chatPreview.style.backgroundImage = `url(${currentWallpaper})`;
+else
+  chatPreview.style.backgroundColor = "white";
 </script>
 
 </body>
