@@ -1296,28 +1296,31 @@ function newMessagesFound(count) {
   }, 3000);
 }
 
-/* ===================== LOAD CHAT SETTINGS ===================== */
-function loadChatSettings() {
-  // Load theme
-  const savedTheme = localStorage.getItem("chatTheme");
-  if (savedTheme) {
-    // Sent messages
-    document.querySelectorAll(".sent").forEach(el => {
-      el.style.background = themeColors[savedTheme];
-      el.style.color = "white";
-    });
+/* ===================== CHAT THEME COLORS ===================== */
+const CHAT_THEME_COLORS = {
+  black: "#000000",
+  pink: "#ff69b4",
+  green: "#25d366",
+  skyblue: "#87ceeb",
+  purple: "#9b59b6"
+};
 
-    // Sent message preview
-    const sentPreview = document.getElementById("sent-preview");
-    if (sentPreview) sentPreview.style.background = themeColors[savedTheme];
-  }
+/* ===================== APPLY CHAT SETTINGS ===================== */
+function applyChatSettings() {
+  const theme = localStorage.getItem("chatTheme") || "black";
+  const wallpaper = localStorage.getItem("chatWallpaper");
 
-  // Load wallpaper
-  const savedWallpaper = localStorage.getItem("chatWallpaper");
+  const themeColor = CHAT_THEME_COLORS[theme] || "#000";
+
+  document.querySelectorAll(".message.sent, .poll-wrapper.sent").forEach(el => {
+    el.style.background = themeColor;
+    el.style.color = "white";
+  });
+
   const chatBody = document.getElementById("chat-body");
   if (chatBody) {
-    if (savedWallpaper) {
-      chatBody.style.backgroundImage = `url(${savedWallpaper})`;
+    if (wallpaper) {
+      chatBody.style.backgroundImage = `url(${wallpaper})`;
       chatBody.style.backgroundSize = "cover";
       chatBody.style.backgroundPosition = "center";
     } else {
@@ -1326,6 +1329,9 @@ function loadChatSettings() {
     }
   }
 }
+
+/* ===================== INIT ===================== */
+document.addEventListener("DOMContentLoaded", applyChatSettings);
 
 // ===== Event Listeners =====
 window.addEventListener("online", retryAllPolls);  // retry pending polls once online
