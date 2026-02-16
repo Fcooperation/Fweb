@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Fchat Chat Settings</title>
+
 <style>
   body {
     font-family: Arial, sans-serif;
@@ -12,306 +13,222 @@
     padding: 20px;
   }
 
-  /* Header */
-  #chat-settings-header {
-    font-size: 32px;
-    font-weight: bold;
-    color: black;
-    margin-bottom: 10px;
-  }
+  h1 { font-size: 32px; margin-bottom: 6px; }
+  .subtext { font-size: 14px; color: #007bff; margin-bottom: 20px; }
 
-  /* Subtext */
-  #chat-settings-subtext {
-    font-size: 14px;
-    color: #007bff;
-    margin-bottom: 20px;
-  }
-
-  /* Card for message styling */
-  #message-styling-card {
+  .card {
     background: white;
     border-radius: 12px;
     padding: 16px;
     max-width: 500px;
-    margin: 0 auto;
-    cursor: pointer;
+    margin: 0 auto 20px;
     box-shadow: 0 2px 6px rgba(0,0,0,0.15);
   }
 
-  #message-styling-card:hover {
-    background: #f0f8ff;
-  }
+  .section-title { font-size: 18px; font-weight: bold; margin-bottom: 12px; }
 
-  /* Dropdown */
-  #message-styling-dropdown {
-    display: none;
-    flex-direction: column;
-    margin-top: 16px;
-    gap: 16px;
-  }
+  /* Themes */
+  .themes { display: flex; gap: 12px; flex-wrap: wrap; }
+  .theme-box { width: 100px; height: 60px; border-radius: 10px; cursor: pointer; position: relative; border: 2px solid transparent; }
+  .theme-box.selected { border-color: #007bff; }
+  .theme-name { position: absolute; bottom: 6px; left: 0; right: 0; text-align: center; font-size: 12px; font-weight: bold; color: white; text-shadow: 0 1px 2px black; }
 
-  .message-style-section {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
+  .black { background: #000; }
+  .pink { background: #ff69b4; }
+  .green { background: #25d366; }
+  .skyblue { background: #87ceeb; }
+  .purple { background: #9b59b6; }
 
-  .section-label {
-    font-size: 16px;
-    font-weight: bold;
-    color: black;
-  }
-
-  .color-options {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-  }
-
-  .color-box, .preview-box {
-    width: 40px;
-    height: 24px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    cursor: pointer;
-    opacity: 0.5;
+  /* Chat Preview */
+  .chat-preview {
+    margin-top: 12px;
+    width: 100%;
+    height: 180px;
+    border-radius: 12px;
+    background: white; /* default */
     position: relative;
     overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    padding: 10px;
+    box-sizing: border-box;
+    background-size: cover;
+    background-position: center;
   }
 
-  .color-box {
-    transition: opacity 0.2s;
-  }
-
-  .color-box.selected, .preview-box.selected {
-    opacity: 1;
-  }
-
-  /* Tick overlay */
-  .tick {
-    position: absolute;
-    top: -6px;
-    right: -6px;
-    background: #007bff;
+  .sent-preview {
+    max-width: 70%;
+    padding: 10px 14px;
+    border-radius: 18px 18px 18px 4px;
     color: white;
-    font-size: 12px;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
+    font-size: 14px;
+    position: absolute;
+    right: 10px;
+    top: 14px;
+    background: black;
+  }
+
+  input[type="file"] { margin-top: 10px; }
+
+  /* Wallpaper Previews */
+  .wallpaper-previews {
+    margin-top: 10px;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
+    gap: 10px;
+    flex-wrap: wrap;
   }
 
-  .preview-box img, .preview-box video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+  .wallpaper-preview-square {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    border: 2px solid transparent;
+    overflow: hidden;
+    cursor: pointer;
+    background-size: cover;
+    background-position: center;
   }
 
-  /* Default colors */
-  #sent-message-black { background: black; opacity: 1; }
-  #sent-message-blue { background: #007bff; }
-  #sent-message-pink { background: pink; }
-
-  #received-message-white { background: white; border: 1px solid #aaa; opacity: 1; }
-  #received-message-blue { background: #007bff; }
-  #received-message-pink { background: pink; }
-
-  #background-white { background: white; border: 1px solid #aaa; opacity: 1; }
-  #background-blue { background: #007bff; }
-  #background-pink { background: pink; }
-
-  #others-blue { background: #007bff; opacity: 1; }
-  #others-black { background: black; }
-  #others-pink { background: pink; }
-
+  .wallpaper-preview-square.selected { border-color: #007bff; }
 </style>
 </head>
+
 <body>
 
-<div id="chat-settings-header">Chat Settings</div>
-<div id="chat-settings-subtext">Customize your chat appearance here</div>
+<h1>Chat Settings</h1>
+<div class="subtext">Choose how your chats look</div>
 
-<div id="message-styling-card">
-  Message Styling
-  <div id="message-styling-dropdown">
+<!-- THEME CARD -->
+<div class="card">
+  <div class="section-title">Theme</div>
+  <div class="themes">
+    <div class="theme-box black" data-theme="black"><div class="theme-name">Black</div></div>
+    <div class="theme-box pink" data-theme="pink"><div class="theme-name">Pink</div></div>
+    <div class="theme-box green" data-theme="green"><div class="theme-name">Green</div></div>
+    <div class="theme-box skyblue" data-theme="skyblue"><div class="theme-name">Sky Blue</div></div>
+    <div class="theme-box purple" data-theme="purple"><div class="theme-name">Purple</div></div>
+  </div>
+</div>
 
-    <!-- Sent Messages -->
-    <div class="message-style-section" data-section="sent">
-      <div class="section-label">Sent Messages</div>
-      <div class="color-options">
-        <div class="color-box" id="sent-message-black" data-color="black"></div>
-        <div class="color-box" id="sent-message-blue" data-color="blue"></div>
-        <div class="color-box" id="sent-message-pink" data-color="pink"></div>
-        <div class="preview-box" id="sent-preview"></div>
-      </div>
-      <input type="file" class="file-input" data-section="sent" accept="image/*,video/*">
+<!-- WALLPAPER + CHAT BACKGROUND -->
+<div class="card">
+  <div class="section-title">Chat Background</div>
+
+  <!-- File input to add images -->
+  <input type="file" id="wallpaper-input" accept="image/*">
+
+  <!-- Previews row -->
+  <div class="wallpaper-previews" id="wallpaper-previews">
+    <!-- White default square -->
+    <div class="wallpaper-preview-square" id="white-background" style="background:white;" title="Default White"></div>
+  </div>
+
+  <!-- Mock chat preview -->
+  <div class="chat-preview" id="chat-preview">
+    <div class="sent-preview" id="sent-preview">
+      Customize your chat theme
     </div>
-
-    <!-- Received Messages -->
-    <div class="message-style-section" data-section="received">
-      <div class="section-label">Received Messages</div>
-      <div class="color-options">
-        <div class="color-box" id="received-message-white" data-color="white"></div>
-        <div class="color-box" id="received-message-blue" data-color="blue"></div>
-        <div class="color-box" id="received-message-pink" data-color="pink"></div>
-        <div class="preview-box" id="received-preview"></div>
-      </div>
-      <input type="file" class="file-input" data-section="received" accept="image/*,video/*">
-    </div>
-
-    <!-- Background -->
-    <div class="message-style-section" data-section="background">
-      <div class="section-label">Background</div>
-      <div class="color-options">
-        <div class="color-box" id="background-white" data-color="white"></div>
-        <div class="color-box" id="background-blue" data-color="blue"></div>
-        <div class="color-box" id="background-pink" data-color="pink"></div>
-        <div class="preview-box" id="background-preview"></div>
-      </div>
-      <input type="file" class="file-input" data-section="background" accept="image/*,video/*">
-    </div>
-
-    <!-- Others -->
-    <div class="message-style-section" data-section="others">
-      <div class="section-label">Others</div>
-      <div class="color-options">
-        <div class="color-box" id="others-blue" data-color="blue"></div>
-        <div class="color-box" id="others-black" data-color="black"></div>
-        <div class="color-box" id="others-pink" data-color="pink"></div>
-        <div class="preview-box" id="others-preview"></div>
-      </div>
-      <input type="file" class="file-input" data-section="others" accept="image/*,video/*">
-    </div>
-
   </div>
 </div>
 
 <script>
-const card = document.getElementById("message-styling-card");
-const dropdown = document.getElementById("message-styling-dropdown");
-
-// Toggle dropdown
-card.addEventListener("click", (e) => {
-  if(e.target === card) {
-    dropdown.style.display = dropdown.style.display === "flex" ? "none" : "flex";
-  }
-});
-
-// Load saved styles and previews
-const savedStyles = JSON.parse(localStorage.getItem("chatStyles")) || {
-  sent: "black",
-  received: "white",
-  background: "white",
-  others: "blue"
+/* ===================== STATE ===================== */
+const themeColors = {
+  black: "#000000",
+  pink: "#ff69b4",
+  green: "#25d366",
+  skyblue: "#87ceeb",
+  purple: "#9b59b6"
 };
 
-const savedPreviews = JSON.parse(localStorage.getItem("chatPreviews")) || {};
+const themeBoxes = document.querySelectorAll(".theme-box");
+const sentPreview = document.getElementById("sent-preview");
+const chatPreview = document.getElementById("chat-preview");
+const wallpaperInput = document.getElementById("wallpaper-input");
+const wallpaperPreviews = document.getElementById("wallpaper-previews");
 
-function updateTicks() {
-  document.querySelectorAll(".color-box, .preview-box").forEach(box => {
-    const section = box.closest(".message-style-section").dataset.section;
-    const color = box.dataset.color || box.dataset.preview;
-    box.classList.remove("selected");
-    box.querySelector(".tick")?.remove();
-    if(savedStyles[section] === color) {
-      box.classList.add("selected");
-      const tick = document.createElement("div");
-      tick.classList.add("tick");
-      tick.textContent = "✔";
-      box.appendChild(tick);
-    }
+let currentTheme = localStorage.getItem("chatTheme") || "black";
+let savedWallpapers = JSON.parse(localStorage.getItem("chatWallpapers") || "[]");
+let currentWallpaper = localStorage.getItem("chatWallpaper") || null;
+
+/* ===================== THEME ===================== */
+function updateThemeUI() {
+  themeBoxes.forEach(box => {
+    box.classList.toggle("selected", box.dataset.theme === currentTheme);
   });
+  sentPreview.style.background = themeColors[currentTheme];
 }
 
-// Load previews from localStorage
-Object.keys(savedPreviews).forEach(section => {
-  const previewBox = document.getElementById(`${section}-preview`);
-  const data = savedPreviews[section];
-  if(data) {
-    let element;
-    if(data.type.startsWith("image")) element = document.createElement("img");
-    else if(data.type.startsWith("video")) {
-      element = document.createElement("video");
-      element.loop = true; element.muted = true; element.controls = true;
-    }
-    if(element) {
-      element.src = data.dataUrl;
-      element.dataset.preview = data.dataUrl;
-      previewBox.appendChild(element);
-      previewBox.dataset.preview = data.dataUrl;
-    }
-  }
-});
-
-updateTicks();
-
-// Color selection
-document.querySelectorAll(".color-box").forEach(box => {
+themeBoxes.forEach(box => {
   box.addEventListener("click", () => {
-    const section = box.closest(".message-style-section").dataset.section;
-    savedStyles[section] = box.dataset.color;
-    localStorage.setItem("chatStyles", JSON.stringify(savedStyles));
-    updateTicks();
+    currentTheme = box.dataset.theme;
+    localStorage.setItem("chatTheme", currentTheme);
+    updateThemeUI();
   });
 });
 
-// Preview selection
-document.querySelectorAll(".preview-box").forEach(box => {
-  box.addEventListener("click", () => {
-    const section = box.closest(".message-style-section").dataset.section;
-    if(box.children.length) {
-      savedStyles[section] = box.children[0].src; // use dataUrl as "color"
-      localStorage.setItem("chatStyles", JSON.stringify(savedStyles));
-      updateTicks();
-    }
+/* ===================== WALLPAPER / BACKGROUND ===================== */
+function renderWallpaperPreviews() {
+  // always keep the white default first
+  wallpaperPreviews.innerHTML = `<div class="wallpaper-preview-square" id="white-background" style="background:white;" title="Default White"></div>`;
+
+  // add saved wallpapers
+  savedWallpapers.forEach((dataUrl) => {
+    const square = document.createElement("div");
+    square.className = "wallpaper-preview-square";
+    square.style.backgroundImage = `url(${dataUrl})`;
+    square.title = "Custom Wallpaper";
+    if (currentWallpaper === dataUrl) square.classList.add("selected");
+    square.addEventListener("click", () => {
+      currentWallpaper = dataUrl;
+      chatPreview.style.backgroundImage = `url(${dataUrl})`;
+      chatPreview.style.backgroundColor = ''; // remove solid color
+      localStorage.setItem("chatWallpaper", currentWallpaper);
+      document.querySelectorAll(".wallpaper-preview-square").forEach(sq => sq.classList.remove("selected"));
+      square.classList.add("selected");
+    });
+    wallpaperPreviews.appendChild(square);
   });
+
+  // White default click
+  const whiteSquare = document.getElementById("white-background");
+  whiteSquare.addEventListener("click", () => {
+    currentWallpaper = null;
+    chatPreview.style.backgroundImage = '';
+    chatPreview.style.backgroundColor = 'white';
+    localStorage.setItem("chatWallpaper", '');
+    document.querySelectorAll(".wallpaper-preview-square").forEach(sq => sq.classList.remove("selected"));
+    whiteSquare.classList.add("selected");
+  });
+
+  // highlight default if no wallpaper selected
+  if (!currentWallpaper) whiteSquare.classList.add("selected");
+}
+
+renderWallpaperPreviews();
+
+// Upload new wallpaper
+wallpaperInput.addEventListener("change", () => {
+  const file = wallpaperInput.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    const dataUrl = reader.result;
+    savedWallpapers.push(dataUrl);
+    localStorage.setItem("chatWallpapers", JSON.stringify(savedWallpapers));
+    currentWallpaper = dataUrl;
+    localStorage.setItem("chatWallpaper", currentWallpaper);
+    chatPreview.style.backgroundImage = `url(${dataUrl})`;
+    chatPreview.style.backgroundColor = '';
+    renderWallpaperPreviews();
+  };
+  reader.readAsDataURL(file);
 });
 
-// File input and preview handling
-document.querySelectorAll(".file-input").forEach(input => {
-  input.addEventListener("change", async (e) => {
-    const section = input.dataset.section;
-    const file = e.target.files[0];
-    const previewBox = document.getElementById(`${section}-preview`);
-    previewBox.innerHTML = "";
-
-    if(file) {
-      const reader = new FileReader();
-      reader.onload = function(event) {
-        const dataUrl = event.target.result;
-        let element;
-        if(file.type.startsWith("image")) element = document.createElement("img");
-        else if(file.type.startsWith("video")) {
-          element = document.createElement("video");
-          element.loop = true; element.muted = true; element.controls = true;
-        }
-        if(element) {
-          element.src = dataUrl;
-          element.dataset.preview = dataUrl;
-          previewBox.appendChild(element);
-          previewBox.dataset.preview = dataUrl;
-
-          // Save to localStorage
-          savedPreviews[section] = { type: file.type, dataUrl };
-          localStorage.setItem("chatPreviews", JSON.stringify(savedPreviews));
-
-          // Auto-select uploaded preview
-          savedStyles[section] = dataUrl;
-          localStorage.setItem("chatStyles", JSON.stringify(savedStyles));
-          updateTicks();
-        }
-      }
-      reader.readAsDataURL(file);
-    }
-  });
-});
-
+/* INIT */
+updateThemeUI();
+if(currentWallpaper) chatPreview.style.backgroundImage = `url(${currentWallpaper})`;
+else chatPreview.style.backgroundColor = 'white';
 </script>
+
 </body>
 </html>
