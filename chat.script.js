@@ -1312,26 +1312,33 @@ function applyChatSettings() {
 
   const themeColor = CHAT_THEME_COLORS[theme] || "#000";
 
-  /* ---------- SENT MESSAGES + POLLS ---------- */
-  document.querySelectorAll(
-    ".message.sent, .poll-wrapper.sent"
-  ).forEach(el => {
-    el.style.background = themeColor;
-    el.style.color = "white";
-  });
+/* ---------- SENT MESSAGES + POLLS ---------- */
+document.querySelectorAll(
+  ".message.sent, .poll-wrapper.sent"
+).forEach(el => {
+  el.style.background = themeColor;
+  el.style.color = "white";
+});
 
-  /* ---------- POLL SUBMIT BUTTON (SENT) ---------- */
-  document.querySelectorAll(".poll-submit-btn.sent").forEach(btn => {
-    btn.style.background = themeColor;
-    btn.style.color = "white";
-  });
+/* ---------- POLL SUBMIT BUTTON (SENT) ---------- */
+document.querySelectorAll(".poll-submit-btn.sent").forEach(btn => {
+  btn.style.background = themeColor;
+  btn.style.color = "white";
+});
 
-  /* ---------- SENT REPLY PREVIEW ---------- */
-  const replyPreview = document.getElementById("reply-preview");
-  if (replyPreview && replyPreview.classList.contains("sent")) {
-    replyPreview.style.background = themeColor;
-    replyPreview.style.color = "white";
-  }
+/* ---------- SENT REPLY BAR ---------- */
+const replyPreview = document.getElementById("reply-preview");
+if (replyPreview && replyPreview.classList.contains("sent")) {
+  replyPreview.style.background = themeColor;
+  replyPreview.style.color = "white";
+}
+
+/* ---------- LINKED REPLY PREVIEW (INSIDE SENT MSG) ---------- */
+document.querySelectorAll(".sent .linked-preview").forEach(preview => {
+  preview.style.background = "rgba(255,255,255,0.12)";
+  preview.style.color = "white";
+  preview.style.borderLeftColor = "#ffffff";
+});
 
   /* ---------- CHAT WALLPAPER ---------- */
   const chatBody = document.getElementById("chat-body");
