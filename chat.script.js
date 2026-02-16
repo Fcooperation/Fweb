@@ -1312,11 +1312,28 @@ function applyChatSettings() {
 
   const themeColor = CHAT_THEME_COLORS[theme] || "#000";
 
-  document.querySelectorAll(".message.sent, .poll-wrapper.sent").forEach(el => {
+  /* ---------- SENT MESSAGES + POLLS ---------- */
+  document.querySelectorAll(
+    ".message.sent, .poll-wrapper.sent"
+  ).forEach(el => {
     el.style.background = themeColor;
     el.style.color = "white";
   });
 
+  /* ---------- POLL SUBMIT BUTTON (SENT) ---------- */
+  document.querySelectorAll(".poll-submit-btn.sent").forEach(btn => {
+    btn.style.background = themeColor;
+    btn.style.color = "white";
+  });
+
+  /* ---------- SENT REPLY PREVIEW ---------- */
+  const replyPreview = document.getElementById("reply-preview");
+  if (replyPreview && replyPreview.classList.contains("sent")) {
+    replyPreview.style.background = themeColor;
+    replyPreview.style.color = "white";
+  }
+
+  /* ---------- CHAT WALLPAPER ---------- */
   const chatBody = document.getElementById("chat-body");
   if (chatBody) {
     if (wallpaper) {
@@ -1355,3 +1372,4 @@ retryPendingMessages();
 retryPendingPollMessages();
 fetchAllFChatLogs();
 loadChatSettings();
+applyChatSettings();
