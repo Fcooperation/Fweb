@@ -699,3 +699,58 @@ body {
   opacity: 1;
   transform: translateX(-50%) translateY(6px);
 }
+/* ===== REACTION BAR ===== */
+.reaction-bar {
+  position: absolute;
+  bottom: 100%; /* float above message */
+  left: 0;
+  margin-bottom: 5px; /* 5px above the message */
+  background: #f5f5f5;
+  border-radius: 30px;
+  padding: 6px;
+  display: flex;
+  gap: 6px;
+  max-width: 240px; /* 6 emojis width */
+  overflow-x: auto;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  z-index: 999; /* ensure above other elements */
+}
+
+.reaction-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.reaction-emoji {
+  font-size: 22px;
+  padding: 6px;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.reaction-emoji:hover {
+  background: rgba(0,0,0,0.1);
+  transform: scale(1.2);
+}
+
+/* ===== REACTIONS UNDER MESSAGE ===== */
+.reactions {
+  display: flex;
+  gap: 6px;
+  margin-top: 3px; /* 2-5px gap from message */
+}
+
+.reaction-pill {
+  background: #e5e5e5;
+  border-radius: 14px;
+  padding: 2px 8px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Optional: highlight the emoji in pill when hovered */
+.reaction-pill:hover {
+  background: #dcdcdc;
+}

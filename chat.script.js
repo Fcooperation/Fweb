@@ -1364,8 +1364,8 @@ document.querySelectorAll(".sent .linked-preview").forEach(preview => {
 
 /* ===================== INIT ===================== */
 document.addEventListener("DOMContentLoaded", applyChatSettings);
-// Emojis reaction functions 
 const REACTIONS = ["👍","❤️","😂","😮","😢","😡","🙏","🔥","👀","💯","🤔","🎉"];
+const CURRENT_USER = "me"; // placeholder for user ID / session
 
 function showReactionBar(msgEl, msgObj) {
   removeReactionBar();
@@ -1378,7 +1378,8 @@ function showReactionBar(msgEl, msgObj) {
     span.className = "reaction-emoji";
     span.textContent = emoji;
 
-    span.onclick = () => {
+    span.onclick = e => {
+      e.stopPropagation();
       addReaction(msgEl, emoji);
       removeReactionBar();
     };
@@ -1386,8 +1387,12 @@ function showReactionBar(msgEl, msgObj) {
     bar.appendChild(span);
   });
 
+  // Position relative for absolute bar
   msgEl.style.position = "relative";
   msgEl.appendChild(bar);
+
+  // prevent the bar from disappearing immediately when clicking it
+  bar.addEventListener("click", e => e.stopPropagation());
 }
 
 function removeReactionBar() {
@@ -1396,23 +1401,26 @@ function removeReactionBar() {
 
 function addReaction(msgEl, emoji) {
   let reactions = msgEl.querySelector(".reactions");
-
   if (!reactions) {
     reactions = document.createElement("div");
     reactions.className = "reactions";
-    msgEl.appendChild(reactions);
+    msgEl.after(reactions); // ⚡ place reactions under message, not inside
   }
 
-  let pill = [...reactions.children].find(p => p.dataset.emoji === emoji);
+  // Track per-user reaction
+  let pill = [...reactions.children].find(p => p.dataset.user === CURRENT_USER);
 
   if (pill) {
-    pill.querySelector(".count").textContent =
-      Number(pill.querySelector(".count").textContent) + 1;
+    // Change previous emoji to new one
+    pill.dataset.emoji = emoji;
+    pill.querySelector("span:first-child").textContent = emoji;
   } else {
+    // Add new reaction pill for current user
     pill = document.createElement("div");
     pill.className = "reaction-pill";
+    pill.dataset.user = CURRENT_USER;
     pill.dataset.emoji = emoji;
-    pill.innerHTML = `<span>${emoji}</span><span class="count">1</span>`;
+    pill.innerHTML = `<span>${emoji}</span>`;
     reactions.appendChild(pill);
   }
 }
