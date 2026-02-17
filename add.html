@@ -192,16 +192,23 @@ function renderCard(u) {
   if (u.broadcast === "yes") {
     addBtn.textContent = "Add";
     addBtn.onclick = async () => {
-      const res = await api("accept", { user_id: u.id });
+  addBtn.textContent = "Adding...";   // ← Change immediately
+  addBtn.disabled = true;             // optional: prevent double clicks
 
-      if (!res.error) {
-        // Hide button
-        addBtn.style.display = "none";
+  const res = await api("accept", { user_id: u.id });
 
-        // Update UI instantly
-        info.querySelector(".status").textContent = "Already in FZONE";
-      }
-    };
+  if (!res.error) {
+    // Hide button
+    addBtn.style.display = "none";
+
+    // Update UI instantly
+    info.querySelector(".status").textContent = "Already in FZONE";
+  } else {
+    // If API failed, revert button
+    addBtn.textContent = "Add";
+    addBtn.disabled = false;
+  }
+};
   }
 
   // 🔁 NORMAL USER → SEND REQUEST
@@ -211,10 +218,19 @@ function renderCard(u) {
   } else {
     addBtn.textContent = "Add";
     addBtn.onclick = async () => {
-      await api("add_user", { invite_id: u.id });
-      addBtn.textContent = "Sent";
-      addBtn.disabled = true;
-    };
+  addBtn.textContent = "Adding...";
+  addBtn.disabled = true;
+
+  const res = await api("add_user", { invite_id: u.id });
+
+  if (!res.error) {
+    addBtn.textContent = "Sent";
+  } else {
+    // revert if failed
+    addBtn.textContent = "Add";
+    addBtn.disabled = false;
+  }
+};
   }
 }else {    
     addBtn.style.display = "none";    
