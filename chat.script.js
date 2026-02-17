@@ -1209,17 +1209,18 @@ async function fetchAllFChatLogs() {
         }
 
         newItems.push({
-          id: msg.id,
-          sender_id: msg.sender_id,
-          receiver_id: msg.receiver_id,
-          text: msg.text || "",
-          sent_at: msg.sent_at,
-          isPoll: false,
-          pollData: null,
-          linked: msg.linked || false,
-          linked_message_id: msg.linked_message_id || null,
-          replyTo
-        });
+  id: msg.id,
+  sender_id: msg.sender_id,
+  receiver_id: msg.receiver_id,
+  text: msg.text || "",
+  sent_at: msg.sent_at,
+  isPoll: false,
+  pollData: null,
+  linked: msg.linked || false,
+  linked_message_id: msg.linked_message_id || null,
+  replyTo,
+  reactions: Array.isArray(msg.reactions) ? msg.reactions : []
+});
       });
     }
 
