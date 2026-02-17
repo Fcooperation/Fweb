@@ -1380,7 +1380,7 @@ function showReactionBar(msgEl, msgObj) {
 
     span.onclick = e => {
       e.stopPropagation();
-      addReaction(msgEl, emoji);
+      addReaction(msgEl, msgObj, emoji); // pass msgObj so we can send to backend
       removeReactionBar();
     };
 
@@ -1401,7 +1401,8 @@ function removeReactionBar() {
   document.querySelectorAll(".reaction-bar").forEach(b => b.remove());
 }
 
-function addReaction(msgEl, emoji) {
+// ✅ Updated addReaction to send JSON to backend
+function addReaction(msgEl, msgObj, emoji) {
   // Wrap message in container if not already
   let wrapper = msgEl.closest(".message-wrapper");
   if (!wrapper) {
@@ -1442,6 +1443,26 @@ function addReaction(msgEl, emoji) {
     pill.innerHTML = `<span>${emoji}</span>`;
     reactions.appendChild(pill);
   }
+
+  // --- SEND TO BACKEND ---
+  const payload = {
+    action: "react_to_messages",
+    message_id: msgObj.id,
+    sender_id: msgObj.sender_id, // usually your account.id
+    receiver_id: msgObj.receiver_id, // chatWith.id
+    emoji
+  };
+
+  fetch("https://fweb-backend.onrender.com/fchat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  })
+    .then(r => r.json())
+    .then(res => {
+      if (res.error) console.error("Reaction failed:", res.error);
+    })
+    .catch(err => console.error("Reaction network error:", err));
 }
 // ===== Event Listeners =====
 window.addEventListener("online", retryAllPolls);  // retry pending polls once online
