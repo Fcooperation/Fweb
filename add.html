@@ -1,3 +1,4 @@
+
 <html lang="en">    
 <head>    
 <meta charset="UTF-8">    
@@ -183,21 +184,39 @@ function renderCard(u) {
 
   if (alreadyInFzone) {    
     addBtn.style.display = "none";    
-  } else if (u.fchat === "yes") {    
-    const requests = u.friend_requests || "";    
-    const requestIds = requests.split(",").map(s => s.trim());    
-    if (requestIds.includes(myId)) {    
-      addBtn.textContent = "Sent";    
-      addBtn.disabled = true;    
-    } else {    
-      addBtn.textContent = "Add";    
-      addBtn.onclick = async () => {    
-        await api("add_user", { invite_id: u.id });    
-        addBtn.textContent = "Sent";    
-        addBtn.disabled = true;    
-      };    
-    }    
-  } else {    
+  } else if (u.fchat === "yes") {
+  const requests = u.friend_requests || "";
+  const requestIds = requests.split(",").map(s => s.trim());
+
+  // ✅ BROADCAST USER → AUTO ACCEPT
+  if (u.broadcast === "yes") {
+    addBtn.textContent = "Add";
+    addBtn.onclick = async () => {
+      const res = await api("accept", { user_id: u.id });
+
+      if (!res.error) {
+        // Hide button
+        addBtn.style.display = "none";
+
+        // Update UI instantly
+        info.querySelector(".status").textContent = "Already in FZONE";
+      }
+    };
+  }
+
+  // 🔁 NORMAL USER → SEND REQUEST
+  else if (requestIds.includes(myId)) {
+    addBtn.textContent = "Sent";
+    addBtn.disabled = true;
+  } else {
+    addBtn.textContent = "Add";
+    addBtn.onclick = async () => {
+      await api("add_user", { invite_id: u.id });
+      addBtn.textContent = "Sent";
+      addBtn.disabled = true;
+    };
+  }
+}else {    
     addBtn.style.display = "none";    
   }    
 
