@@ -680,13 +680,21 @@ msg.addEventListener("contextmenu", e => {
 
   messageMenu.style.display = "block";
 });
-  // ===== LONG PRESS MULTI SELECT =====
+// ===== LONG PRESS MULTI SELECT + REACTIONS =====
 msg.addEventListener("touchstart", e => {
-  if (e.target.closest(".reply-bubble")) return; // don't hijack reply clicks
+  if (e.target.closest(".reply-bubble")) return;
 
   longPressTimer = setTimeout(() => {
-    selectionMode = true;
+
+    // 🔹 If NOT already in selection mode → show reactions
+    if (!selectionMode) {
+      showReactionBar(msg, msgObj);
+      return;
+    }
+
+    // 🔹 If already selecting → continue multi-select
     toggleSelectMessage(msg, msgObj);
+
   }, 400);
 });
 
@@ -1356,7 +1364,58 @@ document.querySelectorAll(".sent .linked-preview").forEach(preview => {
 
 /* ===================== INIT ===================== */
 document.addEventListener("DOMContentLoaded", applyChatSettings);
+// Emojis reaction functions 
+const REACTIONS = ["👍","❤️","😂","😮","😢","😡","🙏","🔥","👀","💯","🤔","🎉"];
 
+function showReactionBar(msgEl, msgObj) {
+  removeReactionBar();
+
+  const bar = document.createElement("div");
+  bar.className = "reaction-bar";
+
+  REACTIONS.forEach(emoji => {
+    const span = document.createElement("span");
+    span.className = "reaction-emoji";
+    span.textContent = emoji;
+
+    span.onclick = () => {
+      addReaction(msgEl, emoji);
+      removeReactionBar();
+    };
+
+    bar.appendChild(span);
+  });
+
+  msgEl.style.position = "relative";
+  msgEl.appendChild(bar);
+}
+
+function removeReactionBar() {
+  document.querySelectorAll(".reaction-bar").forEach(b => b.remove());
+}
+
+function addReaction(msgEl, emoji) {
+  let reactions = msgEl.querySelector(".reactions");
+
+  if (!reactions) {
+    reactions = document.createElement("div");
+    reactions.className = "reactions";
+    msgEl.appendChild(reactions);
+  }
+
+  let pill = [...reactions.children].find(p => p.dataset.emoji === emoji);
+
+  if (pill) {
+    pill.querySelector(".count").textContent =
+      Number(pill.querySelector(".count").textContent) + 1;
+  } else {
+    pill = document.createElement("div");
+    pill.className = "reaction-pill";
+    pill.dataset.emoji = emoji;
+    pill.innerHTML = `<span>${emoji}</span><span class="count">1</span>`;
+    reactions.appendChild(pill);
+  }
+}
 // ===== Event Listeners =====
 window.addEventListener("online", retryAllPolls);  // retry pending polls once online
 window.addEventListener("offline", retryAllPolls); // mark sending → pending when offline
@@ -1370,6 +1429,11 @@ window.addEventListener("online", fetchAllFChatLogs);
 setInterval(() => {
   fetchAllFChatLogs();
 }, 2000);
+
+// ===== CLOSE REACTION BAR WHEN TAPPING ANYWHERE =====
+document.addEventListener("click", () => {
+  removeReactionBar();
+});
 
 // Initial load
 syncPolls();
