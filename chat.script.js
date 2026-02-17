@@ -1365,7 +1365,7 @@ document.querySelectorAll(".sent .linked-preview").forEach(preview => {
 /* ===================== INIT ===================== */
 document.addEventListener("DOMContentLoaded", applyChatSettings);
 const REACTIONS = ["👍","❤️","😂","😮","😢","😡","🙏","🔥","👀","💯","🤔","🎉"];
-const CURRENT_USER = "me"; // placeholder for user ID / session
+const CURRENT_USER = "me"; // placeholder for logged-in user
 
 function showReactionBar(msgEl, msgObj) {
   removeReactionBar();
@@ -1387,11 +1387,13 @@ function showReactionBar(msgEl, msgObj) {
     bar.appendChild(span);
   });
 
-  // Position relative for absolute bar
+  // Position bar above message
   msgEl.style.position = "relative";
+  bar.style.bottom = "calc(100% + 5px)";
+  bar.style.left = "0";
   msgEl.appendChild(bar);
 
-  // prevent the bar from disappearing immediately when clicking it
+  // Prevent bar from disappearing on click
   bar.addEventListener("click", e => e.stopPropagation());
 }
 
@@ -1400,22 +1402,39 @@ function removeReactionBar() {
 }
 
 function addReaction(msgEl, emoji) {
-  let reactions = msgEl.querySelector(".reactions");
+  // Wrap message in container if not already
+  let wrapper = msgEl.closest(".message-wrapper");
+  if (!wrapper) {
+    wrapper = document.createElement("div");
+    wrapper.className = "message-wrapper";
+    wrapper.style.display = "flex";
+    wrapper.style.flexDirection = "column";
+    wrapper.style.alignItems = msgEl.classList.contains("sent") ? "flex-end" : "flex-start";
+
+    msgEl.parentNode.insertBefore(wrapper, msgEl);
+    wrapper.appendChild(msgEl);
+  }
+
+  // Reactions container
+  let reactions = wrapper.querySelector(".reactions");
   if (!reactions) {
     reactions = document.createElement("div");
     reactions.className = "reactions";
-    msgEl.after(reactions); // ⚡ place reactions under message, not inside
+    reactions.style.marginTop = "2px";
+    reactions.style.display = "flex";
+    reactions.style.gap = "4px";
+    wrapper.appendChild(reactions);
   }
 
-  // Track per-user reaction
+  // Find existing pill for this user
   let pill = [...reactions.children].find(p => p.dataset.user === CURRENT_USER);
 
   if (pill) {
-    // Change previous emoji to new one
+    // Replace emoji
     pill.dataset.emoji = emoji;
-    pill.querySelector("span:first-child").textContent = emoji;
+    pill.querySelector("span").textContent = emoji;
   } else {
-    // Add new reaction pill for current user
+    // New pill for this user
     pill = document.createElement("div");
     pill.className = "reaction-pill";
     pill.dataset.user = CURRENT_USER;
