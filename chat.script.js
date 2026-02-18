@@ -447,7 +447,39 @@ if (msgObj.linked) {
   });
 }
 }
-  chatBody.appendChild(msg);
+  // ✅ Ensure wrapper for alignment (sent/received)
+const wrapper = document.createElement("div");
+wrapper.className = "message-wrapper";
+wrapper.style.display = "flex";
+wrapper.style.flexDirection = "column";
+wrapper.style.alignItems = isSent ? "flex-end" : "flex-start";
+
+// Append the message into the wrapper
+wrapper.appendChild(msg);
+
+// 🔹 Render reactions if any (outside bubble, spaced 5px)
+if (Array.isArray(msgObj.reactions) && msgObj.reactions.length > 0) {
+  const reactions = document.createElement("div");
+  reactions.className = "reactions";
+  reactions.style.marginTop = "5px"; // spacing from bubble
+  reactions.style.display = "flex";
+  reactions.style.gap = "4px";
+  reactions.style.alignSelf = isSent ? "flex-end" : "flex-start";
+
+  msgObj.reactions.forEach(r => {
+    const pill = document.createElement("div");
+    pill.className = "reaction-pill";
+    pill.dataset.user = r.sender_id;
+    pill.dataset.emoji = r.emoji;
+    pill.innerHTML = `<span>${r.emoji}</span>`;
+    reactions.appendChild(pill);
+  });
+
+  wrapper.appendChild(reactions); // append **after** msg
+}
+
+// Finally, append the wrapper to your chat body
+chatBody.appendChild(wrapper);
 // ===== ADD POLL SUBMIT BUTTON (OUTSIDE POLL BOX) =====
 if (msgObj.isPoll && msgObj.pollData) {
   const submitBtn = document.createElement("button");
