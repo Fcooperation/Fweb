@@ -679,24 +679,27 @@ msg.addEventListener("contextmenu", e => {
   }
 
   messageMenu.style.display = "block";
-});
-// ===== LONG PRESS MULTI SELECT + REACTIONS =====
+});// ===== LONG PRESS MULTI SELECT + REACTIONS =====
 msg.addEventListener("touchstart", e => {
   if (e.target.closest(".reply-bubble")) return;
 
   longPressTimer = setTimeout(() => {
+    // 1️⃣ Always enter selection mode
+    selectionMode = true;
 
-    // 🔹 If NOT already in selection mode → show reactions
-    if (!selectionMode) {
-      showReactionBar(msg, msgObj);
-      return;
-    }
-
-    // 🔹 If already selecting → continue multi-select
+    // 2️⃣ Toggle selection
     toggleSelectMessage(msg, msgObj);
+
+    // 3️⃣ Show reactions ONLY if exactly one message is selected
+    if (selectedMessages.size === 1) {
+      showReactionBar(msg, msgObj);
+    } else {
+      removeReactionBar();
+    }
 
   }, 400);
 });
+
 
 msg.addEventListener("touchend", () => {
   clearTimeout(longPressTimer);
@@ -750,7 +753,7 @@ function updateTimeline() {
 
     addMessage(msg); // addMessage now knows if it's sent or received via msg.isSent
   });
-    applyChatSettings();
+
   // ✅ No scroll adjustment here
 }
 // ===== Unified Poll Retry Handler =====
@@ -1209,18 +1212,17 @@ async function fetchAllFChatLogs() {
         }
 
         newItems.push({
-  id: msg.id,
-  sender_id: msg.sender_id,
-  receiver_id: msg.receiver_id,
-  text: msg.text || "",
-  sent_at: msg.sent_at,
-  isPoll: false,
-  pollData: null,
-  linked: msg.linked || false,
-  linked_message_id: msg.linked_message_id || null,
-  replyTo,
-  reactions: Array.isArray(msg.reactions) ? msg.reactions : []
-});
+          id: msg.id,
+          sender_id: msg.sender_id,
+          receiver_id: msg.receiver_id,
+          text: msg.text || "",
+          sent_at: msg.sent_at,
+          isPoll: false,
+          pollData: null,
+          linked: msg.linked || false,
+          linked_message_id: msg.linked_message_id || null,
+          replyTo
+        });
       });
     }
 
@@ -1365,106 +1367,7 @@ document.querySelectorAll(".sent .linked-preview").forEach(preview => {
 
 /* ===================== INIT ===================== */
 document.addEventListener("DOMContentLoaded", applyChatSettings);
-const REACTIONS = ["👍","❤️","😂","😮","😢","😡","🙏","🔥","👀","💯","🤔","🎉"];
-const CURRENT_USER = "me"; // placeholder for logged-in user
 
-function showReactionBar(msgEl, msgObj) {
-  removeReactionBar();
-
-  const bar = document.createElement("div");
-  bar.className = "reaction-bar";
-
-  REACTIONS.forEach(emoji => {
-    const span = document.createElement("span");
-    span.className = "reaction-emoji";
-    span.textContent = emoji;
-
-    span.onclick = e => {
-      e.stopPropagation();
-      addReaction(msgEl, msgObj, emoji); // pass msgObj so we can send to backend
-      removeReactionBar();
-    };
-
-    bar.appendChild(span);
-  });
-
-  // Position bar above message
-  msgEl.style.position = "relative";
-  bar.style.bottom = "calc(100% + 5px)";
-  bar.style.left = "0";
-  msgEl.appendChild(bar);
-
-  // Prevent bar from disappearing on click
-  bar.addEventListener("click", e => e.stopPropagation());
-}
-
-function removeReactionBar() {
-  document.querySelectorAll(".reaction-bar").forEach(b => b.remove());
-}
-
-// ✅ Updated addReaction to send JSON to backend
-function addReaction(msgEl, msgObj, emoji) {
-  // Wrap message in container if not already
-  let wrapper = msgEl.closest(".message-wrapper");
-  if (!wrapper) {
-    wrapper = document.createElement("div");
-    wrapper.className = "message-wrapper";
-    wrapper.style.display = "flex";
-    wrapper.style.flexDirection = "column";
-    wrapper.style.alignItems = msgEl.classList.contains("sent") ? "flex-end" : "flex-start";
-
-    msgEl.parentNode.insertBefore(wrapper, msgEl);
-    wrapper.appendChild(msgEl);
-  }
-
-  // Reactions container
-  let reactions = wrapper.querySelector(".reactions");
-  if (!reactions) {
-    reactions = document.createElement("div");
-    reactions.className = "reactions";
-    reactions.style.marginTop = "2px";
-    reactions.style.display = "flex";
-    reactions.style.gap = "4px";
-    wrapper.appendChild(reactions);
-  }
-
-  // Find existing pill for this user
-  let pill = [...reactions.children].find(p => p.dataset.user === CURRENT_USER);
-
-  if (pill) {
-    // Replace emoji
-    pill.dataset.emoji = emoji;
-    pill.querySelector("span").textContent = emoji;
-  } else {
-    // New pill for this user
-    pill = document.createElement("div");
-    pill.className = "reaction-pill";
-    pill.dataset.user = CURRENT_USER;
-    pill.dataset.emoji = emoji;
-    pill.innerHTML = `<span>${emoji}</span>`;
-    reactions.appendChild(pill);
-  }
-
-  // --- SEND TO BACKEND ---
-  const payload = {
-    action: "react_to_messages",
-    message_id: msgObj.id,
-    sender_id: msgObj.sender_id, // usually your account.id
-    receiver_id: msgObj.receiver_id, // chatWith.id
-    emoji
-  };
-
-  fetch("https://fweb-backend.onrender.com/fchat", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  })
-    .then(r => r.json())
-    .then(res => {
-      if (res.error) console.error("Reaction failed:", res.error);
-    })
-    .catch(err => console.error("Reaction network error:", err));
-}
 // ===== Event Listeners =====
 window.addEventListener("online", retryAllPolls);  // retry pending polls once online
 window.addEventListener("offline", retryAllPolls); // mark sending → pending when offline
@@ -1478,11 +1381,6 @@ window.addEventListener("online", fetchAllFChatLogs);
 setInterval(() => {
   fetchAllFChatLogs();
 }, 2000);
-
-// ===== CLOSE REACTION BAR WHEN TAPPING ANYWHERE =====
-document.addEventListener("click", () => {
-  removeReactionBar();
-});
 
 // Initial load
 syncPolls();
