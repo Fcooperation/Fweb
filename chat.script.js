@@ -1502,6 +1502,9 @@ function addReaction(msgEl, msgObj, emoji) {
 
   // ✅ Sync localStorage after backend success
   updateLocalReaction(msgObj, emoji);
+
+  // 🔄 Re-render UI
+  updateTimeline();
 })
     .catch(err => console.error("Reaction network error:", err));
 }
