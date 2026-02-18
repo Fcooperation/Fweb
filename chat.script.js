@@ -1483,12 +1483,12 @@ function addReaction(msgEl, msgObj, emoji) {
 
   // --- SEND TO BACKEND ---
   const payload = {
-  action: "react_to_messages",
-  message_id: msgObj.id,
-  sender_id: account.id,       // ✅ use your account id, not msgObj.sender_id
-  receiver_id: msgObj.receiver_id, // chatWith.id
-  emoji
-};
+    action: "react_to_messages",
+    message_id: msgObj.id,
+    sender_id: msgObj.sender_id, // usually your account.id
+    receiver_id: msgObj.receiver_id, // chatWith.id
+    emoji
+  };
 
   fetch("https://fweb-backend.onrender.com/fchat", {
     method: "POST",
@@ -1507,7 +1507,8 @@ function addReaction(msgEl, msgObj, emoji) {
 })
     .catch(err => console.error("Reaction network error:", err));
 }
-// Update localStorage after reaction 
+
+// Update localStorage after reacting
 function updateLocalReaction(msgObj, emoji) {
   const STORAGE_KEY = FCHAT_STORAGE_KEY; // your existing key
   let stored = [];
