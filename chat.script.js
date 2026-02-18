@@ -301,15 +301,6 @@ function addMessage(msgObj) {
 
   const isSent = String(msgObj.sender_id) === String(account.id);
   const alignmentClass = isSent ? "sent" : "received";
-  
-  // Ensure message wrapper exists
-const wrapper = document.createElement("div");
-wrapper.className = "message-wrapper";
-wrapper.style.display = "flex";
-wrapper.style.flexDirection = "column";
-wrapper.style.alignItems = isSent ? "flex-end" : "flex-start";
-
-wrapper.appendChild(msg);
 
   // Format time
   const time = new Date(msgObj.sent_at).toLocaleTimeString([], {
@@ -390,27 +381,6 @@ if (msgObj.deleted && msgObj.deleted_for === "everyone") {
   applyReadMore(textBox, msgObj.text);
 }
 
-// 🔹 Render reactions if any (outside message bubble)
-if (Array.isArray(msgObj.reactions) && msgObj.reactions.length > 0) {
-  const reactions = document.createElement("div");
-  reactions.className = "reactions";
-  reactions.style.marginTop = "5px"; // 👈 spacing from bubble
-  reactions.style.display = "flex";
-  reactions.style.gap = "4px";
-  reactions.style.alignSelf = isSent ? "flex-end" : "flex-start";
-
-  msgObj.reactions.forEach(r => {
-    const pill = document.createElement("div");
-    pill.className = "reaction-pill";
-    pill.dataset.user = r.sender_id;
-    pill.dataset.emoji = r.emoji;
-    pill.innerHTML = `<span>${r.emoji}</span>`;
-    reactions.appendChild(pill);
-  });
-
-  wrapper.appendChild(reactions); // 👈 NOT msg.appendChild
-}
-
   enableSwipe(msg, msgObj); // full object
 // Glow ONLY when clicking the reply preview bubble
 if (msgObj.linked) {
@@ -477,7 +447,7 @@ if (msgObj.linked) {
   });
 }
 }
-  chatBody.appendChild(wrapper);
+  chatBody.appendChild(msg);
 // ===== ADD POLL SUBMIT BUTTON (OUTSIDE POLL BOX) =====
 if (msgObj.isPoll && msgObj.pollData) {
   const submitBtn = document.createElement("button");
@@ -1495,55 +1465,10 @@ function addReaction(msgEl, msgObj, emoji) {
   })
     .then(r => r.json())
     .then(res => {
-  if (res.error) {
-    console.error("Reaction failed:", res.error);
-    return;
-  }
-
-  // ✅ Sync localStorage after backend success
-  updateLocalReaction(msgObj, emoji);
-
-  // 🔄 Re-render UI
-  updateTimeline();
-})
+      if (res.error) console.error("Reaction failed:", res.error);
+    })
     .catch(err => console.error("Reaction network error:", err));
 }
-
-// Save reaction to message json in localStorage
-function updateLocalReaction(msgObj, emoji) {
-  const STORAGE_KEY = FCHAT_STORAGE_KEY; // already used in your app
-  let stored = [];
-
-  try {
-    stored = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-  } catch {
-    stored = [];
-  }
-
-  const index = stored.findIndex(m => m.id === msgObj.id);
-  if (index === -1) return;
-
-  const msg = stored[index];
-
-  if (!msg.reactions) msg.reactions = [];
-
-  // 🔁 One reaction per user → remove old one
-  msg.reactions = msg.reactions.filter(
-    r => r.sender_id !== account.id
-  );
-
-  // ➕ Add new reaction
-  msg.reactions.push({
-    sender_id: account.id,
-    emoji,
-    reacted_at: new Date().toISOString()
-  });
-
-  stored[index] = msg;
-
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
-}
-
 // ===== Event Listeners =====
 window.addEventListener("online", retryAllPolls);  // retry pending polls once online
 window.addEventListener("offline", retryAllPolls); // mark sending → pending when offline
