@@ -1497,9 +1497,46 @@ function addReaction(msgEl, msgObj, emoji) {
   })
     .then(r => r.json())
     .then(res => {
-      if (res.error) console.error("Reaction failed:", res.error);
-    })
+  if (res.error) {
+    console.error("Reaction failed:", res.error);
+    return;
+  }
+
+  // ✅ Update localStorage
+  updateLocalReaction(msgObj, emoji);
+})
     .catch(err => console.error("Reaction network error:", err));
+}
+// Update localStorage after reaction 
+function updateLocalReaction(msgObj, emoji) {
+  const STORAGE_KEY = FCHAT_STORAGE_KEY; // your existing key
+  let stored = [];
+
+  try {
+    stored = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+  } catch {
+    stored = [];
+  }
+
+  const index = stored.findIndex(m => m.id === msgObj.id);
+  if (index === -1) return;
+
+  const msg = stored[index];
+
+  if (!msg.reactions) msg.reactions = [];
+
+  // Remove previous reaction from same user
+  msg.reactions = msg.reactions.filter(r => r.sender_id !== account.id);
+
+  // Add new reaction
+  msg.reactions.push({
+    sender_id: account.id,
+    emoji,
+    reacted_at: new Date().toISOString()
+  });
+
+  stored[index] = msg;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
 }
 // ===== Event Listeners =====
 window.addEventListener("online", retryAllPolls);  // retry pending polls once online
