@@ -301,6 +301,15 @@ function addMessage(msgObj) {
 
   const isSent = String(msgObj.sender_id) === String(account.id);
   const alignmentClass = isSent ? "sent" : "received";
+  
+  // Ensure message wrapper exists
+const wrapper = document.createElement("div");
+wrapper.className = "message-wrapper";
+wrapper.style.display = "flex";
+wrapper.style.flexDirection = "column";
+wrapper.style.alignItems = isSent ? "flex-end" : "flex-start";
+
+wrapper.appendChild(msg);
 
   // Format time
   const time = new Date(msgObj.sent_at).toLocaleTimeString([], {
@@ -381,14 +390,14 @@ if (msgObj.deleted && msgObj.deleted_for === "everyone") {
   applyReadMore(textBox, msgObj.text);
 }
 
-// 🔹 Render reactions if any (⬅️ ADD HERE)
+// 🔹 Render reactions if any (outside message bubble)
 if (Array.isArray(msgObj.reactions) && msgObj.reactions.length > 0) {
   const reactions = document.createElement("div");
   reactions.className = "reactions";
-  reactions.style.marginTop = "4px";
+  reactions.style.marginTop = "5px"; // 👈 spacing from bubble
   reactions.style.display = "flex";
   reactions.style.gap = "4px";
-  reactions.style.justifyContent = isSent ? "flex-end" : "flex-start";
+  reactions.style.alignSelf = isSent ? "flex-end" : "flex-start";
 
   msgObj.reactions.forEach(r => {
     const pill = document.createElement("div");
@@ -399,7 +408,7 @@ if (Array.isArray(msgObj.reactions) && msgObj.reactions.length > 0) {
     reactions.appendChild(pill);
   });
 
-  msg.appendChild(reactions);
+  wrapper.appendChild(reactions); // 👈 NOT msg.appendChild
 }
 
   enableSwipe(msg, msgObj); // full object
@@ -468,7 +477,7 @@ if (msgObj.linked) {
   });
 }
 }
-  chatBody.appendChild(msg);
+  chatBody.appendChild(wrapper);
 // ===== ADD POLL SUBMIT BUTTON (OUTSIDE POLL BOX) =====
 if (msgObj.isPoll && msgObj.pollData) {
   const submitBtn = document.createElement("button");
