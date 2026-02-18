@@ -381,6 +381,27 @@ if (msgObj.deleted && msgObj.deleted_for === "everyone") {
   applyReadMore(textBox, msgObj.text);
 }
 
+// 🔹 Render reactions if any (⬅️ ADD HERE)
+if (Array.isArray(msgObj.reactions) && msgObj.reactions.length > 0) {
+  const reactions = document.createElement("div");
+  reactions.className = "reactions";
+  reactions.style.marginTop = "4px";
+  reactions.style.display = "flex";
+  reactions.style.gap = "4px";
+  reactions.style.justifyContent = isSent ? "flex-end" : "flex-start";
+
+  msgObj.reactions.forEach(r => {
+    const pill = document.createElement("div");
+    pill.className = "reaction-pill";
+    pill.dataset.user = r.sender_id;
+    pill.dataset.emoji = r.emoji;
+    pill.innerHTML = `<span>${r.emoji}</span>`;
+    reactions.appendChild(pill);
+  });
+
+  msg.appendChild(reactions);
+}
+
   enableSwipe(msg, msgObj); // full object
 // Glow ONLY when clicking the reply preview bubble
 if (msgObj.linked) {
