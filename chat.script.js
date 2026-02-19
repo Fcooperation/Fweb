@@ -1021,6 +1021,10 @@ function sendMessage() {
   const input = document.getElementById("messageInput");
   const text = input.value.trim();
   if (!text) return;
+  
+  const sendBtn = document.getElementById("sendBtn"); // ✅ grab the button
+sendBtn.textContent = "Sending…";                  // change text
+sendBtn.disabled = true;                           // prevent spamming
 
   const msgObj = {
     id: Date.now(),
@@ -1047,6 +1051,9 @@ function sendMessage() {
   messages.push(msgObj);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   syncToFChat(msgObj);
+  
+  sendBtn.textContent = "Send";  // reset button
+sendBtn.disabled = false;      // allow clicking again
 
   input.value = "";
   input.style.height = "auto";
