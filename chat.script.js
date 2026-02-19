@@ -1019,8 +1019,13 @@ let replyingMessage = null;
 
 function sendMessage() {
   const input = document.getElementById("messageInput");
+  const sendBtn = document.getElementById("sendBtn"); // 👈 get button
   const text = input.value.trim();
   if (!text) return;
+
+  // Change button to sending
+  sendBtn.textContent = "Sending…";
+  sendBtn.disabled = true; // optional: prevent spamming
 
   const msgObj = {
     id: Date.now(),
@@ -1038,7 +1043,7 @@ function sendMessage() {
           sender: replyingMessage.sender_id
         }
       : null,
-    linked: replyingMessage ? true : false, // yes/no field
+    linked: replyingMessage ? true : false,
     linked_message_id: replyingMessage ? replyingMessage.id : null,
     sender_id: account.id,
     receiver_id: chatWith.id
@@ -1046,11 +1051,19 @@ function sendMessage() {
 
   messages.push(msgObj);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-  syncToFChat(msgObj);
+  syncToFChat(msgObj); // render immediately
 
+  // reset input
   input.value = "";
   input.style.height = "auto";
   replyingMessage = null;
+  document.getElementById("reply-preview").style.display = "none";
+
+  // reset button after rendering
+  setTimeout(() => {
+    sendBtn.textContent = "Send";
+    sendBtn.disabled = false;
+  }, 100); // short delay to ensure DOM has updated
 
   if (navigator.onLine) sendToBackend(msgObj);
 
