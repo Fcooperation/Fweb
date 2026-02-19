@@ -1048,9 +1048,17 @@ sendBtn.disabled = true;                           // prevent spamming
     receiver_id: chatWith.id
   };
 
-  messages.push(msgObj);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-  syncToFChat(msgObj);
+  // push to messages array
+messages.push(msgObj);
+localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+
+// render instantly to frontend
+addMessage(msgObj);       // 🔥 only adds THIS message
+applyChatSettings();      // optional for styling
+  
+  // update fchatMessages in background for storage & sync
+fchatMessages.push(msgObj);
+localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
   
   sendBtn.textContent = "Send";  // reset button
 sendBtn.disabled = false;      // allow clicking again
