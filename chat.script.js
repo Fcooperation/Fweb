@@ -1465,8 +1465,13 @@ function addReaction(msgEl, msgObj, emoji) {
   })
     .then(r => r.json())
     .then(res => {
-      if (res.error) console.error("Reaction failed:", res.error);
-    })
+  if (res.error) {
+    console.error("Reaction failed:", res.error);
+    return;
+  }
+
+  updateTimeline(); // 🔄 re-render messages
+})
     .catch(err => console.error("Reaction network error:", err));
 }
 // ===== Event Listeners =====
