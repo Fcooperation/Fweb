@@ -447,39 +447,7 @@ if (msgObj.linked) {
   });
 }
 }
-  // ✅ Ensure wrapper for alignment (sent/received)
-const wrapper = document.createElement("div");
-wrapper.className = "message-wrapper";
-wrapper.style.display = "flex";
-wrapper.style.flexDirection = "column";
-wrapper.style.alignItems = isSent ? "flex-end" : "flex-start";
-
-// Append the message into the wrapper
-wrapper.appendChild(msg);
-
-// 🔹 Render reactions if any (outside bubble, spaced 5px)
-if (Array.isArray(msgObj.reactions) && msgObj.reactions.length > 0) {
-  const reactions = document.createElement("div");
-  reactions.className = "reactions";
-  reactions.style.marginTop = "5px"; // spacing from bubble
-  reactions.style.display = "flex";
-  reactions.style.gap = "4px";
-  reactions.style.alignSelf = isSent ? "flex-end" : "flex-start";
-
-  msgObj.reactions.forEach(r => {
-    const pill = document.createElement("div");
-    pill.className = "reaction-pill";
-    pill.dataset.user = r.sender_id;
-    pill.dataset.emoji = r.emoji;
-    pill.innerHTML = `<span>${r.emoji}</span>`;
-    reactions.appendChild(pill);
-  });
-
-  wrapper.appendChild(reactions); // append **after** msg
-}
-
-// Finally, append the wrapper to your chat body
-chatBody.appendChild(wrapper);
+  chatBody.appendChild(msg);
 // ===== ADD POLL SUBMIT BUTTON (OUTSIDE POLL BOX) =====
 if (msgObj.isPoll && msgObj.pollData) {
   const submitBtn = document.createElement("button");
@@ -1497,47 +1465,9 @@ function addReaction(msgEl, msgObj, emoji) {
   })
     .then(r => r.json())
     .then(res => {
-  if (res.error) {
-    console.error("Reaction failed:", res.error);
-    return;
-  }
-
-  // ✅ Update localStorage
-  updateLocalReaction(msgObj, emoji);
-})
+      if (res.error) console.error("Reaction failed:", res.error);
+    })
     .catch(err => console.error("Reaction network error:", err));
-}
-
-// Update localStorage after reacting
-function updateLocalReaction(msgObj, emoji) {
-  const STORAGE_KEY = FCHAT_STORAGE_KEY; // your existing key
-  let stored = [];
-
-  try {
-    stored = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-  } catch {
-    stored = [];
-  }
-
-  const index = stored.findIndex(m => m.id === msgObj.id);
-  if (index === -1) return;
-
-  const msg = stored[index];
-
-  if (!msg.reactions) msg.reactions = [];
-
-  // Remove previous reaction from same user
-  msg.reactions = msg.reactions.filter(r => r.sender_id !== account.id);
-
-  // Add new reaction
-  msg.reactions.push({
-    sender_id: account.id,
-    emoji,
-    reacted_at: new Date().toISOString()
-  });
-
-  stored[index] = msg;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
 }
 // ===== Event Listeners =====
 window.addEventListener("online", retryAllPolls);  // retry pending polls once online
