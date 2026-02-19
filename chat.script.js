@@ -1385,7 +1385,7 @@ function showReactionBar(msgEl, msgObj) {
 
     span.onclick = e => {
       e.stopPropagation();
-      addReaction(msgEl, msgObj, emoji); // pass msgObj so we can send to backend
+      addReaction(msgEl, msgObj, emoji); // send reaction to backend
       removeReactionBar();
     };
 
@@ -1398,7 +1398,7 @@ function showReactionBar(msgEl, msgObj) {
   bar.style.left = "0";
   msgEl.appendChild(bar);
 
-  // Prevent bar from disappearing on click
+  // Keep bar from disappearing on click
   bar.addEventListener("click", e => e.stopPropagation());
 }
 
@@ -1406,9 +1406,9 @@ function removeReactionBar() {
   document.querySelectorAll(".reaction-bar").forEach(b => b.remove());
 }
 
-// ✅ Updated addReaction to send JSON to backend
+// --- Add reaction and send JSON to backend ---
 function addReaction(msgEl, msgObj, emoji) {
-  // Wrap message in container if not already
+  // Wrap message if not already
   let wrapper = msgEl.closest(".message-wrapper");
   if (!wrapper) {
     wrapper = document.createElement("div");
@@ -1416,7 +1416,6 @@ function addReaction(msgEl, msgObj, emoji) {
     wrapper.style.display = "flex";
     wrapper.style.flexDirection = "column";
     wrapper.style.alignItems = msgEl.classList.contains("sent") ? "flex-end" : "flex-start";
-
     msgEl.parentNode.insertBefore(wrapper, msgEl);
     wrapper.appendChild(msgEl);
   }
@@ -1432,15 +1431,12 @@ function addReaction(msgEl, msgObj, emoji) {
     wrapper.appendChild(reactions);
   }
 
-  // Find existing pill for this user
+  // Update or create pill for this user
   let pill = [...reactions.children].find(p => p.dataset.user === CURRENT_USER);
-
   if (pill) {
-    // Replace emoji
     pill.dataset.emoji = emoji;
     pill.querySelector("span").textContent = emoji;
   } else {
-    // New pill for this user
     pill = document.createElement("div");
     pill.className = "reaction-pill";
     pill.dataset.user = CURRENT_USER;
@@ -1449,12 +1445,12 @@ function addReaction(msgEl, msgObj, emoji) {
     reactions.appendChild(pill);
   }
 
-  // --- SEND TO BACKEND ---
+  // --- Send to backend ---
   const payload = {
     action: "react_to_messages",
     message_id: msgObj.id,
-    sender_id: msgObj.sender_id, // usually your account.id
-    receiver_id: msgObj.receiver_id, // chatWith.id
+    sender_id: msgObj.sender_id,
+    receiver_id: msgObj.receiver_id,
     emoji
   };
 
@@ -1465,13 +1461,9 @@ function addReaction(msgEl, msgObj, emoji) {
   })
     .then(r => r.json())
     .then(res => {
-  if (res.error) {
-    console.error("Reaction failed:", res.error);
-    return;
-  }
-
-  updateTimeline(); // 🔄 re-render messages
-})
+      if (res.error) console.error("Reaction failed:", res.error);
+      else updateTimeline(); // re-render messages
+    })
     .catch(err => console.error("Reaction network error:", err));
 }
 // ===== Event Listeners =====
