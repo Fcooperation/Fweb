@@ -1434,8 +1434,14 @@ function showReactionBar(msgEl, msgObj) {
         msgObj.reactions.push({ emoji, count: 1 });
       }
 
-      // Save to localStorage
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+      // ===== Sync updated msgObj back into messages array =====
+const msgIndex = messages.findIndex(m => m.id === msgObj.id);
+if (msgIndex !== -1) {
+  messages[msgIndex] = msgObj;
+}
+
+// Save updated messages array
+localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
       
       // ===== Update DOM for this message instantly =====
       let reactionsContainer = msgEl.querySelector(".reactions");
