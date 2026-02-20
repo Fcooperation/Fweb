@@ -67,6 +67,12 @@ function toggleSelectMessage(el, msgObj) {
 
   // enter selection mode if at least one message selected
   selectionMode = selectedMessages.size > 0;
+  
+  // If more than one message selected, hide reaction bar
+if (selectedMessages.size > 1) {
+  const existingBar = document.querySelector(".reaction-bar");
+  if (existingBar) existingBar.remove();
+}
 
   // Refresh the selection board visibility
   updateSelectionBoard();
