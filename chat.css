@@ -703,7 +703,7 @@ body {
 .reaction-bar {
   position: absolute;
   bottom: 100%; /* float above message */
-  left: 2px;
+  left: -2px;
   margin-bottom: 5px; /* 5px above the message */
   background: #f5f5f5;
   border-radius: 30px;
