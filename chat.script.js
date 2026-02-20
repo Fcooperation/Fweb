@@ -337,6 +337,21 @@ function addMessage(msgObj) {
       ${time} ${isSent ? "• " + (msgObj.poll_status || msgObj.status || "sent") : ""}
     </div>
   `;
+  // ===== Reactions container =====
+const reactionsContainer = document.createElement("div");
+reactionsContainer.className = "reactions";
+reactionsContainer.style.marginTop = "2px";
+
+if (msgObj.reactions && msgObj.reactions.length) {
+  msgObj.reactions.forEach(r => {
+    const pill = document.createElement("div");
+    pill.className = "reaction-pill";
+    pill.textContent = `${r.emoji} ${r.count || 1}`;
+    reactionsContainer.appendChild(pill);
+  });
+}
+
+msg.appendChild(reactionsContainer);
 } else {
   msg.className = `message ${alignmentClass}`;
 
@@ -379,6 +394,21 @@ if (msgObj.deleted && msgObj.deleted_for === "everyone") {
 }
   const textBox = msg.querySelector(".message-text");
   applyReadMore(textBox, msgObj.text);
+  // ===== Reactions container =====
+const reactionsContainer = document.createElement("div");
+reactionsContainer.className = "reactions";
+reactionsContainer.style.marginTop = "2px";
+
+if (msgObj.reactions && msgObj.reactions.length) {
+  msgObj.reactions.forEach(r => {
+    const pill = document.createElement("div");
+    pill.className = "reaction-pill";
+    pill.textContent = `${r.emoji} ${r.count || 1}`;
+    reactionsContainer.appendChild(pill);
+  });
+}
+
+msg.appendChild(reactionsContainer);
 }
 
   enableSwipe(msg, msgObj); // full object
@@ -680,23 +710,20 @@ msg.addEventListener("contextmenu", e => {
 
   messageMenu.style.display = "block";
 });
-  // ===== LONG PRESS MULTI SELECT =====
+// ===== LONG PRESS MULTI SELECT / REACTIONS =====
 msg.addEventListener("touchstart", e => {
   if (e.target.closest(".reply-bubble")) return; // don't hijack reply clicks
 
   longPressTimer = setTimeout(() => {
-    selectionMode = true;
-    toggleSelectMessage(msg, msgObj);
+    // selectionMode = true; // optional if you still want multi-select
+    // toggleSelectMessage(msg, msgObj);
+
+    showReactionBar(msg, msgObj); // 🔥 call reaction bar
   }, 400);
 });
 
-msg.addEventListener("touchend", () => {
-  clearTimeout(longPressTimer);
-});
-
-msg.addEventListener("touchmove", () => {
-  clearTimeout(longPressTimer);
-});
+msg.addEventListener("touchend", () => clearTimeout(longPressTimer));
+msg.addEventListener("touchmove", () => clearTimeout(longPressTimer));
 
 // Tap behavior when selection mode is active
 msg.addEventListener("click", e => {
@@ -1372,6 +1399,79 @@ document.querySelectorAll(".sent .linked-preview").forEach(preview => {
 
 /* ===================== INIT ===================== */
 document.addEventListener("DOMContentLoaded", applyChatSettings);
+
+// Show Reaction bar function
+function showReactionBar(msgEl, msgObj) {
+  // Remove existing bar if any
+  const existing = document.querySelector(".reaction-bar");
+  if (existing) existing.remove();
+
+  // Create bar
+  const bar = document.createElement("div");
+  bar.className = "reaction-bar";
+
+  // Example emojis
+  const emojis = ["👍","❤️","😂","😮","😢","😡"];
+  emojis.forEach(emoji => {
+    const span = document.createElement("span");
+    span.className = "reaction-emoji";
+    span.textContent = emoji;
+
+    // Click to react
+    span.addEventListener("click", () => {
+      // ===== Update reactions array =====
+      msgObj.reactions = msgObj.reactions || [];
+      const existingReaction = msgObj.reactions.find(r => r.emoji === emoji);
+      if (existingReaction) {
+        existingReaction.count = (existingReaction.count || 1) + 1;
+      } else {
+        msgObj.reactions.push({ emoji, count: 1 });
+      }
+
+      // Save to localStorage
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+      
+      // ===== Update DOM for this message instantly =====
+      let reactionsContainer = msgEl.querySelector(".reactions");
+      if (!reactionsContainer) {
+        reactionsContainer = document.createElement("div");
+        reactionsContainer.className = "reactions";
+        reactionsContainer.style.marginTop = "2px";
+        msgEl.appendChild(reactionsContainer);
+      }
+      reactionsContainer.innerHTML = "";
+      msgObj.reactions.forEach(r => {
+        const pill = document.createElement("div");
+        pill.className = "reaction-pill";
+        pill.textContent = `${r.emoji} ${r.count || 1}`;
+        reactionsContainer.appendChild(pill);
+      });
+
+      bar.remove(); // hide the reaction bar after selection
+    });
+
+    bar.appendChild(span);
+  });
+
+  // Append to body
+  document.body.appendChild(bar);
+
+  // Position bar above message
+  const rect = msgEl.getBoundingClientRect();
+  bar.style.position = "absolute";
+  bar.style.left = rect.left + "px";
+  bar.style.top = rect.top - bar.offsetHeight - 8 + "px"; // 8px above
+  bar.style.zIndex = 9999;
+
+  // Optional: remove bar if tapped outside
+  const removeBar = e => {
+    if (!bar.contains(e.target)) {
+      bar.remove();
+      document.removeEventListener("click", removeBar);
+    }
+  };
+  setTimeout(() => document.addEventListener("click", removeBar), 0);
+}
 
 // ===== Event Listeners =====
 window.addEventListener("online", retryAllPolls);  // retry pending polls once online
