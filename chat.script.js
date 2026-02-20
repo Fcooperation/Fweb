@@ -1452,6 +1452,19 @@ function showReactionBar(msgEl, msgObj) {
         pill.textContent = `${r.emoji} ${r.count || 1}`;
         reactionsContainer.appendChild(pill);
       });
+      
+      // ===== Exit selection mode =====
+selectionMode = false;
+
+// Clear selected messages
+selectedMessages.clear();
+
+// Remove highlight classes from all messages
+document.querySelectorAll(".selected, .highlight-message")
+  .forEach(el => el.classList.remove("selected", "highlight-message"));
+
+// Hide selection board
+updateSelectionBoard();
 
       bar.remove(); // hide the reaction bar after selection
     });
