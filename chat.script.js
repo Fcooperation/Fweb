@@ -712,13 +712,13 @@ msg.addEventListener("contextmenu", e => {
 });
 // ===== LONG PRESS MULTI SELECT / REACTIONS =====
 msg.addEventListener("touchstart", e => {
-  if (e.target.closest(".reply-bubble")) return; // don't hijack reply clicks
+  if (e.target.closest(".reply-bubble")) return;
 
   longPressTimer = setTimeout(() => {
-    // selectionMode = true; // optional if you still want multi-select
-    // toggleSelectMessage(msg, msgObj);
+    selectionMode = true;
+    toggleSelectMessage(msg, msgObj); // highlight/select message
 
-    showReactionBar(msg, msgObj); // 🔥 call reaction bar
+    showReactionBar(msg, msgObj); // show reaction bar on top
   }, 400);
 });
 
