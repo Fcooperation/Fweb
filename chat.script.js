@@ -1063,6 +1063,7 @@ sendBtn.disabled = true;                           // prevent spamming
     id: Date.now(),
     type: "sent",
     text,
+    reactions: [],
     sent_at: new Date().toISOString(),
     status: navigator.onLine ? "sending" : "pending",
     sending_since: navigator.onLine ? Date.now() : null,
