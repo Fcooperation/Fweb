@@ -1251,17 +1251,18 @@ async function fetchAllFChatLogs() {
         }
 
         newItems.push({
-          id: msg.id,
-          sender_id: msg.sender_id,
-          receiver_id: msg.receiver_id,
-          text: msg.text || "",
-          sent_at: msg.sent_at,
-          isPoll: false,
-          pollData: null,
-          linked: msg.linked || false,
-          linked_message_id: msg.linked_message_id || null,
-          replyTo
-        });
+  id: msg.id,
+  sender_id: msg.sender_id,
+  receiver_id: msg.receiver_id,
+  text: msg.text || "",
+  sent_at: msg.sent_at,
+  isPoll: false,
+  pollData: null,
+  reactions: msg.reactions || [],
+  linked: msg.linked || false,
+  linked_message_id: msg.linked_message_id || null,
+  replyTo
+});
       });
     }
 
@@ -1443,7 +1444,14 @@ if (msgIndex !== -1) {
 
 // Save updated messages array
 localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-      
+      // ===== ALSO SYNC TO fchatMessages =====
+const fIndex = fchatMessages.findIndex(m => m.id === msgObj.id);
+if (fIndex !== -1) {
+  fchatMessages[fIndex] = msgObj;
+}
+
+localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
+
       // ===== Update DOM for this message instantly =====
       let reactionsContainer = msgEl.querySelector(".reactions");
       if (!reactionsContainer) {
