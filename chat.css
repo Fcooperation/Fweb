@@ -710,7 +710,8 @@ body {
   padding: 6px;
   display: flex;
   gap: 6px;
-  max-width: 240px; /* 6 emojis width */
+  max-width: 240px;/* 6 emojis width */
+  min-height: 40px;
   overflow-x: auto;
   box-shadow: 0 4px 10px rgba(0,0,0,0.2);
   z-index: 999; /* ensure above other elements */
@@ -725,6 +726,7 @@ body {
   padding: 6px;
   cursor: pointer;
   border-radius: 50%;
+  display: inline-block; /* ensure height counts */
   transition: background 0.2s, transform 0.1s;
 }
 
