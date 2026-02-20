@@ -1427,14 +1427,8 @@ function showReactionBar(msgEl, msgObj) {
 
     // Click to react
     span.addEventListener("click", () => {
-      // ===== Update reactions array =====
-      msgObj.reactions = msgObj.reactions || [];
-      const existingReaction = msgObj.reactions.find(r => r.emoji === emoji);
-      if (existingReaction) {
-        existingReaction.count = (existingReaction.count || 1) + 1;
-      } else {
-        msgObj.reactions.push({ emoji, count: 1 });
-      }
+      // ===== Replace reaction instead of adding =====
+msgObj.reactions = [{ emoji: emoji, count: 1 }];
 
       // ===== Sync updated msgObj back into messages array =====
 const msgIndex = messages.findIndex(m => m.id === msgObj.id);
