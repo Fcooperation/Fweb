@@ -1426,9 +1426,35 @@ function showReactionBar(msgEl, msgObj) {
     span.textContent = emoji;
 
     // Click to react
-    span.addEventListener("click", () => {
+    span.addEventListener("click", async () => {
       // ===== Replace reaction instead of adding =====
 msgObj.reactions = [{ emoji: emoji, count: 1 }];
+
+// Send reaction to backend
+const payload = {
+  action: "react_to_messages",
+  receiver_id: chatWith.id,
+  reaction_payload: {
+    message_id: msgObj.id,
+    reaction: emoji,
+    sender_id: CURRENT_USER,
+    timestamp: Date.now()
+  }
+};
+
+try {
+  const res = await fetch(API_URL, {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify(payload)
+  });
+
+  const data = await res.json();
+  console.log("Reaction saved:", data);
+
+} catch(err) {
+  console.error("Reaction sync error:", err);
+}
 
       // ===== Sync updated msgObj back into messages array =====
 const msgIndex = messages.findIndex(m => m.id === msgObj.id);
