@@ -1410,121 +1410,114 @@ document.addEventListener("DOMContentLoaded", applyChatSettings);
 
 // Show Reaction bar function
 function showReactionBar(msgEl, msgObj) {
+
   // Remove existing bar if any
   const existing = document.querySelector(".reaction-bar");
   if (existing) existing.remove();
 
-  // Create bar
   const bar = document.createElement("div");
   bar.className = "reaction-bar";
 
-  // Example emojis
   const emojis = ["👍","❤️","😂","😮","😢","😡"];
+
   emojis.forEach(emoji => {
+
     const span = document.createElement("span");
     span.className = "reaction-emoji";
     span.textContent = emoji;
 
-    // Click to react
+    // Click reaction
     span.addEventListener("click", async () => {
-      // ===== Replace reaction instead of adding =====
-msgObj.reactions = [{ emoji: emoji, count: 1 }];
 
-// Send reaction to backend
-const payload = {
-  action: "react_to_messages",
-  receiver_id: chatWith.id,
-  reaction_payload: {
-    message_id: msgObj.id,
-    reaction: emoji,
-    sender_id: CURRENT_USER,
-    timestamp: Date.now()
-  }
-};
+      try {
 
-try {
-  const res = await fetch(API_URL, {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify(payload)
-  });
+        // ✅ Replace reaction locally
+        msgObj.reactions = [{
+          emoji: emoji,
+          count: 1
+        }];
 
-  const data = await res.json();
-  console.log("Reaction saved:", data);
+        // ✅ Instant UI update
+        updateMessageUI(msgEl, msgObj);
 
-} catch(err) {
-  console.error("Reaction sync error:", err);
-}
+        // ✅ Sync backend
+        const payload = {
+          action: "react_to_messages",
+          receiver_id: chatWith.id,
+          reaction_payload: {
+            message_id: msgObj.id,
+            reaction: emoji,
+            sender_id: CURRENT_USER,
+            timestamp: Date.now()
+          }
+        };
 
-      // ===== Sync updated msgObj back into messages array =====
-const msgIndex = messages.findIndex(m => m.id === msgObj.id);
-if (msgIndex !== -1) {
-  messages[msgIndex] = msgObj;
-}
+        const res = await fetch(API_URL, {
+          method: "POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify(payload)
+        });
 
-// Save updated messages array
-localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-      // ===== ALSO SYNC TO fchatMessages =====
-const fIndex = fchatMessages.findIndex(m => m.id === msgObj.id);
-if (fIndex !== -1) {
-  fchatMessages[fIndex] = msgObj;
-}
+        if (res.ok) {
+          console.log("Reaction saved");
+        }
 
-localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
+        // ✅ Sync local storage messages
+        const msgIndex = messages.findIndex(m => m.id === msgObj.id);
+        if (msgIndex !== -1) {
+          messages[msgIndex] = msgObj;
+        }
 
-      // ===== Update DOM for this message instantly =====
-      let reactionsContainer = msgEl.querySelector(".reactions");
-      if (!reactionsContainer) {
-        reactionsContainer = document.createElement("div");
-        reactionsContainer.className = "reactions";
-        reactionsContainer.style.marginTop = "2px";
-        msgEl.appendChild(reactionsContainer);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+
+        const fIndex = fchatMessages.findIndex(m => m.id === msgObj.id);
+        if (fIndex !== -1) {
+          fchatMessages[fIndex] = msgObj;
+        }
+
+        localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
+
+        // ✅ Clear selection mode
+        selectionMode = false;
+        selectedMessages.clear();
+
+        document.querySelectorAll(".selected, .highlight-message")
+          .forEach(el => el.classList.remove("selected", "highlight-message"));
+
+        updateSelectionBoard();
+
+        bar.remove();
+
+      } catch(err) {
+        console.error("Reaction sync error:", err);
       }
-      reactionsContainer.innerHTML = "";
-      msgObj.reactions.forEach(r => {
-        const pill = document.createElement("div");
-        pill.className = "reaction-pill";
-        pill.textContent = `${r.emoji} ${r.count || 1}`;
-        reactionsContainer.appendChild(pill);
-      });
-      
-      // ===== Exit selection mode =====
-selectionMode = false;
 
-// Clear selected messages
-selectedMessages.clear();
-
-// Remove highlight classes from all messages
-document.querySelectorAll(".selected, .highlight-message")
-  .forEach(el => el.classList.remove("selected", "highlight-message"));
-
-// Hide selection board
-updateSelectionBoard();
-
-      bar.remove(); // hide the reaction bar after selection
     });
 
     bar.appendChild(span);
   });
 
-  // Append to body
   document.body.appendChild(bar);
 
   // Position bar above message
   const rect = msgEl.getBoundingClientRect();
+
   bar.style.position = "absolute";
   bar.style.left = rect.left + "px";
-  bar.style.top = rect.top - bar.offsetHeight - 8 + "px"; // 8px above
-  bar.style.zIndex = 9999;
+  bar.style.top = (rect.top - 40) + "px";
+  bar.style.zIndex = "9999";
 
-  // Optional: remove bar if tapped outside
+  // Remove bar when clicking outside
   const removeBar = e => {
     if (!bar.contains(e.target)) {
       bar.remove();
       document.removeEventListener("click", removeBar);
     }
   };
-  setTimeout(() => document.addEventListener("click", removeBar), 0);
+
+  setTimeout(() => {
+    document.addEventListener("click", removeBar);
+  }, 0);
 }
 
 // ===== Event Listeners =====
