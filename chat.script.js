@@ -1428,7 +1428,11 @@ function showReactionBar(msgEl, msgObj) {
     // Click to react
     span.addEventListener("click", () => {
       // ===== Replace reaction instead of adding =====
-msgObj.reactions = [{ emoji: emoji, count: 1 }];
+msgObj.reactions = [{
+  emoji: emoji,
+  count: 1,
+  sender_id: account.id
+}];
 
       // ===== Sync updated msgObj back into messages array =====
 const msgIndex = messages.findIndex(m => m.id === msgObj.id);
