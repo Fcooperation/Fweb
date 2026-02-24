@@ -1480,6 +1480,28 @@ document.querySelectorAll(".selected, .highlight-message")
 updateSelectionBoard();
 
       bar.remove(); // hide the reaction bar after selection
+      // ===== SEND REACTION TO BACKEND =====
+fetch(API_URL, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    action: "react_to_messages",
+    receiver_id: chatWith.id,
+    reaction_payload: {
+      message_id: msgObj.id,
+      reaction: emoji,
+      sender_id: account.id,
+      timestamp: Date.now()
+    }
+  })
+})
+.then(res => res.json())
+.then(data => {
+  console.log("Reaction sent:", data);
+})
+.catch(err => {
+  console.error("Reaction failed:", err);
+});
     });
 
     bar.appendChild(span);
