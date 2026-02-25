@@ -1265,6 +1265,65 @@ async function fetchAllFChatLogs() {
 });
       });
     }
+    
+    // ------------------------
+// NORMALIZE REACTIONS
+// ------------------------
+if (Array.isArray(data.reactions)) {
+  data.reactions.forEach(reaction => {
+
+    // Find message in fchatMessages
+    const targetMsg =
+      fchatMessages.find(m => m.id === reaction.message_id) ||
+      newItems.find(m => m.id === reaction.message_id);
+
+    if (!targetMsg) return;
+
+    // Ensure reactions array exists
+    if (!Array.isArray(targetMsg.reactions)) {
+      targetMsg.reactions = [];
+    }
+
+    // Check if same emoji already exists
+    const existingReaction = targetMsg.reactions.find(
+      r => r.emoji === reaction.reaction
+    );
+
+    if (existingReaction) {
+      existingReaction.count += 1;
+    } else {
+      targetMsg.reactions.push({
+        emoji: reaction.reaction,
+        count: 1,
+        sender_id: reaction.sender_id
+      });
+    }
+
+    // ------------------------
+    // UPDATE DOM IF MESSAGE IS VISIBLE
+    // ------------------------
+    const msgEl = document.querySelector(`[data-id="${targetMsg.id}"]`);
+
+    if (msgEl) {
+      let reactionsContainer = msgEl.querySelector(".reactions");
+
+      if (!reactionsContainer) {
+        reactionsContainer = document.createElement("div");
+        reactionsContainer.className = "reactions";
+        msgEl.appendChild(reactionsContainer);
+      }
+
+      reactionsContainer.innerHTML = "";
+
+      targetMsg.reactions.forEach(r => {
+        const pill = document.createElement("div");
+        pill.className = "reaction-pill";
+        pill.textContent = `${r.emoji} ${r.count || 1}`;
+        reactionsContainer.appendChild(pill);
+      });
+    }
+  });
+}
 
     // ------------------------
     // NORMALIZE POLLS
@@ -1322,6 +1381,8 @@ async function fetchAllFChatLogs() {
       FCHAT_STORAGE_KEY,
       JSON.stringify(fchatMessages)
     );
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
 
     // ------------------------
     // UI SIGNAL
