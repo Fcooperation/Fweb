@@ -774,7 +774,6 @@ function updateTimeline() {
     }
 
     addMessage(msg); // addMessage now knows if it's sent or received via msg.isSent
-    fetchAllFChatLogs();
     applyChatSettings();
   });
 
