@@ -1267,76 +1267,50 @@ async function fetchAllFChatLogs() {
     }
     
     // ------------------------
-// NORMALIZE REACTIONS
+// NORMALIZE REACTIONS (REWRITE MODE)
 // ------------------------
 if (Array.isArray(data.reactions)) {
   data.reactions.forEach(reaction => {
 
-    // Find message in fchatMessages
     const targetMsg =
       fchatMessages.find(m => m.id === reaction.message_id) ||
       newItems.find(m => m.id === reaction.message_id);
 
     if (!targetMsg) return;
 
-    // Ensure reactions array exists
     if (!Array.isArray(targetMsg.reactions)) {
       targetMsg.reactions = [];
     }
 
-    // ------------------------
-// HANDLE REACTION (REWRITE IF SAME SENDER)
-// ------------------------
+    // 🔥 STEP 1: Remove any existing reaction from this sender
+    targetMsg.reactions = targetMsg.reactions.filter(
+      r => r.sender_id !== reaction.sender_id
+    );
 
-// 1️⃣ Check if THIS sender already reacted
-const senderExisting = targetMsg.reactions.find(
-  r => r.sender_id === reaction.sender_id
-);
+    // 🔥 STEP 2: Add the new reaction
+    targetMsg.reactions.push({
+      emoji: reaction.reaction,
+      sender_id: reaction.sender_id
+    });
 
-if (senderExisting) {
+    // 🔥 STEP 3: Recalculate counts per emoji
+    const grouped = {};
 
-  // If same emoji → do nothing (already processed)
-  if (senderExisting.emoji === reaction.reaction) {
-    return;
-  }
+    targetMsg.reactions.forEach(r => {
+      if (!grouped[r.emoji]) {
+        grouped[r.emoji] = {
+          emoji: r.emoji,
+          count: 0,
+          senders: []
+        };
+      }
 
-  // If different emoji → decrease old emoji count
-  const oldEmojiGroup = targetMsg.reactions.find(
-    r => r.emoji === senderExisting.emoji
-  );
+      grouped[r.emoji].count += 1;
+      grouped[r.emoji].senders.push(r.sender_id);
+    });
 
-  if (oldEmojiGroup) {
-    oldEmojiGroup.count -= 1;
-
-    // Remove group if count becomes 0
-    if (oldEmojiGroup.count <= 0) {
-      targetMsg.reactions = targetMsg.reactions.filter(
-        r => r.count > 0
-      );
-    }
-  }
-
-  // Remove sender's old reaction entry
-  targetMsg.reactions = targetMsg.reactions.filter(
-    r => r.sender_id !== reaction.sender_id
-  );
-}
-
-// 2️⃣ Now add or increase new emoji
-
-const existingEmoji = targetMsg.reactions.find(
-  r => r.emoji === reaction.reaction
-);
-
-if (existingEmoji) {
-  existingEmoji.count += 1;
-} else {
-  targetMsg.reactions.push({
-    emoji: reaction.reaction,
-    count: 1,
-    sender_id: reaction.sender_id
-  });
-}
+    // Convert grouped object back to array format for UI
+    targetMsg.reactions = Object.values(grouped);
 
     // ------------------------
     // UPDATE DOM IF MESSAGE IS VISIBLE
@@ -1357,11 +1331,15 @@ if (existingEmoji) {
       targetMsg.reactions.forEach(r => {
         const pill = document.createElement("div");
         pill.className = "reaction-pill";
-        pill.textContent = `${r.emoji} ${r.count || 1}`;
+        pill.textContent = `${r.emoji} ${r.count}`;
         reactionsContainer.appendChild(pill);
       });
     }
   });
+
+  // Save after processing reactions
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+  localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
 }
 
     // ------------------------
