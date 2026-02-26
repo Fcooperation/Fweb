@@ -774,6 +774,7 @@ function updateTimeline() {
     }
 
     addMessage(msg); // addMessage now knows if it's sent or received via msg.isSent
+    fetchAllFChatLogs();
     applyChatSettings();
   });
 
@@ -1622,9 +1623,9 @@ setInterval(() => {
 // Initial load
 syncPolls();
 syncToFChat();
+fetchAllFChatLogs();
 retryAllPolls();
 retryPendingMessages();
 retryPendingPollMessages();
-fetchAllFChatLogs();
 loadChatSettings();
 applyChatSettings();
