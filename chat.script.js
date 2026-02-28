@@ -1265,6 +1265,82 @@ async function fetchAllFChatLogs() {
 });
       });
     }
+    
+    // ------------------------
+// NORMALIZE REACTIONS (REWRITE MODE)
+// ------------------------
+if (Array.isArray(data.reactions)) {
+  data.reactions.forEach(reaction => {
+
+    const targetMsg =
+      fchatMessages.find(m => m.id === reaction.message_id) ||
+      newItems.find(m => m.id === reaction.message_id);
+
+    if (!targetMsg) return;
+
+    if (!Array.isArray(targetMsg.reactions)) {
+      targetMsg.reactions = [];
+    }
+
+    // 🔥 STEP 1: Remove any existing reaction from this sender
+    targetMsg.reactions = targetMsg.reactions.filter(
+      r => r.sender_id !== reaction.sender_id
+    );
+
+    // 🔥 STEP 2: Add the new reaction
+    targetMsg.reactions.push({
+      emoji: reaction.reaction,
+      sender_id: reaction.sender_id
+    });
+
+    // 🔥 STEP 3: Recalculate counts per emoji
+    const grouped = {};
+
+    targetMsg.reactions.forEach(r => {
+      if (!grouped[r.emoji]) {
+        grouped[r.emoji] = {
+          emoji: r.emoji,
+          count: 0,
+          senders: []
+        };
+      }
+
+      grouped[r.emoji].count += 1;
+      grouped[r.emoji].senders.push(r.sender_id);
+    });
+
+    // Convert grouped object back to array format for UI
+    targetMsg.reactions = Object.values(grouped);
+
+    // ------------------------
+    // UPDATE DOM IF MESSAGE IS VISIBLE
+    // ------------------------
+    const msgEl = document.querySelector(`[data-id="${targetMsg.id}"]`);
+
+    if (msgEl) {
+      let reactionsContainer = msgEl.querySelector(".reactions");
+
+      if (!reactionsContainer) {
+        reactionsContainer = document.createElement("div");
+        reactionsContainer.className = "reactions";
+        msgEl.appendChild(reactionsContainer);
+      }
+
+      reactionsContainer.innerHTML = "";
+
+      targetMsg.reactions.forEach(r => {
+        const pill = document.createElement("div");
+        pill.className = "reaction-pill";
+        pill.textContent = `${r.emoji} ${r.count}`;
+        reactionsContainer.appendChild(pill);
+      });
+    }
+  });
+
+  // Save after processing reactions
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+  localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
+}
 
     // ------------------------
     // NORMALIZE POLLS
@@ -1322,6 +1398,8 @@ async function fetchAllFChatLogs() {
       FCHAT_STORAGE_KEY,
       JSON.stringify(fchatMessages)
     );
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
 
     // ------------------------
     // UI SIGNAL
@@ -1480,6 +1558,28 @@ document.querySelectorAll(".selected, .highlight-message")
 updateSelectionBoard();
 
       bar.remove(); // hide the reaction bar after selection
+      // ===== SEND REACTION TO BACKEND =====
+fetch(API_URL, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    action: "react_to_messages",
+    receiver_id: chatWith.id,
+    reaction_payload: {
+      message_id: msgObj.id,
+      reaction: emoji,
+      sender_id: account.id,
+      timestamp: Date.now()
+    }
+  })
+})
+.then(res => res.json())
+.then(data => {
+  console.log("Reaction sent:", data);
+})
+.catch(err => {
+  console.error("Reaction failed:", err);
+});
     });
 
     bar.appendChild(span);
