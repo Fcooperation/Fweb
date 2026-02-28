@@ -1327,7 +1327,7 @@ async function fetchAllFChatLogs() {
     // UI SIGNAL
     // ------------------------
     newMessagesFound(newItems.length);
-    updateTimeline();
+    newItems.forEach(addMessage);
 
   } catch (err) {
     console.warn("Failed to fetch FChat logs:", err);
