@@ -1265,92 +1265,7 @@ async function fetchAllFChatLogs() {
 });
       });
     }
-    
-// NORMALIZE REACTIONS (SAFE GROUP WRITE MODE)
-if (Array.isArray(data.reactions)) {
 
-  data.reactions.forEach(reaction => {
-
-    const targetMsg =
-      fchatMessages.find(m => m.id === reaction.message_id) ||
-      newItems.find(m => m.id === reaction.message_id);
-
-    if (!targetMsg) return;
-
-    if (!Array.isArray(targetMsg.reactions)) {
-      targetMsg.reactions = [];
-    }
-
-    // -------------------------
-    // STEP 1: Remove sender from ALL emoji groups first
-    // -------------------------
-    targetMsg.reactions.forEach(group => {
-      if (Array.isArray(group.senders)) {
-        group.senders = group.senders.filter(
-          id => id !== reaction.sender_id
-        );
-
-        group.count = group.senders.length;
-      }
-    });
-
-    // Remove empty groups
-    targetMsg.reactions = targetMsg.reactions.filter(
-      group => group.count > 0
-    );
-
-    // -------------------------
-    // STEP 2: Add reaction into correct emoji group
-    // -------------------------
-    let emojiGroup = targetMsg.reactions.find(
-      g => g.emoji === reaction.reaction
-    );
-
-    if (!emojiGroup) {
-      emojiGroup = {
-        emoji: reaction.reaction,
-        count: 0,
-        senders: []
-      };
-
-      targetMsg.reactions.push(emojiGroup);
-    }
-
-    if (!emojiGroup.senders.includes(reaction.sender_id)) {
-      emojiGroup.senders.push(reaction.sender_id);
-      emojiGroup.count = emojiGroup.senders.length;
-    }
-
-    // -------------------------
-    // STEP 3: Update UI
-    // -------------------------
-    const msgEl = document.querySelector(`[data-id="${targetMsg.id}"]`);
-
-    if (msgEl) {
-      const container =
-        msgEl.querySelector(".reactions") ||
-        (() => {
-          const el = document.createElement("div");
-          el.className = "reactions";
-          msgEl.appendChild(el);
-          return el;
-        })();
-
-      container.innerHTML = "";
-
-      targetMsg.reactions.forEach(r => {
-        const pill = document.createElement("div");
-        pill.className = "reaction-pill";
-        pill.textContent = `${r.emoji} ${r.count}`;
-        container.appendChild(pill);
-      });
-    }
-  });
-
-  // Save state
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-  localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
-}
     // ------------------------
     // NORMALIZE POLLS
     // ------------------------
@@ -1407,8 +1322,6 @@ if (Array.isArray(data.reactions)) {
       FCHAT_STORAGE_KEY,
       JSON.stringify(fchatMessages)
     );
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
 
     // ------------------------
     // UI SIGNAL
@@ -1567,28 +1480,6 @@ document.querySelectorAll(".selected, .highlight-message")
 updateSelectionBoard();
 
       bar.remove(); // hide the reaction bar after selection
-      // ===== SEND REACTION TO BACKEND =====
-fetch(API_URL, {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    action: "react_to_messages",
-    receiver_id: chatWith.id,
-    reaction_payload: {
-      message_id: msgObj.id,
-      reaction: emoji,
-      sender_id: account.id,
-      timestamp: Date.now()
-    }
-  })
-})
-.then(res => res.json())
-.then(data => {
-  console.log("Reaction sent:", data);
-})
-.catch(err => {
-  console.error("Reaction failed:", err);
-});
     });
 
     bar.appendChild(span);
@@ -1631,9 +1522,9 @@ setInterval(() => {
 // Initial load
 syncPolls();
 syncToFChat();
-fetchAllFChatLogs();
 retryAllPolls();
 retryPendingMessages();
 retryPendingPollMessages();
+fetchAllFChatLogs();
 loadChatSettings();
 applyChatSettings();
