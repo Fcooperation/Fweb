@@ -1266,10 +1266,9 @@ async function fetchAllFChatLogs() {
       });
     }
     
-    // ------------------------
-// NORMALIZE REACTIONS (REWRITE MODE)
-// ------------------------
+// NORMALIZE REACTIONS (SAFE GROUP WRITE MODE)
 if (Array.isArray(data.reactions)) {
+
   data.reactions.forEach(reaction => {
 
     const targetMsg =
@@ -1282,66 +1281,76 @@ if (Array.isArray(data.reactions)) {
       targetMsg.reactions = [];
     }
 
-    // 🔥 STEP 1: Remove any existing reaction from this sender
+    // -------------------------
+    // STEP 1: Remove sender from ALL emoji groups first
+    // -------------------------
+    targetMsg.reactions.forEach(group => {
+      if (Array.isArray(group.senders)) {
+        group.senders = group.senders.filter(
+          id => id !== reaction.sender_id
+        );
+
+        group.count = group.senders.length;
+      }
+    });
+
+    // Remove empty groups
     targetMsg.reactions = targetMsg.reactions.filter(
-      r => r.sender_id !== reaction.sender_id
+      group => group.count > 0
     );
 
-    // 🔥 STEP 2: Add the new reaction
-    targetMsg.reactions.push({
-      emoji: reaction.reaction,
-      sender_id: reaction.sender_id
-    });
+    // -------------------------
+    // STEP 2: Add reaction into correct emoji group
+    // -------------------------
+    let emojiGroup = targetMsg.reactions.find(
+      g => g.emoji === reaction.reaction
+    );
 
-    // 🔥 STEP 3: Recalculate counts per emoji
-    const grouped = {};
+    if (!emojiGroup) {
+      emojiGroup = {
+        emoji: reaction.reaction,
+        count: 0,
+        senders: []
+      };
 
-    targetMsg.reactions.forEach(r => {
-      if (!grouped[r.emoji]) {
-        grouped[r.emoji] = {
-          emoji: r.emoji,
-          count: 0,
-          senders: []
-        };
-      }
+      targetMsg.reactions.push(emojiGroup);
+    }
 
-      grouped[r.emoji].count += 1;
-      grouped[r.emoji].senders.push(r.sender_id);
-    });
+    if (!emojiGroup.senders.includes(reaction.sender_id)) {
+      emojiGroup.senders.push(reaction.sender_id);
+      emojiGroup.count = emojiGroup.senders.length;
+    }
 
-    // Convert grouped object back to array format for UI
-    targetMsg.reactions = Object.values(grouped);
-
-    // ------------------------
-    // UPDATE DOM IF MESSAGE IS VISIBLE
-    // ------------------------
+    // -------------------------
+    // STEP 3: Update UI
+    // -------------------------
     const msgEl = document.querySelector(`[data-id="${targetMsg.id}"]`);
 
     if (msgEl) {
-      let reactionsContainer = msgEl.querySelector(".reactions");
+      const container =
+        msgEl.querySelector(".reactions") ||
+        (() => {
+          const el = document.createElement("div");
+          el.className = "reactions";
+          msgEl.appendChild(el);
+          return el;
+        })();
 
-      if (!reactionsContainer) {
-        reactionsContainer = document.createElement("div");
-        reactionsContainer.className = "reactions";
-        msgEl.appendChild(reactionsContainer);
-      }
-
-      reactionsContainer.innerHTML = "";
+      container.innerHTML = "";
 
       targetMsg.reactions.forEach(r => {
         const pill = document.createElement("div");
         pill.className = "reaction-pill";
         pill.textContent = `${r.emoji} ${r.count}`;
-        reactionsContainer.appendChild(pill);
+        container.appendChild(pill);
       });
     }
   });
 
-  // Save after processing reactions
+  // Save state
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
 }
-
     // ------------------------
     // NORMALIZE POLLS
     // ------------------------
