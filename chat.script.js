@@ -1045,7 +1045,7 @@ async function sendToBackend(msgObj) {
   }
 
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-  
+  syncToFChat(msgObj);
 }
 
 let replyingMessage = null;
@@ -1405,7 +1405,7 @@ localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
     // UI SIGNAL
     // ------------------------
     newMessagesFound(newItems.length);
-    newItems.forEach(addMessage);
+    updateTimeline();
 
   } catch (err) {
     console.warn("Failed to fetch FChat logs:", err);
@@ -1563,16 +1563,15 @@ fetch(API_URL, {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
-  action: "react_to_messages",
-  reaction_payload: {
-    message_id: msgObj.id,
-    message_sender_id: msgObj.sender_id,   // ✅ ADD THIS
-    sender_id: account.id,
-    receiver_id: chatWith.id,              // ✅ MOVE INSIDE PAYLOAD
-    reaction: emoji,
-    timestamp: Date.now()
-  }
-})
+    action: "react_to_messages",
+    receiver_id: chatWith.id,
+    reaction_payload: {
+      message_id: msgObj.id,
+      reaction: emoji,
+      sender_id: account.id,
+      timestamp: Date.now()
+    }
+  })
 })
 .then(res => res.json())
 .then(data => {
