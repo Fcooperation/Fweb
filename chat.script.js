@@ -1045,7 +1045,7 @@ async function sendToBackend(msgObj) {
   }
 
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-  syncToFChat(msgObj);
+  
 }
 
 let replyingMessage = null;
