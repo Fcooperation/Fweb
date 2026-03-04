@@ -1269,6 +1269,7 @@ async function fetchAllFChatLogs() {
 // NORMALIZE REACTIONS (SIMPLE MODE)
 // ------------------------
 if (Array.isArray(data.reactions)) {
+  let newReactionCount = 0;
 
   data.reactions.forEach(reaction => {
 
@@ -1289,6 +1290,7 @@ if (Array.isArray(data.reactions)) {
       emoji: reaction.reaction,
       sender_id: reaction.sender_id
     });
+    newReactionCount++;
 
     // ------------------------
     // UPDATE DOM IF VISIBLE
@@ -1317,6 +1319,9 @@ if (Array.isArray(data.reactions)) {
 
   // Save updated messages
   localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
+  if (newReactionCount > 0) {
+  newMessagesFound(newReactionCount);
+}
 }
 
     // ------------------------
