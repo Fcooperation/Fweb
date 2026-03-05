@@ -2,7 +2,14 @@ const API_URL = "https://fweb-backend.onrender.com/fchat";
 const account = JSON.parse(localStorage.getItem("faccount")) || {};
 const chatWith = JSON.parse(localStorage.getItem("chatting_with")) || {};
 
-const senderId = account.id;
+const currentSenderId = account.id;
+
+function isCurrentChatItem(sender_id, receiver_id) {
+  return (
+    (sender_id === currentSenderId && receiver_id === chatWith.id) ||
+    (sender_id === chatWith.id && receiver_id === currentSenderId)
+  );
+}
 
 if (!chatWith || !chatWith.id) {
   alert("No chat selected");
@@ -1234,7 +1241,12 @@ async function fetchAllFChatLogs() {
     // ------------------------
     if (Array.isArray(data.messages)) {
       data.messages.forEach(msg => {
-        if (fchatMessages.some(m => m.id === msg.id)) return;
+
+  if (!isCurrentChatItem(msg.sender_id, msg.receiver_id)) {
+    return;
+  }
+
+  if (fchatMessages.some(m => m.id === msg.id)) return;
 
         // 🔗 Resolve linked message
         let replyTo = null;
@@ -1274,6 +1286,10 @@ if (Array.isArray(data.reactions)) {
   let newReactionCount = 0;
 
   data.reactions.forEach(reaction => {
+
+  if (!isCurrentChatItem(reaction.sender_id, reaction.receiver_id)) {
+    return;
+  }
 
     // Find the message
     const targetMsg = fchatMessages.find(
@@ -1331,6 +1347,10 @@ if (Array.isArray(data.reactions)) {
     // ------------------------
     if (Array.isArray(data.polls)) {
       data.polls.forEach(poll => {
+
+  if (!isCurrentChatItem(poll.sender_id, poll.receiver_id)) {
+    return;
+  }
         if (fchatMessages.some(m => m.id === poll.id)) return;
 
         newItems.push({
