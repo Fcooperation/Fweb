@@ -1313,17 +1313,29 @@ const existingIndex = targetMsg.reactions.findIndex(
   r => Number(r.sender_id) === Number(reaction.sender_id)
 );
 
+let isNewReaction = false;
+
 if (existingIndex !== -1) {
-  // Replace the previous reaction
-  targetMsg.reactions[existingIndex].emoji = reaction.reaction;
+
+  // Only update if emoji changed
+  if (targetMsg.reactions[existingIndex].emoji !== reaction.reaction) {
+    targetMsg.reactions[existingIndex].emoji = reaction.reaction;
+    isNewReaction = true;
+  }
+
 } else {
-  // Add new reaction
+
   targetMsg.reactions.push({
     emoji: reaction.reaction,
     sender_id: reaction.sender_id
   });
+
+  isNewReaction = true;
 }
-    newReactionCount++;
+
+if (isNewReaction) {
+  newReactionCount++;
+}
 
     // ------------------------
     // UPDATE DOM IF VISIBLE
