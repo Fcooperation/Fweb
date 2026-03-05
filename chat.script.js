@@ -358,12 +358,21 @@ reactionsContainer.className = "reactions";
 reactionsContainer.style.marginTop = "2px";
 
 if (msgObj.reactions && msgObj.reactions.length) {
-  msgObj.reactions.forEach(r => {
-    const pill = document.createElement("div");
-    pill.className = "reaction-pill";
-    pill.textContent = `${r.emoji} ${r.count || 1}`;
-    reactionsContainer.appendChild(pill);
-  });
+  // Group reactions first
+const counts = {};
+
+msgObj.reactions.forEach(r => {
+  const emoji = r.emoji || r.reaction;
+  counts[emoji] = (counts[emoji] || 0) + 1;
+});
+
+// Render grouped reactions
+Object.entries(counts).forEach(([emoji, count]) => {
+  const pill = document.createElement("div");
+  pill.className = "reaction-pill";
+  pill.textContent = count > 1 ? `${emoji}${count}` : emoji;
+  reactionsContainer.appendChild(pill);
+});
 }
 
 msg.appendChild(reactionsContainer);
@@ -1313,17 +1322,29 @@ const existingIndex = targetMsg.reactions.findIndex(
   r => Number(r.sender_id) === Number(reaction.sender_id)
 );
 
+let isNewReaction = false;
+
 if (existingIndex !== -1) {
-  // Replace the previous reaction
-  targetMsg.reactions[existingIndex].emoji = reaction.reaction;
+
+  // Only update if emoji changed
+  if (targetMsg.reactions[existingIndex].emoji !== reaction.reaction) {
+    targetMsg.reactions[existingIndex].emoji = reaction.reaction;
+    isNewReaction = true;
+  }
+
 } else {
-  // Add new reaction
+
   targetMsg.reactions.push({
     emoji: reaction.reaction,
     sender_id: reaction.sender_id
   });
+
+  isNewReaction = true;
 }
-    newReactionCount++;
+
+if (isNewReaction) {
+  newReactionCount++;
+}
 
     // ------------------------
     // UPDATE DOM IF VISIBLE
