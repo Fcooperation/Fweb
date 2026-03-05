@@ -358,12 +358,21 @@ reactionsContainer.className = "reactions";
 reactionsContainer.style.marginTop = "2px";
 
 if (msgObj.reactions && msgObj.reactions.length) {
-  msgObj.reactions.forEach(r => {
-    const pill = document.createElement("div");
-    pill.className = "reaction-pill";
-    pill.textContent = `${r.emoji} ${r.count || 1}`;
-    reactionsContainer.appendChild(pill);
-  });
+  // Group reactions first
+const counts = {};
+
+msgObj.reactions.forEach(r => {
+  const emoji = r.emoji || r.reaction;
+  counts[emoji] = (counts[emoji] || 0) + 1;
+});
+
+// Render grouped reactions
+Object.entries(counts).forEach(([emoji, count]) => {
+  const pill = document.createElement("div");
+  pill.className = "reaction-pill";
+  pill.textContent = count > 1 ? `${emoji}${count}` : emoji;
+  reactionsContainer.appendChild(pill);
+});
 }
 
 msg.appendChild(reactionsContainer);
