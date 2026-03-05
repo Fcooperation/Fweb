@@ -2,6 +2,8 @@ const API_URL = "https://fweb-backend.onrender.com/fchat";
 const account = JSON.parse(localStorage.getItem("faccount")) || {};
 const chatWith = JSON.parse(localStorage.getItem("chatting_with")) || {};
 
+const senderId = account.id;
+
 if (!chatWith || !chatWith.id) {
   alert("No chat selected");
   window.location.href = "fchat.html";
