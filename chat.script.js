@@ -548,7 +548,7 @@ const markSelectedOptions = (pollWrapper, pollData) => {
   // Set initial button text & selected options based on stored poll
   const pollWrapper = msg.querySelector(".poll-wrapper") || msg;
   if (storedPoll) {
-  const voted = Array.isArray(storedPoll.voted_options) && storedPoll.voted_options.length > 0;
+  const voted = storedPoll?.votes?.[account.id]?.length > 0;
 
   markSelectedOptions(pollWrapper, storedPoll);
 
@@ -576,9 +576,11 @@ const markSelectedOptions = (pollWrapper, pollData) => {
     }
   }
   else if (storedPoll.status === "sent") {
-    if (voted) {
-      submitBtn.textContent = "Revote";
-    } else {
+    const myVotes = storedPoll?.votes?.[account.id] || [];
+
+if (myVotes.length > 0) {
+  submitBtn.textContent = "Revote";
+} else {
       submitBtn.textContent = "Submit vote";
     }
     submitBtn.disabled = false;
@@ -689,8 +691,14 @@ if (isSender) {
       p.id === msgObj.id
         ? {
             ...p,
-            status: "pending",
-            voted_options: selectedOptions
+            p.votes = p.votes || {};
+p.votes[account.id] = selectedOptions;
+
+return {
+  ...p,
+  status: "pending",
+  votes: p.votes
+}
           }
         : p
     );
@@ -1448,6 +1456,59 @@ Object.entries(counts).forEach(([emoji, count]) => {
         }
       });
     }
+    
+    // ------------------------
+// NORMALIZE VOTES
+// ------------------------
+if (Array.isArray(data.votes)) {
+
+  const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
+  let polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+
+  let newVoteCount = 0;
+
+  data.votes.forEach(vote => {
+
+    if (!isCurrentChatItem(vote.sender_id, vote.receiver_id)) {
+      return;
+    }
+
+    polls = polls.map(p => {
+
+      if (Number(p.id) === Number(vote.poll_id)) {
+
+        // ensure votes object
+        p.votes = p.votes || {};
+
+        const existing = JSON.stringify(p.votes[vote.sender_id]);
+
+        // store vote
+        p.votes[vote.sender_id] = vote.options;
+
+        // detect if new vote
+        if (existing !== JSON.stringify(vote.options)) {
+          newVoteCount++;
+        }
+
+        return {
+          ...p,
+          votes: p.votes
+        };
+      }
+
+      return p;
+    });
+
+  });
+
+  localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
+
+  if (newVoteCount > 0) {
+    updateTimeline();
+    newMessagesFound(newVoteCount);
+  }
+
+}
 
     // ------------------------
     // NO NEW DATA → STOP
