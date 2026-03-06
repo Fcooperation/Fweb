@@ -511,22 +511,36 @@ submitBtn.textContent = "Submit vote"; // ✅ DEFAULT TEXT (VERY IMPORTANT)
   const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
   const polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
   const storedPoll = polls.find(p => p.id === msgObj.id);
+  
 // Function to mark selected options in the UI
-const markSelectedOptions = (pollWrapper, votedOptions) => {
-  const totalSelected = votedOptions.length || 1; // avoid divide by zero
-  const percentPerOption = 100 / totalSelected;
+const markSelectedOptions = (pollWrapper, pollData) => {
+
+  const votes = pollData?.votes || {};
 
   pollWrapper.querySelectorAll(".poll-option").forEach((opt, i) => {
+
+    const optionIndex = i + 1;
+
     const circle = opt.querySelector(".poll-circle");
     const bar = opt.querySelector(".poll-bar");
 
-    if (votedOptions.includes(i + 1)) {
+    let optionHasVote = false;
+
+    // Check if ANY user voted this option
+    Object.values(votes).forEach(userVotes => {
+      if (Array.isArray(userVotes) && userVotes.includes(optionIndex)) {
+        optionHasVote = true;
+      }
+    });
+
+    if (optionHasVote) {
       circle.classList.add("selected");
-      bar.style.width = percentPerOption + "%";   // 👈 THIS is the magic
+      bar.style.width = "100%";
     } else {
       circle.classList.remove("selected");
       bar.style.width = "0%";
     }
+
   });
 };
 
@@ -536,7 +550,7 @@ const markSelectedOptions = (pollWrapper, votedOptions) => {
   if (storedPoll) {
   const voted = Array.isArray(storedPoll.voted_options) && storedPoll.voted_options.length > 0;
 
-  markSelectedOptions(pollWrapper, voted ? storedPoll.voted_options : []);
+  markSelectedOptions(pollWrapper, storedPoll);
 
   if (storedPoll.status === "pending") {
     if (voted) {
@@ -603,7 +617,8 @@ polls = polls.map(p => {
 localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
 
     // 🔥 Update UI instantly
-markSelectedOptions(pollWrapper, selectedOptions);
+const updatedPoll = polls.find(p => p.id === msgObj.id);
+markSelectedOptions(pollWrapper, updatedPoll);
 
     fetch(API_URL, {
       method: "POST",
@@ -681,7 +696,8 @@ if (isSender) {
     );
     localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
     // 🔥 Show bars immediately even offline
-markSelectedOptions(pollWrapper, selectedOptions);
+const updatedPoll = polls.find(p => p.id === msgObj.id);
+markSelectedOptions(pollWrapper, updatedPoll);
 
     // 🔁 Retry once online
     const onlineListener = () => {
