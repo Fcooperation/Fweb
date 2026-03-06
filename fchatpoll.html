@@ -203,19 +203,20 @@ document.getElementById("send-btn").addEventListener("click", async () => {
 
   // ✅ MESSAGE-SHAPED POLL
   const pollMessage = {
+  id: pollId,
+  sender_id: account.id,
+  receiver_id: chatWith.id,
+  sent_at: new Date().toISOString(),
+  status: "pending",
+  isPoll: true,
+  votes: {},
+  pollData: {
     id: pollId,
-    sender_id: account.id,
-    receiver_id: chatWith.id,
-    sent_at: new Date().toISOString(),
-    status: "pending",
-    isPoll: true,
-    pollData: {
-      id: pollId,
-      question,
-      options,
-      allowMultiple
-    }
-  };
+    question,
+    options,
+    allowMultiple
+  }
+};
 
   // Save locally
   const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
