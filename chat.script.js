@@ -1390,6 +1390,50 @@ Object.entries(counts).forEach(([emoji, count]) => {
 }
 }
 
+// ------------------------
+// NORMALIZE VOTES
+// ------------------------
+if (Array.isArray(data.votes)) {
+
+  const POLL_STORAGE_KEY = `polls_${account.email}_${chatWith.id}`;
+  let storedPolls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+
+  let votesChanged = false;
+
+  data.votes.forEach(vote => {
+
+    // ensure vote belongs to this chat
+    if (!isCurrentChatItem(vote.sender_id, vote.receiver_id)) {
+      return;
+    }
+
+    const pollIndex = storedPolls.findIndex(p => Number(p.id) === Number(vote.poll_id));
+    if (pollIndex === -1) return;
+
+    const poll = storedPolls[pollIndex];
+
+    // ensure votes container exists
+    poll.votes = poll.votes || {};
+
+    const existingVote = JSON.stringify(poll.votes[vote.sender_id] || []);
+    const incomingVote = JSON.stringify(vote.options || []);
+
+    // update only if vote changed
+    if (existingVote !== incomingVote) {
+      poll.votes[vote.sender_id] = vote.options || [];
+      votesChanged = true;
+    }
+
+  });
+
+  if (votesChanged) {
+    localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(storedPolls));
+
+    // refresh UI so markSelectedOptions runs again
+    updateTimeline();
+  }
+}
+
     // ------------------------
     // NORMALIZE POLLS
     // ------------------------
@@ -1421,13 +1465,14 @@ Object.entries(counts).forEach(([emoji, count]) => {
         let storedPolls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
         if (!storedPolls.some(p => p.id === poll.id)) {
           storedPolls.push({
-            id: poll.id,
-            sender_id: poll.sender_id,
-            receiver_id: poll.receiver_id,
-            pollData: poll.pollData,
-            status: "sent", // received polls are considered sent
-            sent_at: poll.sent_at
-          });
+  id: poll.id,
+  sender_id: poll.sender_id,
+  receiver_id: poll.receiver_id,
+  pollData: poll.pollData,
+  status: "sent",
+  votes: {},
+  sent_at: poll.sent_at
+});
           localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(storedPolls));
         }
       });
