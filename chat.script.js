@@ -1427,11 +1427,14 @@ if (Array.isArray(data.votes)) {
   });
 
   if (votesChanged) {
-    localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(storedPolls));
+  localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(storedPolls));
 
-    // refresh UI so markSelectedOptions runs again
-    updateTimeline();
-  }
+  // show notification
+  newMessagesFound(1);
+
+  // refresh UI so markSelectedOptions runs again
+  updateTimeline();
+}
 }
 
     // ------------------------
