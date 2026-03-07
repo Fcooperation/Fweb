@@ -1430,7 +1430,7 @@ if (Array.isArray(data.votes)) {
   localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(storedPolls));
 
   // show notification
-  newMessagesFound(1);
+  newMessagesFound(10);
 
   // refresh UI so markSelectedOptions runs again
   updateTimeline();
