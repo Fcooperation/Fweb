@@ -1399,49 +1399,50 @@ if (Array.isArray(data.votes)) {
   let storedPolls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
 
   let votesChanged = false;
+  let newVoteCount = 0;
 
   data.votes.forEach(vote => {
 
-    // ensure vote belongs to this chat
-    if (!isCurrentChatItem(vote.sender_id, vote.receiver_id)) {
-      return;
-    }
+    if (!isCurrentChatItem(vote.sender_id, vote.receiver_id)) return;
 
-    const pollIndex = storedPolls.findIndex(p => Number(p.id) === Number(vote.poll_id));
+    const pollIndex = storedPolls.findIndex(
+      p => Number(p.id) === Number(vote.poll_id)
+    );
+
     if (pollIndex === -1) return;
 
     const poll = storedPolls[pollIndex];
 
-    // ensure votes container exists
     poll.votes = poll.votes || {};
 
     const existingVote = JSON.stringify(poll.votes[vote.sender_id] || []);
     const incomingVote = JSON.stringify(vote.options || []);
 
-    // update only if vote changed
     if (existingVote !== incomingVote) {
 
-  poll.votes[vote.sender_id] = vote.options || [];
+      poll.votes[vote.sender_id] = vote.options || [];
 
-  // if the vote is from THIS user update voted_options
-  if (Number(vote.sender_id) === Number(account.id)) {
-    poll.voted_options = vote.options || [];
-  }
+      // ⭐ IMPORTANT: update voted_options if it's my vote
+      if (Number(vote.sender_id) === Number(account.id)) {
+        poll.voted_options = vote.options || [];
+      }
 
-  votesChanged = true;
-}
+      votesChanged = true;
+      newVoteCount++;
+    }
 
   });
 
   if (votesChanged) {
-  localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(storedPolls));
 
-  // show notification
-  newMessagesFound(10);
+    localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(storedPolls));
 
-  // refresh UI so markSelectedOptions runs again
-  updateTimeline();
-}
+    // show vote notification
+    newMessagesFound(newVoteCount);
+
+    // refresh poll UI
+    updateTimeline();
+  }
 }
 
     // ------------------------
