@@ -610,7 +610,12 @@ polls = polls.map(p => {
 localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
 
     // 🔥 Update UI instantly
-markSelectedOptions(pollWrapper, allVotes, myVotes)
+const updatedPolls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+const updatedPoll = updatedPolls.find(p => p.id === msgObj.id);
+const updatedAllVotes = Object.values(updatedPoll.votes || {}).flat();
+const updatedMyVotes = updatedPoll.voted_options || [];
+
+markSelectedOptions(pollWrapper, updatedAllVotes, updatedMyVotes);
 
     fetch(API_URL, {
       method: "POST",
@@ -688,7 +693,11 @@ if (isSender) {
     );
     localStorage.setItem(POLL_STORAGE_KEY, JSON.stringify(polls));
     // 🔥 Show bars immediately even offline
-markSelectedOptions(pollWrapper, allVotes, myVotes)
+const offlinePolls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
+const offlinePoll = offlinePolls.find(p => p.id === msgObj.id);
+const offlineAllVotes = Object.values(offlinePoll.votes || {}).flat();
+const offlineMyVotes = offlinePoll.voted_options || [];
+markSelectedOptions(pollWrapper, offlineAllVotes, offlineMyVotes);
 
     // 🔁 Retry once online
     const onlineListener = () => {
