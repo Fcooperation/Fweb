@@ -1420,9 +1420,16 @@ if (Array.isArray(data.votes)) {
 
     // update only if vote changed
     if (existingVote !== incomingVote) {
-      poll.votes[vote.sender_id] = vote.options || [];
-      votesChanged = true;
-    }
+
+  poll.votes[vote.sender_id] = vote.options || [];
+
+  // if the vote is from THIS user update voted_options
+  if (Number(vote.sender_id) === Number(account.id)) {
+    poll.voted_options = vote.options || [];
+  }
+
+  votesChanged = true;
+}
 
   });
 
