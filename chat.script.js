@@ -513,23 +513,31 @@ submitBtn.textContent = "Submit vote"; // ✅ DEFAULT TEXT (VERY IMPORTANT)
   const storedPoll = polls.find(p => p.id === msgObj.id);
 // Function to mark selected options in the UI
 const markSelectedOptions = (pollWrapper, votedOptions) => {
-  const totalSelected = votedOptions.length || 1; // avoid divide by zero
+
+  // 🔴 RESET ALL OPTIONS FIRST
+  pollWrapper.querySelectorAll(".poll-option").forEach(opt => {
+    const circle = opt.querySelector(".poll-circle");
+    const bar = opt.querySelector(".poll-bar");
+
+    circle.classList.remove("selected");
+    bar.style.width = "0%";
+  });
+
+  const totalSelected = votedOptions.length || 1;
   const percentPerOption = 100 / totalSelected;
 
+  // 🟢 APPLY NEW SELECTION
   pollWrapper.querySelectorAll(".poll-option").forEach((opt, i) => {
     const circle = opt.querySelector(".poll-circle");
     const bar = opt.querySelector(".poll-bar");
 
     if (votedOptions.includes(i + 1)) {
       circle.classList.add("selected");
-      bar.style.width = percentPerOption + "%";   // 👈 THIS is the magic
-    } else {
-      circle.classList.remove("selected");
-      bar.style.width = "0%";
+      bar.style.width = percentPerOption + "%";
     }
   });
-};
 
+};
 
   // Set initial button text & selected options based on stored poll
   const pollWrapper = msg.querySelector(".poll-wrapper") || msg;
