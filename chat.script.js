@@ -512,21 +512,38 @@ submitBtn.textContent = "Submit vote"; // ✅ DEFAULT TEXT (VERY IMPORTANT)
   const polls = JSON.parse(localStorage.getItem(POLL_STORAGE_KEY)) || [];
   const storedPoll = polls.find(p => p.id === msgObj.id);
 // Function to mark selected options in the UI
-const markSelectedOptions = (pollWrapper, votedOptions) => {
-  const totalSelected = votedOptions.length || 1; // avoid divide by zero
-  const percentPerOption = 100 / totalSelected;
+const markSelectedOptions = (pollWrapper, pollVotesMap) => {
 
-  pollWrapper.querySelectorAll(".poll-option").forEach((opt, i) => {
+  const optionCountMap = {};
+
+  Object.values(pollVotesMap || {}).forEach(arr => {
+    arr.forEach(opt => {
+      optionCountMap[opt] = (optionCountMap[opt] || 0) + 1;
+    });
+  });
+
+  const totalVotes = Object.values(optionCountMap)
+    .reduce((a, b) => a + b, 0) || 1;
+
+  pollWrapper.querySelectorAll(".poll-option").forEach((opt) => {
+
     const circle = opt.querySelector(".poll-circle");
     const bar = opt.querySelector(".poll-bar");
 
-    if (votedOptions.includes(i + 1)) {
+    const index = Number(opt.dataset.index) + 1;
+
+    const count = optionCountMap[index] || 0;
+
+    const percent = (count / totalVotes) * 100;
+
+    bar.style.width = percent + "%";
+
+    if (optionCountMap[index]) {
       circle.classList.add("selected");
-      bar.style.width = percentPerOption + "%";   // 👈 THIS is the magic
     } else {
       circle.classList.remove("selected");
-      bar.style.width = "0%";
     }
+
   });
 };
 
@@ -536,8 +553,7 @@ const markSelectedOptions = (pollWrapper, votedOptions) => {
   if (storedPoll) {
   const voted = Array.isArray(storedPoll.voted_options) && storedPoll.voted_options.length > 0;
 
-  const allVotes = Object.values(storedPoll.votes || {}).flat();
-markSelectedOptions(pollWrapper, allVotes);
+  markSelectedOptions(pollWrapper, storedPoll?.votes || {});
 
   if (storedPoll.status === "pending") {
     if (voted) {
