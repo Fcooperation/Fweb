@@ -544,8 +544,8 @@ const markSelectedOptions = (pollWrapper, votedOptions) => {
   if (storedPoll) {
   const voted = Array.isArray(storedPoll.voted_options) && storedPoll.voted_options.length > 0;
 
-  const allVotes = Object.values(storedPoll.votes || {}).flat();
-markSelectedOptions(pollWrapper, allVotes);
+  const myVotes = storedPoll.voted_options || [];
+markSelectedOptions(pollWrapper, myVotes);
 
   if (storedPoll.status === "pending") {
     if (voted) {
