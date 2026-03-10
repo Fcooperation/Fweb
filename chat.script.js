@@ -1755,10 +1755,10 @@ setInterval(() => {
     // typing just changed to true
     lastTypingState = true;
 
-    // Vibrate for 5 seconds (5000ms)
-    if (navigator.vibrate) {
-      navigator.vibrate(5000);
-    }
+    // Call your newMessagesFound function instead of vibrating
+    // You can replace 1 with whatever count you want to show
+    newMessagesFound(1);
+
   } else if (!isTyping && lastTypingState) {
     // typing stopped
     lastTypingState = false;
