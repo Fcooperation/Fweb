@@ -1262,7 +1262,7 @@ async function fetchAllFChatLogs() {
     if (!data) return;
     
     // ------------------------
-// UPDATE PARTNER STATUS
+// UPDATE PARTNER STATUS (UTC)
 // ------------------------
 function updatePartnerStatus(partnerStatus) {
   const statusEl = document.getElementById("user-status");
@@ -1294,7 +1294,7 @@ function updatePartnerStatus(partnerStatus) {
     return;
   }
 
-  // Otherwise show Last seen
+  // Otherwise show Last seen in UTC
   let displayText = "";
   if (diffSec < 60) {
     displayText = `Last seen ${Math.floor(diffSec)} seconds ago`;
@@ -1308,21 +1308,17 @@ function updatePartnerStatus(partnerStatus) {
     } else if (hours < 1.5) { 
       displayText = "Last seen 1 hour ago";
     } else if (hours < 24) {
-      displayText = `Last seen ${lastSeenTime.getHours()}:${String(lastSeenTime.getMinutes()).padStart(2,"0")}`;
+      // UTC hours and minutes
+      const hh = String(lastSeenTime.getUTCHours()).padStart(2, "0");
+      const mm = String(lastSeenTime.getUTCMinutes()).padStart(2, "0");
+      displayText = `Last seen ${hh}:${mm} UTC`;
     }
   } else {
-    displayText = `Last seen ${lastSeenTime.toLocaleString()}`;
+    displayText = `Last seen ${lastSeenTime.toUTCString()}`;
   }
 
   statusEl.textContent = displayText;
   statusEl.className = "status last-seen";
-}
-
-// ------------------------
-// Example usage inside fetchAllFChatLogs
-// ------------------------
-if (data.partner_status) {
-  updatePartnerStatus(data.partner_status);
 }
 
     const newItems = [];
@@ -1794,40 +1790,6 @@ fetch(API_URL, {
   };
   setTimeout(() => document.addEventListener("click", removeBar), 0);
 }
-
-// Typing logic
-const input = document.getElementById("messageInput");
-
-let typingTimeout;
-
-input.addEventListener("input", () => {
-
-  isTyping = true;
-
-  clearTimeout(typingTimeout);
-
-  typingTimeout = setTimeout(() => {
-    isTyping = false;
-  }, 2000);
-
-});
-let lastTypingState = false; // remember previous state
-
-// Watch typing every 100ms
-setInterval(() => {
-  if (isTyping && !lastTypingState) {
-    // typing just changed to true
-    lastTypingState = true;
-
-    // Call your newMessagesFound function instead of vibrating
-    // You can replace 1 with whatever count you want to show
-    newMessagesFound(1);
-
-  } else if (!isTyping && lastTypingState) {
-    // typing stopped
-    lastTypingState = false;
-  }
-}, 100);
 
 // ===== Event Listeners =====
 window.addEventListener("online", retryAllPolls);  // retry pending polls once online
