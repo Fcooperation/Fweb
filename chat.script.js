@@ -1260,6 +1260,70 @@ async function fetchAllFChatLogs() {
 
     const data = await res.json();
     if (!data) return;
+    
+    // ------------------------
+// UPDATE PARTNER STATUS
+// ------------------------
+function updatePartnerStatus(partnerStatus) {
+  const statusEl = document.getElementById("user-status");
+  if (!statusEl || !partnerStatus) return;
+
+  const { logs, last_seen } = partnerStatus;
+  if (!logs || !last_seen) {
+    statusEl.textContent = "Offline";
+    statusEl.className = "status last-seen";
+    return;
+  }
+
+  const now = new Date();
+  const lastSeenTime = new Date(last_seen);
+  const diffSec = (now - lastSeenTime) / 1000;
+
+  // If last seen within 3 sec
+  if (diffSec <= 3) {
+    if (logs.status === "active" && logs.chat == account.id) {
+      statusEl.textContent = "Active";
+      statusEl.className = "status active";
+    } else if (logs.status === "active") {
+      statusEl.textContent = "Online";
+      statusEl.className = "status online";
+    } else {
+      statusEl.textContent = "Online";
+      statusEl.className = "status online";
+    }
+    return;
+  }
+
+  // Otherwise show Last seen
+  let displayText = "";
+  if (diffSec < 60) {
+    displayText = `Last seen ${Math.floor(diffSec)} seconds ago`;
+  } else if (diffSec < 3600) {
+    const mins = Math.floor(diffSec / 60);
+    displayText = `Last seen ${mins} minute${mins > 1 ? "s" : ""} ago`;
+  } else if (diffSec < 86400) { // less than 24h
+    const hours = Math.floor(diffSec / 3600);
+    if (hours < 1) {
+      displayText = `Last seen ${Math.floor(diffSec / 60)} minutes ago`;
+    } else if (hours < 1.5) { 
+      displayText = "Last seen 1 hour ago";
+    } else if (hours < 24) {
+      displayText = `Last seen ${lastSeenTime.getHours()}:${String(lastSeenTime.getMinutes()).padStart(2,"0")}`;
+    }
+  } else {
+    displayText = `Last seen ${lastSeenTime.toLocaleString()}`;
+  }
+
+  statusEl.textContent = displayText;
+  statusEl.className = "status last-seen";
+}
+
+// ------------------------
+// Example usage inside fetchAllFChatLogs
+// ------------------------
+if (data.partner_status) {
+  updatePartnerStatus(data.partner_status);
+}
 
     const newItems = [];
 

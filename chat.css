@@ -756,3 +756,28 @@ body {
 .reaction-pill:hover {
   background: #dcdcdc;
 }
+/* Status styles */
+#user-status {
+  font-size: 0.9rem;
+  margin-top: 2px;
+  font-style: normal;
+  color: grey;
+}
+
+#user-status.active {
+  color: #007bff; /* blue */
+  font-weight: bold;
+  font-style: normal;
+}
+
+#user-status.online {
+  color: #007bff; /* blue */
+  font-weight: normal;
+  font-style: normal;
+}
+
+#user-status.last-seen {
+  color: grey;
+  font-style: italic;
+  font-weight: normal;
+}
