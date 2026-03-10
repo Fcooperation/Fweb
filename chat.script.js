@@ -1747,6 +1747,23 @@ input.addEventListener("input", () => {
   }, 2000);
 
 });
+let lastTypingState = false; // remember previous state
+
+// Watch typing every 100ms
+setInterval(() => {
+  if (isTyping && !lastTypingState) {
+    // typing just changed to true
+    lastTypingState = true;
+
+    // Vibrate for 5 seconds (5000ms)
+    if (navigator.vibrate) {
+      navigator.vibrate(5000);
+    }
+  } else if (!isTyping && lastTypingState) {
+    // typing stopped
+    lastTypingState = false;
+  }
+}, 100);
 
 // ===== Event Listeners =====
 window.addEventListener("online", retryAllPolls);  // retry pending polls once online
