@@ -1248,15 +1248,16 @@ async function fetchAllFChatLogs() {
 
   try {
     const res = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-  action: "get_all_fchatlogs",
-  id: account.id,
-  chatwithid: chatWith.id,
-  typing: isTyping ? "yes" : "no"
-})
-    });
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    action: "get_all_fchatlogs",
+    id: account.id,
+    chatwithid: chatWith.id,
+    typing: isTyping ? "yes" : "no",
+    last_seen: new Date().toISOString() // <-- ADD THIS LINE
+  })
+});
 
     const data = await res.json();
     if (!data) return;
