@@ -1262,7 +1262,7 @@ async function fetchAllFChatLogs() {
     if (!data) return;
     
     // ------------------------
-// UPDATE PARTNER STATUS (UTC)
+// UPDATE PARTNER STATUS
 // ------------------------
 function updatePartnerStatus(partnerStatus) {
   const statusEl = document.getElementById("user-status");
@@ -1294,7 +1294,7 @@ function updatePartnerStatus(partnerStatus) {
     return;
   }
 
-  // Otherwise show Last seen in UTC
+  // Otherwise show Last seen
   let displayText = "";
   if (diffSec < 60) {
     displayText = `Last seen ${Math.floor(diffSec)} seconds ago`;
@@ -1308,17 +1308,21 @@ function updatePartnerStatus(partnerStatus) {
     } else if (hours < 1.5) { 
       displayText = "Last seen 1 hour ago";
     } else if (hours < 24) {
-      // UTC hours and minutes
-      const hh = String(lastSeenTime.getUTCHours()).padStart(2, "0");
-      const mm = String(lastSeenTime.getUTCMinutes()).padStart(2, "0");
-      displayText = `Last seen ${hh}:${mm} UTC`;
+      displayText = `Last seen ${lastSeenTime.getHours()}:${String(lastSeenTime.getMinutes()).padStart(2,"0")}`;
     }
   } else {
-    displayText = `Last seen ${lastSeenTime.toUTCString()}`;
+    displayText = `Last seen ${lastSeenTime.toLocaleString()}`;
   }
 
   statusEl.textContent = displayText;
   statusEl.className = "status last-seen";
+}
+
+// ------------------------
+// Example usage inside fetchAllFChatLogs
+// ------------------------
+if (data.partner_status) {
+  updatePartnerStatus(data.partner_status);
 }
 
     const newItems = [];
