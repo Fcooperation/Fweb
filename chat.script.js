@@ -21,6 +21,7 @@ let messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
 let selectionMode = false;
 const selectedMessages = new Set();
 let longPressTimer = null;
+let isTyping = false;
 
 const FCHAT_STORAGE_KEY = `fchat_messages_${account.email}`;
 let fchatMessages = JSON.parse(localStorage.getItem(FCHAT_STORAGE_KEY)) || [];
@@ -1250,10 +1251,11 @@ async function fetchAllFChatLogs() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        action: "get_all_fchatlogs",
-        id: account.id,
-        chatwithid: chatWith.id
-      })
+  action: "get_all_fchatlogs",
+  id: account.id,
+  chatwithid: chatWith.id,
+  typing: isTyping ? "yes" : "no"
+})
     });
 
     const data = await res.json();
@@ -1728,6 +1730,23 @@ fetch(API_URL, {
   };
   setTimeout(() => document.addEventListener("click", removeBar), 0);
 }
+
+// Typing logic
+const input = document.getElementById("messageInput");
+
+let typingTimeout;
+
+input.addEventListener("input", () => {
+
+  isTyping = true;
+
+  clearTimeout(typingTimeout);
+
+  typingTimeout = setTimeout(() => {
+    isTyping = false;
+  }, 2000);
+
+});
 
 // ===== Event Listeners =====
 window.addEventListener("online", retryAllPolls);  // retry pending polls once online
