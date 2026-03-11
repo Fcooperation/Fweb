@@ -48,7 +48,8 @@ const chatBody = document.getElementById("chat-body");
 let typingBubble = null;
 
 function showTypingBubble() {
-  if (typingBubble) return;
+
+  if (document.querySelector(".typing-bubble")) return;
 
   typingBubble = document.createElement("div");
   typingBubble.className = "typing-bubble";
@@ -64,8 +65,10 @@ function showTypingBubble() {
 }
 
 function hideTypingBubble() {
-  if (!typingBubble) return;
-  typingBubble.remove();
+  const bubble = document.querySelector(".typing-bubble");
+  if (bubble) {
+    bubble.remove();
+  }
   typingBubble = null;
 }
 
