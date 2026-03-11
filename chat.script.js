@@ -42,6 +42,33 @@ if (chatWith.profile_pic) {
 // Chat body
 const chatBody = document.getElementById("chat-body");
 
+// ================================
+// TYPING INDICATOR ENGINE
+// ================================
+let typingBubble = null;
+
+function showTypingBubble() {
+  if (typingBubble) return;
+
+  typingBubble = document.createElement("div");
+  typingBubble.className = "typing-bubble";
+
+  typingBubble.innerHTML = `
+    <span></span>
+    <span></span>
+    <span></span>
+  `;
+
+  chatBody.appendChild(typingBubble);
+  chatBody.scrollTop = chatBody.scrollHeight;
+}
+
+function hideTypingBubble() {
+  if (!typingBubble) return;
+  typingBubble.remove();
+  typingBubble = null;
+}
+
 // Date dividers
 function formatDateLabel(dateStr) {
   const date = new Date(dateStr);
@@ -1324,6 +1351,14 @@ function updatePartnerStatus(partnerStatus) {
 // ------------------------
 if (data.partner_status) {
   updatePartnerStatus(data.partner_status);
+
+  const logs = data.partner_status.logs;
+
+  if (logs && logs.typing === true && logs.chat == account.id) {
+    showTypingBubble();
+  } else {
+    hideTypingBubble();
+  }
 }
 
     const newItems = [];
