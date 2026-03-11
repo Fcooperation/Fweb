@@ -1277,7 +1277,7 @@ function updatePartnerStatus(partnerStatus) {
   }
 
   const now = new Date();
-  const lastSeenTime = new Date(last_seen);
+  const lastSeenTime = new Date(new Date(last_seen).getTime() + 3600000);
   const diffSec = (now - lastSeenTime) / 1000;
 
   // If last seen within 3 sec
