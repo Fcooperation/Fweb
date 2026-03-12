@@ -1310,20 +1310,18 @@ function updatePartnerStatus(partnerStatus) {
   const lastSeenTime = new Date(new Date(last_seen).getTime() + 3600000);
   const diffSec = (now - lastSeenTime) / 1000;
 
-  // If last seen within 3 sec
-  if (diffSec <= 5) {
+  // Improved logic block inside updatePartnerStatus
+if (diffSec <= 15) {
     if (logs.status === "active" && logs.chat == account.id) {
-      statusEl.textContent = "Active";
-      statusEl.className = "status active";
-    } else if (logs.status === "active") {
-      statusEl.textContent = "Online";
-      statusEl.className = "status online";
+        statusEl.textContent = "Active";
+        statusEl.className = "status active";
     } else {
-      statusEl.textContent = "Online";
-      statusEl.className = "status online";
+        statusEl.textContent = "Online";
+        statusEl.className = "status online";
     }
     return;
-  }
+}
+
 
 // Otherwise show Last seen
 let displayText = "";
