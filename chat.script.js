@@ -1855,23 +1855,30 @@ fetch(API_URL, {
   setTimeout(() => document.addEventListener("click", removeBar), 0);
 }
 
-//Typing function
+// Typing function
 let typingTimer = null;
 
 textarea.addEventListener("input", () => {
-  // Existing height logic
+  // 1. Maintain the existing height logic
   textarea.style.height = "auto";
   textarea.style.height = Math.min(textarea.scrollHeight, 120) + "px";
 
-  // --- NEW TYPING LOGIC ---
+  // 2. INSTANT CHECK: If we weren't typing before, tell the server NOW
+  if (!isTyping) {
+    isTyping = true;
+    fetchAllFChatLogs(); // This pushes "typing: yes" immediately
+  }
+
+  // 3. Keep the variable true while the user is active
   isTyping = true;
 
-  // Clear the existing timer so it doesn't expire while we are still typing
+  // 4. Reset the "stop" timer
   clearTimeout(typingTimer);
 
-  // After 2 seconds of no input, set isTyping back to false
+  // 5. When they stop for 2 seconds, update the server to "no"
   typingTimer = setTimeout(() => {
     isTyping = false;
+    fetchAllFChatLogs(); // Tells the server they stopped
   }, 2000);
 });
 
