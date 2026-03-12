@@ -1857,6 +1857,27 @@ fetch(API_URL, {
   setTimeout(() => document.addEventListener("click", removeBar), 0);
 }
 
+//Typing function
+let typingTimer = null;
+
+textarea.addEventListener("input", () => {
+  // Existing height logic
+  textarea.style.height = "auto";
+  textarea.style.height = Math.min(textarea.scrollHeight, 120) + "px";
+
+  // --- NEW TYPING LOGIC ---
+  isTyping = true;
+
+  // Clear the existing timer so it doesn't expire while we are still typing
+  clearTimeout(typingTimer);
+
+  // After 2 seconds of no input, set isTyping back to false
+  typingTimer = setTimeout(() => {
+    isTyping = false;
+  }, 2000);
+});
+
+
 // ===== Event Listeners =====
 window.addEventListener("online", retryAllPolls);  // retry pending polls once online
 window.addEventListener("offline", retryAllPolls); // mark sending → pending when offline
