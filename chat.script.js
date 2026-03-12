@@ -1311,7 +1311,7 @@ function updatePartnerStatus(partnerStatus) {
   const diffSec = (now - lastSeenTime) / 1000;
 
   // If last seen within 3 sec
-  if (diffSec <= 3) {
+  if (diffSec <= 5) {
     if (logs.status === "active" && logs.chat == account.id) {
       statusEl.textContent = "Active";
       statusEl.className = "status active";
@@ -1325,25 +1325,48 @@ function updatePartnerStatus(partnerStatus) {
     return;
   }
 
-  // Otherwise show Last seen
-  let displayText = "";
-  if (diffSec < 60) {
-    displayText = `Last seen ${Math.floor(diffSec)} seconds ago`;
-  } else if (diffSec < 3600) {
-    const mins = Math.floor(diffSec / 60);
-    displayText = `Last seen ${mins} minute${mins > 1 ? "s" : ""} ago`;
-  } else if (diffSec < 86400) { // less than 24h
-    const hours = Math.floor(diffSec / 3600);
-    if (hours < 1) {
-      displayText = `Last seen ${Math.floor(diffSec / 60)} minutes ago`;
-    } else if (hours < 1.5) { 
-      displayText = "Last seen 1 hour ago";
-    } else if (hours < 24) {
-      displayText = `Last seen ${lastSeenTime.getHours()}:${String(lastSeenTime.getMinutes()).padStart(2,"0")}`;
-    }
-  } else {
-    displayText = `Last seen ${lastSeenTime.toLocaleString()}`;
+// Otherwise show Last seen
+let displayText = "";
+
+const nowDate = new Date();
+const today = nowDate.toDateString();
+const yesterday = new Date(nowDate - 86400000).toDateString();
+const seenDate = lastSeenTime.toDateString();
+
+// Format time with AM/PM
+let hours = lastSeenTime.getHours();
+const minutes = String(lastSeenTime.getMinutes()).padStart(2,"0");
+const ampm = hours >= 12 ? "PM" : "AM";
+
+hours = hours % 12;
+hours = hours ? hours : 12;
+
+const formattedTime = `${hours}:${minutes} ${ampm}`;
+
+if (diffSec < 60) {
+  displayText = `Last seen ${Math.floor(diffSec)} seconds ago`;
+}
+
+else if (diffSec < 3600) {
+  const mins = Math.floor(diffSec / 60);
+  displayText = `Last seen ${mins} minute${mins > 1 ? "s" : ""} ago`;
+}
+
+else {
+
+  if (seenDate === today) {
+    displayText = `Last seen today at ${formattedTime}`;
   }
+
+  else if (seenDate === yesterday) {
+    displayText = `Last seen yesterday at ${formattedTime}`;
+  }
+
+  else {
+    displayText = `Last seen ${lastSeenTime.toLocaleDateString()} at ${formattedTime}`;
+  }
+
+}
 
   statusEl.textContent = displayText;
   statusEl.className = "status last-seen";
