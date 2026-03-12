@@ -826,7 +826,7 @@ Typing indicator bubble
 }
 
 .msg-status.sent {
-  color: blue;
+  color: #1e88ff;
 }
 
 .msg-status.pending {
