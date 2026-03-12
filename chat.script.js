@@ -380,7 +380,11 @@ function addMessage(msgObj) {
     `).join("")}
 
     <div class="message-meta">
-      ${time} ${isSent ? "• " + (msgObj.poll_status || msgObj.status || "sent") : ""}
+      ${time} ${
+  isSent
+    ? `• <span class="msg-status ${msgObj.status || "sent"}">${msgObj.status || "sent"}</span>`
+    : ""
+}
     </div>
   `;
   // ===== Reactions container =====
@@ -441,8 +445,12 @@ if (msgObj.deleted && msgObj.deleted_for === "everyone") {
     ${replyHTML}
     <div class="message-text"></div>
     <div class="message-meta">
-      ${time} ${isSent ? "• " + (msgObj.status || "sent") : ""}
-    </div>
+  ${time} ${
+    isSent
+      ? `• <span class="msg-status ${msgObj.status || "sent"}">${msgObj.status || "sent"}</span>`
+      : ""
+  }
+</div>
   `;
   if (msgObj.poll_status === "sending") {
   msg.classList.add("poll-dimmed");
