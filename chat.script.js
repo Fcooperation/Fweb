@@ -945,7 +945,7 @@ function retryPendingMessages() {
 }
 // Retry Pending polls with optimistic delivery
 function retryPendingPollMessages() {
-  const FCHAT_STORAGE_KEY = `fchat_${account.email}`;
+  const FCHAT_STORAGE_KEY = `fchat_messages_${account.email}`;
 
   if (!Array.isArray(fchatMessages)) return;
 
