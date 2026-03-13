@@ -1890,50 +1890,6 @@ textarea.addEventListener("input", () => {
   }, 2000);
 });
 
-// Received messages LOGIC
-async function markMessagesAsSeen() {
-  // 1. Find unseen messages from the partner
-  const unseenIds = fchatMessages
-    .filter(m => m.sender_id === chatWith.id && m.seen !== "yes")
-    .map(m => m.id);
-
-  if (unseenIds.length === 0) return;
-
-  // 2. Update LocalStorage immediately (Optimistic)
-  fchatMessages = fchatMessages.map(m => {
-    if (unseenIds.includes(m.id)) {
-      return { ...m, seen: "yes" };
-    }
-    return m;
-  });
-  localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
-
-  // 3. Send to Backend
-  try {
-    await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "received_messages",
-        ids: unseenIds, // Sending as an array
-        status: "seen",
-        sender_id: account.id,
-        receiver_id: chatWith.id
-      })
-    });
-  } catch (err) {
-    console.error("Failed to sync seen status", err);
-  }
-}
-
-// Add this to your event listeners at the bottom
-window.addEventListener("focus", markMessagesAsSeen);
-
-// And call it inside fetchAllFChatLogs after you've added newItems
-if (newItems.length > 0 && document.hasFocus()) {
-    markMessagesAsSeen();
-}
-
 
 // ===== Event Listeners =====
 window.addEventListener("online", retryAllPolls);  // retry pending polls once online
