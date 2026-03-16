@@ -1062,6 +1062,7 @@ function syncToFChat(msgObj=null) {
 
   fchatMessages.sort((a,b) => new Date(a.sent_at)-new Date(b.sent_at));
   localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
+  sendLastSeenMessage();
   updateTimeline();
 }
 
@@ -1275,6 +1276,39 @@ chatBody.addEventListener("click", (e) => {
     optionEl.querySelector(".poll-bar").style.width = "100%";
   }
 });
+
+// Seen messages logic 
+function sendLastSeenMessage() {
+
+  if (!messages || messages.length === 0) return;
+
+  // get the most recent message FROM the partner
+  const partnerMessages = messages.filter(
+    m => m.sender_id === chatWith.id
+  );
+
+  if (partnerMessages.length === 0) return;
+
+  const lastMessage = partnerMessages[partnerMessages.length - 1];
+
+  const payload = {
+    action: "received_messages",
+    last_seen_id: lastMessage.id,
+    status: "seen",
+    sender_id: account.id,
+    receiver_id: chatWith.id
+  };
+
+  fetch(API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  }).catch(err => console.error("Seen update failed:", err));
+
+}
+
 // ------------------------------------
 // Receiving logic
 // Normalize messages + polls
@@ -1914,3 +1948,4 @@ retryPendingPollMessages();
 fetchAllFChatLogs();
 loadChatSettings();
 applyChatSettings();
+sendLastSeenMessage();
