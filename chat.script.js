@@ -1645,6 +1645,20 @@ if (Array.isArray(data.votes)) {
     if (newItems.length === 0) return;
 
     // ------------------------
+    // SEND ONLY THE LATEST RECEIVED MESSAGE ID
+    // ------------------------
+    // 1. Filter items to only get those sent by the OTHER person
+    const receivedItems = newItems.filter(
+      item => String(item.sender_id) === String(chatWith.id)
+    );
+
+    // 2. If there are any, take the very last (latest) one and send it
+    if (receivedItems.length > 0) {
+      const latestMessage = receivedItems[receivedItems.length - 1];
+      sendSeenStatus(latestMessage.id);
+    }
+
+    // ------------------------
     // STORE + SORT
     // ------------------------
     fchatMessages.push(...newItems);
@@ -1889,6 +1903,32 @@ textarea.addEventListener("input", () => {
     fetchAllFChatLogs(); // Tells the server they stopped
   }, 2000);
 });
+
+//Received messages logic 
+async function sendSeenStatus(lastId) {
+  if (!lastId || !navigator.onLine) return;
+
+  try {
+    const payload = {
+      action: "received_messages",
+      ids: [lastId], // Sending as an array with one ID
+      status: "seen",
+      sender_id: account.id,   // You are the one sending the "seen" notification
+      receiver_id: chatWith.id  // To the person who sent the original message
+    };
+
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    console.log("Marked as seen:", lastId, data);
+  } catch (err) {
+    console.warn("Failed to update seen status:", err);
+  }
+}
 
 
 // ===== Event Listeners =====
