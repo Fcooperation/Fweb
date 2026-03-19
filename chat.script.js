@@ -1892,24 +1892,39 @@ textarea.addEventListener("input", () => {
 
 // Received messages logic 
 window.addEventListener("load", () => {
-  sendTestSeen();
+  sendLastSeen();
 });
 
-function sendTestSeen() {
+function sendLastSeen() {
+
+  // 🔍 Get only received messages
+  const receivedMessages = fchatMessages.filter(msg =>
+    String(msg.sender_id) === String(chatWith.id) &&
+    String(msg.receiver_id) === String(account.id)
+  );
+
+  if (receivedMessages.length === 0) {
+    console.log("⚠️ No received messages found");
+    return;
+  }
+
+  // 🧠 Get the LAST one
+  const lastMsg = receivedMessages[receivedMessages.length - 1];
+
+  if (!lastMsg || !lastMsg.id) {
+    console.log("⚠️ No valid last message ID");
+    return;
+  }
+
   const payload = {
     action: "received_messages",
-
-    // 🧪 FAKE TEST IDs (not real messages)
-    ids: [999001, 999002, 999003],
-
+    ids: [Number(lastMsg.id)], // ✅ ONLY ONE ID
     status: "seen",
-
-    // ✅ REAL USERS
-    sender_id: chatWith.id,   // person who sent messages
-    receiver_id: account.id  // YOU (the one seeing them)
+    sender_id: chatWith.id,
+    receiver_id: account.id
   };
 
-  console.log("📤 Sending TEST seen payload:", payload);
+  console.log("📤 Sending LAST seen:", payload);
 
   fetch(API_URL, {
     method: "POST",
@@ -1920,10 +1935,10 @@ function sendTestSeen() {
   })
   .then(res => res.json())
   .then(data => {
-    console.log("✅ Seen test response:", data);
+    console.log("✅ Last seen response:", data);
   })
   .catch(err => {
-    console.error("❌ Seen test failed:", err);
+    console.error("❌ Last seen failed:", err);
   });
 }
 
