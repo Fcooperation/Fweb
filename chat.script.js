@@ -1645,20 +1645,6 @@ if (Array.isArray(data.votes)) {
     if (newItems.length === 0) return;
 
     // ------------------------
-    // SEND ONLY THE LATEST RECEIVED MESSAGE ID
-    // ------------------------
-    // 1. Filter items to only get those sent by the OTHER person
-    const receivedItems = newItems.filter(
-      item => String(item.sender_id) === String(chatWith.id)
-    );
-
-    // 2. If there are any, take the very last (latest) one and send it
-    if (receivedItems.length > 0) {
-      const latestMessage = receivedItems[receivedItems.length - 1];
-      sendSeenStatus(latestMessage.id);
-    }
-
-    // ------------------------
     // STORE + SORT
     // ------------------------
     fchatMessages.push(...newItems);
@@ -1904,30 +1890,41 @@ textarea.addEventListener("input", () => {
   }, 2000);
 });
 
-//Received messages logic 
-async function sendSeenStatus(lastId) {
-  if (!lastId || !navigator.onLine) return;
+// Received messages logic 
+window.addEventListener("load", () => {
+  sendTestSeen();
+});
 
-  try {
-    const payload = {
-      action: "received_messages",
-      ids: [lastId], // Sending as an array with one ID
-      status: "seen",
-      sender_id: account.id,   // You are the one sending the "seen" notification
-      receiver_id: chatWith.id  // To the person who sent the original message
-    };
+function sendTestSeen() {
+  const payload = {
+    action: "received_messages",
 
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
+    // 🧪 FAKE TEST IDs (not real messages)
+    ids: [999001, 999002, 999003],
 
-    const data = await res.json();
-    console.log("Marked as seen:", lastId, data);
-  } catch (err) {
-    console.warn("Failed to update seen status:", err);
-  }
+    status: "seen",
+
+    // ✅ REAL USERS
+    sender_id: chatWith.id,   // person who sent messages
+    receiver_id: account.id  // YOU (the one seeing them)
+  };
+
+  console.log("📤 Sending TEST seen payload:", payload);
+
+  fetch(API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  })
+  .then(res => res.json())
+  .then(data => {
+    console.log("✅ Seen test response:", data);
+  })
+  .catch(err => {
+    console.error("❌ Seen test failed:", err);
+  });
 }
 
 
