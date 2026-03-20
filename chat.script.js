@@ -1382,6 +1382,40 @@ else {
 // Example usage inside fetchAllFChatLogs
 // ------------------------
 if (data.partner_status) {
+  
+  // =========================
+// HANDLE SEEN MESSAGES
+// =========================
+if (data.partner_status?.seen_messages?.length) {
+
+  const seenList = data.partner_status.seen_messages;
+
+  seenList.forEach(seen => {
+    const seenId = Number(seen.message_id);
+
+    // 🔥 Mark ALL messages up to this ID as seen
+    fchatMessages = fchatMessages.map(msg => {
+      const isMine = String(msg.sender_id) === String(account.id);
+
+      if (isMine && Number(msg.id) <= seenId) {
+        return {
+          ...msg,
+          status: "seen"
+        };
+      }
+
+      return msg;
+    });
+
+  });
+
+  // Save updates
+  localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
+
+  // Update UI instantly
+  updateSeenUI();
+}
+
   updatePartnerStatus(data.partner_status);
 
   const logs = data.partner_status.logs;
@@ -1939,6 +1973,23 @@ function sendLastSeen() {
   })
   .catch(err => {
     console.error("❌ Last seen failed:", err);
+  });
+}
+
+// Seen messages logic 
+function updateSeenUI() {
+  fchatMessages.forEach(msg => {
+    if (msg.status !== "seen") return;
+
+    const el = document.querySelector(`[data-id='${msg.id}']`);
+    if (!el) return;
+
+    const statusEl = el.querySelector(".msg-status");
+    if (!statusEl) return;
+
+    statusEl.textContent = "seen";
+    statusEl.classList.remove("sent", "delivered");
+    statusEl.classList.add("seen");
   });
 }
 
