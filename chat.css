@@ -821,3 +821,10 @@ Typing indicator bubble
     opacity: 1;
   }
 }
+/* Reset sent status text so it doesn't look like a message bubble */
+.msg-status.sent {
+  background: none;
+  color: inherit;
+  padding: 0;
+  margin: 0;
+}
