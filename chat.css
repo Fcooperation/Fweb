@@ -821,14 +821,3 @@ Typing indicator bubble
     opacity: 1;
   }
 }
-.msg-status.sending {
-  color: grey;
-}
-
-.msg-status.sent {
-  color: #1e88ff;
-}
-
-.msg-status.pending {
-  color: orange;
-}
