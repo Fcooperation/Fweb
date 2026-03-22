@@ -16,30 +16,19 @@ body {
   flex-direction: column;
 }
 
-/* ----------------- LOADING SCREEN ----------------- */
+/* Update these in your <style> tag */
 #loading-screen {
-  position: fixed;
-  top:0; left:0;
-  width:100%; height:100%;
-  background:white;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  gap:20px;
-  z-index:1000;
+  display: none; /* Changed from flex to none */
 }
-#loading-title { font-size:38px; font-weight:bold; color:black; }
-#loading-logs { font-size:16px; color:#444; text-align:center; }
 
-/* ----------------- MAIN UI ----------------- */
 #main-ui {
-  display:none;
-  flex:1;
+  display: flex; /* Changed from none to flex */
+  flex: 1;
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
 }
+
 
 /* ----------------- TOP BAR ----------------- */
 #top-bar {
@@ -207,12 +196,6 @@ body {
 </head>
 <body>
 
-<!-- LOADING SCREEN -->
-<div id="loading-screen">
-  <div id="loading-title">FCHAT</div>
-  <div id="loading-logs">Starting...</div>
-</div>
-
 <!-- MAIN UI -->
 <div id="main-ui">
   <div id="top-bar">FCHAT
@@ -368,8 +351,12 @@ document.getElementById("profile-modal").onclick = ()=>{
 };
 
 /* ----------------- START ----------------- */
-runLoadingSequence();
-setInterval(fetchAndRenderFchatters,5000);
+// 1. Immediately fetch data when the page hits this script
+fetchAndRenderFchatters(); 
+
+// 2. Keep the background refresh running every 5 seconds
+setInterval(fetchAndRenderFchatters, 5000);
+
 
 // ----------------- THREE DOTS MENU -----------------
 const menuBtn = document.getElementById("menu-btn");
