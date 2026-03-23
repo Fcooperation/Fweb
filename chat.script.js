@@ -1678,6 +1678,17 @@ if (Array.isArray(data.votes)) {
     // ------------------------
     if (newItems.length === 0) return;
 
+// ✅ Check if any NEW RECEIVED messages exist
+const hasIncoming = newItems.some(item =>
+  String(item.sender_id) === String(chatWith.id) &&
+  String(item.receiver_id) === String(account.id)
+);
+
+// ✅ If yes → send seen immediately
+if (hasIncoming) {
+  sendLastSeen();
+}
+
     // ------------------------
     // STORE + SORT
     // ------------------------
