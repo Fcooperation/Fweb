@@ -1417,6 +1417,33 @@ if (data.partner_status?.seen_messages?.length) {
 }
 
   updatePartnerStatus(data.partner_status);
+  
+  // Inside fetchAllFChatLogs, after updating the partner status text:
+if (data.partner_status && data.partner_status.last_seen) {
+    const partnerLastSeen = new Date(data.partner_status.last_seen).getTime();
+    let hasNewSeen = false;
+
+    fchatMessages = fchatMessages.map(msg => {
+        const isMine = String(msg.sender_id) === String(account.id);
+        const msgSentTime = new Date(msg.sent_at).getTime();
+
+        // Check if:
+        // 1. It's my message
+        // 2. It's not already marked "seen"
+        // 3. Partner's last seen is AT LEAST 1 minute (60,000ms) AFTER the message was sent
+        if (isMine && msg.status !== "seen" && (partnerLastSeen - msgSentTime) >= 60000) {
+            hasNewSeen = true;
+            return { ...msg, status: "seen" };
+        }
+        return msg;
+    });
+
+    if (hasNewSeen) {
+        localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
+        updateSeenUI(); // Update the double ticks/status text in the UI
+    }
+}
+
 
   const logs = data.partner_status.logs;
 
