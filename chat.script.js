@@ -1227,8 +1227,18 @@ document.getElementById("close-reply").onclick = () => {
 const textarea = document.getElementById("messageInput");
 
 textarea.addEventListener("input", () => {
+  // 🔵 Auto resize
   textarea.style.height = "auto";
   textarea.style.height = Math.min(textarea.scrollHeight, 120) + "px";
+
+  // 🔵 Typing logic
+  isTyping = true;
+
+  clearTimeout(typingTimer);
+
+  typingTimer = setTimeout(() => {
+    isTyping = false;
+  }, 3000);
 });
 // ===== POLL CLICK WITH MULTI-SELECT SUPPORT =====
 chatBody.addEventListener("click", (e) => {
@@ -1419,11 +1429,31 @@ if (data.partner_status?.seen_messages?.length) {
   updatePartnerStatus(data.partner_status);
   const logs = data.partner_status.logs;
 
-  if (logs && logs.typing === true && logs.chat == account.id) {
-    showTypingBubble();
-  } else {
-    hideTypingBubble();
+  let typingTimeout = null;
+
+if (logs && logs.typing === true && logs.chat == account.id) {
+
+  // Show typing in header
+  const statusEl = document.getElementById("user-status");
+  if (statusEl) {
+    statusEl.textContent = "Typing...";
+    statusEl.className = "status typing"; // 👈 for blue styling
   }
+
+  showTypingBubble();
+
+  // ⏱️ Auto reset after 3 seconds
+  clearTimeout(typingTimeout);
+  typingTimeout = setTimeout(() => {
+    hideTypingBubble();
+
+    // fallback to last seen
+    updatePartnerStatus(data.partner_status);
+  }, 3000);
+
+} else {
+  hideTypingBubble();
+}
 }
 
     const newItems = [];
