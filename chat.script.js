@@ -180,73 +180,107 @@ function updateSelectionBoard() {
 deleteForEveryoneBtn.addEventListener("click", () => {
   if (selectedMessages.size === 0) return;
 
-  const jsonToSend = {
-    action: "delete_for_everyone",
-    chat_id: chatWith.id,
-    message_ids: Array.from(selectedMessages),
-    requested_by: account.id,
-    timestamp: Date.now()
-  };
+  const messageIdsArray = Array.from(selectedMessages);
 
-  // Send to backend
-  fetch(API_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(jsonToSend)
-  })
-  .then(res => res.json())
-  .then(res => console.log("Delete for everyone response:", res))
-  .catch(err => console.error(err));
-
-  // Update frontend AND localStorage arrays
-  selectedMessages.forEach(id => {
+  // 1️⃣ Immediately show "Deleting..." on frontend
+  messageIdsArray.forEach(id => {
     messages = messages.map(msg => {
       if (msg.id === id) {
-        return {
-          ...msg,
-          deleted: true,
-          deleted_for: "everyone",
-          requested_by: account.id,
-          status: "deleted", // ✅ mark status as deleted
-          text: "" // optional, clear original text
-        };
+        return { ...msg, status: "deleting" };
       }
       return msg;
     });
 
     fchatMessages = fchatMessages.map(msg => {
       if (msg.id === id) {
-        return {
-          ...msg,
-          deleted: true,
-          deleted_for: "everyone",
-          requested_by: account.id,
-          status: "deleted",
-          text: ""
-        };
+        return { ...msg, status: "deleting" };
       }
       return msg;
     });
 
-    // Update DOM
     const msgEl = chatBody.querySelector(`[data-id='${id}']`);
     if (msgEl) {
-      const isSent = msgEl.classList.contains("sent");
-
-msgEl.className = `message ${isSent ? "sent" : "received"} deleted-for-everyone`;
-msgEl.innerHTML = `
-  <i class="deleted-text">
-    This message was deleted by you
-  </i>
-`;
+      msgEl.className = `message deleting`;
+      msgEl.innerHTML = `<i class="deleted-text">Deleting...</i>`;
     }
   });
 
-  // Save updated arrays
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-  localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
+  // 2️⃣ Send request to backend
+  const jsonToSend = {
+    action: "delete_for_everyone",
+    chat_id: chatWith.id,
+    message_ids: messageIdsArray,
+    requested_by: account.id,
+    timestamp: Date.now()
+  };
 
-  // Cleanup
+  fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(jsonToSend)
+  })
+  .then(res => res.json())
+  .then(res => {
+    if (res.success) {
+      // 3️⃣ On success, mark deleted
+      messageIdsArray.forEach(id => {
+        messages = messages.map(msg => {
+          if (msg.id === id) {
+            return {
+              ...msg,
+              deleted: true,
+              deleted_for: "everyone",
+              status: "deleted",
+              text: ""
+            };
+          }
+          return msg;
+        });
+
+        fchatMessages = fchatMessages.map(msg => {
+          if (msg.id === id) {
+            return {
+              ...msg,
+              deleted: true,
+              deleted_for: "everyone",
+              status: "deleted",
+              text: ""
+            };
+          }
+          return msg;
+        });
+
+        const msgEl = chatBody.querySelector(`[data-id='${id}']`);
+        if (msgEl) {
+          const isSent = msgEl.classList.contains("sent");
+          msgEl.className = `message ${isSent ? "sent" : "received"} deleted-for-everyone`;
+          msgEl.innerHTML = `<i class="deleted-text">This message was deleted by you</i>`;
+        }
+      });
+
+      // Save updated arrays
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+      localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
+    } else {
+      // ❌ On error, revert back
+      alert("Failed to delete message: " + (res.error || "Unknown error"));
+      messageIdsArray.forEach(id => {
+        const msgEl = chatBody.querySelector(`[data-id='${id}']`);
+        if (msgEl) {
+          msgEl.classList.remove("deleting");
+          // restore original text
+          const originalMsg = messages.find(m => m.id === id);
+          if (originalMsg) msgEl.innerHTML = originalMsg.text;
+        }
+      });
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    alert("Network error while deleting messages.");
+  });
+
+  // 4️⃣ Cleanup selection UI
   selectedMessages.clear();
   selectionMode = false;
   updateSelectionBoard();
