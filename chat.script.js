@@ -228,18 +228,33 @@ deleteForEveryoneBtn.addEventListener("click", () => {
       return msg;
     });
 
-    // Update DOM
+        // Update DOM
     const msgEl = chatBody.querySelector(`[data-id='${id}']`);
     if (msgEl) {
       const isSent = msgEl.classList.contains("sent");
 
-msgEl.className = `message ${isSent ? "sent" : "received"} deleted-for-everyone`;
-msgEl.innerHTML = `
-  <i class="deleted-text">
-    This message was deleted by you
-  </i>
-`;
+      // 1. Assign classes: 'message' for size, 'deleted-state' to stop interaction
+      msgEl.className = `message ${isSent ? "sent" : "received"} deleted-for-everyone deleted-state`;
+      
+      // 2. Use the full standard structure so it has proper padding and size
+      const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      msgEl.innerHTML = `
+        <div class="message-content">
+          <i class="deleted-text" style="opacity: 0.6; font-style: italic;">
+            This message was deleted by you
+          </i>
+        </div>
+        <div class="message-meta">
+          <span class="msg-time">${time}</span>
+        </div>
+      `;
+
+      // 3. DISABLE SWIPE: Clone the element and replace the original.
+      // This instantly kills the swipe/drag event listeners attached by enableSwipe().
+      const newEl = msgEl.cloneNode(true);
+      msgEl.parentNode.replaceChild(newEl, msgEl);
     }
+
   });
 
   // Save updated arrays
