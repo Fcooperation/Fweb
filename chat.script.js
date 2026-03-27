@@ -176,81 +176,89 @@ function updateSelectionBoard() {
     selectionBoard.style.display = "none";
   }
 }
-// ===== DELETE FOR EVERYONE =====
+// ===== DELETE FOR EVERYONE (Updated for loading state) =====
 deleteForEveryoneBtn.addEventListener("click", () => {
   if (selectedMessages.size === 0) return;
+
+  // Capture the IDs before clearing the set
+  const idsToDelete = Array.from(selectedMessages);
+
+  // 1. Immediately show "Deleting..." for all selected messages in the UI
+  idsToDelete.forEach(id => {
+    const msgEl = document.querySelector(`[data-id="${id}"]`);
+    if (msgEl) {
+      const textEl = msgEl.querySelector(".fchat-text");
+      if (textEl) {
+        textEl.innerHTML = "<i>Deleting...</i>";
+      }
+      msgEl.classList.add("deleting-in-progress");
+    }
+  });
 
   const jsonToSend = {
     action: "delete_for_everyone",
     chat_id: chatWith.id,
-    message_ids: Array.from(selectedMessages),
+    message_ids: idsToDelete,
     requested_by: account.id,
     timestamp: Date.now()
   };
 
-  // Send to backend
+  // Close selection UI elements immediately
+  closeModal(deleteModal);
+  selectionMode = false;
+  updateSelectionBoard();
+
+  // 2. Send the request to the backend
   fetch(API_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(jsonToSend)
   })
-  .then(res => res.json())
-  .then(res => console.log("Delete for everyone response:", res))
-  .catch(err => console.error(err));
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        // 3. Finalize the UI: Change to "This message was deleted by you"
+        idsToDelete.forEach(id => {
+          // Update local data arrays
+          const updateMsgInList = (list) => {
+            const m = list.find(msg => msg.id === id);
+            if (m) {
+              m.status = "deleted";
+              m.deleted = true;
+              m.deleted_for = "everyone";
+              m.text = "";
+            }
+          };
+          updateMsgInList(messages);
+          updateMsgInList(fchatMessages);
 
-  // Update frontend AND localStorage arrays
-  selectedMessages.forEach(id => {
-    messages = messages.map(msg => {
-      if (msg.id === id) {
-        return {
-          ...msg,
-          deleted: true,
-          deleted_for: "everyone",
-          requested_by: account.id,
-          status: "deleted", // ✅ mark status as deleted
-          text: "" // optional, clear original text
-        };
+          // Update the physical bubble on the screen
+          const msgEl = document.querySelector(`[data-id="${id}"]`);
+          if (msgEl) {
+            msgEl.classList.remove("deleting-in-progress");
+            msgEl.classList.add("deleted-for-everyone");
+            const textEl = msgEl.querySelector(".fchat-text");
+            if (textEl) {
+              textEl.innerHTML = "<i>This message was deleted by you</i>";
+            }
+          }
+        });
+
+        // Save the updated state so it stays deleted after a refresh
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+        localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
+        
+        selectedMessages.clear();
+      } else {
+        // If the server says no, revert the "Deleting..." text back to original
+        alert("Failed to delete: " + (data.error || "Unknown error"));
+        renderMessages(); 
       }
-      return msg;
+    })
+    .catch(err => {
+      console.error("❌ Delete error:", err);
+      renderMessages(); // Revert UI if internet fails
     });
-
-    fchatMessages = fchatMessages.map(msg => {
-      if (msg.id === id) {
-        return {
-          ...msg,
-          deleted: true,
-          deleted_for: "everyone",
-          requested_by: account.id,
-          status: "deleted",
-          text: ""
-        };
-      }
-      return msg;
-    });
-
-    // Update DOM
-    const msgEl = chatBody.querySelector(`[data-id='${id}']`);
-    if (msgEl) {
-      const isSent = msgEl.classList.contains("sent");
-
-msgEl.className = `message ${isSent ? "sent" : "received"} deleted-for-everyone`;
-msgEl.innerHTML = `
-  <i class="deleted-text">
-    This message was deleted by you
-  </i>
-`;
-    }
-  });
-
-  // Save updated arrays
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-  localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
-
-  // Cleanup
-  selectedMessages.clear();
-  selectionMode = false;
-  updateSelectionBoard();
-  deleteModal.style.display = "none";
 });
 
 // Back button cancels selection mode

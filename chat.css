@@ -828,3 +828,25 @@ Typing indicator bubble
   padding: 0;
   margin: 0;
 }
+.status.typing {
+  color: #0084ff; /* WhatsApp-like blue */
+  font-weight: 500;
+}
+/* While the request is being sent to the backend */
+.deleting-in-progress .fchat-text {
+    opacity: 0.5;
+    font-style: italic;
+    color: #aaa;
+}
+
+/* Final look after successful deletion */
+.deleted-for-everyone .fchat-text {
+    color: #888 !important;
+    font-size: 0.85em;
+    font-style: italic;
+}
+
+/* Optional: hide the status (sent/seen) for deleted messages */
+.deleted-for-everyone .msg-status {
+    display: none;
+}
