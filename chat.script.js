@@ -180,115 +180,71 @@ function updateSelectionBoard() {
 deleteForEveryoneBtn.addEventListener("click", () => {
   if (selectedMessages.size === 0) return;
 
-  const messageIdsArray = Array.from(selectedMessages);
+  const jsonToSend = {
+    action: "delete_for_everyone",
+    chat_id: chatWith.id,
+    message_ids: Array.from(selectedMessages),
+    requested_by: account.id,
+    timestamp: Date.now()
+  };
 
-  messageIdsArray.forEach(id => {
+  // Send to backend
+  fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(jsonToSend)
+  })
+  .then(res => res.json())
+  .then(res => console.log("Delete for everyone response:", res))
+  .catch(err => console.error(err));
+
+  // Update frontend AND localStorage arrays
+  selectedMessages.forEach(id => {
+    messages = messages.map(msg => {
+      if (msg.id === id) {
+        return {
+          ...msg,
+          deleted: true,
+          deleted_for: "everyone",
+          requested_by: account.id,
+          status: "deleted", // ✅ mark status as deleted
+          text: "" // optional, clear original text
+        };
+      }
+      return msg;
+    });
+
+    fchatMessages = fchatMessages.map(msg => {
+      if (msg.id === id) {
+        return {
+          ...msg,
+          deleted: true,
+          deleted_for: "everyone",
+          requested_by: account.id,
+          status: "deleted",
+          text: ""
+        };
+      }
+      return msg;
+    });
+
+    // Update DOM
     const msgEl = chatBody.querySelector(`[data-id='${id}']`);
-    if (!msgEl) return;
-    const isSent = msgEl.classList.contains("sent");
+    if (msgEl) {
+      const isSent = msgEl.classList.contains("sent");
 
-    if (!navigator.onLine) {
-      // 1️⃣ If offline, mark pending immediately
-      markMessagePending(msgEl, isSent);
-    } else {
-      // 2️⃣ Mark deleting initially
-      markMessageDeleting(msgEl, isSent);
+msgEl.className = `message ${isSent ? "sent" : "received"} deleted-for-everyone`;
+msgEl.innerHTML = `
+  <i class="deleted-text">
+    This message was deleted by you
+  </i>
+`;
     }
   });
 
-  const sendDeletionRequest = () => {
-    if (!navigator.onLine) {
-      // Wait until online to retry
-      return;
-    }
-
-    const jsonToSend = {
-      action: "delete_for_everyone",
-      chat_id: chatWith.id,
-      message_ids: messageIdsArray,
-      requested_by: account.id,
-      timestamp: Date.now()
-    };
-
-    const timeoutIds = [];
-
-    // Set 3-second timeout for pending
-    messageIdsArray.forEach(id => {
-      const msgEl = chatBody.querySelector(`[data-id='${id}']`);
-      if (!msgEl) return;
-      const isSent = msgEl.classList.contains("sent");
-
-      const t = setTimeout(() => {
-        if (msgEl.classList.contains("deleting")) {
-          // Took too long → mark pending
-          markMessagePending(msgEl, isSent);
-        }
-      }, 3000);
-      timeoutIds.push(t);
-    });
-
-    fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(jsonToSend)
-    })
-    .then(res => res.json())
-    .then(res => {
-      timeoutIds.forEach(t => clearTimeout(t));
-
-      if (res.success) {
-        // Mark deleted
-        messageIdsArray.forEach(id => {
-          messages = messages.map(msg => {
-            if (msg.id === id) {
-              return { ...msg, deleted: true, deleted_for: "everyone", status: "deleted", text: "" };
-            }
-            return msg;
-          });
-
-          fchatMessages = fchatMessages.map(msg => {
-            if (msg.id === id) {
-              return { ...msg, deleted: true, deleted_for: "everyone", status: "deleted", text: "" };
-            }
-            return msg;
-          });
-
-          const msgEl = chatBody.querySelector(`[data-id='${id}']`);
-          if (msgEl) {
-            const isSent = msgEl.classList.contains("sent");
-            msgEl.className = `message ${isSent ? "sent" : "received"} deleted-for-everyone`;
-            msgEl.innerHTML = `<i class="deleted-text">This message was deleted by you</i>`;
-          }
-        });
-
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-        localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
-      } else {
-        // Show pending on error
-        messageIdsArray.forEach(id => {
-          const msgEl = chatBody.querySelector(`[data-id='${id}']`);
-          if (!msgEl) return;
-          const isSent = msgEl.classList.contains("sent");
-          markMessagePending(msgEl, isSent);
-        });
-      }
-    })
-    .catch(() => {
-      // Network error → mark pending
-      messageIdsArray.forEach(id => {
-        const msgEl = chatBody.querySelector(`[data-id='${id}']`);
-        if (!msgEl) return;
-        const isSent = msgEl.classList.contains("sent");
-        markMessagePending(msgEl, isSent);
-      });
-    });
-  };
-
-  // Retry whenever back online
-  window.addEventListener("online", sendDeletionRequest);
-
-  // Initial attempt
-  sendDeletionRequest();
+  // Save updated arrays
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+  localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
 
   // Cleanup
   selectedMessages.clear();
