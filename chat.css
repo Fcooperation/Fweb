@@ -832,10 +832,16 @@ Typing indicator bubble
   color: #0084ff; /* WhatsApp-like blue */
   font-weight: 500;
 }
-/* Show deleting message style */
-.message.deleting {
-  opacity: 0.6;
-  font-style: italic;
-  color: #888; /* gray text */
-  pointer-events: none; /* disable click */
+/* Ensure the box is visible (no opacity) and clickable but not swipable */
+.message.deleted-state {
+  opacity: 1 !important;    /* Forces full visibility */
+  touch-action: none;       /* Disables browser-level swipes/drags */
+  user-select: none;
+  cursor: pointer;          /* Shows it is still clickable for selection */
+}
+
+/* Optional: styling the italic text */
+.deleted-text {
+  color: #888;
+  font-size: 0.9rem;
 }

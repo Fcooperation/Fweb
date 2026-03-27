@@ -229,33 +229,40 @@ deleteForEveryoneBtn.addEventListener("click", () => {
     });
 
         // Update DOM
-    const msgEl = chatBody.querySelector(`[data-id='${id}']`);
-    if (msgEl) {
-      const isSent = msgEl.classList.contains("sent");
+const msgEl = chatBody.querySelector(`[data-id='${id}']`);
+if (msgEl) {
+  const isSent = msgEl.classList.contains("sent");
 
-      // 1. Assign classes: 'message' for size, 'deleted-state' to stop interaction
-      msgEl.className = `message ${isSent ? "sent" : "received"} deleted-for-everyone deleted-state`;
-      
-      // 2. Use the full standard structure so it has proper padding and size
-      const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-      msgEl.innerHTML = `
-        <div class="message-content">
-          <i class="deleted-text" style="opacity: 0.6; font-style: italic;">
-            This message was deleted by you
-          </i>
-        </div>
-        <div class="message-meta">
-          <span class="msg-time">${time}</span>
-        </div>
-      `;
+  // Keep 'message' class for size, add 'deleted-state' for logic
+  msgEl.className = `message ${isSent ? "sent" : "received"} deleted-for-everyone deleted-state`;
+  
+  const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  
+  // Removed inline opacity so it stays clear
+  msgEl.innerHTML = `
+    <div class="message-content">
+      <i class="deleted-text" style="font-style: italic;">
+        This message was deleted by you
+      </i>
+    </div>
+    <div class="message-meta">
+      <span class="msg-time">${time}</span>
+    </div>
+  `;
 
-      // 3. DISABLE SWIPE: Clone the element and replace the original.
-      // This instantly kills the swipe/drag event listeners attached by enableSwipe().
-      const newEl = msgEl.cloneNode(true);
-      msgEl.parentNode.replaceChild(newEl, msgEl);
-    }
-
+  // CLONE to kill swipe, but keeps click listeners for selection mode
+  const newEl = msgEl.cloneNode(true);
+  
+  // Re-add selection click listener since cloneNode doesn't copy JS listeners
+  newEl.addEventListener("click", (e) => {
+    if (!selectionMode) return;
+    e.stopPropagation();
+    toggleSelectMessage(newEl, messages.find(m => m.id === id));
   });
+
+  msgEl.parentNode.replaceChild(newEl, msgEl);
+}
+});
 
   // Save updated arrays
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
@@ -445,12 +452,15 @@ if (msgObj.replyTo && !(msgObj.deleted && msgObj.deleted_for === "everyone")) {
 
 // ✅ Handle deleted-for-everyone
 if (msgObj.deleted && msgObj.deleted_for === "everyone") {
-  msg.className = `message ${alignmentClass} deleted-for-everyone`;
+  // Added 'deleted-state' here so it works on reload too
+  msg.className = `message ${alignmentClass} deleted-for-everyone deleted-state`;
   msg.innerHTML = `
     ${replyHTML}
-    <i class="deleted-text">
-      This message was deleted by ${msgObj.requested_by === account.id ? "you" : "someone"}
-    </i>
+    <div class="message-content">
+       <i class="deleted-text">
+         This message was deleted by ${msgObj.requested_by === account.id ? "you" : "someone"}
+       </i>
+    </div>
     <div class="message-meta">
       ${time}
     </div>
@@ -1834,7 +1844,10 @@ document.querySelectorAll(".sent .linked-preview").forEach(preview => {
 document.addEventListener("DOMContentLoaded", applyChatSettings);
 
 // Show Reaction bar function
-function showReactionBar(msgEl, msgObj) {
+function showReactionBar(el, msgObj) {
+  // If the message is deleted, don't show the bar
+  if (msgObj.deleted || el.classList.contains("deleted-state")) return;
+  
   // Remove existing bar if any
   const existing = document.querySelector(".reaction-bar");
   if (existing) existing.remove();
