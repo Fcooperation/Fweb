@@ -842,6 +842,6 @@ Typing indicator bubble
 
 /* Optional: styling the italic text */
 .deleted-text {
-  color: #888;
+  color: red;
   font-size: 0.9rem;
 }
