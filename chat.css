@@ -831,8 +831,7 @@ Typing indicator bubble
 .status.typing {
   color: #0084ff; /* WhatsApp-like blue */
   font-weight: 500;
-}
-/* Ensure the box is visible (no opacity) and clickable but not swipable */
+}/* Ensure the box is visible (no opacity) and clickable but not swipable */
 .message.deleted-state {
   opacity: 1 !important;    /* Forces full visibility */
   touch-action: none;       /* Disables browser-level swipes/drags */
@@ -842,6 +841,7 @@ Typing indicator bubble
 
 /* Optional: styling the italic text */
 .deleted-text {
-  color: red;
+  color: #888;
   font-size: 0.9rem;
 }
+
