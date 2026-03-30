@@ -421,14 +421,14 @@ if (msgObj.replyTo && !(msgObj.deleted && msgObj.deleted_for === "everyone")) {
 if (msgObj.deleted && msgObj.deleted_for === "everyone") {
   msg.className = `message ${alignmentClass} deleted-for-everyone`;
   msg.innerHTML = `
-    ${replyHTML}
-    <i class="deleted-text">
-      This message was deleted by ${msgObj.requested_by === account.id ? "you" : "someone"}
-    </i>
-    <div class="message-meta">
-      ${time}
-    </div>
-  `;
+  ${replyHTML}
+  <i class="deleted-text">
+    This message was deleted by ${msgObj.requested_by === account.id ? "you" : "someone"}
+  </i>
+  <div class="message-meta">
+    ${time}
+  </div>
+`;
 } else {
   msg.innerHTML = `
     ${replyHTML}
@@ -463,7 +463,11 @@ if (msgObj.reactions && msgObj.reactions.length) {
 msg.appendChild(reactionsContainer);
 }
 
-  if (!(msgObj.deleted && msgObj.deleted_for === "everyone")) {
+  if (
+  msgObj.deleted === true ||
+  msgObj.deleted_for === "everyone" ||
+  msgObj.status === "deleted"
+)) {
   enableSwipe(msg, msgObj);
 }
 // Glow ONLY when clicking the reply preview bubble
