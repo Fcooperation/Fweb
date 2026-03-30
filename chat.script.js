@@ -228,19 +228,8 @@ deleteForEveryoneBtn.addEventListener("click", () => {
       return msg;
     });
 
-    // Update DOM
-    const msgEl = chatBody.querySelector(`[data-id='${id}']`);
-    if (msgEl) {
-      const isSent = msgEl.classList.contains("sent");
-
-msgEl.className = `message ${isSent ? "sent" : "received"} deleted-for-everyone`;
-msgEl.innerHTML = `
-  <i class="deleted-text">
-    This message was deleted by you
-  </i>
-`;
-    }
-  });
+    // Update DOMupdateTimeline();
+    });
 
   // Save updated arrays
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
@@ -474,7 +463,9 @@ if (msgObj.reactions && msgObj.reactions.length) {
 msg.appendChild(reactionsContainer);
 }
 
-  enableSwipe(msg, msgObj); // full object
+  if (!(msgObj.deleted && msgObj.deleted_for === "everyone")) {
+  enableSwipe(msg, msgObj);
+}
 // Glow ONLY when clicking the reply preview bubble
 if (msgObj.linked) {
   const replyBubble = msg.querySelector(".reply-bubble");
