@@ -467,7 +467,7 @@ msg.appendChild(reactionsContainer);
   msgObj.deleted === true ||
   msgObj.deleted_for === "everyone" ||
   msgObj.status === "deleted"
-)) {
+) {
   enableSwipe(msg, msgObj);
 }
 // Glow ONLY when clicking the reply preview bubble
