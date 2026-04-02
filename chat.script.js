@@ -228,17 +228,25 @@ deleteForEveryoneBtn.addEventListener("click", () => {
       return msg;
     });
 
-    // Update DOM
+        // Update DOM
     const msgEl = chatBody.querySelector(`[data-id='${id}']`);
     if (msgEl) {
       const isSent = msgEl.classList.contains("sent");
+      const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      
+      // Preserve the reply bubble if it exists, otherwise it stays empty
+      const replyBubble = msgEl.querySelector(".reply-bubble")?.outerHTML || "";
 
-msgEl.className = `message ${isSent ? "sent" : "received"} deleted-for-everyone`;
-msgEl.innerHTML = `
-  <i class="deleted-text">
-    This message was deleted by you
-  </i>
-`;
+      msgEl.className = `message ${isSent ? "sent" : "received"} deleted-for-everyone`;
+      msgEl.innerHTML = `
+        ${replyBubble}
+        <i class="deleted-text">
+          This message was deleted by you
+        </i>
+        <div class="message-meta">
+          ${time}
+        </div>
+      `;
     }
   });
 
