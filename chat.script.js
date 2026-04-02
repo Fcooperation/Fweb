@@ -228,8 +228,19 @@ deleteForEveryoneBtn.addEventListener("click", () => {
       return msg;
     });
 
-    // Update DOMupdateTimeline();
-    });
+    // Update DOM
+    const msgEl = chatBody.querySelector(`[data-id='${id}']`);
+    if (msgEl) {
+      const isSent = msgEl.classList.contains("sent");
+
+msgEl.className = `message ${isSent ? "sent" : "received"} deleted-for-everyone`;
+msgEl.innerHTML = `
+  <i class="deleted-text">
+    This message was deleted by you
+  </i>
+`;
+    }
+  });
 
   // Save updated arrays
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
@@ -421,14 +432,14 @@ if (msgObj.replyTo && !(msgObj.deleted && msgObj.deleted_for === "everyone")) {
 if (msgObj.deleted && msgObj.deleted_for === "everyone") {
   msg.className = `message ${alignmentClass} deleted-for-everyone`;
   msg.innerHTML = `
-  ${replyHTML}
-  <i class="deleted-text">
-    This message was deleted by ${msgObj.requested_by === account.id ? "you" : "someone"}
-  </i>
-  <div class="message-meta">
-    ${time}
-  </div>
-`;
+    ${replyHTML}
+    <i class="deleted-text">
+      This message was deleted by ${msgObj.requested_by === account.id ? "you" : "someone"}
+    </i>
+    <div class="message-meta">
+      ${time}
+    </div>
+  `;
 } else {
   msg.innerHTML = `
     ${replyHTML}
@@ -463,13 +474,7 @@ if (msgObj.reactions && msgObj.reactions.length) {
 msg.appendChild(reactionsContainer);
 }
 
-  if (
-  msgObj.deleted === true ||
-  msgObj.deleted_for === "everyone" ||
-  msgObj.status === "deleted"
-) {
-  enableSwipe(msg, msgObj);
-}
+  enableSwipe(msg, msgObj); // full object
 // Glow ONLY when clicking the reply preview bubble
 if (msgObj.linked) {
   const replyBubble = msg.querySelector(".reply-bubble");
