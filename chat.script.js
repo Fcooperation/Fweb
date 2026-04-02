@@ -378,94 +378,102 @@ function addMessage(msgObj) {
 }
     </div>
   `;
-  // ===== Reactions container =====
-const reactionsContainer = document.createElement("div");
-reactionsContainer.className = "reactions";
-reactionsContainer.style.marginTop = "2px";
+  // ===== Reactions container for Polls =====
+  const reactionsContainer = document.createElement("div");
+  reactionsContainer.className = "reactions";
+  reactionsContainer.style.marginTop = "2px";
 
-if (msgObj.reactions && msgObj.reactions.length) {
-  // Group reactions first
-const counts = {};
+  if (msgObj.reactions && msgObj.reactions.length) {
+    const counts = {};
+    msgObj.reactions.forEach(r => {
+      const emoji = r.emoji || r.reaction;
+      counts[emoji] = (counts[emoji] || 0) + 1;
+    });
 
-msgObj.reactions.forEach(r => {
-  const emoji = r.emoji || r.reaction;
-  counts[emoji] = (counts[emoji] || 0) + 1;
-});
-
-// Render grouped reactions
-Object.entries(counts).forEach(([emoji, count]) => {
-  const pill = document.createElement("div");
-  pill.className = "reaction-pill";
-  pill.textContent = count > 1 ? `${emoji}${count}` : emoji;
-  reactionsContainer.appendChild(pill);
-});
-}
-
-msg.appendChild(reactionsContainer);
-} else {
-  msg.className = `message ${alignmentClass}`;
-
-let replyHTML = "";
-// Check if message is NOT deleted before building the reply bubble
-if (msgObj.replyTo && !(msgObj.deleted && msgObj.deleted_for === "everyone")) {
-
-  const isYou = String(msgObj.replyTo.sender) === String(account.id);
-  const senderLabel = isYou ? "You" : (chatWith.username || "User");
-
-  replyHTML = `
-    <div class="reply-bubble linked-preview">
-      <div class="linked-sender">${senderLabel}</div>
-      <div class="linked-text">${msgObj.replyTo.text}</div>
-    </div>
-  `;
-}
-
-// ✅ Handle deleted-for-everyone
-if (msgObj.deleted && msgObj.deleted_for === "everyone") {
-  msg.className = `message ${alignmentClass} deleted-for-everyone`;
-  msg.innerHTML = `
-    <i class="deleted-text">
-      This message was deleted by ${msgObj.requested_by === account.id ? "you" : "someone"}
-    </i>
-    <div class="message-meta">
-      ${time}
-    </div>
-  `;
-} else {
-  msg.innerHTML = `
-    ${replyHTML}
-    <div class="message-text"></div>
-    <div class="message-meta">
-  ${time} ${
-    isSent
-      ? `• <span class="msg-status ${msgObj.status || "sent"}">${msgObj.status || "sent"}</span>`
-      : ""
+    Object.entries(counts).forEach(([emoji, count]) => {
+      const pill = document.createElement("div");
+      pill.className = "reaction-pill";
+      pill.textContent = count > 1 ? `${emoji}${count}` : emoji;
+      reactionsContainer.appendChild(pill);
+    });
   }
-</div>
-  `;
-  if (msgObj.poll_status === "sending") {
-  msg.classList.add("poll-dimmed");
-}
-  const textBox = msg.querySelector(".message-text");
-  applyReadMore(textBox, msgObj.text);
-  // ===== Reactions container =====
-const reactionsContainer = document.createElement("div");
-reactionsContainer.className = "reactions";
-reactionsContainer.style.marginTop = "2px";
+  msg.appendChild(reactionsContainer);
 
-if (msgObj.reactions && msgObj.reactions.length) {
-  msgObj.reactions.forEach(r => {
-    const pill = document.createElement("div");
-    pill.className = "reaction-pill";
-    pill.textContent = `${r.emoji} ${r.count || 1}`;
-    reactionsContainer.appendChild(pill);
-  });
-}
+} else {
+  // 1. TOP PRIORITY: CHECK IF DELETED
+  if (msgObj.deleted && msgObj.deleted_for === "everyone") {
+    msg.className = `message ${alignmentClass} deleted-for-everyone`;
+    msg.innerHTML = `
+      <i class="deleted-text">
+        This message was deleted by ${msgObj.requested_by === account.id ? "you" : "someone"}
+      </i>
+      <div class="message-meta">
+        ${time}
+      </div>
+    `;
+  } 
+  // 2. NORMAL MESSAGE LOGIC (Runs only if NOT deleted)
+  else {
+    msg.className = `message ${alignmentClass}`;
 
-msg.appendChild(reactionsContainer);
-}
+    let replyHTML = "";
+    // Only show reply bubble if message exists
+    if (msgObj.replyTo) {
+      const isYou = String(msgObj.replyTo.sender) === String(account.id);
+      const senderLabel = isYou ? "You" : (chatWith.username || "User");
 
-  enableSwipe(msg, msgObj); // full object
+      replyHTML = `
+        <div class="reply-bubble linked-preview">
+          <div class="linked-sender">${senderLabel}</div>
+          <div class="linked-text">${msgObj.replyTo.text}</div>
+        </div>
+      `;
+    }
+
+    msg.innerHTML = `
+      ${replyHTML}
+      <div class="message-text"></div>
+      <div class="message-meta">
+        ${time} ${
+          isSent
+            ? `• <span class="msg-status ${msgObj.status || "sent"}">${msgObj.status || "sent"}</span>`
+            : ""
+        }
+      </div>
+    `;
+
+    if (msgObj.poll_status === "sending") {
+      msg.classList.add("poll-dimmed");
+    }
+
+    const textBox = msg.querySelector(".message-text");
+    applyReadMore(textBox, msgObj.text);
+
+    // ===== Reactions container for Normal Messages =====
+    const reactionsContainer = document.createElement("div");
+    reactionsContainer.className = "reactions";
+    reactionsContainer.style.marginTop = "2px";
+
+    if (msgObj.reactions && msgObj.reactions.length) {
+      // Group reactions for consistency
+      const counts = {};
+      msgObj.reactions.forEach(r => {
+        const emoji = r.emoji || r.reaction;
+        counts[emoji] = (counts[emoji] || 0) + 1;
+      });
+
+      Object.entries(counts).forEach(([emoji, count]) => {
+        const pill = document.createElement("div");
+        pill.className = "reaction-pill";
+        pill.textContent = count > 1 ? `${emoji}${count}` : emoji;
+        reactionsContainer.appendChild(pill);
+      });
+    }
+    msg.appendChild(reactionsContainer);
+  }
+
+  enableSwipe(msg, msgObj);
+
 // Glow ONLY when clicking the reply preview bubble
 if (msgObj.linked) {
   const replyBubble = msg.querySelector(".reply-bubble");
