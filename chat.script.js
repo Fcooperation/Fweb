@@ -406,6 +406,7 @@ msg.appendChild(reactionsContainer);
   msg.className = `message ${alignmentClass}`;
 
 let replyHTML = "";
+// Check if message is NOT deleted before building the reply bubble
 if (msgObj.replyTo && !(msgObj.deleted && msgObj.deleted_for === "everyone")) {
 
   const isYou = String(msgObj.replyTo.sender) === String(account.id);
@@ -423,7 +424,6 @@ if (msgObj.replyTo && !(msgObj.deleted && msgObj.deleted_for === "everyone")) {
 if (msgObj.deleted && msgObj.deleted_for === "everyone") {
   msg.className = `message ${alignmentClass} deleted-for-everyone`;
   msg.innerHTML = `
-    ${replyHTML}
     <i class="deleted-text">
       This message was deleted by ${msgObj.requested_by === account.id ? "you" : "someone"}
     </i>
