@@ -839,4 +839,6 @@ Typing indicator bubble
   color: #888;
   font-size: 14px;
 }
-}
+  .deleted-message {
+  touch-action: none;
+  }
