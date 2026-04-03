@@ -414,7 +414,9 @@ if (msgObj.replyTo) {
   replyHTML = `
     <div class="reply-bubble linked-preview">
       <div class="linked-sender">${senderLabel}</div>
-      <div class="linked-text">${msgObj.replyTo.text}</div>
+      <div class="linked-text">
+  ${msgObj.replyTo.deleted ? "This message was deleted" : msgObj.replyTo.text}
+</div>
     </div>
   `;
 }
