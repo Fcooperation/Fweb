@@ -468,7 +468,11 @@ if (msgObj.reactions && msgObj.reactions.length) {
 msg.appendChild(reactionsContainer);
 }
 
-  enableSwipe(msg, msgObj); // full object
+  // Only enable swipe if the message is NOT deleted
+if (!msgObj.deleted) {
+  enableSwipe(msg, msgObj);
+}
+ // full object
 // Glow ONLY when clicking the reply preview bubble
 if (msgObj.linked) {
   const replyBubble = msg.querySelector(".reply-bubble");
