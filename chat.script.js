@@ -424,6 +424,7 @@ if (msgObj.replyTo) {
 // ✅ Handle deleted-for-everyone
 if (msgObj.deleted && msgObj.deleted_for === "everyone") {
   msg.className = `message ${alignmentClass} deleted-for-everyone`;
+  msg.classList.add("deleted-message");
   msg.innerHTML = `
     ${replyHTML}
     <i class="deleted-text">
