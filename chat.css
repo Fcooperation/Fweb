@@ -833,12 +833,29 @@ Typing indicator bubble
   font-weight: 500;.deleted-for-everyone {
   opacity: 1 !important; /* 🔥 prevents fading */
 }
+.deleted-for-everyone {
+  background-color: #fdd; /* light red background */
+  border-radius: 5px; /* */
+  padding: 8px 12px;
+  
+  /* Disable scrolling */
+  overflow: hidden !important; 
+  touch-action: pan-y; /* Allows page scroll but prevents box-specific gestures */
+  
+  /* Ensure it remains clickable */
+  cursor: pointer;
+  pointer-events: auto;
+  
+  /* Prevent content from expanding the box weirdly */
+  display: flex;
+  flex-direction: column;
+  max-height: fit-content;
+}
 
 .deleted-text {
-  font-style: italic;
-  color: #888;
-  font-size: 14px;
+  color: red; /* */
+  font-style: italic; /* */
+  white-space: normal; /* Allows text to wrap normally without horizontal scrolling */
+  word-break: break-word;
 }
-  .deleted-message {
-  touch-action: none;
-  }
+
