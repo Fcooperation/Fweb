@@ -406,7 +406,7 @@ msg.appendChild(reactionsContainer);
   msg.className = `message ${alignmentClass}`;
 
 let replyHTML = "";
-if (msgObj.replyTo && !(msgObj.deleted && msgObj.deleted_for === "everyone")) {
+if (msgObj.replyTo) {
 
   const isYou = String(msgObj.replyTo.sender) === String(account.id);
   const senderLabel = isYou ? "You" : (chatWith.username || "User");
