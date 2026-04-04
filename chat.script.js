@@ -423,29 +423,37 @@ if (msgObj.replyTo) {
 
 // ✅ Handle deleted-for-everyone
 if (msgObj.deleted && msgObj.deleted_for === "everyone") {
+
+  const isYou = String(msgObj.requested_by) === String(account.id);
+  const deleterName = isYou ? "you" : (chatWith.username || "them");
+
   msg.className = `message ${alignmentClass} deleted-for-everyone`;
   msg.classList.add("deleted-message");
+
   msg.innerHTML = `
     ${replyHTML}
     <i class="deleted-text">
-      This message was deleted by ${msgObj.requested_by === account.id ? "you" : "someone"}
+      This message was deleted by ${deleterName}
     </i>
     <div class="message-meta">
       ${time}
     </div>
   `;
+
 } else {
+
   msg.innerHTML = `
     ${replyHTML}
     <div class="message-text"></div>
     <div class="message-meta">
-  ${time} ${
-    isSent
-      ? `• <span class="msg-status ${msgObj.status || "sent"}">${msgObj.status || "sent"}</span>`
-      : ""
-  }
-</div>
+      ${time} ${
+        isSent
+          ? `• <span class="msg-status ${msgObj.status || "sent"}">${msgObj.status || "sent"}</span>`
+          : ""
+      }
+    </div>
   `;
+
   if (msgObj.poll_status === "sending") {
   msg.classList.add("poll-dimmed");
 }
