@@ -195,106 +195,43 @@ deleteForEveryoneBtn.addEventListener("click", () => {
     body: JSON.stringify(jsonToSend)
   })
   .then(res => res.json())
- .then(res => {
-  console.log("Delete for everyone response:", res);
-
-  if (res.success) {
-    messages = messages.map(msg => {
-      if (selectedMessages.has(msg.id)) {
-        return {
-          ...msg,
-          deleted: true,
-          deleted_for: "everyone",
-          requested_by: account.id,
-          status: "deleted",
-          text: ""
-        };
-      }
-      return msg;
-    });
-
-    fchatMessages = fchatMessages.map(msg => {
-      if (selectedMessages.has(msg.id)) {
-        return {
-          ...msg,
-          deleted: true,
-          deleted_for: "everyone",
-          requested_by: account.id,
-          status: "deleted",
-          text: ""
-        };
-      }
-      return msg;
-    });
-
-    updateTimeline(); // ✅ NOW show "This message was deleted"
-    
-  } else {
-    // ❌ failed → revert back
-    messages = messages.map(msg => {
-      if (selectedMessages.has(msg.id)) {
-        return { ...msg, status: "sent" };
-      }
-      return msg;
-    });
-
-    fchatMessages = fchatMessages.map(msg => {
-      if (selectedMessages.has(msg.id)) {
-        return { ...msg, status: "sent" };
-      }
-      return msg;
-    });
-
-    updateTimeline();
-  }
-})
-  .catch(err => {
-  console.error(err);
-
-  // ❌ Mark as pending if failed/offline
-  selectedMessages.forEach(id => {
-    messages = messages.map(msg => {
-      if (msg.id === id) {
-        return {
-          ...msg,
-          status: "pending_delete" // 📡 waiting
-        };
-      }
-      return msg;
-    });
-
-    fchatMessages = fchatMessages.map(msg => {
-      if (msg.id === id) {
-        return {
-          ...msg,
-          status: "pending_delete"
-        };
-      }
-      return msg;
-    });
-  });
-
-  updateTimeline();
-});
+  .then(res => console.log("Delete for everyone response:", res))
+  .catch(err => console.error(err));
 
   // Update frontend AND localStorage arrays
   selectedMessages.forEach(id => {
-  messages = messages.map(msg => {
-    if (msg.id === id) {
-      return { ...msg, status: "deleting" };
-    }
-    return msg;
-  });
+    messages = messages.map(msg => {
+      if (msg.id === id) {
+        return {
+          ...msg,
+          deleted: true,
+          deleted_for: "everyone",
+          requested_by: account.id,
+          status: "deleted", // ✅ mark status as deleted
+          text: "" // optional, clear original text
+        };
+      }
+      return msg;
+    });
 
-  fchatMessages = fchatMessages.map(msg => {
-    if (msg.id === id) {
-      return { ...msg, status: "deleting" };
-    }
-    return msg;
-  });
-});
+    fchatMessages = fchatMessages.map(msg => {
+      if (msg.id === id) {
+        return {
+          ...msg,
+          deleted: true,
+          deleted_for: "everyone",
+          requested_by: account.id,
+          status: "deleted",
+          text: ""
+        };
+      }
+      return msg;
+    });
 
-updateTimeline(); // ✅ show "Deleting..."
+    // Update DOM
+    updateTimeline();
+
+  });
 
   // Save updated arrays
   localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
@@ -914,23 +851,6 @@ function updateTimeline() {
 
       lastDate = msgDate;
     }
-    
-    if (msg.status === "deleting") {
-  return `<i class="deleted-text">Deleting...</i>`;
-}
-
-if (msg.status === "pending_delete") {
-  return `<i class="deleted-text">Pending...</i>`;
-}
-
-if (msg.deleted) {
-  const isYou = String(msg.requested_by) === String(account.id);
-  const deleterName = isYou ? "you" : (chatWith.username || "them");
-
-  return `<i class="deleted-text">
-    This message was deleted by ${deleterName}
-  </i>`;
-}
 
     addMessage(msg); // addMessage now knows if it's sent or received via msg.isSent
     applyChatSettings();
