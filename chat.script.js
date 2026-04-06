@@ -176,88 +176,117 @@ function updateSelectionBoard() {
     selectionBoard.style.display = "none";
   }
 }
-// ===== DELETE FOR EVERYONE =====  
-deleteForEveryoneBtn.addEventListener("click", () => {  
-  if (selectedMessages.size === 0) return;  
-  
-  const jsonToSend = {  
-    action: "delete_for_everyone",  
-    chat_id: chatWith.id,  
-    message_ids: Array.from(selectedMessages),  
-    requested_by: account.id,  
-    timestamp: Date.now()  
-  };  
-  
-  // Send to backend  
-  fetch(API_URL, {  
-    method: "POST",  
-    headers: { "Content-Type": "application/json" },  
-    body: JSON.stringify(jsonToSend)  
-  })  
-  .then(res => res.json())  
-  .then(res => {
-    console.log("Delete for everyone response:", res);
+// ===== DELETE FOR EVERYONE =====
+deleteForEveryoneBtn.addEventListener("click", () => {
+  if (selectedMessages.size === 0) return;
 
-    // ✅ Only update frontend if backend confirms success
-    if (res.success) {
-      selectedMessages.forEach(id => {  
-        messages = messages.map(msg => {  
-          if (msg.id === id) {  
-            return {  
-              ...msg,  
-              deleted: true,  
-              deleted_for: "everyone",  
-              requested_by: account.id,  
-              status: "deleted",  
-              text: ""  
-            };  
-          }  
-          return msg;  
-        });  
+  const jsonToSend = {
+    action: "delete_for_everyone",
+    chat_id: chatWith.id,
+    message_ids: Array.from(selectedMessages),
+    requested_by: account.id,
+    timestamp: Date.now()
+  };
 
-        fchatMessages = fchatMessages.map(msg => {  
-          if (msg.id === id) {  
-            return {  
-              ...msg,  
-              deleted: true,  
-              deleted_for: "everyone",  
-              requested_by: account.id,  
-              status: "deleted",  
-              text: ""  
-            };  
-          }  
-          return msg;  
-        });  
-      });
+  // ✅ Immediately clear selection mode
+  selectionMode = false;
+  updateSelectionBoard();
+  deleteModal.style.display = "none";
 
-      // Update DOM
-      updateTimeline();
+  // ✅ Mark messages as "Deleting..." (or "Pending" if offline)
+  const isOffline = !navigator.onLine; // check if user is offline
+  selectedMessages.forEach(id => {
+    messages = messages.map(msg => {
+      if (msg.id === id) {
+        return { ...msg, status: isOffline ? "pending" : "deleting...", text: isOffline ? "Pending" : "Deleting..." };
+      }
+      return msg;
+    });
+    fchatMessages = fchatMessages.map(msg => {
+      if (msg.id === id) {
+        return { ...msg, status: isOffline ? "pending" : "deleting...", text: isOffline ? "Pending" : "Deleting..." };
+      }
+      return msg;
+    });
+  });
+  updateTimeline();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+  localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
 
-      // Save updated arrays
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));  
-      localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
+  // ✅ Send to backend
+  fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(jsonToSend)
+  })
+    .then(res => res.json())
+    .then(res => {
+      console.log("Delete for everyone response:", res);
 
-      // Cleanup
-      selectedMessages.clear();  
-      selectionMode = false;  
-      updateSelectionBoard();  
-      deleteModal.style.display = "none";  
-    } else {
-      // Handle backend failure
-      console.error("Failed to delete messages:", res.error);
-      alert("Failed to delete messages for everyone. Try again.");
-    }
-  })  
-  .catch(err => {
-    console.error(err);
-    alert("An error occurred while deleting messages.");
-  });  
-});  
-  
-// Back button cancels selection mode  
-boardBackBtn.onclick = () => {  
-  clearSelection();  
-};
+      if (res.success) {
+        // ✅ Backend confirmed deletion: update messages fully
+        selectedMessages.forEach(id => {
+          messages = messages.map(msg => {
+            if (msg.id === id) {
+              return {
+                ...msg,
+                deleted: true,
+                deleted_for: "everyone",
+                requested_by: account.id,
+                status: "deleted",
+                text: ""
+              };
+            }
+            return msg;
+          });
+
+          fchatMessages = fchatMessages.map(msg => {
+            if (msg.id === id) {
+              return {
+                ...msg,
+                deleted: true,
+                deleted_for: "everyone",
+                requested_by: account.id,
+                status: "deleted",
+                text: ""
+              };
+            }
+            return msg;
+          });
+        });
+
+        updateTimeline();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+        localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
+      } else {
+        // Backend failed: show error and reset messages
+        console.error("Failed to delete messages:", res.error);
+        alert("Failed to delete messages for everyone. Try again.");
+
+        // Reset messages to original text/status
+        selectedMessages.forEach(id => {
+          messages = messages.map(msg => {
+            if (msg.id === id) return { ...msg, status: "sent", text: msg.originalText || msg.text };
+            return msg;
+          });
+          fchatMessages = fchatMessages.map(msg => {
+            if (msg.id === id) return { ...msg, status: "sent", text: msg.originalText || msg.text };
+            return msg;
+          });
+        });
+        updateTimeline();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+        localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      alert("An error occurred while deleting messages.");
+    });
+
+  // ✅ Finally, clear the selection set immediately
+  selectedMessages.clear();
+});
 
 // ===== DELETE MODAL LOGIC =====
 const deleteModal = document.getElementById("delete-modal");
