@@ -176,77 +176,87 @@ function updateSelectionBoard() {
     selectionBoard.style.display = "none";
   }
 }
-// ===== DELETE FOR EVERYONE =====
-deleteForEveryoneBtn.addEventListener("click", () => {
-  if (selectedMessages.size === 0) return;
+// ===== DELETE FOR EVERYONE =====  
+deleteForEveryoneBtn.addEventListener("click", () => {  
+  if (selectedMessages.size === 0) return;  
+  
+  const jsonToSend = {  
+    action: "delete_for_everyone",  
+    chat_id: chatWith.id,  
+    message_ids: Array.from(selectedMessages),  
+    requested_by: account.id,  
+    timestamp: Date.now()  
+  };  
+  
+  // Send to backend  
+  fetch(API_URL, {  
+    method: "POST",  
+    headers: { "Content-Type": "application/json" },  
+    body: JSON.stringify(jsonToSend)  
+  })  
+  .then(res => res.json())  
+  .then(res => {
+    console.log("Delete for everyone response:", res);
 
-  const jsonToSend = {
-    action: "delete_for_everyone",
-    chat_id: chatWith.id,
-    message_ids: Array.from(selectedMessages),
-    requested_by: account.id,
-    timestamp: Date.now()
-  };
+    // ✅ Only update frontend if backend confirms success
+    if (res.success) {
+      selectedMessages.forEach(id => {  
+        messages = messages.map(msg => {  
+          if (msg.id === id) {  
+            return {  
+              ...msg,  
+              deleted: true,  
+              deleted_for: "everyone",  
+              requested_by: account.id,  
+              status: "deleted",  
+              text: ""  
+            };  
+          }  
+          return msg;  
+        });  
 
-  // Send to backend
-  fetch(API_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(jsonToSend)
-  })
-  .then(res => res.json())
-  .then(res => console.log("Delete for everyone response:", res))
-  .catch(err => console.error(err));
+        fchatMessages = fchatMessages.map(msg => {  
+          if (msg.id === id) {  
+            return {  
+              ...msg,  
+              deleted: true,  
+              deleted_for: "everyone",  
+              requested_by: account.id,  
+              status: "deleted",  
+              text: ""  
+            };  
+          }  
+          return msg;  
+        });  
+      });
 
-  // Update frontend AND localStorage arrays
-  selectedMessages.forEach(id => {
-    messages = messages.map(msg => {
-      if (msg.id === id) {
-        return {
-          ...msg,
-          deleted: true,
-          deleted_for: "everyone",
-          requested_by: account.id,
-          status: "deleted", // ✅ mark status as deleted
-          text: "" // optional, clear original text
-        };
-      }
-      return msg;
-    });
+      // Update DOM
+      updateTimeline();
 
-    fchatMessages = fchatMessages.map(msg => {
-      if (msg.id === id) {
-        return {
-          ...msg,
-          deleted: true,
-          deleted_for: "everyone",
-          requested_by: account.id,
-          status: "deleted",
-          text: ""
-        };
-      }
-      return msg;
-    });
+      // Save updated arrays
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));  
+      localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
 
-    // Update DOM
-    updateTimeline();
-
-  });
-
-  // Save updated arrays
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-  localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
-
-  // Cleanup
-  selectedMessages.clear();
-  selectionMode = false;
-  updateSelectionBoard();
-  deleteModal.style.display = "none";
-});
-
-// Back button cancels selection mode
-boardBackBtn.onclick = () => {
-  clearSelection();
+      // Cleanup
+      selectedMessages.clear();  
+      selectionMode = false;  
+      updateSelectionBoard();  
+      deleteModal.style.display = "none";  
+    } else {
+      // Handle backend failure
+      console.error("Failed to delete messages:", res.error);
+      alert("Failed to delete messages for everyone. Try again.");
+    }
+  })  
+  .catch(err => {
+    console.error(err);
+    alert("An error occurred while deleting messages.");
+  });  
+});  
+  
+// Back button cancels selection mode  
+boardBackBtn.onclick = () => {  
+  clearSelection();  
 };
 
 // ===== DELETE MODAL LOGIC =====
