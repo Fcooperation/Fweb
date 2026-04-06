@@ -1894,6 +1894,16 @@ document.addEventListener("DOMContentLoaded", applyChatSettings);
 
 // Show Reaction bar function
 function showReactionBar(msgEl, msgObj) {
+
+  if (
+    msgObj.deleted ||
+    msgObj.status === "deleted" ||
+    msgObj.status === "deleting" ||
+    msgObj.status === "pending_delete"
+  ) {
+    return;
+  }
+
   // Remove existing bar if any
   const existing = document.querySelector(".reaction-bar");
   if (existing) existing.remove();
