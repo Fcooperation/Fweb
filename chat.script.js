@@ -2177,6 +2177,7 @@ function handleDeleteQueue() {
             ...msg,
             deleted: true,
             deleted_for: "everyone",
+            requested_by: account.id,
             status: "deleted",
             text: ""
           };
@@ -2190,6 +2191,7 @@ function handleDeleteQueue() {
             ...msg,
             deleted: true,
             deleted_for: "everyone",
+            requested_by: account.id,
             status: "deleted",
             text: ""
           };
