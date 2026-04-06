@@ -858,4 +858,16 @@ Typing indicator bubble
   white-space: normal; /* Allows text to wrap normally without horizontal scrolling */
   word-break: break-word;
 }
+.deleting {
+  color: red;
+  font-style: italic;
+}
 
+.pending_delete {
+  color: orange;
+  font-style: italic;
+}
+
+.failed_delete {
+  color: crimson;
+    }
