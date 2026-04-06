@@ -2107,131 +2107,124 @@ function updateSeenUI() {
   });
 }
 
-// Delete sync 
-function setupDeleteSync() {
+// 🔁 Handle network status changes
+function handleDeleteQueue() {
+  const isOnline = navigator.onLine;
 
-  // 🔴 WHEN OFFLINE → convert deleting → pending
-  window.addEventListener("offline", () => {
+  if (!isOnline) {
+    // ❌ OFFLINE → convert deleting → pending_delete
     messages = messages.map(msg => {
       if (msg.status === "deleting") {
-        return {
-          ...msg,
-          status: "pending_delete"
-        };
+        return { ...msg, status: "pending_delete" };
       }
       return msg;
     });
 
     fchatMessages = fchatMessages.map(msg => {
       if (msg.status === "deleting") {
-        return {
-          ...msg,
-          status: "pending_delete"
-        };
+        return { ...msg, status: "pending_delete" };
       }
       return msg;
     });
 
     updateTimeline();
+    return;
+  }
 
-    console.log("Went offline → pending_delete applied");
+  // ✅ ONLINE → retry all pending deletes
+  const pendingIds = messages
+    .filter(msg => msg.status === "pending_delete")
+    .map(msg => msg.id);
+
+  if (pendingIds.length === 0) return;
+
+  // 🔄 Set them back to deleting
+  messages = messages.map(msg => {
+    if (pendingIds.includes(msg.id)) {
+      return { ...msg, status: "deleting" };
+    }
+    return msg;
   });
 
+  fchatMessages = fchatMessages.map(msg => {
+    if (pendingIds.includes(msg.id)) {
+      return { ...msg, status: "deleting" };
+    }
+    return msg;
+  });
 
-  // 🟢 WHEN ONLINE → retry all pending deletes
-  window.addEventListener("online", () => {
-    console.log("Back online → retrying pending deletes");
+  updateTimeline();
 
-    const pendingIds = messages
-      .filter(msg => msg.status === "pending_delete")
-      .map(msg => msg.id);
+  // 🚀 Retry backend request
+  fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      action: "delete_for_everyone",
+      chat_id: chatWith.id,
+      message_ids: pendingIds,
+      requested_by: account.id,
+      timestamp: Date.now()
+    })
+  })
+  .then(res => res.json())
+  .then(res => {
+    if (res.success) {
+      // ✅ mark as deleted
+      messages = messages.map(msg => {
+        if (pendingIds.includes(msg.id)) {
+          return {
+            ...msg,
+            deleted: true,
+            deleted_for: "everyone",
+            status: "deleted",
+            text: ""
+          };
+        }
+        return msg;
+      });
 
-    if (pendingIds.length === 0) return;
+      fchatMessages = fchatMessages.map(msg => {
+        if (pendingIds.includes(msg.id)) {
+          return {
+            ...msg,
+            deleted: true,
+            deleted_for: "everyone",
+            status: "deleted",
+            text: ""
+          };
+        }
+        return msg;
+      });
 
-    // mark them as deleting again (UI feedback)
+      updateTimeline();
+
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+      localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
+
+    } else {
+      // ❌ failed again → keep as pending
+      messages = messages.map(msg => {
+        if (pendingIds.includes(msg.id)) {
+          return { ...msg, status: "pending_delete" };
+        }
+        return msg;
+      });
+
+      updateTimeline();
+    }
+  })
+  .catch(() => {
+    // still offline or failed → keep pending
     messages = messages.map(msg => {
       if (pendingIds.includes(msg.id)) {
-        return {
-          ...msg,
-          status: "deleting"
-        };
-      }
-      return msg;
-    });
-
-    fchatMessages = fchatMessages.map(msg => {
-      if (pendingIds.includes(msg.id)) {
-        return {
-          ...msg,
-          status: "deleting"
-        };
+        return { ...msg, status: "pending_delete" };
       }
       return msg;
     });
 
     updateTimeline();
-
-    // 🔁 resend delete request
-    fetch(API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        action: "delete_for_everyone",
-        chat_id: chatWith.id,
-        message_ids: pendingIds,
-        requested_by: account.id,
-        timestamp: Date.now()
-      })
-    })
-    .then(res => res.json())
-    .then(res => {
-      if (res.success) {
-        // ✅ mark as deleted finally
-        messages = messages.map(msg => {
-          if (pendingIds.includes(msg.id)) {
-            return {
-              ...msg,
-              deleted: true,
-              deleted_for: "everyone",
-              requested_by: account.id,
-              status: "deleted",
-              text: ""
-            };
-          }
-          return msg;
-        });
-
-        fchatMessages = fchatMessages.map(msg => {
-          if (pendingIds.includes(msg.id)) {
-            return {
-              ...msg,
-              deleted: true,
-              deleted_for: "everyone",
-              requested_by: account.id,
-              status: "deleted",
-              text: ""
-            };
-          }
-          return msg;
-        });
-
-        updateTimeline();
-
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-        localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
-
-        console.log("Pending deletes synced successfully");
-      } else {
-        console.error("Retry failed:", res.error);
-      }
-    })
-    .catch(err => {
-      console.error("Retry error:", err);
-    });
   });
-
 }
 
 
@@ -2243,6 +2236,8 @@ window.addEventListener("offline", retryPendingMessages);
 window.addEventListener("online", retryPendingPollMessages);
 window.addEventListener("offline", retryPendingPollMessages);
 window.addEventListener("online", fetchAllFChatLogs);
+window.addEventListener("online", handleDeleteQueue);
+window.addEventListener("offline", handleDeleteQueue);
 
 // Run fetchAllFChatLogs every 2 seconds (2000 ms)
 setInterval(() => {
@@ -2266,4 +2261,4 @@ retryPendingPollMessages();
 fetchAllFChatLogs();
 loadChatSettings();
 applyChatSettings();
-setupDeleteSync();
+handleDeleteQueue();
