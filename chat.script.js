@@ -2107,6 +2107,133 @@ function updateSeenUI() {
   });
 }
 
+// Delete sync 
+function setupDeleteSync() {
+
+  // 🔴 WHEN OFFLINE → convert deleting → pending
+  window.addEventListener("offline", () => {
+    messages = messages.map(msg => {
+      if (msg.status === "deleting") {
+        return {
+          ...msg,
+          status: "pending_delete"
+        };
+      }
+      return msg;
+    });
+
+    fchatMessages = fchatMessages.map(msg => {
+      if (msg.status === "deleting") {
+        return {
+          ...msg,
+          status: "pending_delete"
+        };
+      }
+      return msg;
+    });
+
+    updateTimeline();
+
+    console.log("Went offline → pending_delete applied");
+  });
+
+
+  // 🟢 WHEN ONLINE → retry all pending deletes
+  window.addEventListener("online", () => {
+    console.log("Back online → retrying pending deletes");
+
+    const pendingIds = messages
+      .filter(msg => msg.status === "pending_delete")
+      .map(msg => msg.id);
+
+    if (pendingIds.length === 0) return;
+
+    // mark them as deleting again (UI feedback)
+    messages = messages.map(msg => {
+      if (pendingIds.includes(msg.id)) {
+        return {
+          ...msg,
+          status: "deleting"
+        };
+      }
+      return msg;
+    });
+
+    fchatMessages = fchatMessages.map(msg => {
+      if (pendingIds.includes(msg.id)) {
+        return {
+          ...msg,
+          status: "deleting"
+        };
+      }
+      return msg;
+    });
+
+    updateTimeline();
+
+    // 🔁 resend delete request
+    fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        action: "delete_for_everyone",
+        chat_id: chatWith.id,
+        message_ids: pendingIds,
+        requested_by: account.id,
+        timestamp: Date.now()
+      })
+    })
+    .then(res => res.json())
+    .then(res => {
+      if (res.success) {
+        // ✅ mark as deleted finally
+        messages = messages.map(msg => {
+          if (pendingIds.includes(msg.id)) {
+            return {
+              ...msg,
+              deleted: true,
+              deleted_for: "everyone",
+              requested_by: account.id,
+              status: "deleted",
+              text: ""
+            };
+          }
+          return msg;
+        });
+
+        fchatMessages = fchatMessages.map(msg => {
+          if (pendingIds.includes(msg.id)) {
+            return {
+              ...msg,
+              deleted: true,
+              deleted_for: "everyone",
+              requested_by: account.id,
+              status: "deleted",
+              text: ""
+            };
+          }
+          return msg;
+        });
+
+        updateTimeline();
+
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+        localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
+
+        console.log("Pending deletes synced successfully");
+      } else {
+        console.error("Retry failed:", res.error);
+      }
+    })
+    .catch(err => {
+      console.error("Retry error:", err);
+    });
+  });
+
+}
+
 
 // ===== Event Listeners =====
 window.addEventListener("online", retryAllPolls);  // retry pending polls once online
@@ -2139,3 +2266,4 @@ retryPendingPollMessages();
 fetchAllFChatLogs();
 loadChatSettings();
 applyChatSettings();
+setupDeleteSync();
