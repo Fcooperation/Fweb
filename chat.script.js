@@ -1894,6 +1894,8 @@ document.addEventListener("DOMContentLoaded", applyChatSettings);
 
 // Show Reaction bar function
 function showReactionBar(msgEl, msgObj) {
+// ❌ Don't show reaction bar in selection mode
+if (selectionMode) return;
 
   if (
     msgObj.deleted ||
@@ -1903,8 +1905,7 @@ function showReactionBar(msgEl, msgObj) {
   ) {
     return;
   }
-
-  // Remove existing bar if any
+// Remove existing bar if any
   const existing = document.querySelector(".reaction-bar");
   if (existing) existing.remove();
 
@@ -1921,12 +1922,20 @@ function showReactionBar(msgEl, msgObj) {
 
     // Click to react
     span.addEventListener("click", () => {
-      // ===== Replace reaction instead of adding =====
-msgObj.reactions = [{
-  emoji: emoji,
-  count: 1,
-  sender_id: account.id
-}];
+// Check existing reaction
+const existingReaction = msgObj.reactions?.find(r => r.sender_id === account.id);
+
+if (existingReaction && existingReaction.emoji === emoji) {
+  // ❌ SAME EMOJI → REMOVE REACTION
+  msgObj.reactions = [];
+} else {
+  // ✅ NEW / DIFFERENT EMOJI
+  msgObj.reactions = [{
+    emoji: emoji,
+    count: 1,
+    sender_id: account.id
+  }];
+}
 
       // ===== Sync updated msgObj back into messages array =====
 const msgIndex = messages.findIndex(m => m.id === msgObj.id);
@@ -1972,6 +1981,9 @@ document.querySelectorAll(".selected, .highlight-message")
 
 // Hide selection board
 updateSelectionBoard();
+// Remove reaction bar if open
+const existingBar = document.querySelector(".reaction-bar");
+if (existingBar) existingBar.remove();
 
       bar.remove(); // hide the reaction bar after selection
       // ===== SEND REACTION TO BACKEND =====
@@ -1983,7 +1995,7 @@ fetch(API_URL, {
     receiver_id: chatWith.id,
     reaction_payload: {
       message_id: msgObj.id,
-      reaction: emoji,
+      reaction: (existingReaction && existingReaction.emoji === emoji) ? "" : emoji,
       sender_id: account.id,
       timestamp: Date.now()
     }
