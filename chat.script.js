@@ -1894,8 +1894,6 @@ document.addEventListener("DOMContentLoaded", applyChatSettings);
 
 // Show Reaction bar function
 function showReactionBar(msgEl, msgObj) {
-// ❌ Don't show reaction bar in selection mode
-if (selectionMode) return;
 
   if (
     msgObj.deleted ||
