@@ -196,7 +196,7 @@ deleteForEveryoneBtn.addEventListener("click", () => {
   updateSelectionBoard();
   deleteModal.style.display = "none";
 
-  // ✅ 2. SHOW "DELETING..." OR "PENDING"
+  // ✅ 2. ONLY CHANGE STATUS (NO TEXT CHANGE)
   const isOnline = navigator.onLine;
 
   messages = messages.map(msg => {
@@ -204,8 +204,7 @@ deleteForEveryoneBtn.addEventListener("click", () => {
       return {
         ...msg,
         status: isOnline ? "deleting" : "pending_delete",
-        text: isOnline ? "Deleting..." : "Pending...",
-        tempDeleting: true // helps track temporary state
+        tempDeleting: true
       };
     }
     return msg;
@@ -216,7 +215,6 @@ deleteForEveryoneBtn.addEventListener("click", () => {
       return {
         ...msg,
         status: isOnline ? "deleting" : "pending_delete",
-        text: isOnline ? "Deleting..." : "Pending...",
         tempDeleting: true
       };
     }
@@ -236,7 +234,7 @@ deleteForEveryoneBtn.addEventListener("click", () => {
     console.log("Delete response:", res);
 
     if (res.success) {
-      // ✅ 4. FINAL DELETE STATE
+      // ✅ FINAL DELETE STATE
       messages = messages.map(msg => {
         if (idsToDelete.includes(msg.id)) {
           return {
@@ -245,7 +243,7 @@ deleteForEveryoneBtn.addEventListener("click", () => {
             deleted_for: "everyone",
             requested_by: account.id,
             status: "deleted",
-            text: "",
+            text: "", // only clear here finally
             tempDeleting: false
           };
         }
@@ -273,13 +271,12 @@ deleteForEveryoneBtn.addEventListener("click", () => {
       localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
 
     } else {
-      // ❌ FAILED → revert or show error
+      // ❌ FAILED
       messages = messages.map(msg => {
         if (idsToDelete.includes(msg.id) && msg.tempDeleting) {
           return {
             ...msg,
-            status: "failed_delete",
-            text: "Failed to delete"
+            status: "failed_delete"
           };
         }
         return msg;
@@ -297,8 +294,7 @@ deleteForEveryoneBtn.addEventListener("click", () => {
       if (idsToDelete.includes(msg.id)) {
         return {
           ...msg,
-          status: "pending_delete",
-          text: "Pending..."
+          status: "pending_delete"
         };
       }
       return msg;
@@ -915,6 +911,14 @@ function updateTimeline() {
 
       lastDate = msgDate;
     }
+    
+    if (msg.status === "deleting") {
+  // make text red
+}
+
+if (msg.status === "pending_delete") {
+  // make text orange
+}
 
     addMessage(msg); // addMessage now knows if it's sent or received via msg.isSent
     applyChatSettings();
