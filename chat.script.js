@@ -1657,6 +1657,7 @@ reactionsContainer.innerHTML = "";
 const counts = {};
 
 targetMsg.reactions.forEach(r => {
+  if (!r.emoji) return; // skip empty emoji → removes old one visually
   counts[r.emoji] = (counts[r.emoji] || 0) + 1;
 });
 
