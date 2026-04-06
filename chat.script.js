@@ -180,113 +180,138 @@ function updateSelectionBoard() {
 deleteForEveryoneBtn.addEventListener("click", () => {
   if (selectedMessages.size === 0) return;
 
+  const idsToDelete = Array.from(selectedMessages);
+
   const jsonToSend = {
     action: "delete_for_everyone",
     chat_id: chatWith.id,
-    message_ids: Array.from(selectedMessages),
+    message_ids: idsToDelete,
     requested_by: account.id,
     timestamp: Date.now()
   };
 
-  // ✅ Immediately clear selection mode
+  // ✅ 1. EXIT SELECTION MODE IMMEDIATELY
+  selectedMessages.clear();
   selectionMode = false;
   updateSelectionBoard();
   deleteModal.style.display = "none";
 
-  // ✅ Mark messages as "Deleting..." (or "Pending" if offline)
-  const isOffline = !navigator.onLine; // check if user is offline
-  selectedMessages.forEach(id => {
-    messages = messages.map(msg => {
-      if (msg.id === id) {
-        return { ...msg, status: isOffline ? "pending" : "deleting...", text: isOffline ? "Pending" : "Deleting..." };
-      }
-      return msg;
-    });
-    fchatMessages = fchatMessages.map(msg => {
-      if (msg.id === id) {
-        return { ...msg, status: isOffline ? "pending" : "deleting...", text: isOffline ? "Pending" : "Deleting..." };
-      }
-      return msg;
-    });
-  });
-  updateTimeline();
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-  localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
+  // ✅ 2. SHOW "DELETING..." OR "PENDING"
+  const isOnline = navigator.onLine;
 
-  // ✅ Send to backend
+  messages = messages.map(msg => {
+    if (idsToDelete.includes(msg.id)) {
+      return {
+        ...msg,
+        status: isOnline ? "deleting" : "pending_delete",
+        text: isOnline ? "Deleting..." : "Pending...",
+        tempDeleting: true // helps track temporary state
+      };
+    }
+    return msg;
+  });
+
+  fchatMessages = fchatMessages.map(msg => {
+    if (idsToDelete.includes(msg.id)) {
+      return {
+        ...msg,
+        status: isOnline ? "deleting" : "pending_delete",
+        text: isOnline ? "Deleting..." : "Pending...",
+        tempDeleting: true
+      };
+    }
+    return msg;
+  });
+
+  updateTimeline();
+
+  // ✅ 3. SEND REQUEST
   fetch(API_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(jsonToSend)
   })
-    .then(res => res.json())
-    .then(res => {
-      console.log("Delete for everyone response:", res);
+  .then(res => res.json())
+  .then(res => {
+    console.log("Delete response:", res);
 
-      if (res.success) {
-        // ✅ Backend confirmed deletion: update messages fully
-        selectedMessages.forEach(id => {
-          messages = messages.map(msg => {
-            if (msg.id === id) {
-              return {
-                ...msg,
-                deleted: true,
-                deleted_for: "everyone",
-                requested_by: account.id,
-                status: "deleted",
-                text: ""
-              };
-            }
-            return msg;
-          });
+    if (res.success) {
+      // ✅ 4. FINAL DELETE STATE
+      messages = messages.map(msg => {
+        if (idsToDelete.includes(msg.id)) {
+          return {
+            ...msg,
+            deleted: true,
+            deleted_for: "everyone",
+            requested_by: account.id,
+            status: "deleted",
+            text: "",
+            tempDeleting: false
+          };
+        }
+        return msg;
+      });
 
-          fchatMessages = fchatMessages.map(msg => {
-            if (msg.id === id) {
-              return {
-                ...msg,
-                deleted: true,
-                deleted_for: "everyone",
-                requested_by: account.id,
-                status: "deleted",
-                text: ""
-              };
-            }
-            return msg;
-          });
-        });
+      fchatMessages = fchatMessages.map(msg => {
+        if (idsToDelete.includes(msg.id)) {
+          return {
+            ...msg,
+            deleted: true,
+            deleted_for: "everyone",
+            requested_by: account.id,
+            status: "deleted",
+            text: "",
+            tempDeleting: false
+          };
+        }
+        return msg;
+      });
 
-        updateTimeline();
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-        localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
-      } else {
-        // Backend failed: show error and reset messages
-        console.error("Failed to delete messages:", res.error);
-        alert("Failed to delete messages for everyone. Try again.");
+      updateTimeline();
 
-        // Reset messages to original text/status
-        selectedMessages.forEach(id => {
-          messages = messages.map(msg => {
-            if (msg.id === id) return { ...msg, status: "sent", text: msg.originalText || msg.text };
-            return msg;
-          });
-          fchatMessages = fchatMessages.map(msg => {
-            if (msg.id === id) return { ...msg, status: "sent", text: msg.originalText || msg.text };
-            return msg;
-          });
-        });
-        updateTimeline();
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-        localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+      localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
+
+    } else {
+      // ❌ FAILED → revert or show error
+      messages = messages.map(msg => {
+        if (idsToDelete.includes(msg.id) && msg.tempDeleting) {
+          return {
+            ...msg,
+            status: "failed_delete",
+            text: "Failed to delete"
+          };
+        }
+        return msg;
+      });
+
+      updateTimeline();
+      alert("Failed to delete messages");
+    }
+  })
+  .catch(err => {
+    console.error(err);
+
+    // ❌ NETWORK ERROR → mark as pending
+    messages = messages.map(msg => {
+      if (idsToDelete.includes(msg.id)) {
+        return {
+          ...msg,
+          status: "pending_delete",
+          text: "Pending..."
+        };
       }
-    })
-    .catch(err => {
-      console.error(err);
-      alert("An error occurred while deleting messages.");
+      return msg;
     });
 
-  // ✅ Finally, clear the selection set immediately
-  selectedMessages.clear();
+    updateTimeline();
+  });
 });
+
+// Back button cancels selection mode
+boardBackBtn.onclick = () => {
+  clearSelection();
+};
 
 // ===== DELETE MODAL LOGIC =====
 const deleteModal = document.getElementById("delete-modal");
