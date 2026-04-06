@@ -1653,11 +1653,10 @@ if (isNewReaction) {
     // Clear container first
 reactionsContainer.innerHTML = "";
 
-// Count emojis, ignoring empty ones
+// Count emojis
 const counts = {};
 
 targetMsg.reactions.forEach(r => {
-  if (!r.emoji) return; // skip empty emoji (removal)
   counts[r.emoji] = (counts[r.emoji] || 0) + 1;
 });
 
