@@ -1583,9 +1583,9 @@ if (Array.isArray(data.reactions)) {
 
   data.reactions.forEach(reaction => {
 
-    if (!isCurrentChatItem(reaction.sender_id, reaction.receiver_id)) {
-      return;
-    }
+  if (!isCurrentChatItem(reaction.sender_id, reaction.receiver_id)) {
+    return;
+  }
 
     // Find the message
     const targetMsg = fchatMessages.find(
@@ -1599,45 +1599,51 @@ if (Array.isArray(data.reactions)) {
       targetMsg.reactions = [];
     }
 
-    // Check if this user already reacted
-    const existingIndex = targetMsg.reactions.findIndex(
-      r => Number(r.sender_id) === Number(reaction.sender_id)
-    );
+    // Ensure reactions array exists
+if (!Array.isArray(targetMsg.reactions)) {
+  targetMsg.reactions = [];
+}
 
-    let isNewReaction = false;
+// Check if this user already reacted
+const existingIndex = targetMsg.reactions.findIndex(
+  r => Number(r.sender_id) === Number(reaction.sender_id)
+);
 
-    if (existingIndex !== -1) {
+let isNewReaction = false;
 
-      if (reaction.reaction === "") {
-        // ✅ REMOVE the previous reaction completely
-        targetMsg.reactions.splice(existingIndex, 1);
-        isNewReaction = true;
-      } else if (targetMsg.reactions[existingIndex].emoji !== reaction.reaction) {
-        // ✅ update emoji if different
-        targetMsg.reactions[existingIndex].emoji = reaction.reaction;
-        isNewReaction = true;
-      }
+if (existingIndex !== -1) {
 
-    } else if (reaction.reaction !== "") {
-      // ✅ Add new reaction
-      targetMsg.reactions.push({
-        emoji: reaction.reaction,
-        sender_id: reaction.sender_id
-      });
-      isNewReaction = true;
-    }
+  // Only update if emoji changed
+  if (targetMsg.reactions[existingIndex].emoji !== reaction.reaction) {
+    targetMsg.reactions[existingIndex].emoji = reaction.reaction;
+    isNewReaction = true;
+  }
 
-    if (isNewReaction) {
-      newReactionCount++;
-    }
+} else {
+
+  targetMsg.reactions.push({
+    emoji: reaction.reaction,
+    sender_id: reaction.sender_id
+  });
+
+  isNewReaction = true;
+}
+
+if (isNewReaction) {
+  newReactionCount++;
+}
 
     // ------------------------
     // UPDATE DOM IF VISIBLE
     // ------------------------
-    const msgEl = document.querySelector(`[data-id="${targetMsg.id}"]`);
+    const msgEl = document.querySelector(
+      `[data-id="${targetMsg.id}"]`
+    );
+
     if (!msgEl) return;
 
     let reactionsContainer = msgEl.querySelector(".reactions");
+
     if (!reactionsContainer) {
       reactionsContainer = document.createElement("div");
       reactionsContainer.className = "reactions";
@@ -1645,29 +1651,30 @@ if (Array.isArray(data.reactions)) {
     }
 
     // Clear container first
-    reactionsContainer.innerHTML = "";
+reactionsContainer.innerHTML = "";
 
-    // Count emojis
-    const counts = {};
-    targetMsg.reactions.forEach(r => {
-      if (!r.emoji) return; // skip empty
-      counts[r.emoji] = (counts[r.emoji] || 0) + 1;
-    });
+// Count emojis
+const counts = {};
 
-    // Render grouped reactions
-    Object.entries(counts).forEach(([emoji, count]) => {
-      const pill = document.createElement("div");
-      pill.className = "reaction-pill";
-      pill.textContent = `${emoji}${count}`;
-      reactionsContainer.appendChild(pill);
-    });
+targetMsg.reactions.forEach(r => {
+  counts[r.emoji] = (counts[r.emoji] || 0) + 1;
+});
+
+// Render grouped reactions
+Object.entries(counts).forEach(([emoji, count]) => {
+  const pill = document.createElement("div");
+  pill.className = "reaction-pill";
+  pill.textContent = `${emoji}${count}`;
+
+  reactionsContainer.appendChild(pill);
+});
   });
 
   // Save updated messages
   localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
   if (newReactionCount > 0) {
-    newMessagesFound(newReactionCount);
-  }
+  newMessagesFound(newReactionCount);
+}
 }
 
 // ------------------------
