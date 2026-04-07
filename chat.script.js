@@ -1598,6 +1598,43 @@ if (Array.isArray(data.reactions)) {
     if (!Array.isArray(targetMsg.reactions)) {
       targetMsg.reactions = [];
     }
+    
+// 🔥 HANDLE REACTION REMOVAL FIRST
+if (!reaction.reaction) {
+  targetMsg.reactions = targetMsg.reactions.filter(
+    r => Number(r.sender_id) !== Number(reaction.sender_id)
+  );
+
+  newReactionCount++;
+  
+  // Update DOM after removal
+  const msgEl = document.querySelector(
+    `[data-id="${targetMsg.id}"]`
+  );
+
+  if (msgEl) {
+    let reactionsContainer = msgEl.querySelector(".reactions");
+
+    if (reactionsContainer) {
+      reactionsContainer.innerHTML = "";
+
+      const counts = {};
+
+      targetMsg.reactions.forEach(r => {
+        counts[r.emoji] = (counts[r.emoji] || 0) + 1;
+      });
+
+      Object.entries(counts).forEach(([emoji, count]) => {
+        const pill = document.createElement("div");
+        pill.className = "reaction-pill";
+        pill.textContent = `${emoji}${count}`;
+        reactionsContainer.appendChild(pill);
+      });
+    }
+  }
+
+  return; // 🚨 VERY IMPORTANT → stop further processing
+}
 
     // Ensure reactions array exists
 if (!Array.isArray(targetMsg.reactions)) {
