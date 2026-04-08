@@ -1169,7 +1169,6 @@ async function sendToBackend(msgObj) {
     const payload = {
       action: "send_messages",
       email: account.email,
-      id: msgObj.id,
       sender_id: account.id,
       receiver_id: chatWith.id,
       linked: msgObj.linked,
@@ -1207,7 +1206,6 @@ sendBtn.textContent = "Sending…";                  // change text
 sendBtn.disabled = true;                           // prevent spamming
 
   const msgObj = {
-    id: Date.now(),
     type: "sent",
     text,
     reactions: [],
