@@ -1582,6 +1582,7 @@ if (Array.isArray(data.reactions)) {
   let newReactionCount = 0;
 
   data.reactions.forEach(reaction => {
+    console.log("🔥 Reaction received:", reaction);
 
   if (!isCurrentChatItem(reaction.sender_id, reaction.receiver_id)) {
     return;
@@ -1592,7 +1593,10 @@ if (Array.isArray(data.reactions)) {
       m => Number(m.id) === Number(reaction.message_id)
     );
 
-    if (!targetMsg) return;
+    if (!targetMsg) {
+  console.warn("⚠️ Message not found for reaction removal:", reaction.message_id);
+  return;
+}
 
     // Ensure reactions array exists
     if (!Array.isArray(targetMsg.reactions)) {
@@ -1601,11 +1605,13 @@ if (Array.isArray(data.reactions)) {
     
 // 🔥 HANDLE REACTION REMOVAL FIRST
 if (!reaction.reaction) {
+  console.log("❌ Reaction REMOVAL detected for message:", reaction.message_id);
   targetMsg.reactions = targetMsg.reactions.filter(
     r => Number(r.sender_id) !== Number(reaction.sender_id)
   );
 
   newReactionCount++;
+  alert("Reaction removed on message " + reaction.message_id);
   
   // Update DOM after removal
   const msgEl = document.querySelector(
