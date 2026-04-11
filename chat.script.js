@@ -1546,19 +1546,21 @@ if (logs && logs.typing === true && logs.chat == account.id) {
 
         // 🔗 Resolve linked message
         let replyTo = null;
-        if (msg.linked && msg.linked_message_id) {
-          const original =
-            fchatMessages.find(m => m.id === msg.linked_message_id) ||
-            data.messages.find(m => m.id === msg.linked_message_id);
 
-          if (original) {
-            replyTo = {
-              id: original.id,
-              text: (original.text || "").slice(0, 100),
-              sender_id: original.sender_id
-            };
-          }
-        }
+if (msg.linked && msg.linked_message_id) {
+  const original =
+    fchatMessages.find(m => m.id === msg.linked_message_id) ||
+    data.messages.find(m => m.id === msg.linked_message_id) ||
+    messages.find(m => m.id === msg.linked_message_id); // 🔥 added
+
+  if (original) {
+    replyTo = {
+      id: original.id,
+      text: (original.message || original.text || "").slice(0, 100), // 🔥 fixed
+      sender_id: original.sender_id
+    };
+  }
+}
 
         newItems.push({
   id: msg.id,
