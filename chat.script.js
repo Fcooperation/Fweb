@@ -1544,20 +1544,20 @@ if (logs && logs.typing === true && logs.chat == account.id) {
 
   if (fchatMessages.some(m => m.id === msg.id)) return;
 
-        // 🔗 Resolve linked message
-        let replyTo = null;
+// 🔗 Resolve linked message
+let replyTo = null;
 
 if (msg.linked && msg.linked_message_id) {
   const original =
     fchatMessages.find(m => m.id === msg.linked_message_id) ||
-    data.messages.find(m => m.id === msg.linked_message_id) ||
-    messages.find(m => m.id === msg.linked_message_id); // 🔥 added
+    messages.find(m => m.id === msg.linked_message_id);
 
   if (original) {
     replyTo = {
       id: original.id,
-      text: (original.message || original.text || "").slice(0, 100), // 🔥 fixed
-      sender_id: original.sender_id
+      text: (original.message || original.text || "").slice(0, 100),
+      sender: original.sender_id, // ✅ correct key
+      deleted: original.deleted || false
     };
   }
 }
