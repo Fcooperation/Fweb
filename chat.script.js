@@ -1532,42 +1532,28 @@ if (logs && logs.typing === true && logs.chat == account.id) {
 
     const newItems = [];
 
-    // ------------------------
-    // NORMALIZE MESSAGES
-    // ------------------------
-    if (Array.isArray(data.messages)) {
-      data.messages.forEach(msg => {
-
-  if (!isCurrentChatItem(msg.sender_id, msg.receiver_id)) {
-    return;
-  }
-
-  if (fchatMessages.some(m => m.id === msg.id)) return;
-
-// 🔗 Resolve linked message
+    // 🔗 Resolve linked message
 let replyTo = null;
-
 if (msg.linked && msg.linked_message_id) {
   const original =
     fchatMessages.find(m => m.id === msg.linked_message_id) ||
-    messages.find(m => m.id === msg.linked_message_id);
+    data.messages.find(m => m.id === msg.linked_message_id);
 
   if (original) {
     replyTo = {
       id: original.id,
       text: (original.message || original.text || "").slice(0, 100),
-      sender: original.sender_id, // ✅ correct key
-      deleted: original.deleted || false
+      sender: original.sender_id
     };
   }
 }
 
-        newItems.push({
+newItems.push({
   id: msg.id,
   sender_id: msg.sender_id,
   receiver_id: msg.receiver_id,
-  text: msg.message || "",
-sent_at: msg.created_at,
+  text: msg.message || msg.text || "",
+  sent_at: msg.sent_at,
   isPoll: false,
   pollData: null,
   reactions: msg.reactions || [],
@@ -1575,8 +1561,6 @@ sent_at: msg.created_at,
   linked_message_id: msg.linked_message_id || null,
   replyTo
 });
-      });
-    }
     // ------------------------
 // NORMALIZE REACTIONS (SIMPLE MODE)
 // ------------------------
