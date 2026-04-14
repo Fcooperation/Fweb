@@ -1532,6 +1532,18 @@ if (logs && logs.typing === true && logs.chat == account.id) {
 
     const newItems = [];
 
+    // ------------------------
+    // NORMALIZE MESSAGES
+    // ------------------------
+    if (Array.isArray(data.messages)) {
+      data.messages.forEach(msg => {
+
+  if (!isCurrentChatItem(msg.sender_id, msg.receiver_id)) {
+    return;
+  }
+
+  if (fchatMessages.some(m => m.id === msg.id)) return;
+
         // 🔗 Resolve linked message
         let replyTo = null;
         if (msg.linked && msg.linked_message_id) {
