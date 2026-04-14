@@ -1532,27 +1532,27 @@ if (logs && logs.typing === true && logs.chat == account.id) {
 
     const newItems = [];
 
-    // 🔗 Resolve linked message
-let replyTo = null;
-if (msg.linked && msg.linked_message_id) {
-  const original =
-    fchatMessages.find(m => m.id === msg.linked_message_id) ||
-    data.messages.find(m => m.id === msg.linked_message_id);
+        // 🔗 Resolve linked message
+        let replyTo = null;
+        if (msg.linked && msg.linked_message_id) {
+          const original =
+            fchatMessages.find(m => m.id === msg.linked_message_id) ||
+            data.messages.find(m => m.id === msg.linked_message_id);
 
-  if (original) {
-    replyTo = {
-      id: original.id,
-      text: (original.message || original.text || "").slice(0, 100),
-      sender: original.sender_id
-    };
-  }
-}
+          if (original) {
+            replyTo = {
+              id: original.id,
+              text: (original.text || "").slice(0, 100),
+              sender: original.sender_id
+            };
+          }
+        }
 
-newItems.push({
+        newItems.push({
   id: msg.id,
   sender_id: msg.sender_id,
   receiver_id: msg.receiver_id,
-  text: msg.message || msg.text || "",
+  text: msg.text || "",
   sent_at: msg.sent_at,
   isPoll: false,
   pollData: null,
@@ -1561,6 +1561,8 @@ newItems.push({
   linked_message_id: msg.linked_message_id || null,
   replyTo
 });
+      });
+    }
     // ------------------------
 // NORMALIZE REACTIONS (SIMPLE MODE)
 // ------------------------
