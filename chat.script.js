@@ -1553,13 +1553,13 @@ if (msg.linked && msg.linked_message_id) {
     data.messages.find(m => m.id === msg.linked_message_id) ||
     messages.find(m => m.id === msg.linked_message_id); // 🔥 added
 
-  if (original) {
-    replyTo = {
+  replyTo = original
+  ? {
       id: original.id,
-      text: (original.message || original.text || "").slice(0, 100), // 🔥 fixed
+      text: (original.message || original.text || "").slice(0, 100),
       sender: original.sender_id
-    };
-  }
+    }
+  : null;
 }
 
         newItems.push({
@@ -1835,6 +1835,25 @@ if (hasIncoming) {
     // STORE + SORT
     // ------------------------
     fchatMessages.push(...newItems);
+    // 🔥 REBUILD ALL REPLIES SAFELY
+const messageMap = {};
+fchatMessages.forEach(m => {
+  messageMap[String(m.id)] = m;
+});
+
+fchatMessages.forEach(msg => {
+  if (msg.linked && msg.linked_message_id) {
+    const original = messageMap[String(msg.linked_message_id)];
+
+    if (original) {
+      msg.replyTo = {
+        id: original.id,
+        text: (original.text || "").slice(0, 100),
+        sender: original.sender_id
+      };
+    }
+  }
+});
     fchatMessages.sort(
       (a, b) => new Date(a.sent_at) - new Date(b.sent_at)
     );
