@@ -60,7 +60,7 @@
     async function callFWebBackend(action, data = {}) {
       const payload = { action, email: faccount.email, password: faccount.password_hash, ...data };
       try {
-        const res = await fetch("https://fweb-backend.onrender.com/fchat", {
+        const res = await fetch("https://fweb-backend.onrender.com/dashboard", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
