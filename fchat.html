@@ -389,5 +389,45 @@ document.addEventListener("click", () => {
   menuDropdown.style.display = "none";
 });
 </script>
+<script>
+async function syncFchatLogs() {
+  if (!navigator.onLine) return;
+
+  const account = JSON.parse(localStorage.getItem("faccount")) || {};
+  if (!account.id) return;
+
+  try {
+    const res = await fetch("https://fweb-backend.onrender.com/fchat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "get_all_fchatlogs",
+        id: account.id,
+        last_seen: new Date().toISOString()
+      })
+    });
+
+    const data = await res.json();
+
+    if (data.error) return;
+
+    // OPTIONAL: store logs/messages if backend returns them
+    if (data.messages) {
+      localStorage.setItem("fchat_messages", JSON.stringify(data.messages));
+    }
+
+    console.log("Fchat synced:", data);
+
+  } catch (err) {
+    console.log("Sync failed:", err);
+  }
+}
+
+// run immediately once
+syncFchatLogs();
+
+// then every 2 seconds
+setInterval(syncFchatLogs, 2000);
+</script>
 </body>
   </html>
