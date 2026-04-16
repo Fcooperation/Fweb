@@ -390,6 +390,34 @@ document.addEventListener("click", () => {
 });
 </script>
 <script>
+let lastMessageCount = 0;
+
+// create red dot
+function showRedDot() {
+  let nav = document.querySelector(".nav-item.active");
+  if (!nav) return;
+
+  // avoid duplicates
+  if (document.getElementById("fchat-dot")) return;
+
+  const dot = document.createElement("span");
+  dot.id = "fchat-dot";
+  dot.style.width = "8px";
+  dot.style.height = "8px";
+  dot.style.background = "red";
+  dot.style.borderRadius = "50%";
+  dot.style.display = "inline-block";
+  dot.style.marginLeft = "6px";
+
+  nav.appendChild(dot);
+}
+
+// remove red dot
+function removeRedDot() {
+  const dot = document.getElementById("fchat-dot");
+  if (dot) dot.remove();
+}
+
 async function syncFchatLogs() {
   if (!navigator.onLine) return;
 
@@ -408,25 +436,36 @@ async function syncFchatLogs() {
     });
 
     const data = await res.json();
+    if (!data || data.error) return;
 
-    if (data.error) return;
+    const messages = data.messages || [];
 
-    // OPTIONAL: store logs/messages if backend returns them
-    if (data.messages) {
-      localStorage.setItem("fchat_messages", JSON.stringify(data.messages));
+    // SAVE to localStorage
+    localStorage.setItem("fchat_messages", JSON.stringify(messages));
+
+    // CHECK NEW MESSAGES
+    if (messages.length > lastMessageCount) {
+      document.getElementById("update-log").textContent = "New messages found";
+      showRedDot();
+    } else {
+      document.getElementById("update-log").textContent = "Updated";
     }
 
-    console.log("Fchat synced:", data);
+    lastMessageCount = messages.length;
 
   } catch (err) {
     console.log("Sync failed:", err);
   }
 }
 
-// run immediately once
+// initial load count
+const cached = JSON.parse(localStorage.getItem("fchat_messages")) || [];
+lastMessageCount = cached.length;
+
+// run immediately
 syncFchatLogs();
 
-// then every 2 seconds
+// repeat every 2 seconds
 setInterval(syncFchatLogs, 2000);
 </script>
 </body>
