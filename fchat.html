@@ -277,7 +277,8 @@ async function callBackend(action, body={}){
 
 /* ----------------- FETCH AND RENDER FCHATTERS ----------------- */
 async function fetchAndRenderFchatters(){
-  document.getElementById("update-log").textContent="Updating...";
+  document.getElementById("update-log").textContent =
+  navigator.onLine ? "Updating..." : "Offline mode";
   if(!navigator.onLine) return; // skip if offline
   try{
     const data = await callBackend("get_all_fchatters");
@@ -350,13 +351,29 @@ document.getElementById("profile-modal").onclick = ()=>{
   document.getElementById("profile-modal").style.display="none";
 };
 
+// load fchatters first 
+function loadCachedChatsFirst() {
+  const cached = JSON.parse(localStorage.getItem("fchat_messages")) || [];
+
+  if (cached.length > 0) {
+    displayChats(cached); // 👈 INSTANT UI LOAD
+  }
+}
 /* ----------------- START ----------------- */
-// 1. Immediately fetch data when the page hits this script
-fetchAndRenderFchatters(); 
+// 1. LOAD CACHE FIRST (NO NETWORK)
+loadCachedChatsFirst();
 
-// 2. Keep the background refresh running every 5 seconds
-setInterval(fetchAndRenderFchatters, 5000);
+// 2. THEN TRY BACKGROUND UPDATE
+if (navigator.onLine) {
+  fetchAndRenderFchatters();
+}
 
+// 3. KEEP REFRESH LOOP (BUT NON-BLOCKING)
+setInterval(() => {
+  if (navigator.onLine) {
+    fetchAndRenderFchatters();
+  }
+}, 5000);
 
 // ----------------- THREE DOTS MENU -----------------
 const menuBtn = document.getElementById("menu-btn");
