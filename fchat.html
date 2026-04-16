@@ -290,37 +290,6 @@ async function fetchAndRenderFchatters(){
   document.getElementById("update-log").textContent="Updated";
 }
 
-// Drop messages 
-function dropMessageOnCards(messages){
-  const cards = document.querySelectorAll(".fcard");
-
-  if (!cards.length) return;
-
-  const latest = messages[messages.length - 1];
-  if (!latest) return;
-
-  const text = (latest.message || "").slice(0, 30);
-
-  cards.forEach(card => {
-
-    // avoid duplicates
-    let existing = card.querySelector(".msg-drop");
-    if (!existing) {
-      existing = document.createElement("div");
-      existing.className = "msg-drop";
-
-      existing.style.fontSize = "13px";
-      existing.style.color = "blue";
-      existing.style.marginTop = "6px";
-      existing.style.fontWeight = "bold";
-
-      card.appendChild(existing);
-    }
-
-    existing.textContent = text;
-  });
-}
-
 /* ----------------- DISPLAY FCARDS ----------------- */
 function displayChats(chats){
   const box = document.getElementById("users-list");
@@ -423,11 +392,12 @@ document.addEventListener("click", () => {
 <script>
 let lastMessageCount = 0;
 
-// -------------------- RED DOT --------------------
+// create red dot
 function showRedDot() {
   let nav = document.querySelector(".nav-item.active");
   if (!nav) return;
 
+  // avoid duplicates
   if (document.getElementById("fchat-dot")) return;
 
   const dot = document.createElement("span");
@@ -442,51 +412,12 @@ function showRedDot() {
   nav.appendChild(dot);
 }
 
+// remove red dot
 function removeRedDot() {
   const dot = document.getElementById("fchat-dot");
   if (dot) dot.remove();
 }
 
-// -------------------- BLUE MESSAGE PREVIEW --------------------
-function showMessagePreview(messages) {
-  if (!messages.length) return;
-
-  const latest = messages[messages.length - 1].message || "";
-
-  let previewText = latest;
-  if (previewText.length > 30) {
-    previewText = previewText.slice(0, 30) + "...";
-  }
-
-  // create or update fixed bottom bar
-  let bar = document.getElementById("msg-preview");
-
-  if (!bar) {
-    bar = document.createElement("div");
-    bar.id = "msg-preview";
-
-    // fixed bottom styling
-    bar.style.position = "fixed";
-    bar.style.bottom = "60px"; // just above bottom nav
-    bar.style.left = "0";
-    bar.style.width = "100%";
-    bar.style.background = "white";
-    bar.style.borderTop = "1px solid #ddd";
-    bar.style.padding = "10px 16px";
-    bar.style.fontSize = "13px";
-    bar.style.fontWeight = "bold";
-    bar.style.color = "blue";
-    bar.style.zIndex = "999";
-    bar.style.textAlign = "left";
-
-    document.body.appendChild(bar);
-  }
-
-  // update text (does NOT disappear now)
-  bar.textContent = previewText;
-}
-
-// -------------------- SYNC ENGINE --------------------
 async function syncFchatLogs() {
   if (!navigator.onLine) return;
 
@@ -516,10 +447,8 @@ async function syncFchatLogs() {
     if (messages.length > lastMessageCount) {
       document.getElementById("update-log").textContent = "New messages found";
       showRedDot();
-      dropMessageOnCards(messages);
     } else {
       document.getElementById("update-log").textContent = "Updated";
-      removeRedDot();
     }
 
     lastMessageCount = messages.length;
@@ -529,14 +458,9 @@ async function syncFchatLogs() {
   }
 }
 
-// -------------------- INIT --------------------
+// initial load count
 const cached = JSON.parse(localStorage.getItem("fchat_messages")) || [];
 lastMessageCount = cached.length;
-
-// load preview instantly if cached exists
-if (cached.length > 0) {
-  showMessagePreview(cached);
-}
 
 // run immediately
 syncFchatLogs();
