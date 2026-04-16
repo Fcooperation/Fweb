@@ -392,12 +392,11 @@ document.addEventListener("click", () => {
 <script>
 let lastMessageCount = 0;
 
-// create red dot
+// -------------------- RED DOT --------------------
 function showRedDot() {
   let nav = document.querySelector(".nav-item.active");
   if (!nav) return;
 
-  // avoid duplicates
   if (document.getElementById("fchat-dot")) return;
 
   const dot = document.createElement("span");
@@ -412,12 +411,43 @@ function showRedDot() {
   nav.appendChild(dot);
 }
 
-// remove red dot
 function removeRedDot() {
   const dot = document.getElementById("fchat-dot");
   if (dot) dot.remove();
 }
 
+// -------------------- BLUE MESSAGE PREVIEW --------------------
+function showMessagePreview(messages) {
+  const box = document.getElementById("users-list");
+  if (!box) return;
+
+  // remove old preview
+  const old = document.getElementById("msg-preview");
+  if (old) old.remove();
+
+  if (!messages.length) return;
+
+  // get latest message
+  const latest = messages[messages.length - 1].message || "";
+
+  let previewText = latest;
+  if (previewText.length > 30) {
+    previewText = previewText.slice(0, 30) + "...";
+  }
+
+  const preview = document.createElement("div");
+  preview.id = "msg-preview";
+  preview.textContent = previewText;
+  preview.style.color = "blue";
+  preview.style.fontSize = "13px";
+  preview.style.fontWeight = "bold";
+  preview.style.margin = "8px 16px";
+  preview.style.textAlign = "left";
+
+  box.prepend(preview);
+}
+
+// -------------------- SYNC ENGINE --------------------
 async function syncFchatLogs() {
   if (!navigator.onLine) return;
 
@@ -447,8 +477,10 @@ async function syncFchatLogs() {
     if (messages.length > lastMessageCount) {
       document.getElementById("update-log").textContent = "New messages found";
       showRedDot();
+      showMessagePreview(messages);
     } else {
       document.getElementById("update-log").textContent = "Updated";
+      removeRedDot();
     }
 
     lastMessageCount = messages.length;
@@ -458,9 +490,14 @@ async function syncFchatLogs() {
   }
 }
 
-// initial load count
+// -------------------- INIT --------------------
 const cached = JSON.parse(localStorage.getItem("fchat_messages")) || [];
 lastMessageCount = cached.length;
+
+// load preview instantly if cached exists
+if (cached.length > 0) {
+  showMessagePreview(cached);
+}
 
 // run immediately
 syncFchatLogs();
