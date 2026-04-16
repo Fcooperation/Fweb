@@ -290,10 +290,31 @@ async function fetchAndRenderFchatters(){
   document.getElementById("update-log").textContent="Updated";
 }
 
+//Get latest messages 
+function getLatestMessageForUser(messages, userId, myId) {
+  // filter messages between YOU and THIS USER
+  const filtered = messages.filter(m =>
+    (m.sender_id == userId && m.receiver_id == myId) ||
+    (m.sender_id == myId && m.receiver_id == userId)
+  );
+
+  if (!filtered.length) return "";
+
+  // get most recent
+  const latest = filtered[filtered.length - 1].message || "";
+
+  return latest.length > 30
+    ? latest.slice(0, 30) + "..."
+    : latest;
+}
+
+
 /* ----------------- DISPLAY FCARDS ----------------- */
 function displayChats(chats){
   const box = document.getElementById("users-list");
   box.innerHTML="";
+const messages = JSON.parse(localStorage.getItem("fchat_messages")) || [];
+const myId = JSON.parse(localStorage.getItem("faccount"))?.id;
   chats.forEach(user=>{
     const card = document.createElement("div");
     card.className="fcard";
@@ -317,8 +338,28 @@ function displayChats(chats){
       pfp.textContent=user.username?.[0]?.toUpperCase()||"U";
     }
 
-    const info = document.createElement("div");
-    info.innerHTML = `<div class="username">${user.username}</div><div class="userid">ID: ${user.id}</div>`;
+    const preview = getLatestMessageForUser(messages, user.id, myId);
+
+const info = document.createElement("div");
+
+const name = document.createElement("div");
+name.className = "username";
+name.textContent = user.username;
+
+const msg = document.createElement("div");
+msg.style.fontSize = "12px";
+msg.style.color = "blue";
+msg.style.marginTop = "4px";
+msg.style.fontWeight = "bold";
+msg.textContent = preview || "No messages yet";
+
+const idText = document.createElement("div");
+idText.className = "userid";
+idText.textContent = "ID: " + user.id;
+
+info.appendChild(name);
+info.appendChild(msg);
+info.appendChild(idText);
     card.appendChild(pfp);
     card.appendChild(info);
 
