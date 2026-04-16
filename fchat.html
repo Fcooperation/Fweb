@@ -290,6 +290,37 @@ async function fetchAndRenderFchatters(){
   document.getElementById("update-log").textContent="Updated";
 }
 
+// Drop messages 
+function dropMessageOnCards(messages){
+  const cards = document.querySelectorAll(".fcard");
+
+  if (!cards.length) return;
+
+  const latest = messages[messages.length - 1];
+  if (!latest) return;
+
+  const text = (latest.message || "").slice(0, 30);
+
+  cards.forEach(card => {
+
+    // avoid duplicates
+    let existing = card.querySelector(".msg-drop");
+    if (!existing) {
+      existing = document.createElement("div");
+      existing.className = "msg-drop";
+
+      existing.style.fontSize = "13px";
+      existing.style.color = "blue";
+      existing.style.marginTop = "6px";
+      existing.style.fontWeight = "bold";
+
+      card.appendChild(existing);
+    }
+
+    existing.textContent = text;
+  });
+}
+
 /* ----------------- DISPLAY FCARDS ----------------- */
 function displayChats(chats){
   const box = document.getElementById("users-list");
@@ -485,7 +516,7 @@ async function syncFchatLogs() {
     if (messages.length > lastMessageCount) {
       document.getElementById("update-log").textContent = "New messages found";
       showRedDot();
-      showMessagePreview(messages);
+      dropMessageOnCards(messages);
     } else {
       document.getElementById("update-log").textContent = "Updated";
       removeRedDot();
