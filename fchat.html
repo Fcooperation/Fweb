@@ -317,8 +317,35 @@ function displayChats(chats){
       pfp.textContent=user.username?.[0]?.toUpperCase()||"U";
     }
 
-    const info = document.createElement("div");
-    info.innerHTML = `<div class="username">${user.username}</div><div class="userid">ID: ${user.id}</div>`;
+    const messages = JSON.parse(localStorage.getItem("fchat_messages")) || [];
+
+const preview = getLatestMessageForUser(messages, user.id);
+
+const info = document.createElement("div");
+
+// username
+const name = document.createElement("div");
+name.className = "username";
+name.textContent = user.username;
+
+// id
+const idText = document.createElement("div");
+idText.className = "userid";
+idText.textContent = "ID: " + user.id;
+
+// message preview (BLUE TEXT)
+const msgPreview = document.createElement("div");
+msgPreview.style.color = "blue";
+msgPreview.style.fontSize = "12px";
+msgPreview.style.marginTop = "3px";
+msgPreview.style.fontWeight = "bold";
+
+msgPreview.textContent = preview ? preview : "";
+
+// assemble
+info.appendChild(name);
+info.appendChild(msgPreview);
+info.appendChild(idText);
     card.appendChild(pfp);
     card.appendChild(info);
 
@@ -448,7 +475,19 @@ function showMessagePreview(messages) {
     bar.style.zIndex = "999";
     bar.style.textAlign = "left";
 
-    document.body.appendChild(bar);
+    function getLatestMessageForUser(messages, userId) {
+  const userMessages = messages.filter(
+    m => m.sender_id == userId || m.receiver_id == userId
+  );
+
+  if (!userMessages.length) return null;
+
+  const latest = userMessages[userMessages.length - 1].message || "";
+
+  return latest.length > 30
+    ? latest.slice(0, 30) + "..."
+    : latest;
+}
   }
 
   // update text (does NOT disappear now)
