@@ -478,6 +478,7 @@ function removeRedDot() {
   if (dot) dot.remove();
 }
 
+// Sync Fchat logs 
 async function syncFchatLogs() {
   if (!navigator.onLine) return;
 
@@ -502,6 +503,9 @@ async function syncFchatLogs() {
 
     // SAVE to localStorage
     localStorage.setItem("fchat_messages", JSON.stringify(messages));
+    
+    const accountData = JSON.parse(localStorage.getItem("faccount")) || {};
+displayChats(accountData.chatUsers || []);
 
     // CHECK NEW MESSAGES
     if (messages.length > lastMessageCount) {
