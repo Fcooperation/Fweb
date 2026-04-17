@@ -512,10 +512,21 @@ async function syncFchatLogs() {
     const data = await res.json();
     if (!data || data.error) return;
 
-    const messages = data.messages || [];
+    const newMessages = data.messages || [];
+let localMessages = JSON.parse(localStorage.getItem("fchat_messages")) || [];
 
-    // SAVE to localStorage
-    localStorage.setItem("fchat_messages", JSON.stringify(messages));
+// merge messages
+const merged = newMessages.map(newMsg => {
+  const local = localMessages.find(m => String(m.id) === String(newMsg.id));
+
+  return {
+    ...newMsg,
+    status: local?.status || newMsg.status // keep seen if already marked
+  };
+});
+
+// save merged
+localStorage.setItem("fchat_messages", JSON.stringify(merged));
     
     const accountData = JSON.parse(localStorage.getItem("faccount")) || {};
 displayChats(accountData.chatUsers || []);
