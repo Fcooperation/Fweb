@@ -341,19 +341,23 @@ function displayChats(chats){
 
 const messages = JSON.parse(localStorage.getItem("fchat_messages")) || [];
 
-// pick ANY message just to test (first one in storage)
 let lastMsg = "";
 let showPreview = false;
 
-if (messages.length > 0) {
-  const msg = messages[messages.length - 1];
-  // show ONLY if NOT seen
+// get messages for THIS user
+const userMessages = messages.filter(m => 
+  String(m.sender_id) === String(user.id) ||
+  String(m.receiver_id) === String(user.id)
+);
+
+if (userMessages.length > 0) {
+  const msg = userMessages[userMessages.length - 1];
+
   if (msg.status !== "seen") {
     lastMsg = msg.message || "[Media]";
     showPreview = true;
   }
 }
-
 const info = document.createElement("div");
 info.innerHTML = `
   <div class="username">${user.username}</div>
