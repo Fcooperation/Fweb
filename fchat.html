@@ -201,6 +201,10 @@ body {
   text-overflow: ellipsis;
   max-width: 200px;
 }
+.last-msg.unread {
+  color: #2196f3;
+  font-weight: 600;
+}
 </style>
 </head>
 <body>
@@ -338,31 +342,56 @@ function displayChats(chats){
 const messages = JSON.parse(localStorage.getItem("fchat_messages")) || [];
 
 // pick ANY message just to test (first one in storage)
-let lastMsg = "No messages yet";
+let lastMsg = "";
+let showPreview = false;
 
 if (messages.length > 0) {
-  lastMsg = messages[0].message || "[Media]";
+  const msg = messages[0]; // still using first message for now
+
+  // show ONLY if NOT seen
+  if (msg.status !== "seen") {
+    lastMsg = msg.message || "[Media]";
+    showPreview = true;
+  }
 }
 
 const info = document.createElement("div");
 info.innerHTML = `
   <div class="username">${user.username}</div>
-  <div class="last-msg">${lastMsg}</div>
+  ${
+    showPreview
+      ? `<div class="last-msg unread">🔵 ${lastMsg}</div>`
+      : ""
+  }
 `;
     card.appendChild(pfp);
     card.appendChild(info);
 
     // ---------- UPDATED ONCLICK ----------
     card.onclick = ()=>{ 
-      const chatTarget = {
-        id: user.id,
-        username: user.username || "",
-        profile_pic: user.profile_pic || "",
-        status: user.status || ""
-      };
-      localStorage.setItem("chatting_with", JSON.stringify(chatTarget));
-      window.location.href="chat.html";
-    };
+
+  // mark messages as seen locally for this user
+  let messages = JSON.parse(localStorage.getItem("fchat_messages")) || [];
+
+  messages = messages.map(msg => {
+    if (String(msg.sender_id) !== String(account.id)) {
+      return { ...msg, status: "seen" };
+    }
+    return msg;
+  });
+
+  localStorage.setItem("fchat_messages", JSON.stringify(messages));
+
+  const chatTarget = {
+    id: user.id,
+    username: user.username || "",
+    profile_pic: user.profile_pic || "",
+    status: user.status || ""
+  };
+
+  localStorage.setItem("chatting_with", JSON.stringify(chatTarget));
+  window.location.href="chat.html";
+};
 
     box.appendChild(card);
   });
