@@ -326,18 +326,13 @@ function displayChats(chats){
       pfp.textContent=user.username?.[0]?.toUpperCase()||"U";
     }
 
-   const messages = JSON.parse(localStorage.getItem("fchat_messages")) || [];
+const messages = JSON.parse(localStorage.getItem("fchat_messages")) || [];
 
-// get last message with this user
-const userMessages = messages.filter(m => 
-  m.sender_id == user.id || m.receiver_id == user.id
-);
-
+// pick ANY message just to test (first one in storage)
 let lastMsg = "No messages yet";
 
-if (userMessages.length > 0) {
-  const last = userMessages[userMessages.length - 1];
-  lastMsg = last.message || "[Media]";
+if (messages.length > 0) {
+  lastMsg = messages[0].message || "[Media]";
 }
 
 const info = document.createElement("div");
