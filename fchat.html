@@ -353,7 +353,9 @@ const userMessages = messages.filter(m =>
 if (userMessages.length > 0) {
   const msg = userMessages[userMessages.length - 1];
 
-  if (msg.status !== "seen") {
+  const isFromThem = String(msg.sender_id) === String(user.id);
+
+if (isFromThem && msg.status !== "seen") {
     lastMsg = msg.message || "[Media]";
     showPreview = true;
   }
@@ -377,11 +379,16 @@ info.innerHTML = `
   let messages = JSON.parse(localStorage.getItem("fchat_messages")) || [];
 
   messages = messages.map(msg => {
-    if (String(msg.sender_id) !== String(account.id)) {
-      return { ...msg, status: "seen" };
-    }
-    return msg;
-  });
+  const isFromThisUser =
+    String(msg.sender_id) === String(user.id) &&
+    String(msg.receiver_id) === String(account.id);
+
+  if (isFromThisUser) {
+    return { ...msg, status: "seen" };
+  }
+
+  return msg;
+});
 
   localStorage.setItem("fchat_messages", JSON.stringify(messages));
 
