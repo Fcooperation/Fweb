@@ -337,7 +337,7 @@ let lastMsg = "No messages yet";
 
 if (userMessages.length > 0) {
   const last = userMessages[userMessages.length - 1];
-  lastMsg = last.text || "[Media]";
+  lastMsg = last.message || "[Media]";
 }
 
 const info = document.createElement("div");
