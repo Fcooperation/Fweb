@@ -192,6 +192,15 @@ body {
 .menu-item:hover {
   background: #f0f0f0;
 }
+.last-msg {
+  font-size: 13px;
+  color: #777;
+  margin-top: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
 </style>
 </head>
 <body>
@@ -317,8 +326,25 @@ function displayChats(chats){
       pfp.textContent=user.username?.[0]?.toUpperCase()||"U";
     }
 
-    const info = document.createElement("div");
-    info.innerHTML = `<div class="username">${user.username}</div><div class="userid">ID: ${user.id}</div>`;
+   const messages = JSON.parse(localStorage.getItem("fchat_messages")) || [];
+
+// get last message with this user
+const userMessages = messages.filter(m => 
+  m.sender_id == user.id || m.receiver_id == user.id
+);
+
+let lastMsg = "No messages yet";
+
+if (userMessages.length > 0) {
+  const last = userMessages[userMessages.length - 1];
+  lastMsg = last.text || "[Media]";
+}
+
+const info = document.createElement("div");
+info.innerHTML = `
+  <div class="username">${user.username}</div>
+  <div class="last-msg">${lastMsg}</div>
+`;
     card.appendChild(pfp);
     card.appendChild(info);
 
