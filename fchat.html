@@ -238,7 +238,10 @@ const EMAIL = account.email;
 const PASSWORD = account.password;
 
 // Load previous fchatters from localStorage immediately
-const savedChats = JSON.parse(localStorage.getItem("fchat_messages")) || [];
+const accountData = JSON.parse(localStorage.getItem("faccount")) || {};
+const savedChats = accountData.chatUsers || [];
+
+if (savedChats.length > 0) displayChats(savedChats);
 if(savedChats.length > 0) displayChats(savedChats);
 
 /* ----------------- LOADING SEQUENCE ----------------- */
@@ -291,10 +294,16 @@ async function fetchAndRenderFchatters(){
   if(!navigator.onLine) return; // skip if offline
   try{
     const data = await callBackend("get_all_fchatters");
-    if(data.data){
-      localStorage.setItem("fchat_messages", JSON.stringify(data.data));
-      displayChats(data.data);
-    }
+
+if (data.data) {
+  const accountData = JSON.parse(localStorage.getItem("faccount")) || {};
+
+  accountData.chatUsers = data.data.chatUsers || data.data;
+
+  localStorage.setItem("faccount", JSON.stringify(accountData));
+
+  displayChats(accountData.chatUsers);
+}
   }catch(e){ console.warn("Fetch fchatters failed:", e); }
   document.getElementById("update-log").textContent="Updated";
 }
@@ -362,7 +371,8 @@ info.innerHTML = `
 /* ----------------- SEARCH ----------------- */
 document.getElementById("search-bar").addEventListener("input", function(){
   const term = this.value.toLowerCase();
-  const chats = JSON.parse(localStorage.getItem("fchat_messages"))||[];
+  const accountData = JSON.parse(localStorage.getItem("faccount")) || {};
+const chats = accountData.chatUsers || [];
   const filtered = chats.filter(u=>u.username.toLowerCase().includes(term));
   displayChats(filtered);
 });
