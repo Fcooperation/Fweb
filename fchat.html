@@ -346,8 +346,7 @@ let lastMsg = "";
 let showPreview = false;
 
 if (messages.length > 0) {
-  const msg = messages[0]; // still using first message for now
-
+  const msg = messages[messages.length - 1];
   // show ONLY if NOT seen
   if (msg.status !== "seen") {
     lastMsg = msg.message || "[Media]";
@@ -388,6 +387,9 @@ info.innerHTML = `
     profile_pic: user.profile_pic || "",
     status: user.status || ""
   };
+  
+  const accountData = JSON.parse(localStorage.getItem("faccount")) || {};
+displayChats(accountData.chatUsers || []);
 
   localStorage.setItem("chatting_with", JSON.stringify(chatTarget));
   window.location.href="chat.html";
