@@ -527,19 +527,40 @@ const merged = newMessages.map(newMsg => {
 
 // save merged
 localStorage.setItem("fchat_messages", JSON.stringify(merged));
+
+// 🔥 FORCE SEEN FOR CURRENT CHAT USER
+const chattingWith = JSON.parse(localStorage.getItem("chatting_with")) || {};
+
+if (chattingWith.id) {
+  const account = JSON.parse(localStorage.getItem("faccount")) || {};
+
+  const fixed = merged.map(msg => {
+    const isFromThem =
+      String(msg.sender_id) === String(chattingWith.id) &&
+      String(msg.receiver_id) === String(account.id);
+
+    if (isFromThem) {
+      return { ...msg, status: "seen" };
+    }
+
+    return msg;
+  });
+
+  localStorage.setItem("fchat_messages", JSON.stringify(fixed));
+}
     
     const accountData = JSON.parse(localStorage.getItem("faccount")) || {};
 displayChats(accountData.chatUsers || []);
 
     // CHECK NEW MESSAGES
-    if (messages.length > lastMessageCount) {
+    if (merged.length > lastMessageCount) {
       document.getElementById("update-log").textContent = "New messages found";
       showRedDot();
     } else {
       document.getElementById("update-log").textContent = "Updated";
     }
 
-    lastMessageCount = messages.length;
+    lastMessageCount = merged.length;
 
   } catch (err) {
     console.log("Sync failed:", err);
