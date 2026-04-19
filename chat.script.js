@@ -1826,9 +1826,23 @@ const hasIncoming = newItems.some(item =>
   String(item.receiver_id) === String(account.id)
 );
 
-// ✅ If yes → send seen immediately
 if (hasIncoming) {
   sendLastSeen();
+
+  // 🔥 ALSO mark locally as seen
+  fchatMessages = fchatMessages.map(msg => {
+    const isFromThem =
+      String(msg.sender_id) === String(chatWith.id) &&
+      String(msg.receiver_id) === String(account.id);
+
+    if (isFromThem) {
+      return { ...msg, status: "seen" };
+    }
+
+    return msg;
+  });
+
+  localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
 }
 
     // ------------------------
