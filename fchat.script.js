@@ -138,6 +138,7 @@ info.innerHTML = `
 
     // ---------- UPDATED ONCLICK ----------
     card.onclick = ()=>{ 
+      removeRedDot();
 
   // mark messages as seen locally for this user
   let messages = JSON.parse(localStorage.getItem("fchat_messages")) || [];
@@ -293,15 +294,17 @@ localStorage.setItem("fchat_messages", JSON.stringify(merged));
     const accountData = JSON.parse(localStorage.getItem("faccount")) || {};
 displayChats(accountData.chatUsers || []);
 
-    // CHECK NEW MESSAGES
-    if (messages.length > lastMessageCount) {
-      document.getElementById("update-log").textContent = "New messages found";
-      showRedDot();
-    } else {
-      document.getElementById("update-log").textContent = "Updated";
-    }
+// CHECK NEW MESSAGES  
+const currentMessages = merged;
 
-    lastMessageCount = messages.length;
+if (currentMessages.length > lastMessageCount) {  
+  document.getElementById("update-log").textContent = "New messages found";  
+  showRedDot();  
+} else {  
+  document.getElementById("update-log").textContent = "Updated";  
+}  
+
+lastMessageCount = currentMessages.length;
 
   } catch (err) {
     console.log("Sync failed:", err);
