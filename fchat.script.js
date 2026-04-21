@@ -6,8 +6,7 @@ const EMAIL = account.email;
 const PASSWORD = account.password;
 
 // Load previous fchatters from localStorage immediately
-const accountData = JSON.parse(localStorage.getItem("faccount")) || {};
-const savedChats = accountData.chatUsers || [];
+const savedChats = JSON.parse(localStorage.getItem("fchat_users")) || [];
 
 if (savedChats.length > 0) displayChats(savedChats);
 if(savedChats.length > 0) displayChats(savedChats);
@@ -66,9 +65,10 @@ async function fetchAndRenderFchatters(){
 if (data.data) {
   const accountData = JSON.parse(localStorage.getItem("faccount")) || {};
 
-  accountData.chatUsers = data.data.chatUsers || data.data;
+  const chatUsers = data.data.chatUsers || data.data;
+localStorage.setItem("fchat_users", JSON.stringify(chatUsers));
 
-  localStorage.setItem("faccount", JSON.stringify(accountData));
+displayChats(chatUsers);
 
   displayChats(accountData.chatUsers);
 }
@@ -164,8 +164,8 @@ info.innerHTML = `
     status: user.status || ""
   };
   
-  const accountData = JSON.parse(localStorage.getItem("faccount")) || {};
-displayChats(accountData.chatUsers || []);
+  const chats = JSON.parse(localStorage.getItem("fchat_users")) || [];
+displayChats(chats);
 
   localStorage.setItem("chatting_with", JSON.stringify(chatTarget));
   window.location.href="chat.html";
@@ -178,8 +178,7 @@ displayChats(accountData.chatUsers || []);
 /* ----------------- SEARCH ----------------- */
 document.getElementById("search-bar").addEventListener("input", function(){
   const term = this.value.toLowerCase();
-  const accountData = JSON.parse(localStorage.getItem("faccount")) || {};
-const chats = accountData.chatUsers || [];
+  const chats = JSON.parse(localStorage.getItem("fchat_users")) || [];
   const filtered = chats.filter(u=>u.username.toLowerCase().includes(term));
   displayChats(filtered);
 });
@@ -291,8 +290,8 @@ const merged = newMessages.map(newMsg => {
 // save merged
 localStorage.setItem("fchat_messages", JSON.stringify(merged));
     
-    const accountData = JSON.parse(localStorage.getItem("faccount")) || {};
-displayChats(accountData.chatUsers || []);
+    const chats = JSON.parse(localStorage.getItem("fchat_users")) || [];
+displayChats(chats);
 
 // CHECK NEW MESSAGES  
 const currentMessages = merged;
