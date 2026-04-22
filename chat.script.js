@@ -1163,6 +1163,97 @@ function syncPolls() {
   localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
 }
 
+// Send message
+async function sendToBackend(msgObj) {
+  try {
+    const payload = {
+      action: "send_messages",
+      email: account.email,
+      id: msgObj.id,
+      sender_id: account.id,
+      receiver_id: chatWith.id,
+      linked: msgObj.linked,
+      linked_message_id: msgObj.linked_message_id,
+      sent_at: msgObj.sent_at,
+      text: msgObj.text
+    };
+
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    msgObj.status = data.success ? "sent" : "pending";
+  } catch(e) {
+    msgObj.status = "pending";
+    console.warn("Failed to send", e);
+  }
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+  syncToFChat(msgObj);
+}
+
+let replyingMessage = null;
+
+function sendMessage() {
+  const input = document.getElementById("messageInput");
+  const text = input.value.trim();
+  if (!text) return;
+  
+  const sendBtn = document.getElementById("sendBtn"); // ✅ grab the button
+sendBtn.textContent = "Sending…";                  // change text
+sendBtn.disabled = true;                           // prevent spamming
+
+  const msgObj = {
+    id: Date.now(),
+    type: "sent",
+    text,
+    reactions: [],
+    sent_at: new Date().toISOString(),
+    status: navigator.onLine ? "sending" : "pending",
+    sending_since: navigator.onLine ? Date.now() : null,
+    replyTo: replyingMessage
+      ? {
+          id: replyingMessage.id,
+          text:
+            replyingMessage.text?.slice(0, 120) +
+            (replyingMessage.text?.length > 120 ? "…" : ""),
+          sender: replyingMessage.sender_id
+        }
+      : null,
+    linked: replyingMessage ? true : false, // yes/no field
+    linked_message_id: replyingMessage ? replyingMessage.id : null,
+    sender_id: account.id,
+    receiver_id: chatWith.id
+  };
+
+  // push to messages array
+messages.push(msgObj);
+localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+
+// render instantly to frontend
+addMessage(msgObj);       // 🔥 only adds THIS message
+applyChatSettings();      // optional for styling
+  
+  // update fchatMessages in background for storage & sync
+fchatMessages.push(msgObj);
+localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
+  
+  sendBtn.textContent = "Send";  // reset button
+sendBtn.disabled = false;      // allow clicking again
+
+  input.value = "";
+  input.style.height = "auto";
+  replyingMessage = null;
+
+  if (navigator.onLine) sendToBackend(msgObj);
+
+  // hide reply preview
+  document.getElementById("reply-preview").style.display = "none";
+}
+
 document.getElementById("sendBtn").onclick = sendMessage;
 
 function goBack(){ window.location.href="fchat.html"; }
@@ -2229,10 +2320,6 @@ function handleDeleteQueue() {
     updateTimeline();
   });
 }
-
-// all your chat code above...
-
-document.getElementById("sendBtn").addEventListener("click", sendMessage);
 
 
 // ===== Event Listeners =====
