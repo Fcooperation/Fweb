@@ -1577,6 +1577,11 @@ sent_at: msg.created_at,
 });
       });
     }
+    
+    // ------------------------
+// ADD NEW MESSAGES FIRST
+// ------------------------
+fchatMessages.push(...newItems);
     // ------------------------
 // NORMALIZE REACTIONS (SIMPLE MODE)
 // ------------------------
