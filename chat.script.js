@@ -1585,34 +1585,67 @@ if (Array.isArray(data.reactions)) {
 
   data.reactions.forEach(reaction => {
 
-    // 1️⃣ Find message
     const msg = fchatMessages.find(
       m => String(m.id) === String(reaction.message_id)
     );
 
     if (!msg) return;
 
-    // 2️⃣ Ensure reactions array exists
     if (!Array.isArray(msg.reactions)) {
       msg.reactions = [];
     }
 
-    // 3️⃣ Remove existing reaction from same sender
-    msg.reactions = msg.reactions.filter(
-      r => String(r.sender_id) !== String(reaction.sender_id)
+    // Find existing reaction from this sender
+    const existingIndex = msg.reactions.findIndex(
+      r => String(r.sender_id) === String(reaction.sender_id)
     );
 
-    // 4️⃣ If reaction exists → add it
-    if (reaction.reaction) {
-      msg.reactions.push({
-        sender_id: reaction.sender_id,
-        emoji: reaction.reaction
-      });
+    let changed = false;
+
+    // ------------------------
+    // 🗑 REMOVE reaction (empty string)
+    // ------------------------
+    if (!reaction.reaction) {
+
+      if (existingIndex !== -1) {
+        msg.reactions.splice(existingIndex, 1);
+        changed = true;
+      }
+
+    } else {
+
+      // ------------------------
+      // ✏️ UPDATE existing reaction
+      // ------------------------
+      if (existingIndex !== -1) {
+
+        if (msg.reactions[existingIndex].emoji !== reaction.reaction) {
+          msg.reactions[existingIndex].emoji = reaction.reaction;
+          changed = true;
+        }
+
+      } else {
+
+        // ------------------------
+        // ➕ ADD new reaction
+        // ------------------------
+        msg.reactions.push({
+          sender_id: reaction.sender_id,
+          emoji: reaction.reaction
+        });
+
+        changed = true;
+      }
     }
+
+    // 🚨 Only continue if something ACTUALLY changed
+    if (!changed) return;
 
     newReactionCount++;
 
-    // 5️⃣ Update UI instantly (safe)
+    // ------------------------
+    // 🎨 UPDATE UI
+    // ------------------------
     const msgEl = document.querySelector(`[data-id="${msg.id}"]`);
 
     if (msgEl) {
@@ -1642,10 +1675,11 @@ if (Array.isArray(data.reactions)) {
 
   });
 
-  // 6️⃣ Save + notify
-  localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
-
+  // ------------------------
+  // 💾 SAVE + NOTIFY (only if real changes)
+  // ------------------------
   if (newReactionCount > 0) {
+    localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
     newMessagesFound(newReactionCount);
   }
 }
