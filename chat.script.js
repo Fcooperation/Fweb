@@ -1684,8 +1684,6 @@ if (isNewReaction) {
       `[data-id="${targetMsg.id}"]`
     );
 
-    if (!msgEl) return;
-
     let reactionsContainer = msgEl.querySelector(".reactions");
 
     if (!reactionsContainer) {
@@ -1853,7 +1851,6 @@ if (hasIncoming) {
     // ------------------------
     // STORE + SORT
     // ------------------------
-    fchatMessages.push(...newItems);
     // 🔥 REBUILD ALL REPLIES SAFELY
 const messageMap = {};
 fchatMessages.forEach(m => {
