@@ -1657,20 +1657,35 @@ if (Array.isArray(data.reactions)) {
         msgEl.appendChild(box);
       }
 
-      // Count emojis
-      const counts = {};
-      msg.reactions.forEach(r => {
-        counts[r.emoji] = (counts[r.emoji] || 0) + 1;
-      });
+// Count emojis
+const counts = {};
+msg.reactions.forEach(r => {
+  counts[r.emoji] = (counts[r.emoji] || 0) + 1;
+});
 
-      // Render
-      box.innerHTML = "";
-      Object.entries(counts).forEach(([emoji, count]) => {
-        const pill = document.createElement("span");
-        pill.className = "reaction-pill";
-        pill.textContent = `${emoji}${count}`;
-        box.appendChild(pill);
-      });
+// 🔥 Sort by most used
+const sorted = Object.entries(counts)
+  .sort((a, b) => b[1] - a[1])
+  .slice(0, 3); // ✅ TOP 3 ONLY
+
+// Render
+box.innerHTML = "";
+
+sorted.forEach(([emoji, count]) => {
+  const pill = document.createElement("span");
+  pill.className = "reaction-pill";
+
+  // ✅ Show count ONLY if > 1
+  pill.textContent = count > 1 ? `${emoji}${count}` : emoji;
+
+  // 👇 Add click event (for popup)
+  pill.onclick = (e) => {
+    e.stopPropagation();
+    showReactionPopup(pill, msg);
+  };
+
+  box.appendChild(pill);
+});
     }
 
   });
@@ -2288,6 +2303,34 @@ function handleDeleteQueue() {
     updateTimeline();
   });
 }
+
+// Show reacted users function 
+function showReactionPopup(anchorEl, msg) {
+  // Remove existing popup
+  document.querySelectorAll(".reaction-popup").forEach(p => p.remove());
+
+  const popup = document.createElement("div");
+  popup.className = "reaction-popup";
+
+  popup.textContent = " "; // blank for now
+
+  document.body.appendChild(popup);
+
+  // Position it under the emoji
+  const rect = anchorEl.getBoundingClientRect();
+
+  popup.style.position = "absolute";
+  popup.style.top = rect.bottom + window.scrollY + 5 + "px";
+  popup.style.left = rect.left + window.scrollX + "px";
+
+  // Close when clicking anywhere else
+  setTimeout(() => {
+    document.addEventListener("click", () => {
+      popup.remove();
+    }, { once: true });
+  }, 0);
+}
+
 
 
 // ===== Event Listeners =====
