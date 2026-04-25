@@ -108,6 +108,12 @@ function toggleSelectMessage(el, msgObj) {
   // enter selection mode if at least one message selected
   selectionMode = selectedMessages.size > 0;
   
+  if (selectionMode) {
+  document.body.classList.add("no-select");
+} else {
+  document.body.classList.remove("no-select");
+}
+  
   // If more than one message selected, hide reaction bar
 if (selectedMessages.size > 1) {
   const existingBar = document.querySelector(".reaction-bar");
@@ -374,6 +380,7 @@ function clearSelection() {
   selectedMessages.clear();
   selectionMode = false;
   updateSelectionBoard();
+document.body.classList.remove("no-select");
 }
 // Menu For PC
 menuReply.onclick = () => {
@@ -2288,6 +2295,12 @@ function handleDeleteQueue() {
     updateTimeline();
   });
 }
+
+document.addEventListener("selectstart", (e) => {
+  if (selectionMode) {
+    e.preventDefault();
+  }
+});
 
 
 // ===== Event Listeners =====
