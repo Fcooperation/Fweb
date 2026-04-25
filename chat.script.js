@@ -1831,10 +1831,24 @@ setInterval(() => {
   }
 }, 5000); // 5000ms = 5 seconds
 
+// Call Receive message script on page load
+document.addEventListener("DOMContentLoaded", () => {
+  fetchAllFChatLogs();
+
+  // optional: keep fetching every few seconds
+  setInterval(fetchAllFChatLogs, 3000);
+});
+
+// Render messages on page load
+document.addEventListener("DOMContentLoaded", () => {
+  syncToFChat();     // ensure both storages are merged
+  updateTimeline();  // render immediately
+});
 
 // Initial load
 syncPolls();
 syncToFChat();
+updateTimeline();
 retryAllPolls();
 retryPendingMessages();
 retryPendingPollMessages();
