@@ -1865,9 +1865,14 @@ fchatMessages.forEach(msg => {
     );
 
     localStorage.setItem(
-      FCHAT_STORAGE_KEY,
-      JSON.stringify(fchatMessages)
-    );
+  FCHAT_STORAGE_KEY,
+  JSON.stringify(fchatMessages)
+);
+
+localStorage.setItem(
+  "fchat_messages",
+  JSON.stringify(fchatMessages)
+);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
 localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
 
