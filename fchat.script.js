@@ -88,10 +88,11 @@ async function updateChatsFromBackend() {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        action: "get_all_fchatters",
-        email: account.email,
-        password: account.password
-      })
+  action: "get_all_fchatters",
+  email: account.email,
+  password: account.password,
+  id: account.id
+})
     });
 
     const data = await res.json();
