@@ -60,11 +60,82 @@ function displayChats(users) {
   });
 }
 
-/* ----------------- INIT (OFFLINE LOAD) ----------------- */
+/* ----------------- LOAD OFFLINE FIRST ----------------- */
 
 function loadOfflineChats() {
+
+  // instant offline render
   displayChats(chatUsers);
+
+  console.log("Offline chats loaded");
 }
 
-// run immediately on page load
+/* ----------------- FETCH ONLINE UPDATE ----------------- */
+
+async function updateChatsFromBackend() {
+
+  // skip if offline
+  if (!navigator.onLine) {
+    console.log("Offline mode");
+    return;
+  }
+
+  try {
+
+    const res = await fetch("https://fweb-backend.onrender.com/fchat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        action: "get_all_fchatters",
+        email: account.email,
+        password: account.password
+      })
+    });
+
+    const data = await res.json();
+
+    console.log("Backend response:", data);
+
+    // backend sends:
+    // { data: [...] }
+
+    const freshUsers = data.data || [];
+
+    // SAVE SEPARATE CACHE
+    localStorage.setItem(
+      "fchat_users",
+      JSON.stringify(freshUsers)
+    );
+
+    // UPDATE faccount.chatUsers
+    const updatedAccount =
+      JSON.parse(localStorage.getItem("faccount")) || {};
+
+    updatedAccount.chatUsers = freshUsers;
+
+    localStorage.setItem(
+      "faccount",
+      JSON.stringify(updatedAccount)
+    );
+
+    // UPDATE UI
+    displayChats(freshUsers);
+
+    console.log("Chats updated from backend");
+
+  } catch (err) {
+
+    console.error("Update failed:", err);
+
+  }
+}
+
+/* ----------------- START ----------------- */
+
+// 1. LOAD OFFLINE INSTANTLY
 loadOfflineChats();
+
+// 2. THEN UPDATE FROM BACKEND
+updateChatsFromBackend();
