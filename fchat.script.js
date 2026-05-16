@@ -41,11 +41,86 @@ function displayChats(users) {
       pfp.textContent = user.username?.[0]?.toUpperCase() || "U";
     }
 
-    // USER INFO
-    const info = document.createElement("div");
-    info.innerHTML = `
-      <div class="username">${user.username || "Unknown"}</div>
-    `;
+// =========================
+// GET MOST RECENT MESSAGE
+// =========================
+
+const allMessages =
+  JSON.parse(localStorage.getItem("fchat_messages")) || [];
+
+// messages from THIS user
+const userMessages = allMessages.filter(msg =>
+  String(msg.sender_id) === String(user.id)
+);
+
+// newest message
+const latestMessage =
+  userMessages[userMessages.length - 1];
+
+// default values
+let messageText = "";
+let messageTime = "";
+
+// if message exists
+if (latestMessage) {
+
+  messageText = latestMessage.message || "[Media]";
+
+  // format time
+  const date = new Date(latestMessage.created_at);
+
+  messageTime = date.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
+// USER INFO
+const info = document.createElement("div");
+
+info.innerHTML = `
+  <div class="username">
+    ${user.username || "Unknown"}
+  </div>
+
+  ${
+    latestMessage
+      ? `
+      <div style="
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        margin-top:2px;
+        width:100%;
+        gap:10px;
+      ">
+
+        <div style="
+          color:#38bdf8;
+          font-size:14px;
+          font-weight:bold;
+          overflow:hidden;
+          text-overflow:ellipsis;
+          white-space:nowrap;
+          flex:1;
+        ">
+          🔵 ${messageText}
+        </div>
+
+        <div style="
+          color:black;
+          font-style:italic;
+          font-size:11px;
+          white-space:nowrap;
+        ">
+          ${messageTime}
+        </div>
+
+      </div>
+    `
+      : ""
+  }
+`;
 
     // CLICK ACTION
     card.onclick = () => {
@@ -103,6 +178,13 @@ async function updateChatsFromBackend() {
     // { data: [...] }
 
     const freshUsers = data.data || [];
+    // save backend messages offline
+const backendMessages = data.messages || [];
+
+localStorage.setItem(
+  "fchat_messages",
+  JSON.stringify(backendMessages)
+);
 
     // SAVE SEPARATE CACHE
     localStorage.setItem(
