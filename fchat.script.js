@@ -48,23 +48,34 @@ function displayChats(users) {
 const allMessages =
   JSON.parse(localStorage.getItem("fchat_messages")) || [];
 
-// messages from THIS user
+// messages involving THIS user
 const userMessages = allMessages.filter(msg =>
-  String(msg.sender_id) === String(user.id)
+  String(msg.sender_id) === String(user.id) ||
+  String(msg.receiver_id) === String(user.id)
+);
+
+// sort newest last
+userMessages.sort(
+  (a, b) =>
+    new Date(a.created_at) -
+    new Date(b.created_at)
 );
 
 // newest message
 const latestMessage =
   userMessages[userMessages.length - 1];
 
-// default values
-let messageText = "";
+// defaults
+let messageHTML = "";
 let messageTime = "";
 
-// if message exists
 if (latestMessage) {
 
-  messageText = latestMessage.message || "[Media]";
+  const isYou =
+    String(latestMessage.sender_id) === String(account.id);
+
+  const text =
+    latestMessage.message || "[Media]";
 
   // format time
   const date = new Date(latestMessage.created_at);
@@ -73,10 +84,55 @@ if (latestMessage) {
     hour: "2-digit",
     minute: "2-digit"
   });
+
+  // =========================
+  // YOUR MESSAGE
+  // =========================
+
+  if (isYou) {
+
+    messageHTML = `
+      <span style="
+        color:#38bdf8;
+        font-weight:bold;
+      ">
+        YOU:
+      </span>
+
+      <span style="
+        color:black;
+        font-weight:normal;
+      ">
+        ${text}
+      </span>
+    `;
+
+  }
+
+  // =========================
+  // THEIR MESSAGE
+  // =========================
+
+  else {
+
+    messageHTML = `
+      <span style="
+        color:#38bdf8;
+        font-weight:bold;
+      ">
+        🔵 ${text}
+      </span>
+    `;
+  }
 }
 
+// =========================
 // USER INFO
+// =========================
+
 const info = document.createElement("div");
+
+info.style.flex = "1";
 
 info.innerHTML = `
   <div class="username">
@@ -90,21 +146,19 @@ info.innerHTML = `
         display:flex;
         justify-content:space-between;
         align-items:center;
+        gap:10px;
         margin-top:2px;
         width:100%;
-        gap:10px;
       ">
 
         <div style="
-          color:#38bdf8;
-          font-size:14px;
-          font-weight:bold;
           overflow:hidden;
           text-overflow:ellipsis;
           white-space:nowrap;
           flex:1;
+          font-size:14px;
         ">
-          🔵 ${messageText}
+          ${messageHTML}
         </div>
 
         <div style="
@@ -171,6 +225,23 @@ async function updateChatsFromBackend() {
     });
 
     const data = await res.json();
+// =========================
+// SAVE BACKEND MESSAGES
+// =========================
+
+const newBackendMessages =
+  data.messages || [];
+
+// save to BOTH storages
+localStorage.setItem(
+  "fchat_messages",
+  JSON.stringify(newBackendMessages)
+);
+
+localStorage.setItem(
+  "messages",
+  JSON.stringify(newBackendMessages)
+);
 
     console.log("Backend response:", data);
 
@@ -222,3 +293,12 @@ loadOfflineChats();
 
 // 2. THEN UPDATE FROM BACKEND
 updateChatsFromBackend();
+
+/* ----------------- AUTO UPDATE LOOP ----------------- */
+
+// every 2 seconds
+setInterval(() => {
+
+  updateChatsFromBackend();
+
+}, 2000);
