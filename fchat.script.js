@@ -50,8 +50,21 @@ const allMessages =
 
 // messages involving THIS user
 const userMessages = allMessages.filter(msg =>
-  String(msg.sender_id) === String(user.id) ||
-  String(msg.receiver_id) === String(user.id)
+
+  // YOU sent to this user
+  (
+    String(msg.sender_id) === String(account.id) &&
+    String(msg.receiver_id) === String(user.id)
+  )
+
+  ||
+
+  // THIS user sent to YOU
+  (
+    String(msg.sender_id) === String(user.id) &&
+    String(msg.receiver_id) === String(account.id)
+  )
+
 );
 
 // sort newest last
