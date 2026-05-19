@@ -77,9 +77,9 @@ if (latestMessage) {
   let text =
   latestMessage.message || "[Media]";
 
-// limit to 25 chars
-if (text.length > 25) {
-  text = text.slice(0, 25) + "...";
+// limit to 10 chars before ...
+if (text.length > 10) {
+  text = text.slice(0, 10) + "...";
 }
 
   // format time
