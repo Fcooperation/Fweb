@@ -46,7 +46,7 @@ function displayChats(users) {
 // =========================
 
 const allMessages =
-  JSON.parse(localStorage.getItem("messages")) || [];
+  JSON.parse(localStorage.getItem("fchat_messages")) || [];
 
 // messages involving THIS user
 const userMessages = allMessages.filter(msg =>
