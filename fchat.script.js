@@ -70,8 +70,8 @@ const userMessages = allMessages.filter(msg =>
 // sort newest last
 userMessages.sort(
   (a, b) =>
-    new Date(a.created_at) -
-    new Date(b.created_at)
+    new Date(a.sent_at) -
+new Date(b.sent_at)
 );
 
 // newest message
@@ -96,7 +96,7 @@ if (text.length > 15) {
 }
 
   // format time
-  const date = new Date(latestMessage.created_at);
+  const date = new Date(latestMessage.sent_at);
 
   messageTime = date.toLocaleTimeString([], {
     hour: "2-digit",
