@@ -74,8 +74,13 @@ if (latestMessage) {
   const isYou =
     String(latestMessage.sender_id) === String(account.id);
 
-  const text =
-    latestMessage.message || "[Media]";
+  let text =
+  latestMessage.message || "[Media]";
+
+// limit to 80 chars
+if (text.length > 80) {
+  text = text.slice(0, 80) + "...";
+}
 
   // format time
   const date = new Date(latestMessage.created_at);
