@@ -21,6 +21,61 @@ function displayChats(users) {
     box.innerHTML = "<p>No chat users found offline</p>";
     return;
   }
+  
+// =========================
+// SORT USERS BY LATEST MESSAGE
+// =========================
+
+users.sort((a, b) => {
+
+  const allMessages =
+    JSON.parse(localStorage.getItem("fchat_messages")) || [];
+
+  // messages for user A
+  const aMessages = allMessages.filter(msg =>
+    (
+      String(msg.sender_id) === String(account.id) &&
+      String(msg.receiver_id) === String(a.id)
+    )
+    ||
+    (
+      String(msg.sender_id) === String(a.id) &&
+      String(msg.receiver_id) === String(account.id)
+    )
+  );
+
+  // messages for user B
+  const bMessages = allMessages.filter(msg =>
+    (
+      String(msg.sender_id) === String(account.id) &&
+      String(msg.receiver_id) === String(b.id)
+    )
+    ||
+    (
+      String(msg.sender_id) === String(b.id) &&
+      String(msg.receiver_id) === String(account.id)
+    )
+  );
+
+  // latest timestamps
+  const aLatest =
+    aMessages.length
+      ? new Date(
+          aMessages[aMessages.length - 1].created_at
+        ).getTime()
+      : 0;
+
+  const bLatest =
+    bMessages.length
+      ? new Date(
+          bMessages[bMessages.length - 1].created_at
+        ).getTime()
+      : 0;
+
+  // newest goes TOP
+  return bLatest - aLatest;
+
+});
 
   users.forEach(user => {
     const card = document.createElement("div");
