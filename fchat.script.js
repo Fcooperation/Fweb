@@ -70,15 +70,14 @@ const userMessages = allMessages.filter(msg =>
 // sort newest last
 userMessages.sort(
   (a, b) =>
-    new Date(a.sent_at) -
-new Date(b.sent_at)
+    new Date(a.created_at) -
+    new Date(b.created_at)
 );
 
 // newest message
 const latestMessage =
   userMessages[userMessages.length - 1];
 
-// defaults
 let messageHTML = "";
 let messageTime = "";
 
@@ -88,20 +87,20 @@ if (latestMessage) {
     String(latestMessage.sender_id) === String(account.id);
 
   let text =
-  latestMessage.message || "[Media]";
+    latestMessage.message || "[Media]";
 
-// limit to 15 chars before ...
-if (text.length > 15) {
-  text = text.slice(0, 15) + "...";
-}
+  if (text.length > 15) {
+    text = text.slice(0, 15) + "...";
+  }
 
   // format time
-  const date = new Date(latestMessage.sent_at);
+  const date = new Date(latestMessage.created_at);
 
   messageTime = date.toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit"
   });
+
 
   // =========================
   // YOUR MESSAGE
