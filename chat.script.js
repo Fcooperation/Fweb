@@ -1210,6 +1210,7 @@ async function sendToBackend(msgObj) {
 
     const data = await res.json();
     msgObj.status = data.success ? "sent" : "pending";
+    saveToFChatSync(msgObj);
   } catch(e) {
     msgObj.status = "pending";
     console.warn("Failed to send", e);
@@ -1264,6 +1265,7 @@ applyChatSettings();      // optional for styling
   // update fchatMessages in background for storage & sync
 fchatMessages.push(msgObj);
 localStorage.setItem(FCHAT_STORAGE_KEY, JSON.stringify(fchatMessages));
+saveToFChatSync(msgObj);
   
   sendBtn.textContent = "Send";  // reset button
 sendBtn.disabled = false;      // allow clicking again
@@ -1338,6 +1340,43 @@ textarea.addEventListener("input", () => {
     isTyping = false;
   }, 3000);
 });
+
+// Fchat sync storage function 
+const FCHAT_SYNC_STORAGE_KEY = "fchat_sync";
+
+function saveToFChatSync(msgObj) {
+  let syncData = JSON.parse(localStorage.getItem(FCHAT_SYNC_STORAGE_KEY)) || {};
+
+  // ensure structure per chat
+  const chatKey = `${account.id}_${chatWith.id}`;
+
+  if (!syncData[chatKey]) {
+    syncData[chatKey] = [];
+  }
+
+  // check if message already exists (update instead of duplicate)
+  const index = syncData[chatKey].findIndex(m => m.id === msgObj.id);
+
+  const syncEntry = {
+    id: msgObj.id,
+    text: msgObj.text,
+    sender_id: msgObj.sender_id,
+    receiver_id: msgObj.receiver_id,
+    status: msgObj.status,          // 👈 THIS is the important part
+    sent_at: msgObj.sent_at,
+    linked: msgObj.linked,
+    linked_message_id: msgObj.linked_message_id
+  };
+
+  if (index > -1) {
+    syncData[chatKey][index] = syncEntry; // update
+  } else {
+    syncData[chatKey].push(syncEntry); // insert
+  }
+
+  localStorage.setItem(FCHAT_SYNC_STORAGE_KEY, JSON.stringify(syncData));
+}
+
 // ===== POLL CLICK WITH MULTI-SELECT SUPPORT =====
 chatBody.addEventListener("click", (e) => {
   const optionEl = e.target.closest(".poll-option");

@@ -8,6 +8,40 @@ const chatUsers =
   account.chatUsers ||
   JSON.parse(localStorage.getItem("fchat_users")) ||
   [];
+  
+  // GET LATEST MESSAGES 
+  function getLatestMessage(userId, accountId) {
+
+  const messages = JSON.parse(localStorage.getItem("fchat_messages")) || [];
+
+  const syncData = JSON.parse(localStorage.getItem("fchat_sync")) || {};
+
+  const chatKey = `${accountId}_${userId}`;
+
+  const syncMessages = syncData[chatKey] || [];
+
+  // combine both sources
+  const all = [...messages, ...syncMessages];
+
+  // filter only messages between these 2 users
+  const filtered = all.filter(msg =>
+    (String(msg.sender_id) === String(accountId) &&
+     String(msg.receiver_id) === String(userId))
+    ||
+    (String(msg.sender_id) === String(userId) &&
+     String(msg.receiver_id) === String(accountId))
+  );
+
+  if (!filtered.length) return null;
+
+  // IMPORTANT: use sent_at fallback if created_at missing
+  filtered.sort((a, b) =>
+    new Date((a.sent_at || a.created_at)) -
+    new Date((b.sent_at || b.created_at))
+  );
+
+  return filtered[filtered.length - 1];
+}
 
 /* ----------------- DISPLAY CHAT USERS ----------------- */
 
@@ -100,38 +134,9 @@ users.sort((a, b) => {
 // GET MOST RECENT MESSAGE
 // =========================
 
-const allMessages =
-  JSON.parse(localStorage.getItem("fchat_messages")) || [];
-
-// messages involving THIS user
-const userMessages = allMessages.filter(msg =>
-
-  // YOU sent to this user
-  (
-    String(msg.sender_id) === String(account.id) &&
-    String(msg.receiver_id) === String(user.id)
-  )
-
-  ||
-
-  // THIS user sent to YOU
-  (
-    String(msg.sender_id) === String(user.id) &&
-    String(msg.receiver_id) === String(account.id)
-  )
-
-);
-
-// sort newest last
-userMessages.sort(
-  (a, b) =>
-    new Date(a.created_at) -
-    new Date(b.created_at)
-);
 
 // newest message
-const latestMessage =
-  userMessages[userMessages.length - 1];
+const latestMessage = getLatestMessage(user.id, account.id);
 
 let messageHTML = "";
 let messageTime = "";
@@ -141,57 +146,39 @@ if (latestMessage) {
   const isYou =
     String(latestMessage.sender_id) === String(account.id);
 
-  let text =
-    latestMessage.message || "[Media]";
+  let text = latestMessage.text || "[Media]";
 
   if (text.length > 15) {
     text = text.slice(0, 15) + "...";
   }
 
-  // format time
-  const date = new Date(latestMessage.created_at);
+  const date = new Date(latestMessage.sent_at || latestMessage.created_at);
 
   messageTime = date.toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit"
   });
 
-
   // =========================
-  // YOUR MESSAGE
+  // YOU MESSAGE (from sync or messages)
   // =========================
-
   if (isYou) {
-
     messageHTML = `
-      <span style="
-        color:#38bdf8;
-        font-weight:bold;
-      ">
+      <span style="color:#38bdf8; font-weight:bold;">
         YOU:
       </span>
-
-      <span style="
-        color:black;
-        font-weight:normal;
-      ">
+      <span style="color:black;">
         ${text}
       </span>
     `;
-
   }
 
   // =========================
-  // THEIR MESSAGE
+  // RECEIVED MESSAGE
   // =========================
-
   else {
-
     messageHTML = `
-      <span style="
-        color:#38bdf8;
-        font-weight:bold;
-      ">
+      <span style="color:#1d9bf0; font-weight:bold;">
         🔵 ${text}
       </span>
     `;
