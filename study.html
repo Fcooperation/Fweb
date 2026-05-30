@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Study</title>
+<link rel="stylesheet" href="study.css">
+</head>
+
+<body>
+
+<!-- TOP BAR -->
+<div id="top-bar">
+  <div id="title">STUDY</div>
+</div>
+
+<!-- SEARCH BAR -->
+<div id="search-container">
+  <input type="text" id="search-bar" placeholder="Search university...">
+</div>
+
+<!-- LOADING BOX -->
+<div id="loading-box">
+
+  <div class="circle">
+
+    <svg width="100" height="100">
+  <circle class="bg" cx="50" cy="50" r="35"></circle>
+  <circle class="progress" cx="50" cy="50" r="35"></circle>
+</svg>
+
+    <div id="loading-text">0%</div>
+
+  </div>
+
+</div>
+
+<!-- PICK TEXT -->
+<div id="pick-text">
+  Pick your university
+</div>
+
+<!-- UNIVERSITY LIST -->
+<div id="uni-list">
+
+  <div class="uni-card" onclick="location.href='studyebsu.html'">EBSU</div>
+  <div class="uni-card" onclick="location.href='studyfuto.html'">FUTO</div>
+  <div class="uni-card" onclick="location.href='studyfuta.html'">FUTA</div>
+  <div class="uni-card" onclick="location.href='studyunn.html'">UNN</div>
+
+</div>
+
+<!-- FLOATING FAI BUTTON -->
+<button id="fai-btn" onclick="location.href='studyfai.html'">
+  🤖
+</button>
+
+<script src="study.script.js"></script>
+</body>
+</html>
