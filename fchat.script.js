@@ -76,6 +76,32 @@ function displayChats(users) {
   });
 }
 
+//Search user function 
+const searchBar = document.getElementById("search-bar");
+
+// current full user list (offline)
+let allUsers = chatUsers;
+
+// search handler
+searchBar.addEventListener("input", function () {
+  const query = this.value.toLowerCase().trim();
+
+  if (!query) {
+    // if empty search → show all users
+    displayChats(allUsers);
+    return;
+  }
+
+  const filtered = allUsers.filter(user => {
+    return (
+      String(user.username || "").toLowerCase().includes(query) ||
+      String(user.id || "").toLowerCase().includes(query)
+    );
+  });
+
+  displayChats(filtered);
+});
+
 /* ----------------- LOAD OFFLINE ----------------- */
 
 function loadOfflineChats() {
