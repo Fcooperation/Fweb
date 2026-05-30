@@ -6,6 +6,21 @@ const account = JSON.parse(localStorage.getItem("faccount")) || {};
 // ONLY source of offline users
 const chatUsers = account.chatUsers || [];
 
+// menu dropdown
+const menuBtn = document.getElementById("menu-btn");
+const menuDropdown = document.getElementById("menu-dropdown");
+
+// toggle menu on click
+menuBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+  menuDropdown.classList.toggle("show");
+});
+
+// close when clicking outside
+document.addEventListener("click", () => {
+  menuDropdown.classList.remove("show");
+});
+
 /* ----------------- DISPLAY CHAT USERS ----------------- */
 
 function displayChats(users) {

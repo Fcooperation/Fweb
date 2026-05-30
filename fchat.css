@@ -198,3 +198,33 @@ body {
   color: #2196f3;
   font-weight: 600;
 }
+#menu-container {
+  position: relative;
+  display: inline-block;
+}
+
+#menu-dropdown {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 40px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+  overflow: hidden;
+  z-index: 999;
+  min-width: 150px;
+}
+
+#menu-dropdown.show {
+  display: block;
+}
+
+.menu-item {
+  padding: 10px;
+  cursor: pointer;
+}
+
+.menu-item:hover {
+  background: #f2f2f2;
+}
