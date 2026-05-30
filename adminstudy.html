@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin Study</title>
+<link rel="stylesheet" href="adminstudy.css">
+</head>
+
+<body>
+
+<h2>ADMIN STUDY PANEL</h2>
+
+<div class="card">
+
+<select id="university">
+<option>EBSU</option>
+<option>FUTO</option>
+<option>FUTA</option>
+<option>UNN</option>
+</select>
+
+<input id="course" placeholder="Course">
+
+<textarea id="question"
+placeholder="Question"></textarea>
+
+<input id="option1" placeholder="Option A">
+<input id="option2" placeholder="Option B">
+<input id="option3" placeholder="Option C">
+<input id="option4" placeholder="Option D">
+
+<input id="answer" placeholder="Answer">
+
+<textarea id="explanation"
+placeholder="Explanation"></textarea>
+
+<select id="difficulty">
+<option value="easy">Easy</option>
+<option value="medium">Medium</option>
+<option value="hard">Hard</option>
+</select>
+
+<input id="topic" placeholder="Topic">
+
+<select id="type">
+<option value="mcq">MCQ</option>
+<option value="theory">Theory</option>
+<option value="true_false">True / False</option>
+</select>
+
+<input id="year" type="number" placeholder="Year">
+
+<input id="session" placeholder="Session">
+
+<input id="question_number"
+type="number"
+placeholder="Question Number">
+
+<input id="instructor"
+placeholder="Instructor">
+
+<button id="submit-btn">
+ADD QUESTION
+</button>
+
+</div>
+
+<h3>LIVE PREVIEW</h3>
+
+<pre id="preview">
+Waiting...
+</pre>
+
+<h3>BULK JSON UPLOAD</h3>
+
+<textarea id="bulk-json"
+placeholder="Paste JSON here"></textarea>
+
+<input type="file"
+id="json-file"
+accept=".json">
+
+<button id="bulk-btn">
+UPLOAD BULK QUESTIONS
+</button>
+
+<script src="adminstudy.script.js"></script>
+
+</body>
+</html>
