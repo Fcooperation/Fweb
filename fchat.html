@@ -6,31 +6,73 @@
 <title>Fchat</title>
 <link rel="stylesheet" href="fchat.css">
 </head>
+
 <body>
 
 <!-- MAIN UI -->
 <div id="main-ui">
-  <div id="top-bar">FCHAT
-  <button id="menu-btn">⋮</button>
-<div id="menu-dropdown">
-  <div class="menu-item" onclick="location.href='friendrequest.html'">Friend Requests</div>
-</div></div>
+
+  <!-- TOP BAR -->
+  <div id="top-bar">
+    <div id="app-title">FCHAT</div>
+
+    <!-- MENU BUTTON (TOP RIGHT) -->
+    <div id="menu-container">
+      <button id="menu-btn">⋮</button>
+
+      <div id="menu-dropdown">
+        <div class="menu-item" onclick="location.href='friendrequest.html'">
+          Friend Requests
+        </div>
+
+        <div class="menu-item" onclick="location.href='studyfai.html'">
+          FAI (Study AI)
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SEARCH -->
   <input type="text" id="search-bar" placeholder="Search users...">
+
+  <!-- CONTENT -->
   <div id="users-list"></div>
   <div id="update-log"></div>
+
+  <!-- ADD BUTTON -->
   <button id="add-btn" onclick="location.href='add.html'">+</button>
+
+  <!-- BOTTOM NAV -->
   <div id="bottom-nav">
+
     <div class="nav-item active">FCHAT</div>
-    <div class="nav-item" onclick="location.href='fvids.html'">FVIDS</div>
-    <div class="nav-item" onclick="location.href='fchatupdates.html'">UPDATES</div>
-    <div class="nav-item" onclick="location.href='fchatme.html'">ME</div>
+
+    <div class="nav-item" onclick="location.href='fvids.html'">
+      FVIDS
+    </div>
+
+    <div class="nav-item" onclick="location.href='study.html'">
+      STUDY
+    </div>
+
+    <div class="nav-item" onclick="location.href='fchatupdates.html'">
+      UPDATES
+    </div>
+
+    <div class="nav-item" onclick="location.href='fchatme.html'">
+      ME
+    </div>
+
   </div>
+
 </div>
 
 <!-- PROFILE MODAL -->
 <div id="profile-modal">
   <img id="modal-img">
 </div>
+
 <script src="fchat.script.js"></script>
+
 </body>
-  </html>
+</html>
