@@ -1,114 +1,139 @@
-/* ----------------- LOAD OFFLINE CHAT USERS (CLEAN) ----------------- */
+document.addEventListener("DOMContentLoaded", () => {
 
-// get saved account ONLY
-const account = JSON.parse(localStorage.getItem("faccount")) || {};
+  /* ----------------- ACCOUNT + GUEST CHECK ----------------- */
+  const account = JSON.parse(localStorage.getItem("faccount")) || {};
+  const isGuest = !account.username;
 
-// ONLY source of offline users
-const chatUsers = account.chatUsers || [];
+  window.IS_GUEST = isGuest;
 
-// menu dropdown
-const menuBtn = document.getElementById("menu-btn");
-const menuDropdown = document.getElementById("menu-dropdown");
+  /* ----------------- UI ELEMENTS ----------------- */
+  const mainUI = document.getElementById("main-ui");
+  const loadingScreen = document.getElementById("loading-screen");
 
-// toggle menu on click
-menuBtn.addEventListener("click", (e) => {
-  e.stopPropagation();
-  menuDropdown.classList.toggle("show");
-});
+  if (loadingScreen) loadingScreen.style.display = "none";
+  if (mainUI) mainUI.style.display = "flex";
 
-// close when clicking outside
-document.addEventListener("click", () => {
-  menuDropdown.classList.remove("show");
-});
+  /* ----------------- CHAT USERS ----------------- */
+  const chatUsers = account.chatUsers || [];
 
-/* ----------------- DISPLAY CHAT USERS ----------------- */
+  const usersList = document.getElementById("users-list");
+  const searchBar = document.getElementById("search-bar");
 
-function displayChats(users) {
-  const box = document.getElementById("users-list");
-  if (!box) return;
+  /* ----------------- TOAST ----------------- */
+  function showToast(message) {
+    let toast = document.getElementById("toast");
 
-  box.innerHTML = "";
-
-  if (!users.length) {
-    box.innerHTML = "<p>No chat users found offline</p>";
-    return;
-  }
-
-  users.forEach(user => {
-    const card = document.createElement("div");
-    card.className = "fcard";
-
-    // PROFILE PIC
-    const pfp = document.createElement("div");
-    pfp.className = "pfp";
-
-    if (user.profile_pic) {
-      const img = document.createElement("img");
-      img.src = user.profile_pic;
-      img.style.width = "100%";
-      img.style.height = "100%";
-      img.style.borderRadius = "50%";
-      pfp.appendChild(img);
-    } else {
-      pfp.textContent = user.username?.[0]?.toUpperCase() || "U";
+    if (!toast) {
+      toast = document.createElement("div");
+      toast.id = "toast";
+      document.body.appendChild(toast);
     }
 
-    // USER INFO
-    const info = document.createElement("div");
-    info.style.flex = "1";
+    toast.textContent = message;
+    toast.classList.add("show");
 
-    info.innerHTML = `
-      <div class="username">
-        ${user.username || "Unknown"}
-      </div>
-    `;
-
-    // CLICK ACTION
-    card.onclick = () => {
-      localStorage.setItem("chatting_with", JSON.stringify(user));
-      window.location.href = "chat.html";
-    };
-
-    card.appendChild(pfp);
-    card.appendChild(info);
-
-    box.appendChild(card);
-  });
-}
-
-//Search user function 
-const searchBar = document.getElementById("search-bar");
-
-// current full user list (offline)
-let allUsers = chatUsers;
-
-// search handler
-searchBar.addEventListener("input", function () {
-  const query = this.value.toLowerCase().trim();
-
-  if (!query) {
-    // if empty search → show all users
-    displayChats(allUsers);
-    return;
+    setTimeout(() => {
+      toast.classList.remove("show");
+    }, 2500);
   }
 
-  const filtered = allUsers.filter(user => {
-    return (
-      String(user.username || "").toLowerCase().includes(query) ||
-      String(user.id || "").toLowerCase().includes(query)
-    );
-  });
+  /* ----------------- MENU ----------------- */
+  const menuBtn = document.getElementById("menu-btn");
+  const menuDropdown = document.getElementById("menu-dropdown");
 
-  displayChats(filtered);
-});
+  if (menuBtn && menuDropdown) {
+    menuBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      menuDropdown.classList.toggle("show");
+    });
 
-/* ----------------- LOAD OFFLINE ----------------- */
+    document.addEventListener("click", () => {
+      menuDropdown.classList.remove("show");
+    });
+  }
 
-function loadOfflineChats() {
+  /* ----------------- DISPLAY USERS ----------------- */
+  function displayChats(users) {
+    if (!usersList) return;
+
+    usersList.innerHTML = "";
+
+    if (!users.length) {
+      usersList.innerHTML =
+        "<p style='text-align:center;color:#777'>No users found</p>";
+      return;
+    }
+
+    users.forEach(user => {
+      const card = document.createElement("div");
+      card.className = "fcard";
+
+      const pfp = document.createElement("div");
+      pfp.className = "pfp";
+
+      if (user.profile_pic) {
+        const img = document.createElement("img");
+        img.src = user.profile_pic;
+        img.style.width = "100%";
+        img.style.height = "100%";
+        img.style.borderRadius = "50%";
+        pfp.appendChild(img);
+      } else {
+        pfp.textContent = user.username?.[0]?.toUpperCase() || "U";
+      }
+
+      const info = document.createElement("div");
+      info.style.flex = "1";
+      info.innerHTML = `<div class="username">${user.username || "Unknown"}</div>`;
+
+      card.onclick = () => {
+        localStorage.setItem("chatting_with", JSON.stringify(user));
+        window.location.href = "chat.html";
+      };
+
+      card.appendChild(pfp);
+      card.appendChild(info);
+
+      usersList.appendChild(card);
+    });
+  }
+
+  /* ----------------- SEARCH ----------------- */
+  if (searchBar) {
+    searchBar.addEventListener("input", function () {
+      const query = this.value.toLowerCase().trim();
+
+      if (!query) {
+        displayChats(chatUsers);
+        return;
+      }
+
+      const filtered = chatUsers.filter(user =>
+        (user.username || "").toLowerCase().includes(query) ||
+        (user.id || "").toLowerCase().includes(query)
+      );
+
+      displayChats(filtered);
+    });
+  }
+
+  /* ----------------- ADD BUTTON (GUEST BLOCK) ----------------- */
+  const addBtn = document.getElementById("add-btn");
+
+  if (addBtn) {
+    addBtn.addEventListener("click", (e) => {
+
+      if (window.IS_GUEST) {
+        e.preventDefault();
+        showToast("Sign up first to access full chat experience");
+        return;
+      }
+
+      window.location.href = "add.html";
+    });
+  }
+
+  /* ----------------- INIT ----------------- */
   displayChats(chatUsers);
-  console.log("Offline chats loaded from faccount only");
-}
 
-/* ----------------- START ----------------- */
-
-loadOfflineChats();
+});
