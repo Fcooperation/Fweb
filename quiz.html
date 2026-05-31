@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Setup</title>
+<link rel="stylesheet" href="quiz.css">
+</head>
+
+<body>
+
+<!-- SETUP BOX -->
+<div id="setup-box">
+
+  <h2>Quiz Setup</h2>
+
+  <!-- QUESTION SELECT -->
+  <div class="row">
+    <button id="minus">-</button>
+
+    <div id="count">1</div>
+
+    <button id="plus">+</button>
+
+    <button id="max">MAX</button>
+  </div>
+
+  <!-- TIME SELECT -->
+  <div class="row">
+    <button id="minus-time">-</button>
+
+    <div id="time">60 sec</div>
+
+    <button id="plus-time">+</button>
+  </div>
+
+  <button id="start-btn">Get Started</button>
+
+</div>
+
+<!-- LOADING SCREEN -->
+<div id="loading" class="hidden">
+  <div class="dots">...</div>
+</div>
+
+<!-- QUIZ AREA (blank for now) -->
+<div id="quiz-area"></div>
+
+<!-- QUIZ UI -->
+<div id="quiz-ui" class="hidden">
+
+  <!-- TOP BAR -->
+  <div id="quiz-top">
+
+    <div id="timer">60</div>
+
+    <button id="submit-btn">Submit</button>
+
+  </div>
+
+  <!-- QUESTION BOX -->
+  <div id="question-box">
+    <div id="q-number"></div>
+    <div id="q-text"></div>
+  </div>
+
+  <!-- OPTIONS -->
+  <div id="options"></div>
+
+  <!-- NAV BUTTONS -->
+  <div id="nav">
+    <button id="prev">Prev</button>
+    <button id="next">Next</button>
+  </div>
+
+</div>
+
+<script src="quiz.js"></script>
+</body>
+</html>

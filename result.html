@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Result</title>
+<link rel="stylesheet" href="result.css">
+</head>
+
+<body>
+
+<div id="result-container">
+
+  <div id="circle-wrapper">
+    <svg id="progress-ring">
+      <circle class="bg"></circle>
+      <circle class="progress"></circle>
+    </svg>
+
+    <div id="percent-text">0%</div>
+  </div>
+
+  <h2 id="grade-text">Loading...</h2>
+
+  <p id="score-text"></p>
+  <p id="xp-text"></p>
+  
+  <div id="xp-toast">
+  <span id="xp-toast-text"></span>
+</div>
+<a id="check-profile"></a>
+
+</div>
+
+<script src="result.js"></script>
+</body>
+</html>

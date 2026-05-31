@@ -1,0 +1,169 @@
+body {
+  margin: 0;
+  font-family: Arial;
+  background: #f5f7fa;
+  text-align: center;
+}
+
+/* SETUP BOX */
+#setup-box {
+  margin: 50px auto;
+  width: 90%;
+  max-width: 400px;
+  background: white;
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+/* ROWS */
+.row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin: 15px 0;
+}
+
+/* BUTTONS */
+button {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 10px;
+  background: #1d9bf0;
+  color: white;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+/* COUNT DISPLAY */
+#count, #time {
+  min-width: 80px;
+  font-weight: bold;
+}
+
+/* LOADING */
+#loading {
+  margin-top: 100px;
+}
+
+.dots {
+  font-size: 40px;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0% {opacity: 0.2;}
+  50% {opacity: 1;}
+  100% {opacity: 0.2;}
+}
+
+.hidden {
+  display: none;
+}
+/* QUIZ UI */
+#quiz-ui {
+  padding: 15px;
+}
+
+/* TIMER */
+#timer {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  font-weight: bold;
+}
+
+/* RED TIMER */
+#timer.red {
+  color: red;
+}
+
+/* SUBMIT */
+#submit-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: red;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+}
+
+/* QUESTION */
+#question-box {
+  margin-top: 60px;
+  background: white;
+  padding: 15px;
+  border-radius: 12px;
+}
+
+/* OPTIONS */
+.option {
+  margin: 10px 0;
+  padding: 12px;
+  border: 2px solid #ddd;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* SELECTED */
+.option.selected {
+  border-color: #1d9bf0;
+  background: #e8f4ff;
+}
+
+/* CIRCLE CHECK */
+.circle {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #1d9bf0;
+}
+
+.option.selected .circle {
+  background: #1d9bf0;
+}
+
+/* NAV */
+#nav {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+/* QUESTION STYLE */
+.question-text {
+  font-size: 20px;
+  font-weight: 800;
+  margin-bottom: 10px;
+  color: #111;
+}
+
+/* OPTION TEXT */
+.option-text {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+/* OPTION BOX IMPROVEMENT */
+.option {
+  background: white;
+  border: 1px solid #ddd;
+  padding: 12px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: 0.2s;
+}
+
+/* SELECTED STATE */
+.option.selected {
+  border: 2px solid #1d9bf0;
+  background: #eaf4ff;
+}
