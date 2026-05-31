@@ -210,65 +210,69 @@ document.getElementById("bulk-btn").addEventListener("click", async () => {
   const btn = document.getElementById("bulk-btn");
   const textArea = document.getElementById("bulk-json");
 
-  let json;
+  let questions;
 
-  // ---------------- PARSE SAFELY ----------------
+  // ---------------- PARSE JSON ----------------
   try {
-    json = JSON.parse(textArea.value);
+    questions = JSON.parse(textArea.value);
   } catch (err) {
     alert("❌ Invalid JSON format");
     return;
   }
 
-  if (!Array.isArray(json) || json.length === 0) {
-    alert("❌ JSON must be an array of questions");
+  if (!Array.isArray(questions) || questions.length === 0) {
+    alert("❌ Must be an array of questions");
     return;
   }
 
-  // ---------------- UI LOADING STATE ----------------
+  // ---------------- LOADING UI ----------------
   btn.disabled = true;
-  btn.textContent = "Uploading...";
+  btn.textContent = `Uploading 0/${questions.length}...`;
   btn.style.opacity = "0.6";
 
-  textArea.style.opacity = "0.4";
   textArea.disabled = true;
+  textArea.style.opacity = "0.4";
 
-  try {
+  let successCount = 0;
 
-    const res = await fetch(
-      "https://fweb-backend.onrender.com/admin",
-      {
+  // ---------------- LOOP SEND ONE BY ONE ----------------
+  for (let i = 0; i < questions.length; i++) {
+
+    const q = questions[i];
+
+    try {
+      const res = await fetch("https://fweb-backend.onrender.com/admin", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: "bulk_add_study_questions",
-          questions: json
+          action: "add_study_question",
+          ...q
         })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        successCount++;
+      } else {
+        console.warn("Failed question:", q.id, data.error);
       }
-    );
 
-    const data = await res.json();
-
-    if (data.success || data.message || !data.error) {
-      alert(`✅ Uploaded ${json.length} questions successfully`);
-    } else {
-      alert("❌ Upload failed: " + (data.error || "Unknown error"));
+    } catch (err) {
+      console.error("Network error:", err);
     }
 
-  } catch (err) {
-    console.error(err);
-    alert("❌ Network error while uploading");
-
-  } finally {
-    // ---------------- RESET UI ----------------
-    btn.disabled = false;
-    btn.textContent = "Upload";
-    btn.style.opacity = "1";
-
-    textArea.style.opacity = "1";
-    textArea.disabled = false;
+    // update progress live
+    btn.textContent = `Uploading ${i + 1}/${questions.length}...`;
   }
 
+  // ---------------- DONE ----------------
+  alert(`✅ Upload complete: ${successCount}/${questions.length} added`);
+
+  btn.disabled = false;
+  btn.textContent = "Upload";
+  btn.style.opacity = "1";
+
+  textArea.disabled = false;
+  textArea.style.opacity = "1";
 });
