@@ -101,3 +101,115 @@ circle.progress {
   font-weight: bold;
   cursor: pointer;
 }
+#school-name,
+#course-name{
+  text-align:center;
+  font-weight:bold;
+  margin-bottom:8px;
+}
+
+.review-question{
+  background:#fff;
+  border-radius:12px;
+  padding:15px;
+  margin-top:15px;
+}
+
+.review-option{
+  padding:10px;
+  margin-top:6px;
+  border-radius:10px;
+  border:1px solid #ddd;
+}
+
+.correct{
+  background:#d4edda;
+  border-color:#28a745;
+}
+
+.wrong{
+  background:#f8d7da;
+  border-color:#dc3545;
+}
+
+.explanation{
+  margin-top:10px;
+  padding:10px;
+  background:#f5f5f5;
+  border-radius:10px;
+}
+
+.hidden{
+  display:none;
+}
+#actions{
+  display:flex;
+  gap:12px;
+  justify-content:center;
+  margin-top:20px;
+  padding:0 15px;
+}
+
+#view-explanations,
+#retake-btn{
+  flex:1;
+  border:none;
+  border-radius:12px;
+  padding:14px;
+  font-size:15px;
+  font-weight:700;
+  cursor:pointer;
+  transition:0.2s;
+}
+
+#view-explanations{
+  background:#1d9bf0;
+  color:white;
+}
+
+#retake-btn{
+  background:#eef3f8;
+  color:#1d9bf0;
+}
+
+#view-explanations:hover,
+#retake-btn:hover{
+  transform:scale(1.02);
+}
+
+#view-explanations:active,
+#retake-btn:active{
+  transform:scale(0.97);
+}
+#history-page{
+  padding:20px;
+}
+
+#history-page h2{
+  text-align:center;
+  margin-bottom:20px;
+}
+
+.history-card{
+  background:white;
+  padding:15px;
+  border-radius:12px;
+  margin-bottom:12px;
+  border:1px solid #ddd;
+  cursor:pointer;
+}
+
+.history-card h3{
+  margin:0;
+  color:#1d9bf0;
+}
+
+.history-card p{
+  margin:8px 0;
+  font-size:20px;
+  font-weight:bold;
+}
+
+.history-card small{
+  color:#666;
+}

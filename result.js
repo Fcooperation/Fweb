@@ -1,6 +1,67 @@
+const resultData =
+JSON.parse(
+  localStorage.getItem(
+    "quizResult"
+  )
+);
 document.addEventListener("DOMContentLoaded", () => {
 
   const data = JSON.parse(localStorage.getItem("quizResult"));
+  
+  // XP already collected?
+if (!data.received) {
+
+  let account =
+    JSON.parse(
+      localStorage.getItem("faccount")
+    ) || {};
+
+  account.xp =
+    (account.xp || 0) +
+    data.xp;
+
+  localStorage.setItem(
+    "faccount",
+    JSON.stringify(account)
+  );
+
+  data.received = true;
+
+  localStorage.setItem(
+    "quizResult",
+    JSON.stringify(data)
+  );
+
+} else {
+
+  showHistory();
+
+  return;
+
+}
+
+let history =
+JSON.parse(
+  localStorage.getItem(
+    "quizHistory"
+  )
+) || [];
+
+const exists =
+history.some(
+  item => item.id === data.id
+);
+
+if (!exists) {
+
+  history.unshift(data);
+
+  localStorage.setItem(
+    "quizHistory",
+    JSON.stringify(history)
+  );
+
+}
 
   const circle = document.querySelector(".progress");
   const percentText = document.getElementById("percent-text");
@@ -11,12 +72,32 @@ document.addEventListener("DOMContentLoaded", () => {
   const toast = document.getElementById("xp-toast");
   const toastText = document.getElementById("xp-toast-text");
   const profileLink = document.getElementById("check-profile");
+  
+  const schoolName =
+document.getElementById(
+  "school-name"
+);
+
+const courseName =
+document.getElementById(
+  "course-name"
+);
 
   // ---------------- NO RESULT ----------------
   if (!data) {
     gradeText.textContent = "No result found";
     return;
   }
+  // show school and course 
+  if (schoolName) {
+  schoolName.textContent =
+    data.school || "";
+}
+
+if (courseName) {
+  courseName.textContent =
+    data.course || "";
+}
 
   const percent = Math.round((data.score / data.total) * 100);
 
@@ -76,3 +157,88 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 });
+
+document
+.getElementById("retake-btn")
+.onclick = () => {
+
+  window.location.href =
+    "quiz.html";
+
+};
+
+document
+.getElementById("view-explanations")
+.onclick = () => {
+
+  if (
+    !resultData ||
+    !resultData.review
+  ) {
+    alert("No explanations found");
+    return;
+  }
+
+  window.location.href =
+    "explanations.html";
+
+};
+
+function showHistory() {
+
+  const history =
+    JSON.parse(
+      localStorage.getItem(
+        "quizHistory"
+      )
+    ) || [];
+
+  document.body.innerHTML = `
+    <div id="history-page">
+
+      <h2>
+        Previous Results
+      </h2>
+
+      <div id="history-list"></div>
+
+    </div>
+  `;
+
+  const list =
+    document.getElementById(
+      "history-list"
+    );
+
+  history.forEach(item => {
+
+    const card =
+      document.createElement("div");
+
+    card.className =
+      "history-card";
+
+    card.innerHTML = `
+      <h3>${item.course}</h3>
+
+      <p>${item.percent}%</p>
+
+      <small>${item.date}</small>
+    `;
+
+    card.onclick = () => {
+
+      localStorage.setItem(
+        "quizResult",
+        JSON.stringify(item)
+      );
+
+      location.reload();
+
+    };
+
+    list.appendChild(card);
+
+  });
+
+}

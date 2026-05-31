@@ -1,0 +1,57 @@
+body{
+  margin:0;
+  background:#f5f7fa;
+  font-family:Arial,sans-serif;
+}
+
+#top{
+  position:sticky;
+  top:0;
+  background:white;
+  padding:16px;
+  text-align:center;
+  font-size:20px;
+  font-weight:700;
+  border-bottom:1px solid #ddd;
+}
+
+#review-container{
+  padding:15px;
+}
+
+.question-card{
+  background:white;
+  border-radius:14px;
+  padding:15px;
+  margin-bottom:15px;
+}
+
+.question{
+  font-weight:800;
+  font-size:17px;
+  margin-bottom:12px;
+}
+
+.option{
+  padding:12px;
+  border:1px solid #ddd;
+  border-radius:10px;
+  margin-top:8px;
+}
+
+.correct{
+  background:#d4edda;
+  border-color:#28a745;
+}
+
+.wrong{
+  background:#f8d7da;
+  border-color:#dc3545;
+}
+
+.explanation{
+  margin-top:15px;
+  padding:12px;
+  background:#f4f4f4;
+  border-radius:10px;
+}

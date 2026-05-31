@@ -252,14 +252,71 @@ function submitQuiz() {
 
   const percent = Math.round((score / questions.length) * 100);
 
-  localStorage.setItem("quizResult", JSON.stringify({
-    score,
-    total: questions.length,
-    xp: xpEarned,
-    percent
-  }));
+// ---------------- REVIEW DATA ----------------
+const review = [];
 
-  window.location.href = "result.html";
+questions.forEach(q => {
+
+  const userAnswer = answers[q.id] || null;
+
+  review.push({
+    question: q.question,
+    options: q.options,
+    correct: q.answer,
+    selected: userAnswer,
+    explanation: q.explanation
+  });
+
+});
+
+// ---------------- SAVE RESULT ----------------
+
+const result = {
+
+  id: "R" + Date.now(),
+
+  school: "EBSU",
+
+  course: studying
+    ? studying.replace("(quiz)", "")
+              .replace("(tutorials)", "")
+              .trim()
+    : "",
+
+  score,
+  total: questions.length,
+  xp: xpEarned,
+  percent,
+
+  date: new Date().toLocaleString(),
+
+  received: false,
+viewed: false,
+
+  review
+
+};
+
+// current result
+localStorage.setItem(
+  "quizResult",
+  JSON.stringify(result)
+);
+
+// save to history
+const history =
+  JSON.parse(
+    localStorage.getItem("quizHistory")
+  ) || [];
+
+history.unshift(result);
+
+localStorage.setItem(
+  "quizHistory",
+  JSON.stringify(history)
+);
+
+window.location.href = "result.html";
 }
 
 });
