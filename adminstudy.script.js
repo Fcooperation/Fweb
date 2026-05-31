@@ -205,37 +205,70 @@ reader.readAsText(file);
 }
 );
 
-document
-.getElementById("bulk-btn")
-.addEventListener(
-"click",
-async ()=>{
+document.getElementById("bulk-btn").addEventListener("click", async () => {
 
-const text =
-document.getElementById(
-"bulk-json"
-).value;
+  const btn = document.getElementById("bulk-btn");
+  const textArea = document.getElementById("bulk-json");
 
-const json =
-JSON.parse(text);
+  let json;
 
-await fetch(
-"https://fweb-backend.onrender.com/admin",
-{
-method:"POST",
-headers:{
-"Content-Type":
-"application/json"
-},
-body:JSON.stringify({
-action:
-"bulk_add_study_questions",
-questions:json
-})
-}
-);
+  // ---------------- PARSE SAFELY ----------------
+  try {
+    json = JSON.parse(textArea.value);
+  } catch (err) {
+    alert("❌ Invalid JSON format");
+    return;
+  }
 
-alert("Bulk upload done");
+  if (!Array.isArray(json) || json.length === 0) {
+    alert("❌ JSON must be an array of questions");
+    return;
+  }
 
-}
-);
+  // ---------------- UI LOADING STATE ----------------
+  btn.disabled = true;
+  btn.textContent = "Uploading...";
+  btn.style.opacity = "0.6";
+
+  textArea.style.opacity = "0.4";
+  textArea.disabled = true;
+
+  try {
+
+    const res = await fetch(
+      "https://fweb-backend.onrender.com/admin",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          action: "bulk_add_study_questions",
+          questions: json
+        })
+      }
+    );
+
+    const data = await res.json();
+
+    if (data.success || data.message || !data.error) {
+      alert(`✅ Uploaded ${json.length} questions successfully`);
+    } else {
+      alert("❌ Upload failed: " + (data.error || "Unknown error"));
+    }
+
+  } catch (err) {
+    console.error(err);
+    alert("❌ Network error while uploading");
+
+  } finally {
+    // ---------------- RESET UI ----------------
+    btn.disabled = false;
+    btn.textContent = "Upload";
+    btn.style.opacity = "1";
+
+    textArea.style.opacity = "1";
+    textArea.disabled = false;
+  }
+
+});
