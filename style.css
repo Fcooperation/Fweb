@@ -1,0 +1,166 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+body {
+  background: white;
+  color: black;
+}
+
+/* TOP BAR */
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  border-bottom: 1px solid #eee;
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 1000;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: bold;
+}
+
+.logo-box {
+  width: 32px;
+  height: 32px;
+  background: black;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+
+.menu-btn {
+  font-size: 24px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* DROPDOWN */
+.dropdown {
+  position: absolute;
+  top: 60px;
+  left: 0;
+  width: 100%;
+  background: white;
+  border-bottom: 1px solid #eee;
+  display: none;
+  flex-direction: column;
+  padding: 10px 0;
+}
+
+.dropdown a {
+  padding: 12px 20px;
+  text-decoration: none;
+  color: black;
+  font-weight: 500;
+}
+
+.dropdown a:hover {
+  background: #f5f5f5;
+}
+
+.auth-row {
+  display: flex;
+  gap: 10px;
+  padding: 15px 20px;
+}
+
+.signup {
+  background: #1d9bf0;
+  color: white;
+  padding: 10px 14px;
+  border-radius: 8px;
+  text-decoration: none;
+}
+
+.login {
+  background: white;
+  border: 1px solid #ccc;
+  padding: 10px 14px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: black;
+}
+
+/* HERO */
+.hero {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.hero h1 {
+  font-size: 32px;
+  margin-bottom: 10px;
+}
+
+.hero p {
+  color: #555;
+  max-width: 600px;
+  margin: auto;
+}
+
+.cta {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.btn {
+  padding: 12px 16px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.btn.black {
+  background: black;
+  color: white;
+}
+
+.btn.white {
+  background: white;
+  border: 1px solid black;
+  color: black;
+}
+
+/* FEATURES */
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 15px;
+  padding: 40px 20px;
+}
+
+.card {
+  border: 1px solid #eee;
+  padding: 20px;
+  border-radius: 10px;
+  background: #fff;
+}
+
+/* FOOTER */
+.footer {
+  text-align: center;
+  padding: 40px 20px;
+  border-top: 1px solid #eee;
+  color: #555;
+}
+
+.footer a {
+  color: #1d9bf0;
+  text-decoration: none;
+}
