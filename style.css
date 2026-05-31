@@ -48,7 +48,7 @@ body {
   cursor: pointer;
 }
 
-/* DROPDOWN */
+/* DROPDOWN (ANIMATED SLIDE) */
 .dropdown {
   position: absolute;
   top: 60px;
@@ -56,9 +56,25 @@ body {
   width: 100%;
   background: white;
   border-bottom: 1px solid #eee;
-  display: none;
+
+  display: flex;
   flex-direction: column;
+
   padding: 10px 0;
+
+  /* animation system */
+  transform: translateY(-20px);
+  opacity: 0;
+  pointer-events: none;
+
+  transition: all 0.25s ease;
+}
+
+/* ACTIVE STATE */
+.dropdown.show {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .dropdown a {
