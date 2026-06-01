@@ -20,3 +20,59 @@ body {
   background: black;
   transform: scaleX(-1);
 }
+/* CONTROL BAR (floating overlay) */
+#controls {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  background: rgba(255,255,255,0.8);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  border-radius: 20px;
+  z-index: 9999;
+  backdrop-filter: blur(10px);
+}
+
+/* BUTTONS */
+#controls button {
+  border: none;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* UPLOAD BUTTON (blue) */
+#upload-btn {
+  background: #1d9bf0;
+  color: white;
+}
+
+/* RECORD BUTTON */
+#record-btn {
+  background: red;
+  color: white;
+}
+
+/* SWITCH BUTTON */
+#switch-btn {
+  background: black;
+  color: white;
+}
+
+/* CAMERA */
+#camera-container {
+  position: fixed;
+  width: 100vw;
+  height: 100vh;
+}
+
+#camera {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
