@@ -14,51 +14,48 @@ thumbnail.src = draft?.thumbnail || "";
 
 postBtn.onclick = () => {
 
+  // get draft from previous page
+  const draft = JSON.parse(localStorage.getItem("fvid_draft"));
+  if (!draft) return;
+
+  // -----------------------------
+  // 1. BUILD FINAL PAYLOAD
+  // -----------------------------
   const payload = {
-    video: draft.video,
+    uploadId: draft.uploadId,
+
+    video: draft.videoURL,
     thumbnail: draft.thumbnail,
+
     caption: caption.value,
     details: details.value,
     category: category.value,
     language: language.value,
-    hashtags: hashtags.value.split(",").map(t => t.trim()),
-    createdAt: Date.now()
+
+    hashtags: hashtags.value
+      ? hashtags.value.split(",").map(t => t.trim())
+      : [],
+
+    createdAt: Date.now(),
+    status: "ready_to_upload"
   };
 
-  // store upload task locally (for monitoring page)
-  const uploadId = "fvid_" + Date.now();
+  // -----------------------------
+  // 2. SAVE TO LOCAL STORAGE (UPLOAD QUEUE)
+  // -----------------------------
+  localStorage.setItem(
+    payload.uploadId,
+    JSON.stringify({
+      status: "ready_to_upload",
+      data: payload
+    })
+  );
 
-  localStorage.setItem(uploadId, JSON.stringify({
-    status: "uploading",
-    data: payload
-  }));
+  // track current item (for feed monitoring)
+  localStorage.setItem("current_upload", payload.uploadId);
 
-  localStorage.setItem("current_upload", uploadId);
-
-  // send to backend (NON BLOCKING)
-  fetch("https://fweb-backend.onrender.com/fvids", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(payload)
-  }).then(res => res.json())
-    .then(data => {
-
-      localStorage.setItem(uploadId, JSON.stringify({
-        status: "done",
-        response: data
-      }));
-
-    }).catch(err => {
-
-      localStorage.setItem(uploadId, JSON.stringify({
-        status: "failed",
-        error: err.message
-      }));
-
-    });
-
-  // immediately go to feed page
+  // -----------------------------
+  // 3. GO TO FEED (NO UPLOAD)
+  // -----------------------------
   window.location.href = "fvids.html";
 };

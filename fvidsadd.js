@@ -141,21 +141,24 @@ function showPreview(url) {
 
 // Post video function
 postBtn.onclick = async () => {
-
   if (!recordedBlob) return;
 
   postBtn.textContent = "Processing...";
 
-  // 1. CREATE VIDEO URL
+  // -----------------------------
+  // 1. CREATE TEMP VIDEO URL
+  // -----------------------------
   const videoURL = URL.createObjectURL(recordedBlob);
 
+  // -----------------------------
   // 2. CREATE THUMBNAIL
+  // -----------------------------
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
 
   const tempVideo = document.createElement("video");
   tempVideo.src = videoURL;
-  tempVideo.currentTime = 1; // capture at 1 sec
+  tempVideo.currentTime = 1;
 
   await new Promise(resolve => {
     tempVideo.onloadeddata = () => resolve();
@@ -168,16 +171,25 @@ postBtn.onclick = async () => {
 
   const thumbnail = canvas.toDataURL("image/jpeg", 0.7);
 
-  // 3. SAVE TEMP DATA
-  const fvidDraft = {
-    video: videoURL,
-    thumbnail: thumbnail,
-    createdAt: Date.now()
-  };
+  // -----------------------------
+  // 3. CREATE DRAFT ID
+  // -----------------------------
+  const uploadId = "fvid_" + Date.now();
 
-  localStorage.setItem("fvid_draft", JSON.stringify(fvidDraft));
+  // -----------------------------
+  // 4. SAVE DRAFT (NO UPLOAD YET)
+  // -----------------------------
+  localStorage.setItem("fvid_draft", JSON.stringify({
+    uploadId,
+    videoURL,        // temporary preview only
+    thumbnail,
+    createdAt: Date.now(),
+    status: "draft"
+  }));
 
-  // 4. GO TO DETAILS PAGE
+  // -----------------------------
+  // 5. MOVE TO DETAILS PAGE
+  // -----------------------------
   window.location.href = "fvidsdetails.html";
 };
 
