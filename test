@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>FVIDS Test Storage</title>
+<style>
+  body {
+    font-family: Arial;
+    background: #111;
+    color: white;
+    padding: 20px;
+  }
+
+  pre {
+    background: #222;
+    padding: 10px;
+    border-radius: 10px;
+    overflow-x: auto;
+  }
+
+  button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 8px;
+    background: #1d9bf0;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+</style>
+</head>
+
+<body>
+
+<h2>🔍 FVID Draft Storage Checker</h2>
+
+<button onclick="checkDraft()">Check fvid_draft</button>
+<button onclick="clearDraft()">Clear fvid_draft</button>
+
+<h3>Result:</h3>
+<pre id="output">Click check to view data...</pre>
+
+<script>
+function checkDraft() {
+  const data = localStorage.getItem("fvid_draft");
+
+  if (!data) {
+    document.getElementById("output").textContent = "❌ No fvid_draft found in localStorage";
+    return;
+  }
+
+  try {
+    const parsed = JSON.parse(data);
+    document.getElementById("output").textContent =
+      JSON.stringify(parsed, null, 2);
+  } catch (err) {
+    document.getElementById("output").textContent =
+      "⚠️ Error parsing data: " + err.message;
+  }
+}
+
+function clearDraft() {
+  localStorage.removeItem("fvid_draft");
+  document.getElementById("output").textContent =
+    "🧹 fvid_draft cleared";
+}
+</script>
+
+</body>
+</html>
