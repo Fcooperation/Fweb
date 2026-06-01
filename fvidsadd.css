@@ -76,3 +76,30 @@ body {
   height: 100%;
   object-fit: cover;
 }
+/* PREVIEW SCREEN */
+#preview-screen {
+  position: fixed;
+  inset: 0;
+  background: black;
+  display: none;
+  z-index: 9000;
+}
+
+#preview-video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: black;
+}
+
+/* HIDE CONTROLS */
+#controls.hidden {
+  display: none;
+}
+
+/* POST BUTTON */
+#post-btn {
+  display: none;
+  background: #1d9bf0;
+  color: white;
+}

@@ -6,6 +6,22 @@ const video = document.getElementById("camera");
 const uploadBtn = document.getElementById("upload-btn");
 const recordBtn = document.getElementById("record-btn");
 const switchBtn = document.getElementById("switch-btn");
+const controls = document.getElementById("controls");
+
+const previewScreen =
+document.getElementById("preview-screen");
+
+const previewVideo =
+document.getElementById("preview-video");
+
+// Post button 
+const postBtn =
+document.createElement("button");
+
+postBtn.id = "post-btn";
+postBtn.textContent = "Post";
+
+controls.appendChild(postBtn);
 
 let mediaRecorder;
 let chunks = [];
@@ -57,7 +73,10 @@ uploadBtn.onclick = () => {
     if (!file) return;
 
     recordedBlob = file;
-    alert("File selected (ready to upload)");
+    const url =
+URL.createObjectURL(file);
+
+showPreview(url);
   };
 
   input.click();
@@ -75,7 +94,10 @@ recordBtn.onclick = () => {
 
     mediaRecorder.onstop = () => {
       recordedBlob = new Blob(chunks, { type: "video/mp4" });
-      alert("Recording done (ready to upload)");
+      const url =
+URL.createObjectURL(recordedBlob);
+
+showPreview(url);
     };
 
     mediaRecorder.start();
@@ -86,4 +108,67 @@ recordBtn.onclick = () => {
     mediaRecorder.stop();
     recordBtn.textContent = "● Record";
   }
+};
+
+// Show preview 
+function showPreview(url) {
+
+  previewVideo.src = url;
+
+  previewScreen.style.display =
+  "block";
+
+  controls.classList.add("hidden");
+
+  postBtn.style.display =
+  "block";
+}
+
+// Post video function
+postBtn.onclick = async () => {
+
+  if (!recordedBlob) return;
+
+  const formData =
+  new FormData();
+
+  formData.append(
+    "file",
+    recordedBlob,
+    "video.mp4"
+  );
+
+  try {
+
+    postBtn.textContent =
+    "Uploading...";
+
+    const res =
+    await fetch(
+      "https://fweb-backend.onrender.com/fvids",
+      {
+        method: "POST",
+        body: formData
+      }
+    );
+
+    const data =
+    await res.json();
+
+    console.log(data);
+
+    alert("Upload successful");
+
+    location.reload();
+
+  } catch (err) {
+
+    console.error(err);
+
+    alert("Upload failed");
+
+    postBtn.textContent =
+    "Post";
+  }
+
 };
