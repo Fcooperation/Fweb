@@ -2,6 +2,7 @@ let stream;
 let mediaRecorder;
 let chunks = [];
 let recordedBlob = null;
+let currentFacingMode = "user"; // front camera default
 
 const video = document.getElementById("camera");
 const recordBtn = document.getElementById("record-btn");
@@ -15,14 +16,44 @@ const postBtn = document.getElementById("post-btn");
 
 async function startCamera() {
   try {
-    stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+    }
+
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: currentFacingMode },
+      audio: true
+    });
+
     video.srcObject = stream;
+
   } catch (err) {
     alert("Camera access denied or not supported");
   }
 }
-
 startCamera();
+
+// Switch button 
+const switchBtn = document.getElementById("switch-cam");
+
+switchBtn.onclick = () => {
+  currentFacingMode = currentFacingMode === "user" ? "environment" : "user";
+  startCamera();
+};
+
+//Cancel button 
+const cancelBtn = document.getElementById("cancel-btn");
+
+cancelBtn.onclick = () => {
+  recordedBlob = null;
+  previewVideo.src = "";
+
+  previewContainer.classList.remove("fullscreen");
+  previewContainer.style.display = "none";
+
+  cancelBtn.style.display = "none";
+};
 
 /* ---------------- RECORD ---------------- */
 
@@ -44,7 +75,10 @@ recordBtn.onclick = () => {
       const url = URL.createObjectURL(recordedBlob);
       previewVideo.src = url;
 
-      previewContainer.style.display = "block";
+      previewContainer.style.display = "flex";
+previewContainer.classList.add("fullscreen");
+
+cancelBtn.style.display = "block";
     };
 
     mediaRecorder.start();
@@ -76,7 +110,10 @@ fileInput.onchange = (e) => {
   const url = URL.createObjectURL(file);
   previewVideo.src = url;
 
-  previewContainer.style.display = "block";
+  previewContainer.style.display = "flex";
+previewContainer.classList.add("fullscreen");
+
+cancelBtn.style.display = "block";
 };
 
 /* ---------------- POST ---------------- */
@@ -103,6 +140,14 @@ postBtn.onclick = async () => {
     alert("Upload successful!");
 
     console.log(data);
+    
+    recordedBlob = null;
+previewVideo.src = "";
+
+previewContainer.classList.remove("fullscreen");
+previewContainer.style.display = "none";
+
+cancelBtn.style.display = "none";
 
   } catch (err) {
     alert("Upload failed");
