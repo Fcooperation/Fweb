@@ -16,12 +16,7 @@ document.getElementById("preview-video");
 
 // Post button 
 const postBtn =
-document.createElement("button");
-
-postBtn.id = "post-btn";
-postBtn.textContent = "Post";
-
-controls.appendChild(postBtn);
+document.getElementById("post-btn");
 
 let mediaRecorder;
 let chunks = [];
@@ -118,10 +113,10 @@ function showPreview(url) {
   previewScreen.style.display =
   "block";
 
-  controls.classList.add("hidden");
-
-  postBtn.style.display =
-  "block";
+uploadBtn.style.display = "none";
+recordBtn.style.display = "none";
+switchBtn.style.display = "none";
+postBtn.style.display = "block";
 }
 
 // Post video function
