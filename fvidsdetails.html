@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FVID Details</title>
+<link rel="stylesheet" href="fvidsdetails.css">
+</head>
+
+<body>
+
+<div class="container">
+
+  <!-- preview -->
+  <div class="preview">
+    <img id="thumbnail" />
+  </div>
+
+  <!-- form -->
+  <div class="form">
+
+    <input id="caption" placeholder="Write a caption..." />
+
+    <textarea id="details" placeholder="Details about this video..."></textarea>
+
+    <!-- category -->
+    <select id="category">
+      <option value="">Select Category</option>
+      <option>Entertainment</option>
+      <option>Education</option>
+      <option>Comedy</option>
+      <option>Tech</option>
+      <option>Sports</option>
+      <option>Music</option>
+      <option>Lifestyle</option>
+    </select>
+
+    <!-- language -->
+    <select id="language">
+      <option value="">Language</option>
+      <option>English</option>
+      <option>Nigerian Pidgin</option>
+      <option>Yoruba</option>
+      <option>Igbo</option>
+      <option>Hausa</option>
+    </select>
+
+    <!-- hashtags -->
+    <input id="hashtags" placeholder="#tags (comma separated)" />
+
+    <button id="post-btn">Post</button>
+
+  </div>
+
+</div>
+
+<script src="fvidsdetails.js"></script>
+</body>
+</html>

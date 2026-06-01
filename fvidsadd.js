@@ -144,48 +144,41 @@ postBtn.onclick = async () => {
 
   if (!recordedBlob) return;
 
-  const formData =
-  new FormData();
+  postBtn.textContent = "Processing...";
 
-  formData.append(
-    "file",
-    recordedBlob,
-    "video.mp4"
-  );
+  // 1. CREATE VIDEO URL
+  const videoURL = URL.createObjectURL(recordedBlob);
 
-  try {
+  // 2. CREATE THUMBNAIL
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
 
-    postBtn.textContent =
-    "Uploading...";
+  const tempVideo = document.createElement("video");
+  tempVideo.src = videoURL;
+  tempVideo.currentTime = 1; // capture at 1 sec
 
-    const res =
-    await fetch(
-      "https://fweb-backend.onrender.com/fvids",
-      {
-        method: "POST",
-        body: formData
-      }
-    );
+  await new Promise(resolve => {
+    tempVideo.onloadeddata = () => resolve();
+  });
 
-    const data =
-    await res.json();
+  canvas.width = tempVideo.videoWidth;
+  canvas.height = tempVideo.videoHeight;
 
-    console.log(data);
+  ctx.drawImage(tempVideo, 0, 0, canvas.width, canvas.height);
 
-    alert("Upload successful");
+  const thumbnail = canvas.toDataURL("image/jpeg", 0.7);
 
-    location.reload();
+  // 3. SAVE TEMP DATA
+  const fvidDraft = {
+    video: videoURL,
+    thumbnail: thumbnail,
+    createdAt: Date.now()
+  };
 
-  } catch (err) {
+  localStorage.setItem("fvid_draft", JSON.stringify(fvidDraft));
 
-    console.error(err);
-
-    alert("Upload failed");
-
-    postBtn.textContent =
-    "Post";
-  }
-
+  // 4. GO TO DETAILS PAGE
+  window.location.href = "fvidsdetails.html";
 };
 
 // Cancel button function 
