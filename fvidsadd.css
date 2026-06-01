@@ -18,7 +18,6 @@ body {
   height: 100%;
   object-fit: cover; /* 🔥 IMPORTANT: fills screen properly */
   background: black;
-  transform: scaleX(-1);
 }
 /* CONTROL BAR (floating overlay) */
 #controls {
@@ -90,6 +89,7 @@ body {
   height: 100%;
   object-fit: contain;
   background: black;
+  transform: scaleX(-1);
 }
 
 /* HIDE CONTROLS */
