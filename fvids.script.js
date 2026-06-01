@@ -46,3 +46,6 @@ function createUploadItem() {
 
   return { item, info };
 }
+window.onload = () => {
+  createUploadItem();
+};
