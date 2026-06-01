@@ -3,41 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Upload FVID</title>
+<title>FVID Camera</title>
 <link rel="stylesheet" href="fvidsadd.css">
 </head>
 
 <body>
 
-<!-- CAMERA VIEW -->
+<!-- CAMERA ONLY -->
 <div id="camera-container">
-
   <video id="camera" autoplay playsinline></video>
-  <!-- SWITCH CAMERA -->
-<button id="switch-cam">🔄</button>
-
-<!-- CANCEL BUTTON (hidden initially) -->
-<button id="cancel-btn">✖</button>
-
-  <div id="overlay"></div>
-
-  <!-- RECORD BUTTON -->
-  <button id="record-btn">●</button>
-
 </div>
-
-<!-- FILE UPLOAD -->
-<input type="file" id="file-input" accept="video/*,image/*">
-
-<button id="upload-picker">＋</button>
-
-<!-- PREVIEW -->
-<div id="preview-container">
-  <video id="preview-video" controls></video>
-</div>
-
-<!-- POST BUTTON -->
-<button id="post-btn">Post</button>
 
 <script src="fvidsadd.js"></script>
 </body>
