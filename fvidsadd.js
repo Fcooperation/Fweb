@@ -116,11 +116,8 @@ function showPreview(url) {
 
   previewVideo.src = url;
 
-  if (currentFacingMode === "user") {
-    previewVideo.style.transform = "scaleX(-1)";
-  } else {
-    previewVideo.style.transform = "scaleX(1)";
-  }
+  // DON'T mirror preview
+  previewVideo.style.transform = "scaleX(1)";
 
   previewScreen.style.display = "block";
 
