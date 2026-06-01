@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Upload FVID</title>
+<link rel="stylesheet" href="fvidsadd.css">
+</head>
+
+<body>
+
+<!-- CAMERA VIEW -->
+<div id="camera-container">
+
+  <video id="camera" autoplay playsinline></video>
+
+  <div id="overlay"></div>
+
+  <!-- RECORD BUTTON -->
+  <button id="record-btn">●</button>
+
+</div>
+
+<!-- FILE UPLOAD -->
+<input type="file" id="file-input" accept="video/*,image/*">
+
+<button id="upload-picker">＋</button>
+
+<!-- PREVIEW -->
+<div id="preview-container">
+  <video id="preview-video" controls></video>
+</div>
+
+<!-- POST BUTTON -->
+<button id="post-btn">Post</button>
+
+<script src="fvidsadd.js"></script>
+</body>
+</html>
