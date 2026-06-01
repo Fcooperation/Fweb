@@ -119,6 +119,11 @@ showPreview(url);
 
 // Show preview 
 function showPreview(url) {
+  if (stream) {
+  stream.getAudioTracks().forEach(track => {
+    track.enabled = false;
+  });
+}
 
   previewVideo.src = url;
 
@@ -185,6 +190,11 @@ postBtn.onclick = async () => {
 
 // Cancel button function 
 cancelBtn.onclick = () => {
+  if (stream) {
+  stream.getAudioTracks().forEach(track => {
+    track.enabled = true;
+  });
+}
 
   previewVideo.pause();
 
