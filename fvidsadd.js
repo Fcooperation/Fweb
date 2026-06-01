@@ -34,10 +34,16 @@ async function startCamera() {
       video: {
         facingMode: { ideal: currentFacingMode }
       },
-      audio: false
+      audio: true
     });
 
     video.srcObject = stream;
+    
+    if (currentFacingMode === "user") {
+  video.style.transform = "scaleX(-1)";
+} else {
+  video.style.transform = "scaleX(1)";
+}
 
   } catch (err) {
     console.error(err);
@@ -88,7 +94,7 @@ recordBtn.onclick = () => {
     mediaRecorder.ondataavailable = e => chunks.push(e.data);
 
     mediaRecorder.onstop = () => {
-      recordedBlob = new Blob(chunks, { type: "video/mp4" });
+      recordedBlob = new Blob(chunks);
       const url =
 URL.createObjectURL(recordedBlob);
 
@@ -110,13 +116,19 @@ function showPreview(url) {
 
   previewVideo.src = url;
 
-  previewScreen.style.display =
-  "block";
+  if (currentFacingMode === "user") {
+    previewVideo.style.transform = "scaleX(-1)";
+  } else {
+    previewVideo.style.transform = "scaleX(1)";
+  }
 
-uploadBtn.style.display = "none";
-recordBtn.style.display = "none";
-switchBtn.style.display = "none";
-postBtn.style.display = "block";
+  previewScreen.style.display = "block";
+
+  uploadBtn.style.display = "none";
+  recordBtn.style.display = "none";
+  switchBtn.style.display = "none";
+
+  postBtn.style.display = "block";
 }
 
 // Post video function
