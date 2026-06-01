@@ -73,3 +73,47 @@ else{
   });
 
 }
+
+const toast =
+document.getElementById(
+  "fai-toast"
+);
+
+setTimeout(() => {
+
+  toast.classList.add(
+    "show"
+  );
+
+}, 1000);
+
+setTimeout(() => {
+
+  toast.classList.remove(
+    "show"
+  );
+
+}, 7000);
+
+document
+.getElementById("fai-btn")
+.onclick = () => {
+
+  if(
+    !resultData ||
+    !resultData.review
+  ){
+    return;
+  }
+
+  localStorage.setItem(
+    "fai_review",
+    JSON.stringify(
+      resultData.review
+    )
+  );
+
+  window.location.href =
+    "fai.html";
+
+};

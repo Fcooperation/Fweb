@@ -228,6 +228,123 @@ if (newChatBtn) {
 
 }
 
+/* ---------- QUIZ REVIEW AUTO EXPLAIN ---------- */
+
+const reviewData =
+localStorage.getItem("fai_review");
+
+if (reviewData) {
+
+  try {
+
+    const review =
+    JSON.parse(reviewData);
+
+    // 1. user message first
+    messages.push({
+      role: "user",
+      text: "Explain my quiz answers in a simple way."
+    });
+
+    renderMessages();
+    saveMessages();
+
+    // 2. SHOW TYPING IMMEDIATELY (IMPORTANT)
+    showTyping();
+
+    // 3. timeout warning system
+    let timeoutWarning;
+
+    const timeout = setTimeout(() => {
+
+      const typing = document.getElementById("typing-indicator");
+
+      if (typing) {
+
+        const warning =
+        document.createElement("div");
+
+        warning.className = "message system";
+
+        warning.innerHTML = `
+          ⏳ This is taking longer than usual...<br>
+          <span id="reload-fai" style="color:#1d9bf0; text-decoration:underline; cursor:pointer;">
+            Reload to reset
+          </span>
+        `;
+
+        chatBox.appendChild(warning);
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        document.getElementById("reload-fai").onclick = () => {
+          location.reload();
+        };
+      }
+
+    }, 30000);
+
+    // 4. request
+    fetch(
+      `https://fweb-backend.onrender.com/fai?q=${encodeURIComponent(
+        `
+You are FAI helping a student.
+
+Give short but very clear explanations.
+
+For each question:
+- Correct answer
+- Why it's correct
+- Simple explanation
+
+Quiz Review:
+${JSON.stringify(review)}
+        `
+      )}`
+    )
+    .then(res => res.json())
+    .then(data => {
+
+      clearTimeout(timeout);
+
+      removeTyping();
+
+      messages.push({
+        role: "ai",
+        text: data.answer || "No explanation received."
+      });
+
+      renderMessages();
+      saveMessages();
+
+      localStorage.removeItem("fai_review");
+
+    })
+    .catch(() => {
+
+      clearTimeout(timeout);
+      removeTyping();
+
+      messages.push({
+        role: "ai",
+        text: "Failed to generate explanations."
+      });
+
+      renderMessages();
+      saveMessages();
+
+      localStorage.removeItem("fai_review");
+
+    });
+
+  } catch(err) {
+
+    console.error(err);
+    localStorage.removeItem("fai_review");
+
+  }
+
+}
+
 /* ---------- START ---------- */
 
 renderMessages();
