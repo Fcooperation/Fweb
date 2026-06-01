@@ -18,6 +18,12 @@ document.getElementById("preview-video");
 const postBtn =
 document.getElementById("post-btn");
 
+// Cancel button 
+const cancelBtn =
+document.getElementById(
+  "cancel-preview"
+);
+
 let mediaRecorder;
 let chunks = [];
 let recordedBlob = null;
@@ -175,4 +181,29 @@ postBtn.onclick = async () => {
     "Post";
   }
 
+};
+
+// Cancel button function 
+cancelBtn.onclick = () => {
+
+  previewVideo.pause();
+
+  previewVideo.src = "";
+
+  recordedBlob = null;
+
+  previewScreen.style.display =
+  "none";
+
+  uploadBtn.style.display =
+  "block";
+
+  recordBtn.style.display =
+  "block";
+
+  switchBtn.style.display =
+  "block";
+
+  postBtn.style.display =
+  "none";
 };
