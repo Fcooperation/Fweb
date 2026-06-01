@@ -18,4 +18,5 @@ body {
   height: 100%;
   object-fit: cover; /* 🔥 IMPORTANT: fills screen properly */
   background: black;
+  transform: scaleX(-1);
 }
