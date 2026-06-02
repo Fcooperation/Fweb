@@ -3,6 +3,10 @@ const feed = document.getElementById("video-feed");
 const uploadQueue = document.getElementById("upload-queue");
 const videoCache = {};
 
+function isLoggedIn() {
+  return !!localStorage.getItem("faccount");
+}
+
 let videos = [];
 let currentIndex = 0;
 
@@ -208,6 +212,36 @@ function createUploadItem() {
   uploadQueue.appendChild(item);
 
   return { item, info };
+}
+
+// Plus button logic 
+function handlePlusClick(e) {
+
+  if (!isLoggedIn()) {
+    showToast("Must sign-in to access this feature");
+    return;
+  }
+
+  window.location.href = "fvidsadd.html";
+}
+
+// toast message 
+function showToast(message) {
+
+  let toast = document.getElementById("toast");
+
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "toast";
+    document.body.appendChild(toast);
+  }
+
+  toast.textContent = message;
+  toast.className = "toast show";
+
+  setTimeout(() => {
+    toast.className = "toast";
+  }, 2500);
 }
 
 // ---------------- INIT ----------------
