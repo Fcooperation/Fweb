@@ -140,56 +140,12 @@ function showPreview(url) {
 }
 
 // Post video function
-postBtn.onclick = async () => {
+postBtn.onclick = () => {
 
   if (!recordedBlob) return;
 
-  try {
-
-    postBtn.disabled = true;
-    postBtn.textContent = "Uploading...";
-
-    const formData = new FormData();
-
-    formData.append(
-      "file",
-      recordedBlob,
-      "video.mp4"
-    );
-
-    console.log("Sending request...");
-
-    const res = await fetch(
-      "https://fweb-backend.onrender.com/fvids",
-      {
-        method: "POST",
-        body: formData
-      }
-    );
-
-    console.log("Response received:", res.status);
-
-    const data = await res.json();
-
-    console.log("JSON received:", data);
-
-    if (!res.ok || !data.success) {
-      throw new Error(data.error || "Upload failed");
-    }
-
-    console.log("SUCCESS");
-
-    postBtn.textContent = "Uploaded ✓";
-
-  } catch (err) {
-
-    console.error("UPLOAD ERROR:", err);
-
-    postBtn.disabled = false;
-    postBtn.textContent = "Post";
-
-  }
-
+  document.getElementById("upload-overlay").classList.remove("hidden");
+  document.getElementById("details-sheet").classList.remove("hidden");
 };
 
 // Cancel button function 
@@ -220,4 +176,67 @@ cancelBtn.onclick = () => {
 
   postBtn.style.display =
   "none";
+};
+
+// Confirm upload logic 
+document.getElementById("confirm-upload").onclick = async () => {
+
+  const category = document.getElementById("category").value;
+  const language = document.getElementById("language").value;
+  const hashtags = document.getElementById("hashtags").value;
+  const details = document.getElementById("details").value;
+
+  if (!recordedBlob) return;
+
+  // LOCK UI
+  document.getElementById("details-sheet").classList.add("hidden");
+  document.getElementById("upload-loader").classList.remove("hidden");
+
+  let percent = 0;
+  const percentEl = document.getElementById("upload-percent");
+
+  // fake progress (backend will replace later)
+  const interval = setInterval(() => {
+    if (percent < 90) {
+      percent += 5;
+      percentEl.innerText = percent + "%";
+    }
+  }, 300);
+
+  // upload
+  const formData = new FormData();
+  formData.append("file", recordedBlob, "video.mp4");
+
+  const res = await fetch("https://fweb-backend.onrender.com/fvids", {
+    method: "POST",
+    body: formData
+  });
+
+  const data = await res.json();
+
+  clearInterval(interval);
+  percentEl.innerText = "100%";
+
+  if (!data.success) {
+    alert("Upload failed");
+    location.reload();
+    return;
+  }
+
+  // SAVE FINAL META TO LOCAL STORAGE (for now)
+  const uploadData = {
+    video_url: data.video_url,
+    category,
+    language,
+    hashtags: hashtags.split(",").map(t => t.trim()),
+    details,
+    createdAt: Date.now(),
+    user_id: localStorage.getItem("account_id") || null
+  };
+
+  localStorage.setItem("last_upload", JSON.stringify(uploadData));
+
+  setTimeout(() => {
+    window.location.href = "fvids.html";
+  }, 800);
 };

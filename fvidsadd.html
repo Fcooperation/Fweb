@@ -40,5 +40,44 @@
 </div>
 
 <script src="fvidsadd.js"></script>
+<!-- OVERLAY (blocks everything) -->
+<div id="upload-overlay" class="hidden"></div>
+
+<!-- DETAILS BOTTOM SHEET -->
+<div id="details-sheet" class="hidden">
+
+  <h3>Complete Upload</h3>
+
+  <select id="category">
+    <option value="">Select Category</option>
+    <option>Comedy</option>
+    <option>Gaming</option>
+    <option>Education</option>
+    <option>Music</option>
+    <option>Vlog</option>
+  </select>
+
+  <select id="language">
+    <option value="">Select Language</option>
+    <option>English</option>
+    <option>Pidgin</option>
+    <option>Yoruba</option>
+    <option>Igbo</option>
+  </select>
+
+  <input id="hashtags" placeholder="hashtags (comma separated)" />
+  <textarea id="details" placeholder="video details"></textarea>
+
+  <button id="confirm-upload">Post Video</button>
+</div>
+
+<!-- LOADING SCREEN -->
+<div id="upload-loader" class="hidden">
+  <div class="loader-balls">
+    <div></div><div></div><div></div>
+  </div>
+
+  <div id="upload-percent">0%</div>
+</div>
 </body>
 </html>
