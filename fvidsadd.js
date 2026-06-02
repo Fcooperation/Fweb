@@ -141,56 +141,68 @@ function showPreview(url) {
 
 // Post video function
 postBtn.onclick = async () => {
+
   if (!recordedBlob) return;
 
-  postBtn.textContent = "Processing...";
+  try {
 
-  // -----------------------------
-  // 1. CREATE TEMP VIDEO URL
-  // -----------------------------
-  const videoURL = URL.createObjectURL(recordedBlob);
+    postBtn.disabled = true;
+    postBtn.textContent = "Uploading...";
 
-  // -----------------------------
-  // 2. CREATE THUMBNAIL
-  // -----------------------------
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
+    const formData = new FormData();
 
-  const tempVideo = document.createElement("video");
-  tempVideo.src = videoURL;
-  tempVideo.currentTime = 1;
+    formData.append(
+      "file",
+      recordedBlob,
+      "video.mp4"
+    );
 
-  await new Promise(resolve => {
-    tempVideo.onloadeddata = () => resolve();
-  });
+    const res = await fetch(
+      "https://fweb-backend.onrender.com/fvids",
+      {
+        method: "POST",
+        body: formData
+      }
+    );
 
-  canvas.width = tempVideo.videoWidth;
-  canvas.height = tempVideo.videoHeight;
+    const data = await res.json();
 
-  ctx.drawImage(tempVideo, 0, 0, canvas.width, canvas.height);
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || "Upload failed");
+    }
 
-  const thumbnail = canvas.toDataURL("image/jpeg", 0.7);
+    // Backend confirmed upload
+    postBtn.textContent = "Uploaded ✓";
 
-  // -----------------------------
-  // 3. CREATE DRAFT ID
-  // -----------------------------
-  const uploadId = "fvid_" + Date.now();
+    console.log("Video URL:", data.video_url);
 
-  // -----------------------------
-  // 4. SAVE DRAFT (NO UPLOAD YET)
-  // -----------------------------
-  localStorage.setItem("fvid_draft", JSON.stringify({
-    uploadId,
-    videoURL,        // temporary preview only
-    thumbnail,
-    createdAt: Date.now(),
-    status: "draft"
-  }));
+    // Save upload info if needed
+    localStorage.setItem(
+      "fvid_upload",
+      JSON.stringify({
+        video_url: data.video_url,
+        public_id: data.public_id,
+        uploadedAt: Date.now()
+      })
+    );
 
-  // -----------------------------
-  // 5. MOVE TO DETAILS PAGE
-  // -----------------------------
-  window.location.href = "fvidsdetails.html";
+    setTimeout(() => {
+      window.location.href = "fvidsdetails.html";
+    }, 1000);
+
+  } catch (err) {
+
+    console.error(err);
+
+    postBtn.disabled = false;
+    postBtn.textContent = "Post";
+
+    alert(
+      "Upload failed: " +
+      err.message
+    );
+  }
+
 };
 
 // Cancel button function 
