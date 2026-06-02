@@ -144,18 +144,9 @@ postBtn.onclick = () => {
 
   if (!recordedBlob) return;
 
-  // SHOW OVERLAY + SHEET
   document.getElementById("upload-overlay").classList.remove("hidden");
-  document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("details-sheet").classList.remove("hidden");
 
-  postBtn.onclick = () => {
-    if (!recordedBlob) return;
-
-    document.getElementById("upload-overlay").classList.remove("hidden");
-    document.getElementById("details-sheet").classList.remove("hidden");
-  };
-
-});
 };
 
 // Cancel button function 
