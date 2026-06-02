@@ -204,11 +204,21 @@ document.getElementById("confirm-upload").onclick = async () => {
 
   const formData = new FormData();
 
-  formData.append(
-    "file",
-    recordedBlob,
-    "video.mp4"
-  );
+formData.append("file", recordedBlob, "video.mp4");
+
+// 🔥 ADD ALL METADATA
+formData.append("category", category);
+formData.append("language", language);
+formData.append("details", details);
+formData.append("user_id", localStorage.getItem("account_id") || "");
+
+// hashtags must be string (IMPORTANT for FormData)
+formData.append(
+  "hashtags",
+  JSON.stringify(
+    hashtags.split(",").map(t => t.trim())
+  )
+);
 
   const xhr = new XMLHttpRequest();
 
