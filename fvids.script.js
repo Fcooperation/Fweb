@@ -1,21 +1,127 @@
-// TAB SWITCH (For You only for now)
+// ---------------- VIDEO FEED STATE ----------------
+const feed = document.getElementById("video-feed");
+const uploadQueue = document.getElementById("upload-queue");
+
+let videos = [];
+let currentIndex = 0;
+
+// ---------------- TAB SWITCH ----------------
 function switchTab(tab) {
 
-  const feed = document.getElementById("video-feed");
-  const uploadQueue = document.getElementById("upload-queue");
-
   if (tab === "foryou") {
-
     feed.innerHTML = `
-      <div style="text-align:center; margin-top:20px;">
-        🎬 For You Videos Loading...
+      <div style="text-align:center; margin-top:20px; color:white;">
+        🎬 Loading For You...
       </div>
     `;
 
+    loadVideos();
   }
-
 }
 
+// ---------------- LOAD VIDEOS FROM BACKEND ----------------
+async function loadVideos() {
+
+  try {
+
+    feed.innerHTML = `
+      <div style="text-align:center; margin-top:20px; color:white;">
+        🎬 Fetching videos...
+      </div>
+    `;
+
+    const res = await fetch("https://fweb-backend.onrender.com/fvids");
+    videos = await res.json();
+
+    if (!videos || videos.length === 0) {
+      feed.innerHTML = `
+        <div style="text-align:center; margin-top:20px; color:white;">
+          No videos found
+        </div>
+      `;
+      return;
+    }
+
+    currentIndex = 0;
+    renderVideo(currentIndex);
+
+  } catch (err) {
+    console.error(err);
+    feed.innerHTML = `
+      <div style="text-align:center; margin-top:20px; color:white;">
+        Error loading videos
+      </div>
+    `;
+  }
+}
+
+// ---------------- RENDER SINGLE VIDEO ----------------
+function renderVideo(index) {
+
+  const vid = videos[index];
+  if (!vid) return;
+
+  feed.innerHTML = "";
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "video-wrapper";
+
+  const video = document.createElement("video");
+
+  video.src = vid.video_url;
+  video.className = "video";
+  video.autoplay = true;
+  video.loop = true;
+  video.muted = true;
+  video.playsInline = true;
+
+  // 🔥 FORCE PLAY (IMPORTANT)
+  video.play().catch(err => console.log("Autoplay blocked:", err));
+
+  wrapper.appendChild(video);
+  feed.appendChild(wrapper);
+}
+
+// ---------------- SWIPE LOGIC ----------------
+let startY = 0;
+
+document.addEventListener("touchstart", (e) => {
+  startY = e.touches[0].clientY;
+});
+
+document.addEventListener("touchend", (e) => {
+
+  let endY = e.changedTouches[0].clientY;
+  let diff = startY - endY;
+
+  // swipe up → next
+  if (diff > 50) {
+    nextVideo();
+  }
+
+  // swipe down → previous
+  if (diff < -50) {
+    prevVideo();
+  }
+
+});
+
+// ---------------- NAVIGATION ----------------
+function nextVideo() {
+  if (currentIndex < videos.length - 1) {
+    currentIndex++;
+    renderVideo(currentIndex);
+  }
+}
+
+function prevVideo() {
+  if (currentIndex > 0) {
+    currentIndex--;
+    renderVideo(currentIndex);
+  }
+}
+
+// ---------------- UPLOAD QUEUE (DRAFT UI) ----------------
 function createUploadItem() {
 
   const draft = JSON.parse(localStorage.getItem("fvid_draft"));
@@ -24,9 +130,6 @@ function createUploadItem() {
   const item = document.createElement("div");
   item.className = "upload-item";
 
-  // -----------------------------
-  // THUMBNAIL ONLY (NO FILE OBJECT)
-  // -----------------------------
   const media = document.createElement("img");
   media.src = draft.thumbnail;
   media.className = "upload-thumb";
@@ -46,6 +149,9 @@ function createUploadItem() {
 
   return { item, info };
 }
+
+// ---------------- INIT ----------------
 window.onload = () => {
   createUploadItem();
+  loadVideos(); // auto load For You feed
 };
