@@ -157,6 +157,8 @@ postBtn.onclick = async () => {
       "video.mp4"
     );
 
+    console.log("Sending request...");
+
     const res = await fetch(
       "https://fweb-backend.onrender.com/fvids",
       {
@@ -165,42 +167,27 @@ postBtn.onclick = async () => {
       }
     );
 
+    console.log("Response received:", res.status);
+
     const data = await res.json();
+
+    console.log("JSON received:", data);
 
     if (!res.ok || !data.success) {
       throw new Error(data.error || "Upload failed");
     }
 
-    // Backend confirmed upload
+    console.log("SUCCESS");
+
     postBtn.textContent = "Uploaded ✓";
-
-    console.log("Video URL:", data.video_url);
-
-    // Save upload info if needed
-    localStorage.setItem(
-      "fvid_upload",
-      JSON.stringify({
-        video_url: data.video_url,
-        public_id: data.public_id,
-        uploadedAt: Date.now()
-      })
-    );
-
-    setTimeout(() => {
-      window.location.href = "fvidsdetails.html";
-    }, 1000);
 
   } catch (err) {
 
-    console.error(err);
+    console.error("UPLOAD ERROR:", err);
 
     postBtn.disabled = false;
     postBtn.textContent = "Post";
 
-    alert(
-      "Upload failed: " +
-      err.message
-    );
   }
 
 };
