@@ -176,16 +176,17 @@ body {
 }
 #video-feed {
   position: fixed;
-  top: 0;
+  top: 100px;     /* 👈 space for top bar + tabs */
+  bottom: 70px;   /* 👈 space for bottom nav */
   left: 0;
   width: 100%;
-  height: 100vh;
   background: black;
+  overflow: hidden;
 }
 
 .video-wrapper {
   width: 100%;
-  height: 100vh;
+  height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
