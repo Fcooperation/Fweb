@@ -77,22 +77,24 @@ async function renderVideo(index) {
   video.muted = true;
   video.playsInline = true;
 
-  // 🔥 WAIT FOR VIDEO TO BE READY
+  // 🔥 WAIT UNTIL VIDEO CAN ACTUALLY PLAY SMOOTHLY
   await new Promise((resolve) => {
-    video.onloadeddata = () => resolve();
+    video.oncanplay = () => resolve();
   });
 
   wrapper.appendChild(video);
   feed.appendChild(wrapper);
 
-  loader.style.display = "none";
-
-  // 🔥 NOW PLAY (NO LAG)
   try {
     await video.play();
   } catch (err) {
     console.log("Autoplay blocked:", err);
   }
+
+  // 🔥 give browser 100–200ms to stabilize rendering
+  setTimeout(() => {
+    loader.style.display = "none";
+  }, 150);
 }
 // ---------------- SWIPE LOGIC ----------------
 let startY = 0;
