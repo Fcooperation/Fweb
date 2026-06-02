@@ -167,10 +167,15 @@ body {
   background: black;
   color: white;
   z-index: 2000;
-  display: flex;
+
+  display: none; /* ✅ IMPORTANT FIX */
   flex-direction: column;
   justify-content: center;
   align-items: center;
+}
+
+#upload-loader.show {
+  display: flex;
 }
 
 /* bouncing balls */

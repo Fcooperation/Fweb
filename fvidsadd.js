@@ -146,7 +146,16 @@ postBtn.onclick = () => {
 
   // SHOW OVERLAY + SHEET
   document.getElementById("upload-overlay").classList.remove("hidden");
-  document.getElementById("details-sheet").classList.remove("hidden");
+  document.addEventListener("DOMContentLoaded", () => {
+
+  postBtn.onclick = () => {
+    if (!recordedBlob) return;
+
+    document.getElementById("upload-overlay").classList.remove("hidden");
+    document.getElementById("details-sheet").classList.remove("hidden");
+  };
+
+});
 };
 
 // Cancel button function 
