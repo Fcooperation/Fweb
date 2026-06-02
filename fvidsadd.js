@@ -192,9 +192,6 @@ document.getElementById("confirm-upload").onclick = async () => {
 
   const btn = document.getElementById("confirm-upload");
 
-  btn.disabled = true;
-  btn.textContent = "Uploading... 0%";
-
   const category = document.getElementById("category").value;
   const language = document.getElementById("language").value;
   const hashtags = document.getElementById("hashtags").value;
@@ -202,68 +199,102 @@ document.getElementById("confirm-upload").onclick = async () => {
 
   if (!recordedBlob) return;
 
-  let percent = 0;
-
-  const interval = setInterval(() => {
-    if (percent < 90) {
-      percent += 5;
-      btn.textContent = `Uploading... ${percent}%`;
-    }
-  }, 300);
+  btn.disabled = true;
+  btn.textContent = "Uploading... 0%";
 
   const formData = new FormData();
 
-  formData.append("file", recordedBlob, "video.mp4");
+  formData.append(
+    "file",
+    recordedBlob,
+    "video.mp4"
+  );
 
-  try {
+  const xhr = new XMLHttpRequest();
 
-    const res = await fetch(
-      "https://fweb-backend.onrender.com/fvids",
-      {
-        method: "POST",
-        body: formData
-      }
-    );
+  // REAL upload progress
+  xhr.upload.onprogress = (e) => {
 
-    const data = await res.json();
+    if (e.lengthComputable) {
 
-    clearInterval(interval);
+      const percent = Math.round(
+        (e.loaded / e.total) * 100
+      );
 
-    btn.textContent = "Uploading... 100%";
-
-    if (!data.success) {
-      throw new Error("Upload failed");
+      btn.textContent =
+        `Uploading... ${percent}%`;
     }
+  };
 
-    btn.textContent = "Uploaded ✓";
+  xhr.onload = () => {
 
-    // save data
-    const uploadData = {
-      video_url: data.video_url,
-      category,
-      language,
-      hashtags: hashtags.split(",").map(t => t.trim()),
-      details,
-      createdAt: Date.now(),
-      user_id: localStorage.getItem("account_id") || null
-    };
+    try {
 
-    localStorage.setItem(
-      "last_upload",
-      JSON.stringify(uploadData)
-    );
+      const data =
+        JSON.parse(xhr.responseText);
 
-    setTimeout(() => {
-      window.location.href = "fvids.html";
-    }, 1000);
+      if (
+        xhr.status !== 200 ||
+        !data.success
+      ) {
+        throw new Error(
+          data.error || "Upload failed"
+        );
+      }
 
-  } catch (err) {
+      btn.textContent = "Uploaded ✓";
 
-    clearInterval(interval);
+      const uploadData = {
+        video_url: data.video_url,
+        public_id: data.public_id,
+        category,
+        language,
+        hashtags: hashtags
+          .split(",")
+          .map(t => t.trim()),
+        details,
+        createdAt: Date.now(),
+        user_id:
+          localStorage.getItem(
+            "account_id"
+          ) || null
+      };
+
+      localStorage.setItem(
+        "last_upload",
+        JSON.stringify(uploadData)
+      );
+
+      setTimeout(() => {
+        window.location.href =
+          "fvids.html";
+      }, 1000);
+
+    } catch (err) {
+
+      btn.disabled = false;
+      btn.textContent =
+        "Post Video";
+
+      alert(err.message);
+    }
+  };
+
+  xhr.onerror = () => {
 
     btn.disabled = false;
-    btn.textContent = "Post Video";
+    btn.textContent =
+      "Post Video";
 
-    alert(err.message);
-  }
+    alert(
+      "Network error. Upload failed."
+    );
+  };
+
+  xhr.open(
+    "POST",
+    "https://fweb-backend.onrender.com/fvids"
+  );
+
+  xhr.send(formData);
 };
