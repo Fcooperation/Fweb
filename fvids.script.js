@@ -56,12 +56,10 @@ async function loadVideos() {
 }
 
 // ---------------- RENDER SINGLE VIDEO ----------------
-function renderVideo(index) {
+function renderVideo(index, direction = "next") {
 
   const vid = videos[index];
   if (!vid) return;
-
-  feed.innerHTML = "";
 
   const wrapper = document.createElement("div");
   wrapper.className = "video-wrapper";
@@ -72,57 +70,76 @@ function renderVideo(index) {
   video.className = "video";
   video.loop = true;
   video.muted = false;
-video.play();
   video.playsInline = true;
   video.autoplay = true;
 
   wrapper.appendChild(video);
+
+  // animation
+  wrapper.style.transform = direction === "next"
+    ? "translateY(100%)"
+    : "translateY(-100%)";
+
+  wrapper.style.transition = "transform 0.25s ease";
+
+  feed.innerHTML = "";
   feed.appendChild(wrapper);
 
-  // 🔥 play immediately (no loader blocking)
-  video.play().catch(() => {
-    console.log("Autoplay blocked");
+  requestAnimationFrame(() => {
+    wrapper.style.transform = "translateY(0)";
   });
+
+  video.play().catch(() => {});
 }
 // ---------------- SWIPE LOGIC ----------------
 let startY = 0;
+let isSwiping = false;
 
 document.addEventListener("touchstart", (e) => {
   startY = e.touches[0].clientY;
-});
+  isSwiping = true;
+}, { passive: true });
+
+document.addEventListener("touchmove", (e) => {
+  if (!isSwiping) return;
+
+  // 🔥 STOP browser scroll
+  e.preventDefault();
+}, { passive: false });
 
 document.addEventListener("touchend", (e) => {
+
+  if (!isSwiping) return;
+  isSwiping = false;
 
   let endY = e.changedTouches[0].clientY;
   let diff = startY - endY;
 
   // swipe up → next
-  if (diff > 50) {
+  if (diff > 60) {
     nextVideo();
   }
 
   // swipe down → previous
-  if (diff < -50) {
+  if (diff < -60) {
     prevVideo();
   }
-
 });
 
 // ---------------- NAVIGATION ----------------
 function nextVideo() {
   if (currentIndex < videos.length - 1) {
     currentIndex++;
-    renderVideo(currentIndex);
+    renderVideo(currentIndex, "next");
   }
 }
 
 function prevVideo() {
   if (currentIndex > 0) {
     currentIndex--;
-    renderVideo(currentIndex);
+    renderVideo(currentIndex, "prev");
   }
 }
-
 // ---------------- UPLOAD QUEUE (DRAFT UI) ----------------
 function createUploadItem() {
 
