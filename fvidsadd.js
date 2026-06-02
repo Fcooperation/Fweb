@@ -8,6 +8,10 @@ const recordBtn = document.getElementById("record-btn");
 const switchBtn = document.getElementById("switch-btn");
 const controls = document.getElementById("controls");
 
+function getCurrentUser() {
+  return JSON.parse(localStorage.getItem("faccount"));
+}
+
 const previewScreen =
 document.getElementById("preview-screen");
 
@@ -210,7 +214,15 @@ formData.append("file", recordedBlob, "video.mp4");
 formData.append("category", category);
 formData.append("language", language);
 formData.append("details", details);
-formData.append("user_id", localStorage.getItem("account_id") || "");
+const user = getCurrentUser();
+
+if (!user) {
+  alert("You must be logged in to upload");
+  window.location.href = "login.html";
+  return;
+}
+
+formData.append("user_id", user.id || user.user_id || "");
 
 // hashtags must be string (IMPORTANT for FormData)
 formData.append(
