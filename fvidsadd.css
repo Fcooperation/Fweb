@@ -213,3 +213,24 @@ body {
 .hidden {
   display: none;
 }
+#confirm-upload {
+  width: 100%;
+  margin-top: 15px;
+
+  background: #1d9bf0;
+  color: white;
+
+  border: none;
+  border-radius: 12px;
+
+  padding: 14px;
+
+  font-size: 16px;
+  font-weight: bold;
+
+  cursor: pointer;
+}
+
+#confirm-upload:active {
+  transform: scale(0.98);
+}
