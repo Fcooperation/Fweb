@@ -71,7 +71,8 @@ function renderVideo(index) {
   video.src = vid.video_url;
   video.className = "video";
   video.loop = true;
-  video.muted = true;
+  video.muted = false;
+video.play();
   video.playsInline = true;
   video.autoplay = true;
 
