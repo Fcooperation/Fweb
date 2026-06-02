@@ -1,6 +1,7 @@
 // ---------------- VIDEO FEED STATE ----------------
 const feed = document.getElementById("video-feed");
 const uploadQueue = document.getElementById("upload-queue");
+const videoCache = {};
 
 let videos = [];
 let currentIndex = 0;
@@ -64,14 +65,23 @@ function renderVideo(index, direction = "next") {
   const wrapper = document.createElement("div");
   wrapper.className = "video-wrapper";
 
-  const video = document.createElement("video");
+  let video;
 
+if (videoCache[vid.video_url]) {
+
+  video = videoCache[vid.video_url];
+
+} else {
+
+  video = document.createElement("video");
   video.src = vid.video_url;
-  video.className = "video";
-  video.loop = true;
-  video.muted = false;
-  video.playsInline = true;
-  video.autoplay = true;
+}
+
+video.className = "video";
+video.loop = true;
+video.muted = false;
+video.playsInline = true;
+video.autoplay = true;
 
   wrapper.appendChild(video);
 
@@ -90,6 +100,9 @@ function renderVideo(index, direction = "next") {
   });
 
   video.play().catch(() => {});
+
+// preload next videos
+preloadVideos(index);
 }
 // ---------------- SWIPE LOGIC ----------------
 let startY = 0;
@@ -140,6 +153,34 @@ function prevVideo() {
     renderVideo(currentIndex, "prev");
   }
 }
+
+// Preload vid function 
+function preloadVideos(startIndex) {
+
+  for (let i = 1; i <= 3; i++) {
+
+    const nextIndex = startIndex + i;
+
+    if (!videos[nextIndex]) continue;
+
+    const url = videos[nextIndex].video_url;
+
+    if (videoCache[url]) continue;
+
+    const preloadVideo = document.createElement("video");
+
+    preloadVideo.src = url;
+    preloadVideo.preload = "auto";
+    preloadVideo.muted = true;
+
+    preloadVideo.load();
+
+    videoCache[url] = preloadVideo;
+
+    console.log("Preloading:", url);
+  }
+}
+
 // ---------------- UPLOAD QUEUE (DRAFT UI) ----------------
 function createUploadItem() {
 
