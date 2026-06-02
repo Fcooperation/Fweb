@@ -144,6 +144,7 @@ postBtn.onclick = () => {
 
   if (!recordedBlob) return;
 
+  // SHOW OVERLAY + SHEET
   document.getElementById("upload-overlay").classList.remove("hidden");
   document.getElementById("details-sheet").classList.remove("hidden");
 };
@@ -188,14 +189,17 @@ document.getElementById("confirm-upload").onclick = async () => {
 
   if (!recordedBlob) return;
 
-  // LOCK UI
+  // ❗ HIDE SHEET FIRST
   document.getElementById("details-sheet").classList.add("hidden");
+
+  // ❗ SHOW LOADER ONLY HERE (FIXED)
   document.getElementById("upload-loader").classList.remove("hidden");
+
+  document.getElementById("upload-overlay").classList.remove("hidden");
 
   let percent = 0;
   const percentEl = document.getElementById("upload-percent");
 
-  // fake progress (backend will replace later)
   const interval = setInterval(() => {
     if (percent < 90) {
       percent += 5;
@@ -203,40 +207,45 @@ document.getElementById("confirm-upload").onclick = async () => {
     }
   }, 300);
 
-  // upload
   const formData = new FormData();
   formData.append("file", recordedBlob, "video.mp4");
 
-  const res = await fetch("https://fweb-backend.onrender.com/fvids", {
-    method: "POST",
-    body: formData
-  });
+  try {
 
-  const data = await res.json();
+    const res = await fetch("https://fweb-backend.onrender.com/fvids", {
+      method: "POST",
+      body: formData
+    });
 
-  clearInterval(interval);
-  percentEl.innerText = "100%";
+    const data = await res.json();
 
-  if (!data.success) {
-    alert("Upload failed");
-    location.reload();
-    return;
+    clearInterval(interval);
+    percentEl.innerText = "100%";
+
+    if (!data.success) throw new Error("Upload failed");
+
+    const uploadData = {
+      video_url: data.video_url,
+      category,
+      language,
+      hashtags: hashtags.split(",").map(t => t.trim()),
+      details,
+      createdAt: Date.now(),
+      user_id: localStorage.getItem("account_id") || null
+    };
+
+    localStorage.setItem("last_upload", JSON.stringify(uploadData));
+
+    setTimeout(() => {
+      window.location.href = "fvids.html";
+    }, 800);
+
+  } catch (err) {
+
+    clearInterval(interval);
+    alert(err.message);
+
+    document.getElementById("upload-loader").classList.add("hidden");
+    document.getElementById("upload-overlay").classList.add("hidden");
   }
-
-  // SAVE FINAL META TO LOCAL STORAGE (for now)
-  const uploadData = {
-    video_url: data.video_url,
-    category,
-    language,
-    hashtags: hashtags.split(",").map(t => t.trim()),
-    details,
-    createdAt: Date.now(),
-    user_id: localStorage.getItem("account_id") || null
-  };
-
-  localStorage.setItem("last_upload", JSON.stringify(uploadData));
-
-  setTimeout(() => {
-    window.location.href = "fvids.html";
-  }, 800);
 };
