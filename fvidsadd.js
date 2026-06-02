@@ -190,6 +190,11 @@ cancelBtn.onclick = () => {
 // Confirm upload logic 
 document.getElementById("confirm-upload").onclick = async () => {
 
+  const btn = document.getElementById("confirm-upload");
+
+  btn.disabled = true;
+  btn.textContent = "Uploading... 0%";
+
   const category = document.getElementById("category").value;
   const language = document.getElementById("language").value;
   const hashtags = document.getElementById("hashtags").value;
@@ -197,41 +202,42 @@ document.getElementById("confirm-upload").onclick = async () => {
 
   if (!recordedBlob) return;
 
-  // ❗ HIDE SHEET FIRST
-  document.getElementById("details-sheet").classList.add("hidden");
-
-  // ❗ SHOW LOADER ONLY HERE (FIXED)
-  document.getElementById("upload-loader").classList.remove("hidden");
-
-  document.getElementById("upload-overlay").classList.remove("hidden");
-
   let percent = 0;
-  const percentEl = document.getElementById("upload-percent");
 
   const interval = setInterval(() => {
     if (percent < 90) {
       percent += 5;
-      percentEl.innerText = percent + "%";
+      btn.textContent = `Uploading... ${percent}%`;
     }
   }, 300);
 
   const formData = new FormData();
+
   formData.append("file", recordedBlob, "video.mp4");
 
   try {
 
-    const res = await fetch("https://fweb-backend.onrender.com/fvids", {
-      method: "POST",
-      body: formData
-    });
+    const res = await fetch(
+      "https://fweb-backend.onrender.com/fvids",
+      {
+        method: "POST",
+        body: formData
+      }
+    );
 
     const data = await res.json();
 
     clearInterval(interval);
-    percentEl.innerText = "100%";
 
-    if (!data.success) throw new Error("Upload failed");
+    btn.textContent = "Uploading... 100%";
 
+    if (!data.success) {
+      throw new Error("Upload failed");
+    }
+
+    btn.textContent = "Uploaded ✓";
+
+    // save data
     const uploadData = {
       video_url: data.video_url,
       category,
@@ -242,18 +248,22 @@ document.getElementById("confirm-upload").onclick = async () => {
       user_id: localStorage.getItem("account_id") || null
     };
 
-    localStorage.setItem("last_upload", JSON.stringify(uploadData));
+    localStorage.setItem(
+      "last_upload",
+      JSON.stringify(uploadData)
+    );
 
     setTimeout(() => {
       window.location.href = "fvids.html";
-    }, 800);
+    }, 1000);
 
   } catch (err) {
 
     clearInterval(interval);
-    alert(err.message);
 
-    document.getElementById("upload-loader").classList.add("hidden");
-    document.getElementById("upload-overlay").classList.add("hidden");
+    btn.disabled = false;
+    btn.textContent = "Post Video";
+
+    alert(err.message);
   }
 };
