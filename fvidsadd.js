@@ -144,9 +144,17 @@ postBtn.onclick = () => {
 
   if (!recordedBlob) return;
 
-  document.getElementById("upload-overlay").classList.remove("hidden");
-  document.getElementById("details-sheet").classList.remove("hidden");
+  // hide preview buttons
+  postBtn.style.display = "none";
+  cancelBtn.style.display = "none";
+  controls.style.display = "none";
 
+  // show upload UI
+  document.getElementById("upload-overlay")
+    .classList.remove("hidden");
+
+  document.getElementById("details-sheet")
+    .classList.remove("hidden");
 };
 
 // Cancel button function 
