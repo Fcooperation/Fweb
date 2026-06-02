@@ -56,10 +56,7 @@ async function loadVideos() {
 }
 
 // ---------------- RENDER SINGLE VIDEO ----------------
-async function renderVideo(index) {
-
-  const loader = document.getElementById("video-loader");
-  loader.style.display = "flex";
+function renderVideo(index) {
 
   const vid = videos[index];
   if (!vid) return;
@@ -76,25 +73,15 @@ async function renderVideo(index) {
   video.loop = true;
   video.muted = true;
   video.playsInline = true;
-
-  // 🔥 WAIT UNTIL VIDEO CAN ACTUALLY PLAY SMOOTHLY
-  await new Promise((resolve) => {
-    video.oncanplay = () => resolve();
-  });
+  video.autoplay = true;
 
   wrapper.appendChild(video);
   feed.appendChild(wrapper);
 
-  try {
-    await video.play();
-  } catch (err) {
-    console.log("Autoplay blocked:", err);
-  }
-
-  // 🔥 give browser 100–200ms to stabilize rendering
-  setTimeout(() => {
-    loader.style.display = "none";
-  }, 150);
+  // 🔥 play immediately (no loader blocking)
+  video.play().catch(() => {
+    console.log("Autoplay blocked");
+  });
 }
 // ---------------- SWIPE LOGIC ----------------
 let startY = 0;
