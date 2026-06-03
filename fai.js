@@ -114,15 +114,38 @@ async function sendPrompt() {
 
   renderMessages();
   saveMessages();
+  
+  // once user sends message, disable new chat mode
+localStorage.setItem("fai_new_chat", "false");
 
   promptInput.value = "";
   showTyping();
 
   try {
 
-    const res =
-await fetch(
-  `https://fweb-backend.onrender.com/fai?q=${encodeURIComponent(prompt)}`
+    const account = JSON.parse(localStorage.getItem("faccount")) || {};
+
+const userId = account?.userId || account?.id || "guest";
+
+// get last 15 messages INCLUDING current user message
+const contextMessages = messages.slice(-15);
+
+// detect if new chat mode is active
+const newChatMode = localStorage.getItem("fai_new_chat") === "true";
+
+const res = await fetch(
+  "https://fweb-backend.onrender.com/fai",
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      userId,
+      messages: newChatMode ? [] : contextMessages,
+      prompt
+    })
+  }
 );
 
 const data =
@@ -211,20 +234,16 @@ if (newChatBtn) {
 
   newChatBtn.onclick = () => {
 
-    messages.push({
+  localStorage.setItem("fai_new_chat", "true");
 
-      role: "ai",
+  messages = [{
+    role: "ai",
+    text: "📚 New Study FAI chat started."
+  }];
 
-      text:
-      "📚 New Study FAI chat started."
-
-    });
-
-    renderMessages();
-
-    saveMessages();
-
-  };
+  renderMessages();
+  saveMessages();
+};
 
 }
 
@@ -343,6 +362,21 @@ ${JSON.stringify(review)}
 
   }
 
+}
+
+// Fai features notice
+const notice = document.getElementById("fai-notice");
+
+const account = JSON.parse(localStorage.getItem("faccount"));
+
+if (!account) {
+  if (notice) {
+    notice.classList.remove("hidden");
+
+    setTimeout(() => {
+      notice.classList.add("hidden");
+    }, 8000);
+  }
 }
 
 /* ---------- START ---------- */

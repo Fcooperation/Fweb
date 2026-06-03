@@ -137,3 +137,26 @@ border-radius:10px;
     opacity: 1;
   }
 }
+.fai-notice {
+  position: fixed;
+  top: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #111;
+  color: #fff;
+  padding: 12px 18px;
+  border-radius: 10px;
+  font-size: 14px;
+  z-index: 9999;
+  box-shadow: 0 0 10px rgba(0,0,0,0.4);
+}
+
+.fai-notice a {
+  color: #1d9bf0;
+  text-decoration: underline;
+  font-weight: bold;
+}
+
+.hidden {
+  display: none;
+}
