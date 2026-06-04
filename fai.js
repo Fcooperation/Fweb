@@ -256,8 +256,15 @@ if (reviewData) {
 
   try {
 
-    const review =
-    JSON.parse(reviewData);
+    let parsed = {};
+
+try {
+  parsed = JSON.parse(reviewData || "{}");
+} catch (e) {
+  parsed = {};
+}
+
+const review = JSON.parse(reviewData || "[]");
 
     messages.push({
       role: "user",
@@ -268,6 +275,17 @@ if (reviewData) {
     saveMessages();
 
     showTyping();
+    
+    if (!review.length) {
+  messages.push({
+    role: "ai",
+    text: "⚠️ No quiz data found to explain."
+  });
+
+  renderMessages();
+  saveMessages();
+  return;
+}
 
     const timeout = setTimeout(() => {
 
@@ -315,8 +333,8 @@ For each question:
 - Why it's correct
 - Simple explanation
 
-Quiz Review:
-${JSON.stringify(review)}
+Quiz Review (structured data):
+${JSON.stringify(review, null, 2)}
         `.trim()
       })
     })
