@@ -1,75 +1,120 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>All LocalStorage Test</title>
-
-  <style>
-    body{
-      font-family:Arial;
-      background:#f5f5f5;
-      padding:20px;
-    }
-
-    .box{
-      background:white;
-      padding:15px;
-      margin-bottom:20px;
-      border-radius:10px;
-    }
-
-    pre{
-      white-space:pre-wrap;
-      word-break:break-word;
-      overflow:auto;
-    }
-
-    h2{
-      margin-top:0;
-    }
-  </style>
+  <title>FAI Review Debug</title>
 </head>
 <body>
 
-<h1>All LocalStorage Data</h1>
+<h2>FAI Review Debug</h2>
 
-<div id="container"></div>
+<button id="check">Check Storage</button>
+<button id="send">Send To Backend</button>
+
+<h3>Stored Review</h3>
+<pre id="output"></pre>
+
+<h3>Backend Response</h3>
+<pre id="response"></pre>
 
 <script>
 
-const container =
-  document.getElementById("container");
+const output =
+document.getElementById("output");
 
-// loop through ALL localStorage items
-for (let i = 0; i < localStorage.length; i++) {
+const responseBox =
+document.getElementById("response");
 
-  const key = localStorage.key(i);
+document.getElementById("check").onclick = () => {
 
-  let value =
-    localStorage.getItem(key);
+  const reviewData =
+    localStorage.getItem("fai_review");
 
-  // try formatting JSON
+  const review =
+    JSON.parse(reviewData || "[]");
+
+  output.textContent =
+    JSON.stringify(review, null, 2);
+
+  console.log("RAW:", reviewData);
+  console.log("PARSED:", review);
+};
+
+document.getElementById("send").onclick = async () => {
+
   try {
-    value = JSON.stringify(
-      JSON.parse(value),
-      null,
-      2
+
+    const reviewData =
+      localStorage.getItem("fai_review");
+
+    const review =
+      JSON.parse(reviewData || "[]");
+
+    console.log("📚 REVIEW:", review);
+
+    const payload = {
+      userId: "debug-user",
+      messages: [],
+      prompt: `
+You are FAI helping a student.
+
+Give short but very clear explanations.
+
+For each question:
+- Correct answer
+- Why it's correct
+- Simple explanation
+
+Quiz Review:
+${JSON.stringify(review, null, 2)}
+      `.trim()
+    };
+
+    console.log("📦 PAYLOAD:", payload);
+
+    responseBox.textContent =
+      "Sending request...";
+
+    const res = await fetch(
+      "https://fweb-backend.onrender.com/fai",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      }
     );
-  } catch(err) {}
 
-  const box =
-    document.createElement("div");
+    const text =
+      await res.text();
 
-  box.className = "box";
+    console.log("📨 RAW RESPONSE:", text);
 
-  box.innerHTML = `
-    <h2>${key}</h2>
-    <pre>${value}</pre>
-  `;
+    try {
 
-  container.appendChild(box);
-}
+      const json =
+        JSON.parse(text);
 
-console.log(localStorage);
+      responseBox.textContent =
+        JSON.stringify(json, null, 2);
+
+    } catch {
+
+      responseBox.textContent =
+        text;
+
+    }
+
+  } catch (err) {
+
+    console.error(err);
+
+    responseBox.textContent =
+      "ERROR:\n\n" + err.message;
+
+  }
+
+};
 
 </script>
 
