@@ -88,6 +88,10 @@ video.playsInline = true;
 video.autoplay = true;
 
   wrapper.appendChild(video);
+  
+  const pauseIcon = document.createElement("div");
+pauseIcon.className = "pause-icon";
+wrapper.appendChild(pauseIcon);
 
   // animation
   wrapper.style.transform = direction === "next"
@@ -97,6 +101,97 @@ video.autoplay = true;
   wrapper.style.transition = "transform 0.25s ease";
 
   feed.innerHTML = "";
+  const likeBtn = document.createElement("div");
+likeBtn.className = "like-heart";
+likeBtn.innerHTML = "🤍";
+
+// OPTIONAL: attach video id
+likeBtn.dataset.id = vid._id || vid.id;
+
+// toggle logic
+likeBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+
+  toggleLike();
+});
+wrapper.appendChild(likeBtn);
+
+let lastTap = 0;
+let tapCount = 0;
+let tapTimer = null;
+let clickTimer = null;
+
+video.addEventListener("click", (e) => {
+
+  const currentTime = Date.now();
+  const tapLength = currentTime - lastTap;
+
+  const likeBtn = wrapper.querySelector(".like-heart");
+
+  // DOUBLE TAP
+  if (tapLength < 300 && tapLength > 0) {
+
+    clearTimeout(clickTimer);
+
+    likeBtn.classList.add("liked");
+    likeBtn.innerHTML = "❤️";
+
+    showHeartPop(e.clientX, e.clientY);
+
+    tapCount++;
+
+    clearTimeout(tapTimer);
+
+    tapTimer = setTimeout(() => {
+      tapCount = 0;
+    }, 800);
+
+    if (tapCount > 2) {
+      showHeartPop(e.clientX, e.clientY);
+    }
+
+    // Prevent accidental pause after spam likes
+    lastTap = Date.now();
+
+    return;
+  }
+
+  lastTap = currentTime;
+
+  clearTimeout(clickTimer);
+
+  clickTimer = setTimeout(() => {
+
+    const pauseIcon =
+      wrapper.querySelector(".pause-icon");
+
+    if (video.paused) {
+
+      video.play();
+
+      pauseIcon.classList.remove("show");
+
+    } else {
+
+      video.pause();
+
+      pauseIcon.classList.add("show");
+    }
+
+  }, 350);
+
+});
+// handle likes
+function handleLike() {
+
+  const likeBtn = wrapper.querySelector(".like-heart");
+
+  if (!likeBtn) return;
+
+  // ONLY LIKE (no toggle here anymore)
+  likeBtn.classList.add("liked");
+  likeBtn.innerHTML = "❤️";
+}
   feed.appendChild(wrapper);
 
   requestAnimationFrame(() => {
@@ -104,6 +199,23 @@ video.autoplay = true;
   });
 
   video.play().catch(() => {});
+  
+  function toggleLike() {
+
+  const likeBtn = wrapper.querySelector(".like-heart");
+
+  if (!likeBtn) return;
+
+  if (likeBtn.classList.contains("liked")) {
+    // UNLIKE
+    likeBtn.classList.remove("liked");
+    likeBtn.innerHTML = "🤍";
+  } else {
+    // LIKE
+    likeBtn.classList.add("liked");
+    likeBtn.innerHTML = "❤️";
+  }
+}
 
 // preload next videos
 preloadVideos(index);
@@ -242,6 +354,24 @@ function showToast(message) {
   setTimeout(() => {
     toast.className = "toast";
   }, 2500);
+}
+
+// Poping heart function 
+function showHeartPop(x, y) {
+
+  const heart = document.createElement("div");
+
+  heart.className = "floating-heart";
+  heart.innerHTML = "❤️";
+
+  heart.style.left = x + "px";
+  heart.style.top = y + "px";
+
+  document.body.appendChild(heart);
+
+  setTimeout(() => {
+    heart.remove();
+  }, 800);
 }
 
 // ---------------- INIT ----------------
