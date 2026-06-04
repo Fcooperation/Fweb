@@ -303,9 +303,17 @@ if (reviewData) {
     }, 30000);
 
     // 4. request
-    fetch(
-      `https://fweb-backend.onrender.com/fai?q=${encodeURIComponent(
-        `
+    fetch("https://fweb-backend.onrender.com/fai", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    userId: account?.userId || account?.id || "guest",
+
+    messages: [],
+
+    prompt: `
 You are FAI helping a student.
 
 Give short but very clear explanations.
@@ -317,9 +325,9 @@ For each question:
 
 Quiz Review:
 ${JSON.stringify(review)}
-        `
-      )}`
-    )
+    `.trim()
+  })
+});
     .then(res => res.json())
     .then(data => {
 
