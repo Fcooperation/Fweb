@@ -17,6 +17,8 @@ document.getElementById("clear-btn");
 const newChatBtn =
 document.getElementById("new-chat-btn");
 
+const account = JSON.parse(localStorage.getItem("faccount"));
+
 let messages =
 JSON.parse(
 localStorage.getItem(STORAGE_KEY)
@@ -247,144 +249,10 @@ if (newChatBtn) {
 
 }
 
-/* ---------- QUIZ REVIEW AUTO EXPLAIN ---------- */
-
-const reviewData =
-localStorage.getItem("fai_review");
-
-if (reviewData) {
-
-  try {
-
-    let parsed = {};
-
-try {
-  parsed = JSON.parse(reviewData || "{}");
-} catch (e) {
-  parsed = {};
-}
-
-const review = JSON.parse(reviewData || "[]");
-
-    messages.push({
-      role: "user",
-      text: "Explain my quiz answers in a simple way."
-    });
-
-    renderMessages();
-    saveMessages();
-
-    showTyping();
-    
-    if (!review.length) {
-  messages.push({
-    role: "ai",
-    text: "⚠️ No quiz data found to explain."
-  });
-
-  renderMessages();
-  saveMessages();
-  return;
-}
-
-    const timeout = setTimeout(() => {
-
-      const typing = document.getElementById("typing-indicator");
-
-      if (typing) {
-
-        const warning =
-        document.createElement("div");
-
-        warning.className = "message system";
-
-        warning.innerHTML = `
-          ⏳ This is taking longer than usual...<br>
-          <span id="reload-fai" style="color:#1d9bf0; text-decoration:underline; cursor:pointer;">
-            Reload to reset
-          </span>
-        `;
-
-        chatBox.appendChild(warning);
-        chatBox.scrollTop = chatBox.scrollHeight;
-
-        document.getElementById("reload-fai").onclick = () => {
-          location.reload();
-        };
-      }
-
-    }, 30000);
-
-    fetch("https://fweb-backend.onrender.com/fai", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        userId: account?.userId || account?.id || "guest",
-        messages: [],
-        prompt: `
-You are FAI helping a student.
-
-Give short but very clear explanations.
-
-For each question:
-- Correct answer
-- Why it's correct
-- Simple explanation
-
-Quiz Review (structured data):
-${JSON.stringify(review, null, 2)}
-        `.trim()
-      })
-    })
-    .then(res => res.json())
-    .then(data => {
-
-      clearTimeout(timeout);
-      removeTyping();
-
-      messages.push({
-        role: "ai",
-        text: data.answer || "No explanation received."
-      });
-
-      renderMessages();
-      saveMessages();
-
-      localStorage.removeItem("fai_review");
-
-    })
-    .catch(() => {
-
-      clearTimeout(timeout);
-      removeTyping();
-
-      messages.push({
-        role: "ai",
-        text: "Failed to generate explanations."
-      });
-
-      renderMessages();
-      saveMessages();
-
-      localStorage.removeItem("fai_review");
-
-    });
-
-  } catch (err) {
-
-    console.error(err);
-    localStorage.removeItem("fai_review");
-
-  }
-
-}
-
 // Fai features notice
 const notice = document.getElementById("fai-notice");
 
-const account = JSON.parse(localStorage.getItem("faccount"));
+
 
 if (!account) {
   if (notice) {
@@ -399,5 +267,122 @@ if (!account) {
 /* ---------- START ---------- */
 
 renderMessages();
+
+/* ---------- AUTO REVIEW CHECK ---------- */
+
+const reviewData = localStorage.getItem("fai_review");
+
+if (reviewData) {
+
+  try {
+
+    const parsed =
+      JSON.parse(reviewData);
+
+    if (
+      parsed &&
+      parsed.review &&
+      parsed.review.length
+    ) {
+
+      
+
+messages.push({
+  role: "user",
+  text: "Please explain my quiz answers in a much better and simpler way."
+});
+
+renderMessages();
+saveMessages();
+
+showTyping();
+
+      fetch(
+        "https://fweb-backend.onrender.com/fai",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+          body: JSON.stringify({
+            userId:
+              account?.userId ||
+              account?.id ||
+              "guest",
+            messages: [],
+            prompt: `
+You are FAI helping a student.
+
+Give short but very clear explanations.
+
+For each question:
+- Correct answer
+- Why it's correct
+- Simple explanation
+
+Quiz Review:
+${JSON.stringify(parsed, null, 2)}
+            `.trim()
+          })
+        }
+      )
+      .then(res => {
+
+        
+
+        return res.json();
+
+      })
+      .then(data => {
+
+  removeTyping();
+
+  localStorage.removeItem("fai_review");
+
+  messages.push({
+    role: "ai",
+    text:
+      data.answer ||
+      data.reply ||
+      "No response"
+  });
+
+  renderMessages();
+  saveMessages();
+
+})
+      .catch(err => {
+
+  removeTyping();
+
+  localStorage.removeItem("fai_review");
+
+  messages.push({
+    role: "ai",
+    text:
+      "Failed to generate review explanation."
+  });
+
+  renderMessages();
+  saveMessages();
+
+  console.error(err);
+
+});
+
+    }
+
+  } catch (err) {
+
+    console.error(
+      "Review parse error:",
+      err
+    );
+
+  }
+
+}
+
 
 });
