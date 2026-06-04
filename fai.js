@@ -285,7 +285,7 @@ if (reviewData) {
       parsed.review.length
     ) {
 
-   alert("📚 FAI review found. Generating explanation...");   
+   
 
 messages.push({
   role: "user",
@@ -329,7 +329,7 @@ ${JSON.stringify(parsed, null, 2)}
       )
       .then(res => {
 
-  alert("✅ Successfully sent to backend");
+  
 
   return res.json();
 
