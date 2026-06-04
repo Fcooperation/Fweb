@@ -107,11 +107,13 @@ document
   }
 
   localStorage.setItem(
-    "fai_review",
-    JSON.stringify(
-      resultData.review
-    )
-  );
+  "fai_review",
+  JSON.stringify({
+    review: resultData.review,
+    source: "quiz-system",
+    timestamp: Date.now()
+  })
+);
 
   window.location.href =
     "fai.html";
