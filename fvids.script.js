@@ -103,7 +103,23 @@ wrapper.appendChild(pauseIcon);
   feed.innerHTML = "";
   const likeBtn = document.createElement("div");
 likeBtn.className = "like-heart";
-likeBtn.innerHTML = "🤍";
+const likedVideos =
+  JSON.parse(
+    localStorage.getItem(
+      "fvid_likes"
+    )
+  ) || {};
+
+if (likedVideos[vid._id || vid.id]) {
+
+  likeBtn.classList.add("liked");
+  likeBtn.innerHTML = "❤️";
+
+} else {
+
+  likeBtn.innerHTML = "🤍";
+
+}
 
 // OPTIONAL: attach video id
 likeBtn.dataset.id = vid._id || vid.id;
@@ -200,20 +216,124 @@ function handleLike() {
 
   video.play().catch(() => {});
   
-  function toggleLike() {
+  async function toggleLike() {
 
-  const likeBtn = wrapper.querySelector(".like-heart");
+  const likeBtn =
+    wrapper.querySelector(".like-heart");
 
   if (!likeBtn) return;
 
-  if (likeBtn.classList.contains("liked")) {
-    // UNLIKE
+  const account =
+    JSON.parse(
+      localStorage.getItem("faccount")
+    ) || {};
+
+  const userId =
+    account.userId ||
+    account.id;
+
+  if (!userId) {
+    showToast("Login required");
+    return;
+  }
+
+  const videoId =
+    vid._id || vid.id;
+
+  const wasLiked =
+    likeBtn.classList.contains("liked");
+
+  // ---------- UPDATE UI FIRST ----------
+
+  if (wasLiked) {
+
     likeBtn.classList.remove("liked");
     likeBtn.innerHTML = "🤍";
+
   } else {
-    // LIKE
+
     likeBtn.classList.add("liked");
     likeBtn.innerHTML = "❤️";
+
+  }
+
+  try {
+
+    const res = await fetch(
+      "https://fweb-backend.onrender.com/fvids/like",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type":
+            "application/json"
+        },
+        body: JSON.stringify({
+          videoId,
+          userId,
+          action: wasLiked
+            ? "unlike"
+            : "like"
+        })
+      }
+    );
+
+    const data =
+      await res.json();
+
+    if (!res.ok) {
+      throw new Error(
+        data.error ||
+        "Failed"
+      );
+    }
+
+    // ---------- SAVE ONLY AFTER SUCCESS ----------
+
+    const likedVideos =
+      JSON.parse(
+        localStorage.getItem(
+          "fvid_likes"
+        )
+      ) || {};
+
+    if (wasLiked) {
+
+      delete likedVideos[videoId];
+
+    } else {
+
+      likedVideos[videoId] = true;
+
+    }
+
+    localStorage.setItem(
+      "fvid_likes",
+      JSON.stringify(
+        likedVideos
+      )
+    );
+
+  } catch (err) {
+
+    console.error(err);
+
+    // rollback UI
+
+    if (wasLiked) {
+
+      likeBtn.classList.add("liked");
+      likeBtn.innerHTML = "❤️";
+
+    } else {
+
+      likeBtn.classList.remove("liked");
+      likeBtn.innerHTML = "🤍";
+
+    }
+
+    showToast(
+      "Failed to update like"
+    );
   }
 }
 
