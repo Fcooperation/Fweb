@@ -149,10 +149,23 @@ video.addEventListener("click", (e) => {
 
     clearTimeout(clickTimer);
 
-    likeBtn.classList.add("liked");
-    likeBtn.innerHTML = "❤️";
+    const alreadyLiked =
+  likeBtn.classList.contains("liked");
 
-    showHeartPop(e.clientX, e.clientY);
+// only send if not already liked
+if (!alreadyLiked) {
+
+  likeBtn.classList.add("liked");
+  likeBtn.innerHTML = "❤️";
+
+  sendDoubleTapLike();
+
+}
+
+showHeartPop(
+  e.clientX,
+  e.clientY
+);
 
     tapCount++;
 
@@ -258,6 +271,8 @@ function handleLike() {
   }
 
   try {
+    
+    
 
     const res = await fetch(
       "https://fweb-backend.onrender.com/fvids/like",
@@ -286,6 +301,8 @@ function handleLike() {
         "Failed"
       );
     }
+    
+    
 
     // ---------- SAVE ONLY AFTER SUCCESS ----------
 
@@ -316,6 +333,7 @@ function handleLike() {
   } catch (err) {
 
     console.error(err);
+    
 
     // rollback UI
 
@@ -334,6 +352,77 @@ function handleLike() {
     showToast(
       "Failed to update like"
     );
+  }
+}
+
+// Handle double click to send like 
+async function sendDoubleTapLike() {
+
+  const account =
+    JSON.parse(
+      localStorage.getItem("faccount")
+    ) || {};
+
+  const userId =
+    account.userId ||
+    account.id;
+
+  if (!userId) return;
+
+  const videoId =
+    vid._id || vid.id;
+
+  try {
+
+    const res = await fetch(
+      "https://fweb-backend.onrender.com/fvids/like",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type":
+            "application/json"
+        },
+        body: JSON.stringify({
+          videoId,
+          userId,
+          action: "like"
+        })
+      }
+    );
+
+    const data =
+      await res.json();
+
+    if (!res.ok) {
+      throw new Error(
+        data.error ||
+        "Failed"
+      );
+    }
+
+    const likedVideos =
+      JSON.parse(
+        localStorage.getItem(
+          "fvid_likes"
+        )
+      ) || {};
+
+    likedVideos[videoId] = true;
+
+    localStorage.setItem(
+      "fvid_likes",
+      JSON.stringify(
+        likedVideos
+      )
+    );
+
+  } catch (err) {
+
+    console.error(
+      "Double tap like failed:",
+      err
+    );
+
   }
 }
 
