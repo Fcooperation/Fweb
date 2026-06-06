@@ -3,6 +3,17 @@ const feed = document.getElementById("video-feed");
 const uploadQueue = document.getElementById("upload-queue");
 const videoCache = {};
 
+function updateLikeUI(wrapper, delta) {
+  const likeCount = wrapper.querySelector(".like-count");
+  const likeBtn = wrapper.querySelector(".like-heart");
+
+  if (!likeCount) return;
+
+  let current = parseInt(likeCount.textContent || "0");
+
+  likeCount.textContent = current + delta;
+}
+
 function isLoggedIn() {
   return !!localStorage.getItem("faccount");
 }
@@ -172,6 +183,8 @@ if (!alreadyLiked) {
   likeBtn.classList.add("liked");
   likeBtn.innerHTML = "❤️";
 
+  updateLikeUI(wrapper, 1); // 🔥 instantly update UI
+
   sendDoubleTapLike();
 
 }
@@ -339,11 +352,7 @@ let currentCount = parseInt(likeCount.textContent || "0");
 
     }
     
-    if (likeCount) {
-  likeCount.textContent = wasLiked
-    ? currentCount - 1
-    : currentCount + 1;
-}
+    updateLikeUI(wrapper, wasLiked ? -1 : 1);
 
     localStorage.setItem(
       "fvid_likes",
