@@ -142,16 +142,6 @@ const likedVideos =
 // IMPORTANT: fallback priority = backend first, then local
 const isLiked =
   Boolean(vid.liked) || Boolean(likedVideos[videoKey]);
-  
-  // force DOM sync with storage (prevents swipe reset bug)
-if (isLiked) {
-  likeBtn.classList.add("liked");
-  likeBtn.innerHTML = "❤️";
-  likeCount.textContent = vid.likes_count || likeCount.textContent;
-} else {
-  likeBtn.classList.remove("liked");
-  likeBtn.innerHTML = "🤍";
-}
 
 // apply UI
 if (isLiked) {
@@ -361,13 +351,12 @@ let currentCount = parseInt(likeCount.textContent || "0");
 
     // ---------- SAVE ONLY AFTER SUCCESS ----------
 
-    const account =
-  JSON.parse(localStorage.getItem("faccount")) || {};
-
-const userId = account.userId || account.id;
-
-const likedVideos =
-  JSON.parse(localStorage.getItem(`fvid_likes_${userId}`)) || {};
+    const likedVideos =
+      JSON.parse(
+        localStorage.getItem(
+          "fvid_likes"
+        )
+      ) || {};
 
     if (wasLiked) {
 
@@ -462,20 +451,21 @@ vid.likes_count = wasLiked
   ? (vid.likes_count || 1) - 1
   : (vid.likes_count || 0) + 1;
 
-    const account =
-  JSON.parse(localStorage.getItem("faccount")) || {};
-
-const userId = account.userId || account.id;
-
-const likedVideos =
-  JSON.parse(localStorage.getItem(`fvid_likes_${userId}`)) || {};
+    const likedVideos =
+      JSON.parse(
+        localStorage.getItem(
+          "fvid_likes"
+        )
+      ) || {};
 
     likedVideos[videoId] = true;
 
     localStorage.setItem(
-  `fvid_likes_${userId}`,
-  JSON.stringify(likedVideos)
-);
+      "fvid_likes",
+      JSON.stringify(
+        likedVideos
+      )
+    );
 
   } catch (err) {
 
