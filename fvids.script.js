@@ -133,16 +133,17 @@ const account =
 
 const userId = account.userId || account.id;
 
+const videoKey = vid._id || vid.id;
+
+// get per-account storage
 const likedVideos =
   JSON.parse(localStorage.getItem(`fvid_likes_${userId}`)) || {};
 
-const videoKey = vid._id || vid.id;
-
-// backend is now PRIMARY source
+// IMPORTANT: fallback priority = backend first, then local
 const isLiked =
-  vid.liked === true ||
-  likedVideos[videoKey] === true;
+  Boolean(vid.liked) || Boolean(likedVideos[videoKey]);
 
+// apply UI
 if (isLiked) {
   likeBtn.classList.add("liked");
   likeBtn.innerHTML = "❤️";
@@ -443,6 +444,12 @@ async function sendDoubleTapLike() {
         "Failed"
       );
     }
+    
+    // ---------- SYNC LOCAL VIDEO STATE ----------
+vid.liked = !wasLiked;
+vid.likes_count = wasLiked
+  ? (vid.likes_count || 1) - 1
+  : (vid.likes_count || 0) + 1;
 
     const likedVideos =
       JSON.parse(
