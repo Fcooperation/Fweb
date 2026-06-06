@@ -128,16 +128,22 @@ likeBtn.className = "like-heart";
 const likeCount = document.createElement("div");
 likeCount.className = "like-count";
 likeCount.textContent = vid.likes_count || 0;
+const account =
+  JSON.parse(localStorage.getItem("faccount")) || {};
+
+const userId = account.userId || account.id;
+
 const likedVideos =
-  JSON.parse(
-    localStorage.getItem(
-      "fvid_likes"
-    )
-  ) || {};
+  JSON.parse(localStorage.getItem(`fvid_likes_${userId}`)) || {};
 
 const videoKey = vid._id || vid.id;
 
-if (likedVideos[videoKey] || vid.liked === true) {
+// backend is now PRIMARY source
+const isLiked =
+  vid.liked === true ||
+  likedVideos[videoKey] === true;
+
+if (isLiked) {
   likeBtn.classList.add("liked");
   likeBtn.innerHTML = "❤️";
 } else {
@@ -178,15 +184,24 @@ video.addEventListener("click", (e) => {
   likeBtn.classList.contains("liked");
 
 // only send if not already liked
+const account =
+  JSON.parse(localStorage.getItem("faccount")) || {};
+
+const userId = account.userId || account.id;
+
+if (!userId) {
+  showHeartPop(e.clientX, e.clientY); // still show animation
+  return; // 🚫 DO NOT like
+}
+
 if (!alreadyLiked) {
 
   likeBtn.classList.add("liked");
   likeBtn.innerHTML = "❤️";
 
-  updateLikeUI(wrapper, 1); // 🔥 instantly update UI
+  updateLikeUI(wrapper, 1);
 
   sendDoubleTapLike();
-
 }
 
 showHeartPop(
@@ -355,11 +370,9 @@ let currentCount = parseInt(likeCount.textContent || "0");
     updateLikeUI(wrapper, wasLiked ? -1 : 1);
 
     localStorage.setItem(
-      "fvid_likes",
-      JSON.stringify(
-        likedVideos
-      )
-    );
+  `fvid_likes_${userId}`,
+  JSON.stringify(likedVideos)
+);
 
   } catch (err) {
 
