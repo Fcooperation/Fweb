@@ -114,6 +114,9 @@ wrapper.appendChild(pauseIcon);
   feed.innerHTML = "";
   const likeBtn = document.createElement("div");
 likeBtn.className = "like-heart";
+const likeCount = document.createElement("div");
+likeCount.className = "like-count";
+likeCount.textContent = vid.likes_count || 0;
 const likedVideos =
   JSON.parse(
     localStorage.getItem(
@@ -121,15 +124,14 @@ const likedVideos =
     )
   ) || {};
 
-if (likedVideos[vid._id || vid.id]) {
+const videoKey = vid._id || vid.id;
 
+if (likedVideos[videoKey] || vid.liked === true) {
   likeBtn.classList.add("liked");
   likeBtn.innerHTML = "❤️";
-
 } else {
-
+  likeBtn.classList.remove("liked");
   likeBtn.innerHTML = "🤍";
-
 }
 
 // OPTIONAL: attach video id
@@ -142,6 +144,7 @@ likeBtn.addEventListener("click", (e) => {
   toggleLike();
 });
 wrapper.appendChild(likeBtn);
+wrapper.appendChild(likeCount);
 
 let lastTap = 0;
 let tapCount = 0;
@@ -266,6 +269,8 @@ function handleLike() {
 
   const wasLiked =
     likeBtn.classList.contains("liked");
+    const likeCount = wrapper.querySelector(".like-count");
+let currentCount = parseInt(likeCount.textContent || "0");
 
   // ---------- UPDATE UI FIRST ----------
 
@@ -333,6 +338,12 @@ function handleLike() {
       likedVideos[videoId] = true;
 
     }
+    
+    if (likeCount) {
+  likeCount.textContent = wasLiked
+    ? currentCount - 1
+    : currentCount + 1;
+}
 
     localStorage.setItem(
       "fvid_likes",
