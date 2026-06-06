@@ -29,13 +29,24 @@ async function loadVideos() {
 
   try {
 
+    const account =
+      JSON.parse(
+        localStorage.getItem("faccount")
+      ) || {};
+
+    const userId =
+      account.userId || account.id;
+
     feed.innerHTML = `
       <div style="text-align:center; margin-top:20px; color:white;">
         🎬 Fetching videos...
       </div>
     `;
 
-    const res = await fetch("https://fweb-backend.onrender.com/fvids");
+    const res = await fetch(
+      `https://fweb-backend.onrender.com/fvids?userId=${userId || ""}`
+    );
+
     videos = await res.json();
 
     if (!videos || videos.length === 0) {
