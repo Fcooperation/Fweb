@@ -272,210 +272,120 @@ function handleLike() {
 
   video.play().catch(() => {});
   
+  // Toggle like function 
   async function toggleLike() {
-
-  const likeBtn =
-    wrapper.querySelector(".like-heart");
-
+  const likeBtn = wrapper.querySelector(".like-heart");
   if (!likeBtn) return;
 
-  const account =
-    JSON.parse(
-      localStorage.getItem("faccount")
-    ) || {};
-
-  const userId =
-    account.userId ||
-    account.id;
-
+  const account = JSON.parse(localStorage.getItem("faccount")) || {};
+  const userId = account.userId || account.id;
   if (!userId) {
     showToast("Login required");
     return;
   }
 
-  const videoId =
-    vid._id || vid.id;
+  const videoId = vid._id || vid.id;
+  const wasLiked = likeBtn.classList.contains("liked");
+  const likeCount = wrapper.querySelector(".like-count");
+  let currentCount = parseInt(likeCount.textContent || "0");
 
-  const wasLiked =
-    likeBtn.classList.contains("liked");
-    const likeCount = wrapper.querySelector(".like-count");
-let currentCount = parseInt(likeCount.textContent || "0");
-
-  // ---------- UPDATE UI FIRST ----------
-
+  // ---------- UPDATE UI FIRST (Optimistic UI) ----------
   if (wasLiked) {
-
     likeBtn.classList.remove("liked");
     likeBtn.innerHTML = "🤍";
-
   } else {
-
     likeBtn.classList.add("liked");
     likeBtn.innerHTML = "❤️";
-
   }
 
   try {
+    const res = await fetch("https://fweb-backend.onrender.com/fvids/like", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        videoId,
+        userId,
+        action: wasLiked ? "unlike" : "like"
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Failed");
+
+    // ---------- SYNC IN-MEMORY GLOBAL ARRAY ----------
+    vid.liked = !wasLiked;
+    vid.likes_count = wasLiked ? Math.max(0, currentCount - 1) : currentCount + 1;
+
+    // ---------- SAVE TO STORAGE (Using matching user-specific key) ----------
+    const storageKey = `fvid_likes_${userId}`;
+    const likedVideos = JSON.parse(localStorage.getItem(storageKey)) || {};
     
-    
-
-    const res = await fetch(
-      "https://fweb-backend.onrender.com/fvids/like",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type":
-            "application/json"
-        },
-        body: JSON.stringify({
-          videoId,
-          userId,
-          action: wasLiked
-            ? "unlike"
-            : "like"
-        })
-      }
-    );
-
-    const data =
-      await res.json();
-
-    if (!res.ok) {
-      throw new Error(
-        data.error ||
-        "Failed"
-      );
-    }
-    
-    
-
-    // ---------- SAVE ONLY AFTER SUCCESS ----------
-
-    const likedVideos =
-      JSON.parse(
-        localStorage.getItem(
-          "fvid_likes"
-        )
-      ) || {};
-
     if (wasLiked) {
-
       delete likedVideos[videoId];
-
     } else {
-
       likedVideos[videoId] = true;
-
     }
-    
-    updateLikeUI(wrapper, wasLiked ? -1 : 1);
 
-    localStorage.setItem(
-  `fvid_likes_${userId}`,
-  JSON.stringify(likedVideos)
-);
+    updateLikeUI(wrapper, wasLiked ? -1 : 1);
+    localStorage.setItem(storageKey, JSON.stringify(likedVideos));
 
   } catch (err) {
-
     console.error(err);
-    
-
-    // rollback UI
-
+    // rollback UI on failure
     if (wasLiked) {
-
       likeBtn.classList.add("liked");
       likeBtn.innerHTML = "❤️";
-
     } else {
-
       likeBtn.classList.remove("liked");
       likeBtn.innerHTML = "🤍";
-
     }
-
-    showToast(
-      "Failed to update like"
-    );
+    showToast("Failed to update like");
   }
 }
+
 
 // Handle double click to send like 
 async function sendDoubleTapLike() {
-
-  const account =
-    JSON.parse(
-      localStorage.getItem("faccount")
-    ) || {};
-
-  const userId =
-    account.userId ||
-    account.id;
-
+  const account = JSON.parse(localStorage.getItem("faccount")) || {};
+  const userId = account.userId || account.id;
   if (!userId) return;
 
-  const videoId =
-    vid._id || vid.id;
+  const videoId = vid._id || vid.id;
 
   try {
+    const res = await fetch("https://fweb-backend.onrender.com/fvids/like", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        videoId,
+        userId,
+        action: "like"
+      })
+    });
 
-    const res = await fetch(
-      "https://fweb-backend.onrender.com/fvids/like",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type":
-            "application/json"
-        },
-        body: JSON.stringify({
-          videoId,
-          userId,
-          action: "like"
-        })
-      }
-    );
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Failed");
 
-    const data =
-      await res.json();
-
-    if (!res.ok) {
-      throw new Error(
-        data.error ||
-        "Failed"
-      );
+    // ---------- SYNC IN-MEMORY GLOBAL ARRAY ----------
+    // Since double tap ONLY likes, we force true
+    const alreadyLiked = vid.liked;
+    vid.liked = true;
+    if (!alreadyLiked) {
+      vid.likes_count = (vid.likes_count || 0) + 1;
     }
-    
-    // ---------- SYNC LOCAL VIDEO STATE ----------
-vid.liked = !wasLiked;
-vid.likes_count = wasLiked
-  ? (vid.likes_count || 1) - 1
-  : (vid.likes_count || 0) + 1;
 
-    const likedVideos =
-      JSON.parse(
-        localStorage.getItem(
-          "fvid_likes"
-        )
-      ) || {};
-
+    // ---------- SAVE TO STORAGE (Using matching user-specific key) ----------
+    const storageKey = `fvid_likes_${userId}`;
+    const likedVideos = JSON.parse(localStorage.getItem(storageKey)) || {};
     likedVideos[videoId] = true;
-
-    localStorage.setItem(
-      "fvid_likes",
-      JSON.stringify(
-        likedVideos
-      )
-    );
+    
+    localStorage.setItem(storageKey, JSON.stringify(likedVideos));
 
   } catch (err) {
-
-    console.error(
-      "Double tap like failed:",
-      err
-    );
-
+    console.error("Double tap like failed:", err);
   }
 }
+
 
 // preload next videos
 preloadVideos(index);
