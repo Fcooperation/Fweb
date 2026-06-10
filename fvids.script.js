@@ -101,6 +101,12 @@ if (videoCache[vid.video_url]) {
 
   video = document.createElement("video");
   video.src = vid.video_url;
+  
+  video.addEventListener("loadedmetadata", () => {
+  const isVertical = video.videoHeight > video.videoWidth;
+
+  video.style.objectFit = isVertical ? "cover" : "contain";
+});
 }
 
 video.className = "video";
