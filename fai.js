@@ -19,6 +19,13 @@ document.getElementById("new-chat-btn");
 
 const account = JSON.parse(localStorage.getItem("faccount"));
 
+  function autoResize() {
+  promptInput.style.height = "auto";
+  promptInput.style.height = promptInput.scrollHeight + "px";
+  }
+  
+  promptInput.addEventListener("input", autoResize);
+
 let messages =
 JSON.parse(
 localStorage.getItem(STORAGE_KEY)
@@ -121,6 +128,7 @@ async function sendPrompt() {
 localStorage.setItem("fai_new_chat", "false");
 
   promptInput.value = "";
+  promptInput.style.height = "auto";
   showTyping();
 
   try {
@@ -188,24 +196,14 @@ if (sendBtn) {
 }
 
 if (promptInput) {
+  promptInput.addEventListener("keydown", e => {
 
-  promptInput.addEventListener(
-    "keydown",
-    e => {
-
-      if (
-        e.key === "Enter"
-      ) {
-
-        e.preventDefault();
-
-        sendPrompt();
-
-      }
-
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendPrompt();
     }
-  );
 
+  });
 }
 
 if (clearBtn) {

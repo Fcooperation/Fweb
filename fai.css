@@ -86,11 +86,16 @@ background:#f2f2f2;
 }
 
 #prompt{
-flex:1;
-padding:12px;
-border:1px solid #ccc;
-border-radius:10px;
-min-width: 0; 
+  flex:1;
+  padding:12px;
+  border:1px solid #ccc;
+  border-radius:10px;
+  min-width:0;
+  resize:none;
+  overflow:hidden;
+  max-height:120px; /* optional limit */
+  line-height:1.4;
+  font-family:inherit;
 }
 
 #send-btn{
