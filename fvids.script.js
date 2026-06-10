@@ -5,13 +5,21 @@ const videoCache = {};
 
 function updateLikeUI(wrapper, delta) {
   const likeCount = wrapper.querySelector(".like-count");
-  const likeBtn = wrapper.querySelector(".like-heart");
-
   if (!likeCount) return;
 
   let current = parseInt(likeCount.textContent || "0");
+  let updated = current + delta;
 
-  likeCount.textContent = current + delta;
+  // 🔥 NEVER go below 0
+  updated = Math.max(0, updated);
+
+  // 🔥 hide if 0, otherwise show
+  if (updated === 0) {
+    likeCount.style.display = "none";
+  } else {
+    likeCount.style.display = "block";
+    likeCount.textContent = updated;
+  }
 }
 
 function isLoggedIn() {
@@ -150,8 +158,17 @@ wrapper.appendChild(pauseIcon);
 likeBtn.className = "like-heart";
 const likeCount = document.createElement("div");
 likeCount.className = "like-count";
-likeCount.textContent = vid.likes_count || 0;
-const account =
+
+  const initialLikes = Math.max(0, vid.likes_count || 0);
+
+if (initialLikes === 0) {
+  likeCount.style.display = "none";
+} else {
+  likeCount.style.display = "block";
+  likeCount.textContent = initialLikes;
+}
+
+  const account =
   JSON.parse(localStorage.getItem("faccount")) || {};
 
 const userId = account.userId || account.id;
@@ -350,6 +367,15 @@ function handleLike() {
     }
 
     updateLikeUI(wrapper, wasLiked ? -1 : 1);
+
+// extra safety clamp (prevents backend weirdness)
+const likeCount = wrapper.querySelector(".like-count");
+let safe = parseInt(likeCount.textContent || "0");
+safe = Math.max(0, safe);
+
+if (safe === 0) {
+  likeCount.style.display = "none";
+}
     localStorage.setItem(storageKey, JSON.stringify(likedVideos));
 
   } catch (err) {
