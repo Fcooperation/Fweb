@@ -49,12 +49,14 @@ gap:12px;
 }
 
 .message{
-max-width:85%;
-padding:12px;
-border-radius:12px;
-word-wrap: break-word; 
-overflow-wrap: break-word;
-white-space:pre-wrap;
+  max-width:80%;
+  padding:12px;
+  border-radius:12px;
+  margin:8px;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: pre-wrap;
 }
 
 .user{
@@ -69,12 +71,16 @@ background:#f2f2f2;
 }
 
 #input-area{
-display:flex;
-bottom: 10px;
-flex: 0 0 auto; 
-gap:10px;
-padding:15px;
-border-top:1px solid #ddd;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  display:flex;
+  gap:10px;
+  padding:15px;
+  border-top:1px solid #ddd;
+  background:#fff;
+  z-index: 1000;
 }
 
 #prompt{
@@ -91,13 +97,6 @@ border:none;
 background:#1d9bf0;
 color:white;
 border-radius:10px;
-}
-.message {
-  max-width: 80%;
-  padding: 10px 14px;
-  margin: 8px;
-  border-radius: 12px;
-  word-wrap: break-word;
 }
 
 .message.user {
