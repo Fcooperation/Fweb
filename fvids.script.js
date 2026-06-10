@@ -479,6 +479,12 @@ document.addEventListener("touchend", (e) => {
 // ---------------- NAVIGATION ----------------
 function nextVideo() {
   if (currentIndex < videos.length - 1) {
+    // 👇 Pause the current video first!
+    const currentVideo = feed.querySelector("video");
+    if (currentVideo) {
+      currentVideo.pause();
+    }
+
     currentIndex++;
     renderVideo(currentIndex, "next");
   }
@@ -486,11 +492,16 @@ function nextVideo() {
 
 function prevVideo() {
   if (currentIndex > 0) {
+    // 👇 Pause the current video first!
+    const currentVideo = feed.querySelector("video");
+    if (currentVideo) {
+      currentVideo.pause();
+    }
+
     currentIndex--;
     renderVideo(currentIndex, "prev");
   }
 }
-
 // Preload vid function 
 function preloadVideos(startIndex) {
 
