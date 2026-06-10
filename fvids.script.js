@@ -82,6 +82,20 @@ async function loadVideos() {
   }
 }
 
+// apply video fit 
+function applyVideoFit(video) {
+  const setFit = () => {
+    const isVertical = video.videoHeight > video.videoWidth;
+    video.style.objectFit = isVertical ? "cover" : "contain";
+  };
+
+  if (video.videoWidth && video.videoHeight) {
+    setFit();
+  } else {
+    video.addEventListener("loadedmetadata", setFit, { once: true });
+  }
+}
+
 // ---------------- RENDER SINGLE VIDEO ----------------
 function renderVideo(index, direction = "next") {
 
@@ -96,11 +110,13 @@ function renderVideo(index, direction = "next") {
 if (videoCache[vid.video_url]) {
 
   video = videoCache[vid.video_url];
+  applyVideoFit(video);
 
 } else {
 
   video = document.createElement("video");
   video.src = vid.video_url;
+  applyVideoFit(video);
   
   video.addEventListener("loadedmetadata", () => {
   const isVertical = video.videoHeight > video.videoWidth;
@@ -114,6 +130,7 @@ video.loop = true;
 video.muted = false;
 video.playsInline = true;
 video.autoplay = true;
+  applyVideoFit(video);
 
   wrapper.appendChild(video);
   
