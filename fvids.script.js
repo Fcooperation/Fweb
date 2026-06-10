@@ -16,6 +16,7 @@ function updateLikeUI(wrapper, delta) {
   // 🔥 hide if 0, otherwise show
   if (updated === 0) {
     likeCount.style.display = "none";
+    likeCount.textContent = "0"; 
   } else {
     likeCount.style.display = "block";
     likeCount.textContent = updated;
@@ -375,6 +376,7 @@ safe = Math.max(0, safe);
 
 if (safe === 0) {
   likeCount.style.display = "none";
+  likeCount.textContent = "0"; 
 }
     localStorage.setItem(storageKey, JSON.stringify(likedVideos));
 
