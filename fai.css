@@ -39,14 +39,16 @@ background:#f2f2f2;
 }
 
 #chat-box{
-flex:1;
-overflow-y: auto; /* Only this section scrolls */
-overflow-x: hidden;
-padding:15px;
-display:flex;
-flex-direction:column;
-gap:12px;
-padding-bottom: 80px;
+  flex:1;
+  overflow-y:auto;
+  overflow-x:hidden;
+  padding:15px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+
+  padding-bottom: 0;
+  margin-bottom: 70px; /* 👈 ADD THIS */
 }
 
 .message{
@@ -72,9 +74,8 @@ background:#f2f2f2;
 }
 
 #input-area{
-  position: fixed;
+  position: sticky;
   bottom: 0;
-  left: 0;
   width: 100%;
   display:flex;
   gap:10px;
