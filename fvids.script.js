@@ -204,6 +204,19 @@ likeBtn.addEventListener("click", (e) => {
 });
 wrapper.appendChild(likeBtn);
 wrapper.appendChild(likeCount);
+  
+  const commentBtn = document.createElement("div");
+commentBtn.className = "comment-btn";
+commentBtn.innerHTML = "💬";
+
+commentBtn.addEventListener("click", (e) => {
+  e.stopPropagation(); // prevent pause/video click
+
+  const videoId = vid._id || vid.id;
+  openComments(videoId);
+});
+
+wrapper.appendChild(commentBtn);
 
 let lastTap = 0;
 let tapCount = 0;
