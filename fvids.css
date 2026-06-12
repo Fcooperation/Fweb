@@ -344,14 +344,6 @@ html, body {
   opacity: 1;
   transform: translate(-50%, -50%) scale(1);
 }
-.like-heart {
-  position: absolute;
-  right: 15px;
-  bottom: 150px;
-  font-size: 28px;
-  cursor: pointer;
-  user-select: none;
-}
 
 .like-heart.liked {
   color: red;
@@ -359,8 +351,8 @@ html, body {
 
 .like-count {
   position: absolute;
+  top: 53%;
   right: 12px;
-  bottom: 250px;
   font-size: 14px;
   color: white;
   font-weight: bold;
@@ -447,7 +439,7 @@ html, body {
 .comment-btn {
   position: absolute;
   right: 15px;
-  bottom: 200px;
+  top: 60%;
   font-size: 28px;
   color: white;
   cursor: pointer;
