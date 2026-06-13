@@ -461,3 +461,53 @@ html, body {
 
   z-index: 10;
 }
+.comments-loading{
+  display:flex;
+  justify-content:center;
+  padding:15px;
+}
+
+.comment-spinner{
+  width:24px;
+  height:24px;
+  border:3px solid rgba(255,255,255,.15);
+  border-top-color:white;
+  border-radius:50%;
+  animation:spin .7s linear infinite;
+}
+
+@keyframes spin{
+  to{
+    transform:rotate(360deg);
+  }
+}
+.comment-item{
+  padding:12px;
+  border-bottom:1px solid #222;
+}
+
+.comment-username{
+  font-size:10px;
+  color:#aaa;
+  margin-bottom:5px;
+}
+
+.comment-text{
+  color:white;
+  font-size:14px;
+  line-height:1.4;
+  word-break:break-word;
+}
+
+.creator-badge{
+  color:#4ea3ff;
+  margin-left:4px;
+}
+
+.read-more-btn{
+  display:inline-block;
+  margin-top:4px;
+  color:#4ea3ff;
+  cursor:pointer;
+  font-size:12px;
+}
