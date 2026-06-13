@@ -29,6 +29,9 @@ function isLoggedIn() {
 
 let videos = [];
 let currentIndex = 0;
+let currentPage = 1;
+let isLoadingMore = false;
+let hasMoreVideos = true;
 
 // ---------------- TAB SWITCH ----------------
 function switchTab(tab) {
@@ -45,41 +48,55 @@ function switchTab(tab) {
 }
 
 // ---------------- LOAD VIDEOS FROM BACKEND ----------------
-async function loadVideos() {
+async function loadVideos(page = 1, append = false) {
 
   try {
 
     const account =
-      JSON.parse(
-        localStorage.getItem("faccount")
-      ) || {};
+      JSON.parse(localStorage.getItem("faccount")) || {};
 
     const userId =
       account.userId || account.id;
 
-    feed.innerHTML = `
-      <div style="text-align:center; margin-top:20px; color:white;">
-        🎬 Fetching videos...
-      </div>
-    `;
-
-    const res = await fetch(
-      `https://fweb-backend.onrender.com/fvids?userId=${userId || ""}`
-    );
-
-    videos = await res.json();
-
-    if (!videos || videos.length === 0) {
+    if (!append) {
       feed.innerHTML = `
         <div style="text-align:center; margin-top:20px; color:white;">
-          No videos found
+          🎬 Fetching videos...
         </div>
       `;
+    }
+
+    const res = await fetch(
+      `https://fweb-backend.onrender.com/fvids?userId=${userId || ""}&page=${page}`
+    );
+
+    const newVideos = await res.json();
+
+    if (!newVideos || newVideos.length === 0) {
+      hasMoreVideos = false;
+
+      if (!append) {
+        feed.innerHTML = `
+          <div style="text-align:center; margin-top:20px; color:white;">
+            No videos found
+          </div>
+        `;
+      }
+
       return;
     }
 
-    currentIndex = 0;
-    renderVideo(currentIndex);
+    // ---------------- FIRST LOAD ----------------
+    if (!append) {
+      videos = newVideos;
+      currentIndex = 0;
+      renderVideo(currentIndex);
+    }
+
+    // ---------------- LOAD MORE ----------------
+    else {
+      videos.push(...newVideos);
+    }
 
   } catch (err) {
     console.error(err);
@@ -494,17 +511,35 @@ document.addEventListener("touchend", (e) => {
   }
 });
 
+// Load more videos 
+async function loadMoreVideos() {
+
+  if (isLoadingMore || !hasMoreVideos) return;
+
+  isLoadingMore = true;
+  currentPage++;
+
+  try {
+    await loadVideos(currentPage, true);
+  } finally {
+    isLoadingMore = false;
+  }
+}
+
 // ---------------- NAVIGATION ----------------
 function nextVideo() {
   if (currentIndex < videos.length - 1) {
-    // 👇 Pause the current video first!
+
     const currentVideo = feed.querySelector("video");
-    if (currentVideo) {
-      currentVideo.pause();
-    }
+    if (currentVideo) currentVideo.pause();
 
     currentIndex++;
     renderVideo(currentIndex, "next");
+
+    // 👇 LOAD NEXT PAGE EARLY (IMPORTANT)
+    if (currentIndex >= videos.length - 5) {
+      loadMoreVideos();
+    }
   }
 }
 
