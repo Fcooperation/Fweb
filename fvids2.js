@@ -13,6 +13,26 @@ const USERNAME_LIMIT = 16;
   
   sheet = document.getElementById("comments-sheet");
 
+  // Reload Button 
+  const reloadBtn =
+  document.getElementById("reload-page-btn");
+
+if (reloadBtn) {
+
+  reloadBtn.addEventListener(
+    "click",
+    () => {
+
+      reloadBtn.disabled = true;
+
+      reloadBtn.textContent =
+        "Reloading...";
+
+      location.reload();
+    }
+  );
+}
+
   // ---------------- OPEN COMMENTS ----------------
   window.openComments = function(videoId, videoUrl) {
 
@@ -215,10 +235,7 @@ let postingComment = false;
 
     if (postingComment) return;
 
-postingComment = true;
 
-postBtn.disabled = true;
-postBtn.textContent = "Posting...";
 
     const account =
       JSON.parse(localStorage.getItem("faccount")) || {};
@@ -238,6 +255,11 @@ postBtn.textContent = "Posting...";
       showToast("Login required to comment");
       return;
     }
+
+    postingComment = true;
+
+postBtn.disabled = true;
+postBtn.textContent = "Posting...";
 
     try {
 
