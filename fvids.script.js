@@ -216,6 +216,11 @@ commentBtn.addEventListener("click", (e) => {
   openComments(videoId, vid.video_url);
 });
 
+  const commentCount = document.createElement("div");
+commentCount.className = "comment-count";
+commentCount.textContent = vid.comment_count || 0;
+
+wrapper.appendChild(commentCount);
 wrapper.appendChild(commentBtn);
 
 let lastTap = 0;

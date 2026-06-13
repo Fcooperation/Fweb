@@ -445,3 +445,19 @@ html, body {
   cursor: pointer;
   z-index: 10;
 }
+.comment-count {
+  position: absolute;
+  right: 12px;
+  top: 66%;
+
+  width: 40px;
+
+  text-align: center;
+
+  font-size: 14px;
+  font-weight: bold;
+
+  color: white;
+
+  z-index: 10;
+}
