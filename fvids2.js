@@ -64,9 +64,17 @@ spinner.classList.remove("hidden");
     if (!append) list.innerHTML = "";
 
     if (comments.length === 0 && page === 1) {
-      noComments.style.display = "block";
-      return;
-    }
+
+  noComments.style.display = "block";
+
+  commentHasMore = false;
+
+  spinner.classList.add("hidden");
+
+  loadingComments = false;
+
+  return;
+}
 
     noComments.style.display = "none";
 
