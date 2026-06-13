@@ -7,7 +7,10 @@ let startY = 0;
   let commentPage = 1;
 let commentHasMore = true;
 let loadingComments = false;
-
+  
+const COMMENT_PREVIEW_LENGTH = 120;
+const USERNAME_LIMIT = 16;
+  
   sheet = document.getElementById("comments-sheet");
 
   // ---------------- OPEN COMMENTS ----------------
@@ -43,6 +46,10 @@ let loadingComments = false;
 
   const list = document.getElementById("comments-list");
   const noComments = document.getElementById("no-comments");
+    const spinner =
+  document.getElementById("comments-loading");
+
+spinner.classList.remove("hidden");
 
   try {
 
@@ -65,28 +72,90 @@ let loadingComments = false;
 
     comments.forEach(c => {
 
-      const div = document.createElement("div");
-      div.style.padding = "8px";
-      div.style.borderBottom = "1px solid #222";
+  const div = document.createElement("div");
 
-      div.innerHTML = `
-        <div style="font-size:14px;color:white;">
-          ${c.text}
-        </div>
-        <div style="font-size:11px;opacity:0.6;">
-          ${c.username}
-        </div>
-      `;
+  div.className = "comment-item";
 
-      list.appendChild(div);
-    });
+  let username = c.username || "Unknown";
+
+  if (username.length > USERNAME_LIMIT) {
+    username =
+      username.slice(0, USERNAME_LIMIT) + "...";
+  }
+
+  const account =
+    JSON.parse(
+      localStorage.getItem("faccount")
+    ) || {};
+
+  const myId =
+    account.userId || account.id;
+
+  if (String(myId) === String(c.userId)) {
+    username = "You";
+  }
+
+  let creatorBadge = "";
+
+  if (
+    String(c.userId) ===
+    String(c.creatorId)
+  ) {
+    creatorBadge =
+      `<span class="creator-badge">
+        (creator)
+      </span>`;
+  }
+
+  const fullText = c.text || "";
+
+  let previewText = fullText;
+
+  let readMoreHTML = "";
+
+  if (
+    fullText.length >
+    COMMENT_PREVIEW_LENGTH
+  ) {
+
+    previewText =
+      fullText.slice(
+        0,
+        COMMENT_PREVIEW_LENGTH
+      ) + "...";
+
+    readMoreHTML = `
+      <span
+        class="read-more-btn"
+        data-full="${encodeURIComponent(fullText)}">
+        Read more
+      </span>
+    `;
+  }
+
+  div.innerHTML = `
+    <div class="comment-username">
+      ${username}
+      ${creatorBadge}
+    </div>
+
+    <div class="comment-text">
+      ${previewText}
+    </div>
+
+    ${readMoreHTML}
+  `;
+
+  list.appendChild(div);
+});
 
     commentHasMore = data.hasMore;
 
   } catch (err) {
     console.error("comments load error:", err);
   } finally {
-    loadingComments = false;
+    spinner.classList.add("hidden");
+loadingComments = false;
   }
 }
 
@@ -104,6 +173,27 @@ let loadingComments = false;
     }
   }
 });
+
+  // Readmore logic 
+  document.addEventListener(
+  "click",
+  (e) => {
+
+    if (
+      e.target.classList.contains(
+        "read-more-btn"
+      )
+    ) {
+
+      const fullText =
+        decodeURIComponent(
+          e.target.dataset.full
+        );
+
+      alert(fullText);
+    }
+  }
+);
 
   // ---------------- POST COMMENT ----------------
   const postBtn = document.getElementById("post-comment");
@@ -137,6 +227,7 @@ let loadingComments = false;
         userId,
         commentText: text
       };
+      
 
       const res = await fetch(
         "https://fweb-backend.onrender.com/fvids/comment",
@@ -182,16 +273,15 @@ localStorage.setItem(
       const div =
         document.createElement("div");
 
-      div.style.padding = "8px";
-      div.style.borderBottom = "1px solid #222";
+      div.className = "comment-item";
 
       div.innerHTML = `
         <div style="font-size:14px;color:white;">
           ${text}
         </div>
-        <div style="font-size:10px;opacity:0.6;">
-          You
-        </div>
+        <div class="comment-username">
+  You
+</div>
       `;
 
       list.prepend(div);
