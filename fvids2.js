@@ -59,6 +59,8 @@ spinner.classList.remove("hidden");
 
     const data = await res.json();
 
+    spinner.classList.add("hidden");
+
     const comments = data.comments || [];
 
     if (!append) list.innerHTML = "";
@@ -204,9 +206,19 @@ loadingComments = false;
 );
 
   // ---------------- POST COMMENT ----------------
-  const postBtn = document.getElementById("post-comment");
+  const postBtn =
+  document.getElementById("post-comment");
+
+let postingComment = false;
 
   postBtn.addEventListener("click", async () => {
+
+    if (postingComment) return;
+
+postingComment = true;
+
+postBtn.disabled = true;
+postBtn.textContent = "Posting...";
 
     const account =
       JSON.parse(localStorage.getItem("faccount")) || {};
@@ -254,7 +266,7 @@ loadingComments = false;
         throw new Error(
           data.error || "Failed to post comment"
         );
-      }
+      } 
 
       // ---------- SAVE TO LOCAL STORAGE ----------
 const localKey = `fvid_comments_${currentVideoId}`;
@@ -307,6 +319,13 @@ localStorage.setItem(
       showToast(
         err.message || "Failed to post comment"
       );
+    } finally {
+
+  postingComment = false;
+
+  postBtn.disabled = false;
+
+  postBtn.textContent = "Post";
     }
 
   });
