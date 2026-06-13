@@ -4,66 +4,106 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentVideoUrl = null;
   let sheet;
 let startY = 0;
+  let commentPage = 1;
+let commentHasMore = true;
+let loadingComments = false;
 
   sheet = document.getElementById("comments-sheet");
 
   // ---------------- OPEN COMMENTS ----------------
   window.openComments = function(videoId, videoUrl) {
 
-    currentVideoId = videoId;
-    currentVideoUrl = videoUrl;
+  currentVideoId = videoId;
+  currentVideoUrl = videoUrl;
 
-    const sheet = document.getElementById("comments-sheet");
+  commentPage = 1;
+  commentHasMore = true;
 
-    sheet.classList.remove("hidden");
+  document.getElementById("comments-list").innerHTML = "";
 
-    setTimeout(() => {
-      sheet.classList.add("show");
-      history.pushState({ commentsOpen: true }, "");
-      
-    }, 10);
+  document.getElementById("comments-sheet")
+    .classList.remove("hidden");
 
-    loadComments(videoId);
-  };
+  setTimeout(() => {
+    document.getElementById("comments-sheet")
+      .classList.add("show");
+
+    history.pushState({ commentsOpen: true }, "");
+  }, 10);
+
+  loadComments(videoId, 1);
+};
 
   // ---------------- LOAD COMMENTS ----------------
-  function loadComments(videoId) {
+  async function loadComments(videoId, page = 1, append = false) {
+
+  if (loadingComments || !commentHasMore) return;
+
+  loadingComments = true;
 
   const list = document.getElementById("comments-list");
   const noComments = document.getElementById("no-comments");
 
-  list.innerHTML = "";
+  try {
 
-  const localKey = `fvid_comments_${videoId}`;
-  const comments =
-    JSON.parse(localStorage.getItem(localKey)) || [];
+    const res = await fetch(
+      `https://fweb-backend.onrender.com/fvids/comments?videoId=${videoId}&page=${page}&limit=20`
+    );
 
-  if (comments.length === 0) {
-    noComments.style.display = "block";
-    return;
+    const data = await res.json();
+
+    const comments = data.comments || [];
+
+    if (!append) list.innerHTML = "";
+
+    if (comments.length === 0 && page === 1) {
+      noComments.style.display = "block";
+      return;
+    }
+
+    noComments.style.display = "none";
+
+    comments.forEach(c => {
+
+      const div = document.createElement("div");
+      div.style.padding = "8px";
+      div.style.borderBottom = "1px solid #222";
+
+      div.innerHTML = `
+        <div style="font-size:14px;color:white;">
+          ${c.text}
+        </div>
+        <div style="font-size:11px;opacity:0.6;">
+          ${c.username}
+        </div>
+      `;
+
+      list.appendChild(div);
+    });
+
+    commentHasMore = data.hasMore;
+
+  } catch (err) {
+    console.error("comments load error:", err);
+  } finally {
+    loadingComments = false;
   }
-
-  noComments.style.display = "none";
-
-  comments.forEach(c => {
-
-    const div = document.createElement("div");
-
-    div.style.padding = "8px";
-    div.style.borderBottom = "1px solid #222";
-
-    div.innerHTML = `
-      <div style="font-size:14px;color:white;">
-        ${c.text}
-      </div>
-      <div style="font-size:10px;opacity:0.6;">
-        You
-      </div>
-    `;
-
-    list.appendChild(div);
-  });
 }
+
+  // Scroll to load more comments 
+  document.getElementById("comments-list").addEventListener("scroll", () => {
+
+  const list = document.getElementById("comments-list");
+
+  if (
+    list.scrollTop + list.clientHeight >= list.scrollHeight - 20
+  ) {
+    if (commentHasMore && !loadingComments) {
+      commentPage++;
+      loadComments(currentVideoId, commentPage, true);
+    }
+  }
+});
 
   // ---------------- POST COMMENT ----------------
   const postBtn = document.getElementById("post-comment");
