@@ -480,32 +480,48 @@ preloadVideos(index);
 let startY = 0;
 let isSwiping = false;
 
+function commentsAreOpen() {
+  const sheet =
+    document.getElementById("comments-sheet");
+
+  return sheet &&
+    sheet.classList.contains("show");
+}
+
 document.addEventListener("touchstart", (e) => {
+
+  if (commentsAreOpen()) return;
+
   startY = e.touches[0].clientY;
   isSwiping = true;
+
 }, { passive: true });
 
 document.addEventListener("touchmove", (e) => {
+
+  if (commentsAreOpen()) return;
+
   if (!isSwiping) return;
 
-  // 🔥 STOP browser scroll
   e.preventDefault();
+
 }, { passive: false });
 
 document.addEventListener("touchend", (e) => {
 
+  if (commentsAreOpen()) return;
+
   if (!isSwiping) return;
+
   isSwiping = false;
 
   let endY = e.changedTouches[0].clientY;
   let diff = startY - endY;
 
-  // swipe up → next
   if (diff > 60) {
     nextVideo();
   }
 
-  // swipe down → previous
   if (diff < -60) {
     prevVideo();
   }
