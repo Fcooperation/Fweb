@@ -213,7 +213,7 @@ commentBtn.addEventListener("click", (e) => {
   e.stopPropagation(); // prevent pause/video click
 
   const videoId = vid._id || vid.id;
-  openComments(videoId);
+  openComments(videoId, vid.video_url);
 });
 
 wrapper.appendChild(commentBtn);
