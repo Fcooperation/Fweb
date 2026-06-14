@@ -1,6 +1,8 @@
 {
-  "cleanUrls": true,
   "rewrites": [
-    { "source": "/fai", "destination": "/fai.html" }
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
   ]
 }
