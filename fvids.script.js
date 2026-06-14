@@ -3,6 +3,10 @@ const feed = document.getElementById("video-feed");
 const uploadQueue = document.getElementById("upload-queue");
 const videoCache = {};
 
+// ---------------- DEEP LINK SUPPORT ----------------
+const urlParams = new URLSearchParams(window.location.search);
+const sharedVideoId = urlParams.get("id");
+
 function updateLikeUI(wrapper, delta) {
   const likeCount = wrapper.querySelector(".like-count");
   if (!likeCount) return;
@@ -692,8 +696,58 @@ function showHeartPop(x, y) {
   }, 800);
 }
 
+// ---------------- LOAD SINGLE VIDEO (SHARE LINK) ----------------
+async function loadSingleVideo(videoId) {
+  try {
+
+    feed.innerHTML = `
+      <div style="text-align:center; margin-top:20px; color:white;">
+        Loading video...
+      </div>
+    `;
+
+    const res = await fetch(
+      `https://fweb-backend.onrender.com/fvids/single?id=${videoId}`
+    );
+
+    const video = await res.json();
+
+    if (!video || !video._id && !video.id) {
+      feed.innerHTML = `
+        <div style="text-align:center; margin-top:20px; color:white;">
+          Video not found
+        </div>
+      `;
+      return;
+    }
+
+    videos = [video];
+    currentIndex = 0;
+
+    renderVideo(0);
+
+  } catch (err) {
+    console.error("Shared video load failed:", err);
+
+    feed.innerHTML = `
+      <div style="text-align:center; margin-top:20px; color:white;">
+        Failed to load video
+      </div>
+    `;
+  }
+}
+
+
 // ---------------- INIT ----------------
 window.onload = () => {
   createUploadItem();
-  loadVideos(); // auto load For You feed
+
+  // 🔥 If user opened shared link
+  if (sharedVideoId) {
+    loadSingleVideo(sharedVideoId);
+  } 
+  // normal app flow
+  else {
+    loadVideos();
+  }
 };
