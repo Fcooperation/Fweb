@@ -240,6 +240,23 @@ commentCount.textContent = vid.comment_count || 0;
 wrapper.appendChild(commentCount);
 wrapper.appendChild(commentBtn);
 
+  // Share button 
+  const shareBtn = document.createElement("div");
+
+shareBtn.className = "share-btn";
+
+shareBtn.innerHTML = "➦";
+
+shareBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+
+  if (window.shareVideo) {
+    window.shareVideo(vid);
+  }
+});
+
+wrapper.appendChild(shareBtn);
+
 let lastTap = 0;
 let tapCount = 0;
 let tapTimer = null;
