@@ -328,6 +328,33 @@ localStorage.setItem(
 
       list.prepend(div);
 
+      // Update comment count UI
+const commentCount =
+  document.querySelector(".comment-count");
+
+if (commentCount) {
+
+  let current =
+    parseInt(commentCount.textContent || "0");
+
+  const updated = current + 1;
+
+  commentCount.textContent = updated;
+}
+
+// Update in-memory video object
+const currentVideo =
+  videos.find(v =>
+    String(v.id || v._id) ===
+    String(currentVideoId)
+  );
+
+if (currentVideo) {
+
+  currentVideo.comment_count =
+    (currentVideo.comment_count || 0) + 1;
+}
+
       document.getElementById(
         "no-comments"
       ).style.display = "none";
