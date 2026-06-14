@@ -260,6 +260,13 @@ shareBtn.addEventListener("click", (e) => {
 });
 
 wrapper.appendChild(shareBtn);
+  const shareCount = document.createElement("div");
+shareCount.className = "share-count";
+
+// use backend value (fallback 0)
+shareCount.textContent = vid.share_count || 0;
+
+wrapper.appendChild(shareCount);
 
 let lastTap = 0;
 let tapCount = 0;
