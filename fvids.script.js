@@ -260,6 +260,7 @@ shareBtn.addEventListener("click", (e) => {
 });
 
 wrapper.appendChild(shareBtn);
+  wrapper.dataset.publicId = vid.public_id;
   const shareCount = document.createElement("div");
 shareCount.className = "share-count";
 

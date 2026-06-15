@@ -7,6 +7,8 @@ window.shareVideo = async function(video) {
 
   try {
 
+    let result = null;
+
     if (navigator.share) {
 
       await navigator.share({
@@ -15,8 +17,7 @@ window.shareVideo = async function(video) {
         url: shareLink
       });
 
-      // ✅ count share (native share = real intent)
-      await sendShare(publicId, "system_share");
+      result = await sendShare(publicId, "system_share");
 
     } else {
 
@@ -24,8 +25,21 @@ window.shareVideo = async function(video) {
 
       showShareToast("Link copied");
 
-      // ✅ count copy link as share
-      await sendShare(publicId, "copy_link");
+      result = await sendShare(publicId, "copy_link");
+    }
+
+    // ✅ update local data immediately
+    if (result?.success) {
+      video.share_count = result.share_count;
+
+      // refresh UI
+      const countEl = document.querySelector(
+        `[data-public-id="${publicId}"] .share-count`
+      );
+
+      if (countEl) {
+        countEl.textContent = result.share_count;
+      }
     }
 
   } catch (err) {
@@ -36,17 +50,24 @@ window.shareVideo = async function(video) {
 // Send to backend
 async function sendShare(publicId, type) {
   try {
-    await fetch("https://fweb-backend.onrender.com/fvids/share", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        publicId,
-        type
-      })
-    });
+    const response = await fetch(
+      "https://fweb-backend.onrender.com/fvids/share",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          publicId,
+          type
+        })
+      }
+    );
+
+    return await response.json();
+
   } catch (err) {
     console.error("Share tracking failed:", err);
+    return null;
   }
 }

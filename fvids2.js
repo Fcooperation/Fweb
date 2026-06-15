@@ -155,12 +155,12 @@ spinner.classList.remove("hidden");
       ) + "...";
 
     readMoreHTML = `
-      <span
-        class="read-more-btn"
-        data-full="${encodeURIComponent(fullText)}">
-        Read more
-      </span>
-    `;
+  <span
+    class="read-more-btn"
+    data-full="${encodeURIComponent(fullText)}">
+    Read more
+  </span>
+`;
   }
 
   div.innerHTML = `
@@ -205,25 +205,27 @@ loadingComments = false;
 });
 
   // Readmore logic 
-  document.addEventListener(
-  "click",
-  (e) => {
+  document.addEventListener("click", (e) => {
 
-    if (
-      e.target.classList.contains(
-        "read-more-btn"
-      )
-    ) {
-
-      const fullText =
-        decodeURIComponent(
-          e.target.dataset.full
-        );
-
-      alert(fullText);
-    }
+  if (!e.target.classList.contains("read-more-btn")) {
+    return;
   }
-);
+
+  const btn = e.target;
+
+  const fullText = decodeURIComponent(
+    btn.dataset.full
+  );
+
+  const commentText =
+    btn.parentElement.querySelector(".comment-text");
+
+  if (!commentText) return;
+
+  commentText.textContent = fullText;
+
+  btn.remove();
+});
 
   // ---------------- POST COMMENT ----------------
   const postBtn =
