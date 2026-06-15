@@ -720,7 +720,7 @@ async function loadSingleVideo(videoId) {
 
     const video = await res.json();
 
-    if (!video || !video.public_id) {
+    if (!video || !video._id && !video.id) {
       feed.innerHTML = `
         <div style="text-align:center; margin-top:20px; color:white;">
           Video not found
