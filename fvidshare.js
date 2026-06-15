@@ -3,7 +3,7 @@ window.shareVideo = async function(video) {
   const publicId = video.public_id;
 
   const shareLink =
-    `${window.location.origin}/watch.html?id=${publicId}`;
+    `${window.location.origin}/watch/fvids?id=${publicId}`;
 
   try {
 
