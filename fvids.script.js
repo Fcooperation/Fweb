@@ -5,7 +5,10 @@ const videoCache = {};
 
 // ---------------- DEEP LINK SUPPORT ----------------
 const urlParams = new URLSearchParams(window.location.search);
-const sharedVideoId = urlParams.get("id");
+const pathParts = window.location.pathname.split("/");
+
+const sharedVideoId =
+  urlParams.get("id") || pathParts[pathParts.length - 1];
 
 function updateLikeUI(wrapper, delta) {
   const likeCount = wrapper.querySelector(".like-count");
