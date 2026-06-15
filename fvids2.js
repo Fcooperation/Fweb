@@ -211,6 +211,8 @@ loadingComments = false;
     return;
   }
 
+  e.stopPropagation();
+
   const btn = e.target;
 
   const fullText = decodeURIComponent(
@@ -383,6 +385,11 @@ if (currentVideo) {
 
   // Close comments section 
   document.addEventListener("click", (e) => {
+
+  // Ignore Read more clicks
+  if (e.target.closest(".read-more-btn")) {
+    return;
+  }
 
   const isOpen =
     sheet && sheet.classList.contains("show");
