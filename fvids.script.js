@@ -40,14 +40,22 @@ let hasMoreVideos = true;
 // ---------------- TAB SWITCH ----------------
 function switchTab(tab) {
 
-  if (tab === "foryou") {
-    feed.innerHTML = `
-      <div style="text-align:center; margin-top:20px; color:white;">
-        🎬 Loading For You...
-      </div>
-    `;
+  currentPage = 1;
+  hasMoreVideos = true;
+  currentIndex = 0;
 
+  feed.innerHTML = `
+    <div style="text-align:center; margin-top:20px; color:white;">
+      🎬 Loading...
+    </div>
+  `;
+
+  if (tab === "foryou") {
     loadVideos();
+  }
+
+  if (tab === "tutorials") {
+    loadVideos(1, false, "tutorial");
   }
 }
 
@@ -745,6 +753,22 @@ async function loadSingleVideo(videoId) {
   }
 }
 
+// Tabs highlight 
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    const selectedTab = tab.dataset.tab;
+
+    // remove active state from all tabs
+    document.querySelectorAll(".tab").forEach(t => {
+      t.classList.remove("active");
+    });
+
+    // highlight current tab
+    tab.classList.add("active");
+
+    switchTab(selectedTab);
+  });
+});
 
 // ---------------- INIT ----------------
 window.onload = () => {
