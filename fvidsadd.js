@@ -320,3 +320,54 @@ formData.append(
 
   xhr.send(formData);
 };
+
+// Category Input 
+const categoryInput =
+  document.getElementById("category");
+
+document
+  .querySelectorAll(".category-card")
+  .forEach(card => {
+
+    card.addEventListener("click", () => {
+
+      document
+        .querySelectorAll(".category-card")
+        .forEach(c => c.classList.remove("active"));
+
+      card.classList.add("active");
+
+      categoryInput.value = card.dataset.value;
+    });
+
+  });
+
+const trigger = document.getElementById("category-trigger");
+const grid = document.getElementById("category-grid");
+const hiddenInput = document.getElementById("category");
+const selectedText = document.getElementById("selected-category-text");
+
+// OPEN / CLOSE GRID
+trigger.onclick = () => {
+  grid.classList.toggle("show");
+};
+
+// CATEGORY SELECTION
+document.querySelectorAll(".category-card").forEach(card => {
+  card.addEventListener("click", () => {
+
+    const value = card.dataset.value;
+    const label =
+      card.querySelector(".category-name")?.textContent ||
+      card.textContent.trim();
+
+    hiddenInput.value = value;
+
+    trigger.textContent = label;
+
+    selectedText.textContent = `Selected: ${label}`;
+    selectedText.style.display = "block";
+
+    grid.classList.remove("show");
+  });
+});

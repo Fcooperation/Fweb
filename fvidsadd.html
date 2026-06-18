@@ -32,14 +32,151 @@
 
   <h3>Complete Upload</h3>
 
-  <select id="category">
-    <option value="">Select Category</option>
-    <option>Comedy</option>
-    <option>Gaming</option>
-    <option>Education</option>
-    <option>Music</option>
-    <option>Vlog</option>
-  </select>
+  <div id="category-trigger" class="category-trigger">
+  Select Category
+</div>
+
+<input type="hidden" id="category" value="tutorial">
+
+<div class="category-grid" id="category-grid">
+
+  <button class="category-card active" data-value="animation">
+    <span class="emoji">🎞️</span>
+    <span class="name">Animation</span>
+  </button>
+
+  <button class="category-card" data-value="animals">
+    <span class="emoji">🐾</span>
+    <span class="name">Animals</span>
+  </button>
+
+  <button class="category-card" data-value="art">
+    <span class="emoji">🎨</span>
+    <span class="name">Art</span>
+  </button>
+
+  <button class="category-card" data-value="beauty">
+    <span class="emoji">💄</span>
+    <span class="name">Beauty</span>
+  </button>
+
+  <button class="category-card" data-value="business">
+    <span class="emoji">💼</span>
+    <span class="name">Business</span>
+  </button>
+
+  <button class="category-card" data-value="comedy">
+    <span class="emoji">😂</span>
+    <span class="name">Comedy</span>
+  </button>
+
+  <button class="category-card" data-value="cooking">
+    <span class="emoji">👨‍🍳</span>
+    <span class="name">Cooking</span>
+  </button>
+
+  <button class="category-card" data-value="diy">
+    <span class="emoji">🛠️</span>
+    <span class="name">DIY</span>
+  </button>
+
+  <button class="category-card" data-value="education">
+    <span class="emoji">📚</span>
+    <span class="name">Education</span>
+  </button>
+
+  <button class="category-card" data-value="fashion">
+    <span class="emoji">👗</span>
+    <span class="name">Fashion</span>
+  </button>
+
+  <button class="category-card" data-value="finance">
+    <span class="emoji">💰</span>
+    <span class="name">Finance</span>
+  </button>
+
+  <button class="category-card" data-value="fitness">
+    <span class="emoji">💪</span>
+    <span class="name">Fitness</span>
+  </button>
+
+  <button class="category-card" data-value="food">
+    <span class="emoji">🍔</span>
+    <span class="name">Food</span>
+  </button>
+
+  <button class="category-card" data-value="gaming">
+    <span class="emoji">🎮</span>
+    <span class="name">Gaming</span>
+  </button>
+
+  <button class="category-card" data-value="health">
+    <span class="emoji">🩺</span>
+    <span class="name">Health</span>
+  </button>
+
+  <button class="category-card" data-value="lifestyle">
+    <span class="emoji">✨</span>
+    <span class="name">Lifestyle</span>
+  </button>
+
+  <button class="category-card" data-value="motivation">
+    <span class="emoji">🚀</span>
+    <span class="name">Motivation</span>
+  </button>
+
+  <button class="category-card" data-value="movies">
+    <span class="emoji">🎬</span>
+    <span class="name">Movies</span>
+  </button>
+
+  <button class="category-card" data-value="music">
+    <span class="emoji">🎵</span>
+    <span class="name">Music</span>
+  </button>
+
+  <button class="category-card" data-value="news">
+    <span class="emoji">📰</span>
+    <span class="name">News</span>
+  </button>
+
+  <button class="category-card" data-value="photography">
+    <span class="emoji">📸</span>
+    <span class="name">Photography</span>
+  </button>
+
+  <button class="category-card" data-value="programming">
+    <span class="emoji">💻</span>
+    <span class="name">Programming</span>
+  </button>
+
+  <button class="category-card" data-value="science">
+    <span class="emoji">🔬</span>
+    <span class="name">Science</span>
+  </button>
+
+  <button class="category-card" data-value="sports">
+    <span class="emoji">⚽</span>
+    <span class="name">Sports</span>
+  </button>
+
+  <button class="category-card" data-value="technology">
+    <span class="emoji">📱</span>
+    <span class="name">Technology</span>
+  </button>
+
+  <button class="category-card" data-value="travel">
+    <span class="emoji">✈️</span>
+    <span class="name">Travel</span>
+  </button>
+
+  <button class="category-card" data-value="tutorial">
+    <span class="emoji">🎓</span>
+    <span class="name">Tutorial</span>
+  </button>
+
+</div>
+  <div id="selected-category-text" class="selected-category-text"></div>
 
   <select id="language">
     <option value="">Select Language</option>
