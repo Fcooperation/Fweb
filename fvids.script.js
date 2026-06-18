@@ -3,6 +3,30 @@ const feed = document.getElementById("video-feed");
 const uploadQueue = document.getElementById("upload-queue");
 const videoCache = {};
 
+// Tutorial script logic
+let currentTab = "foryou";
+
+function loadTutorialScript() {
+  return new Promise((resolve, reject) => {
+
+    if (window.tutorialsLoaded) {
+      resolve();
+      return;
+    }
+
+    const script = document.getElementById("tutorial-script");
+
+    script.src = "tutorial.js";
+
+    script.onload = () => {
+      window.tutorialsLoaded = true;
+      resolve();
+    };
+
+    script.onerror = reject;
+  });
+}
+
 // ---------------- DEEP LINK SUPPORT ----------------
 const urlParams = new URLSearchParams(window.location.search);
 const sharedVideoId = urlParams.get("id");
@@ -38,11 +62,20 @@ let isLoadingMore = false;
 let hasMoreVideos = true;
 
 // ---------------- TAB SWITCH ----------------
-function switchTab(tab) {
+async function switchTab(tab) {
+
+  currentTab = tab;
 
   currentPage = 1;
   hasMoreVideos = true;
   currentIndex = 0;
+
+  // pause current video
+  const currentVideo = feed.querySelector("video");
+
+  if (currentVideo) {
+    currentVideo.pause();
+  }
 
   feed.innerHTML = `
     <div style="text-align:center; margin-top:20px; color:white;">
@@ -52,10 +85,16 @@ function switchTab(tab) {
 
   if (tab === "foryou") {
     loadVideos();
+    return;
   }
 
   if (tab === "tutorials") {
-    loadVideos(1, false, "tutorial");
+
+    await loadTutorialScript();
+
+    if (window.loadTutorialVideos) {
+      window.loadTutorialVideos();
+    }
   }
 }
 
@@ -573,7 +612,13 @@ async function loadMoreVideos() {
   currentPage++;
 
   try {
-    await loadVideos(currentPage, true);
+
+    if (currentTab === "tutorials") {
+      await window.loadTutorialVideos(currentPage, true);
+    } else {
+      await loadVideos(currentPage, true);
+    }
+
   } finally {
     isLoadingMore = false;
   }
