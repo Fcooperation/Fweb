@@ -349,6 +349,11 @@ const selectedText = document.getElementById("selected-category-text");
 
 // OPEN / CLOSE GRID
 trigger.onclick = () => {
+
+  // close language dropdown first
+  languageGrid.classList.remove("show");
+
+  // toggle category dropdown
   grid.classList.toggle("show");
 };
 
@@ -387,6 +392,11 @@ const selectedLanguageText =
 
 // OPEN / CLOSE GRID
 languageTrigger.onclick = () => {
+
+  // close category dropdown first
+  grid.classList.remove("show");
+
+  // toggle language dropdown
   languageGrid.classList.toggle("show");
 };
 
@@ -421,3 +431,23 @@ document.querySelectorAll(".language-card")
     });
 
   });
+
+// Click outside to close options
+document.addEventListener("click", (e) => {
+
+  const clickedCategory =
+    trigger.contains(e.target) ||
+    grid.contains(e.target);
+
+  const clickedLanguage =
+    languageTrigger.contains(e.target) ||
+    languageGrid.contains(e.target);
+
+  if (!clickedCategory) {
+    grid.classList.remove("show");
+  }
+
+  if (!clickedLanguage) {
+    languageGrid.classList.remove("show");
+  }
+});
