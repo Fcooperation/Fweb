@@ -38,6 +38,18 @@ let currentPage = 1;
 let isLoadingMore = false;
 let hasMoreVideos = true;
 
+// Stop all vids 
+function stopAllVideos() {
+  document.querySelectorAll("video").forEach(v => {
+    try {
+      v.pause();
+      v.currentTime = 0;
+      v.src = "";
+      v.load();
+    } catch (e) {}
+  });
+}
+
 // ---------------- TAB SWITCH ----------------
 function switchTab(tab) {
 
@@ -47,9 +59,8 @@ function switchTab(tab) {
   currentIndex = 0;
   hasMoreVideos = true;
 
-  // stop currently playing video
-  const currentVideo = feed.querySelector("video");
-  if (currentVideo) currentVideo.pause();
+  // 🔥 STOP EVERYTHING FIRST (IMPORTANT FIX)
+  stopAllVideos();
 
   videos = [];
 
@@ -192,7 +203,9 @@ wrapper.appendChild(pauseIcon);
 
   wrapper.style.transition = "transform 0.25s ease";
 
+  stopAllVideos();
   feed.innerHTML = "";
+  
   const likeBtn = document.createElement("div");
 likeBtn.className = "like-heart";
 const likeCount = document.createElement("div");
@@ -392,7 +405,10 @@ function handleLike() {
     wrapper.style.transform = "translateY(0)";
   });
 
+  setTimeout(() => {
+  stopAllVideos();
   video.play().catch(() => {});
+}, 50);
   
   // Toggle like function 
   async function toggleLike() {
@@ -798,3 +814,10 @@ window.onload = () => {
     loadVideos();
   }
 };
+
+// Stop vid on page or app exit
+window.addEventListener("pagehide", stopAllVideos);
+window.addEventListener("beforeunload", stopAllVideos);
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) stopAllVideos();
+});
