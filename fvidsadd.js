@@ -12,25 +12,6 @@ function getCurrentUser() {
   return JSON.parse(localStorage.getItem("faccount"));
 }
 
-const hashtagsInput =
-  document.getElementById("hashtags-input");
-
-const hashtagsList =
-  document.getElementById("hashtags-list");
-
-const hashtagsCount =
-  document.getElementById("hashtags-count");
-
-const details =
-  document.getElementById("details");
-
-const detailsCount =
-  document.getElementById("details-count");
-
-const hashtags = [];
-
-const MAX_HASHTAGS = 10;
-
 const previewScreen =
 document.getElementById("preview-screen");
 
@@ -217,7 +198,7 @@ document.getElementById("confirm-upload").onclick = async () => {
 
   const category = document.getElementById("category").value;
   const language = document.getElementById("language").value;
-  const selectedHashtags = hashtags;
+  const hashtags = document.getElementById("hashtags").value;
   const details = document.getElementById("details").value;
 
   if (!recordedBlob) return;
@@ -246,7 +227,9 @@ formData.append("user_id", user.id || user.user_id || "");
 // hashtags must be string (IMPORTANT for FormData)
 formData.append(
   "hashtags",
-  JSON.stringify(selectedHashtags)
+  JSON.stringify(
+    hashtags.split(",").map(t => t.trim())
+  )
 );
 
   const xhr = new XMLHttpRequest();
@@ -288,7 +271,9 @@ formData.append(
         public_id: data.public_id,
         category,
         language,
-        hashtags: selectedHashtags,
+        hashtags: hashtags
+          .split(",")
+          .map(t => t.trim()),
         details,
         createdAt: Date.now(),
         user_id:
@@ -436,120 +421,3 @@ document.querySelectorAll(".language-card")
     });
 
   });
-
-// Hashtag function 
-function updateHashtagCount() {
-  hashtagsCount.textContent =
-    `${hashtags.length} / ${MAX_HASHTAGS} hashtags`;
-}
-
-function createChip(tag) {
-
-  const chip = document.createElement("div");
-  chip.className = "hashtag-chip";
-
-  chip.innerHTML = `
-    <span>#${tag}</span>
-    <span class="hashtag-remove">✕</span>
-  `;
-
-  chip.querySelector(".hashtag-remove")
-    .addEventListener("click", () => {
-
-      const index = hashtags.indexOf(tag);
-
-      if (index > -1) {
-        hashtags.splice(index, 1);
-      }
-
-      chip.remove();
-
-      hashtagsInput.disabled = false;
-
-      updateHashtagCount();
-    });
-
-  hashtagsList.appendChild(chip);
-}
-
-function addTag(value) {
-
-  let tag = value
-    .trim()
-    .replace(/^#/, "")
-    .toLowerCase();
-
-  if (!tag) return;
-
-  if (hashtags.includes(tag)) return;
-
-  if (hashtags.length >= MAX_HASHTAGS) {
-    hashtagsInput.disabled = true;
-    return;
-  }
-
-  hashtags.push(tag);
-
-  createChip(tag);
-
-  updateHashtagCount();
-
-  hashtagsInput.value = "";
-
-  if (hashtags.length >= MAX_HASHTAGS) {
-    hashtagsInput.disabled = true;
-  }
-}
-
-// Convert hashtag text to chips 
-hashtagsInput.addEventListener("keydown", e => {
-
-  if (
-    e.key === "Enter" ||
-    e.key === "," ||
-    e.key === " "
-  ) {
-
-    e.preventDefault();
-
-    addTag(hashtagsInput.value);
-  }
-
-  if (
-    e.key === "Backspace" &&
-    hashtagsInput.value === "" &&
-    hashtags.length
-  ) {
-
-    const lastTag = hashtags.pop();
-
-    hashtagsList.lastElementChild?.remove();
-
-    hashtagsInput.disabled = false;
-
-    updateHashtagCount();
-  }
-});
-
-// video description limits 
-details.addEventListener("input", () => {
-
-  const count = details.value.length;
-
-  detailsCount.textContent =
-    `${count} / 500`;
-
-  detailsCount.classList.remove(
-    "warning",
-    "danger"
-  );
-
-  if (count >= 400) {
-    detailsCount.classList.add("warning");
-  }
-
-  if (count >= 480) {
-    detailsCount.classList.remove("warning");
-    detailsCount.classList.add("danger");
-  }
-});
