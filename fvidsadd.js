@@ -12,6 +12,25 @@ function getCurrentUser() {
   return JSON.parse(localStorage.getItem("faccount"));
 }
 
+const hashtagsInput =
+  document.getElementById("hashtags-input");
+
+const hashtagsList =
+  document.getElementById("hashtags-list");
+
+const hashtagsCount =
+  document.getElementById("hashtags-count");
+
+const details =
+  document.getElementById("details");
+
+const detailsCount =
+  document.getElementById("details-count");
+
+const hashtags = [];
+
+const MAX_HASHTAGS = 10;
+
 const previewScreen =
 document.getElementById("preview-screen");
 
@@ -198,7 +217,7 @@ document.getElementById("confirm-upload").onclick = async () => {
 
   const category = document.getElementById("category").value;
   const language = document.getElementById("language").value;
-  const hashtags = document.getElementById("hashtags").value;
+  const selectedHashtags = hashtags;
   const details = document.getElementById("details").value;
 
   if (!recordedBlob) return;
@@ -227,9 +246,7 @@ formData.append("user_id", user.id || user.user_id || "");
 // hashtags must be string (IMPORTANT for FormData)
 formData.append(
   "hashtags",
-  JSON.stringify(
-    hashtags.split(",").map(t => t.trim())
-  )
+  JSON.stringify(selectedHashtags)
 );
 
   const xhr = new XMLHttpRequest();
@@ -271,9 +288,7 @@ formData.append(
         public_id: data.public_id,
         category,
         language,
-        hashtags: hashtags
-          .split(",")
-          .map(t => t.trim()),
+        hashtags: selectedHashtags,
         details,
         createdAt: Date.now(),
         user_id:
@@ -370,4 +385,171 @@ document.querySelectorAll(".category-card").forEach(card => {
 
     grid.classList.remove("show");
   });
+});
+
+// Language selection 
+const languageTrigger =
+  document.getElementById("language-trigger");
+
+const languageGrid =
+  document.getElementById("language-grid");
+
+const languageInput =
+  document.getElementById("language");
+
+const selectedLanguageText =
+  document.getElementById("selected-language-text");
+
+// OPEN / CLOSE GRID
+languageTrigger.onclick = () => {
+  languageGrid.classList.toggle("show");
+};
+
+// SELECT LANGUAGE
+document.querySelectorAll(".language-card")
+  .forEach(card => {
+
+    card.addEventListener("click", () => {
+
+      document
+        .querySelectorAll(".language-card")
+        .forEach(c => c.classList.remove("active"));
+
+      card.classList.add("active");
+
+      const value = card.dataset.value;
+
+      const label =
+        card.querySelector(".name").textContent;
+
+      languageInput.value = value;
+
+      languageTrigger.textContent = label;
+
+      selectedLanguageText.textContent =
+        `Selected: ${label}`;
+
+      selectedLanguageText.style.display =
+        "block";
+
+      languageGrid.classList.remove("show");
+    });
+
+  });
+
+// Hashtag function 
+function updateHashtagCount() {
+  hashtagsCount.textContent =
+    `${hashtags.length} / ${MAX_HASHTAGS} hashtags`;
+}
+
+function createChip(tag) {
+
+  const chip = document.createElement("div");
+  chip.className = "hashtag-chip";
+
+  chip.innerHTML = `
+    <span>#${tag}</span>
+    <span class="hashtag-remove">✕</span>
+  `;
+
+  chip.querySelector(".hashtag-remove")
+    .addEventListener("click", () => {
+
+      const index = hashtags.indexOf(tag);
+
+      if (index > -1) {
+        hashtags.splice(index, 1);
+      }
+
+      chip.remove();
+
+      hashtagsInput.disabled = false;
+
+      updateHashtagCount();
+    });
+
+  hashtagsList.appendChild(chip);
+}
+
+function addTag(value) {
+
+  let tag = value
+    .trim()
+    .replace(/^#/, "")
+    .toLowerCase();
+
+  if (!tag) return;
+
+  if (hashtags.includes(tag)) return;
+
+  if (hashtags.length >= MAX_HASHTAGS) {
+    hashtagsInput.disabled = true;
+    return;
+  }
+
+  hashtags.push(tag);
+
+  createChip(tag);
+
+  updateHashtagCount();
+
+  hashtagsInput.value = "";
+
+  if (hashtags.length >= MAX_HASHTAGS) {
+    hashtagsInput.disabled = true;
+  }
+}
+
+// Convert hashtag text to chips 
+hashtagsInput.addEventListener("keydown", e => {
+
+  if (
+    e.key === "Enter" ||
+    e.key === "," ||
+    e.key === " "
+  ) {
+
+    e.preventDefault();
+
+    addTag(hashtagsInput.value);
+  }
+
+  if (
+    e.key === "Backspace" &&
+    hashtagsInput.value === "" &&
+    hashtags.length
+  ) {
+
+    const lastTag = hashtags.pop();
+
+    hashtagsList.lastElementChild?.remove();
+
+    hashtagsInput.disabled = false;
+
+    updateHashtagCount();
+  }
+});
+
+// video description limits 
+details.addEventListener("input", () => {
+
+  const count = details.value.length;
+
+  detailsCount.textContent =
+    `${count} / 500`;
+
+  detailsCount.classList.remove(
+    "warning",
+    "danger"
+  );
+
+  if (count >= 400) {
+    detailsCount.classList.add("warning");
+  }
+
+  if (count >= 480) {
+    detailsCount.classList.remove("warning");
+    detailsCount.classList.add("danger");
+  }
 });

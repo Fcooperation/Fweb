@@ -178,17 +178,101 @@
 </div>
   <div id="selected-category-text" class="selected-category-text"></div>
 
-  <select id="language">
-    <option value="">Select Language</option>
-    <option>English</option>
-    <option>Pidgin</option>
-    <option>Yoruba</option>
-    <option>Igbo</option>
-  </select>
+  <div id="language-trigger" class="category-trigger">
+  Select Language
+</div>
 
-  <input id="hashtags" placeholder="hashtags (comma separated)" />
-  <textarea id="details" placeholder="video details"></textarea>
+<input type="hidden" id="language">
 
+<div class="language-grid" id="language-grid">
+
+  <button class="language-card" data-value="english">
+    <span class="emoji">🇬🇧</span>
+    <span class="name">English</span>
+  </button>
+
+  <button class="language-card" data-value="pidgin">
+    <span class="emoji">🗣️</span>
+    <span class="name">Pidgin</span>
+  </button>
+
+  <button class="language-card" data-value="igbo">
+    <span class="emoji">🟢</span>
+    <span class="name">Igbo</span>
+  </button>
+
+  <button class="language-card" data-value="yoruba">
+    <span class="emoji">🟡</span>
+    <span class="name">Yoruba</span>
+  </button>
+
+  <button class="language-card" data-value="hausa">
+    <span class="emoji">⚪</span>
+    <span class="name">Hausa</span>
+  </button>
+
+  <button class="language-card" data-value="french">
+    <span class="emoji">🇫🇷</span>
+    <span class="name">French</span>
+  </button>
+
+  <button class="language-card" data-value="spanish">
+    <span class="emoji">🇪🇸</span>
+    <span class="name">Spanish</span>
+  </button>
+
+  <button class="language-card" data-value="arabic">
+    <span class="emoji">🇸🇦</span>
+    <span class="name">Arabic</span>
+  </button>
+
+</div>
+
+<div id="selected-language-text"
+     class="selected-category-text">
+</div>
+
+  <!-- HASHTAGS -->
+<div class="field-group">
+
+  <label>Hashtags</label>
+
+  <div id="hashtags-container" class="hashtags-container">
+
+    <div id="hashtags-list" class="hashtags-list"></div>
+
+    <input
+      id="hashtags-input"
+      type="text"
+      placeholder="Type a hashtag and press space"
+      maxlength="30"
+    >
+
+  </div>
+
+  <div id="hashtags-count" class="helper-text">
+    0 / 10 hashtags
+  </div>
+
+</div>
+
+<!-- DESCRIPTION -->
+<div class="field-group">
+
+  <label>Description</label>
+
+  <textarea
+    id="details"
+    maxlength="500"
+    placeholder="Describe your video..."
+  ></textarea>
+
+  <div id="details-count" class="helper-text">
+    0 / 500
+  </div>
+
+</div>
+  
   <button id="confirm-upload">Post Video</button>
 </div>
 
