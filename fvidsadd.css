@@ -1,3 +1,12 @@
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  overflow-x: hidden;
+}
+
 body {
   margin: 0;
   background: black;
@@ -491,4 +500,9 @@ body {
 
 #details::placeholder {
   color: rgba(255,255,255,0.45);
+}
+#details-sheet {
+  max-height: 85vh;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
