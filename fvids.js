@@ -40,12 +40,9 @@ let hasMoreVideos = true;
 
 // Stop all vids 
 function stopAllVideos() {
-  document.querySelectorAll("video").forEach(v => {
+  document.querySelectorAll("#video-feed video").forEach(v => {
     try {
       v.pause();
-      v.currentTime = 0;
-      v.src = "";
-      v.load();
     } catch (e) {}
   });
 }
@@ -157,6 +154,13 @@ function applyVideoFit(video) {
 // ---------------- RENDER SINGLE VIDEO ----------------
 function renderVideo(index, direction = "next") {
 
+  // stop previous video ONLY
+const currentVideo = feed.querySelector("video");
+if (currentVideo) currentVideo.pause();
+
+// clear UI safely
+feed.innerHTML = "";
+
   const vid = videos[index];
   if (!vid) return;
 
@@ -203,8 +207,7 @@ wrapper.appendChild(pauseIcon);
 
   wrapper.style.transition = "transform 0.25s ease";
 
-  stopAllVideos();
-  feed.innerHTML = "";
+  
   
   const likeBtn = document.createElement("div");
 likeBtn.className = "like-heart";
@@ -405,10 +408,12 @@ function handleLike() {
     wrapper.style.transform = "translateY(0)";
   });
 
-  setTimeout(() => {
-  stopAllVideos();
-  video.play().catch(() => {});
-}, 50);
+  requestAnimationFrame(() => {
+  const v = wrapper.querySelector("video");
+  if (v) {
+    v.play().catch(() => {});
+  }
+});
   
   // Toggle like function 
   async function toggleLike() {
