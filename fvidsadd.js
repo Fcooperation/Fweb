@@ -262,31 +262,36 @@ formData.append(
         );
       }
 
-      btn.textContent = "Uploaded ✓";
+      btn.textContent = "Processing video...";
 
-      const uploadData = {
-        video_url: data.video_url,
-        public_id: data.public_id,
-        category,
-        language,
-        hashtags: selectedHashtags,
-        details,
-        createdAt: Date.now(),
-        user_id:
-          localStorage.getItem(
-            "account_id"
-          ) || null
-      };
+const uploadData = {
+  video_url: data.video_url,
+  public_id: data.public_id,
+  category,
+  language,
+  hashtags: selectedHashtags,
+  details,
+  createdAt: Date.now(),
+  user_id: localStorage.getItem("account_id") || null
+};
 
-      localStorage.setItem(
-        "last_upload",
-        JSON.stringify(uploadData)
-      );
+localStorage.setItem(
+  "last_upload",
+  JSON.stringify(uploadData)
+);
 
-      setTimeout(() => {
-        window.location.href =
-          "fvids.html";
-      }, 1000);
+// STEP STATES (UX FLOW)
+setTimeout(() => {
+  btn.textContent = "Processed ✓";
+}, 800);
+
+setTimeout(() => {
+  btn.textContent = "Done ✓";
+}, 1300);
+
+setTimeout(() => {
+  window.location.href = "fvids.html";
+}, 1800);
 
     } catch (err) {
 
