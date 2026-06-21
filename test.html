@@ -25,10 +25,10 @@
     <div class="specs">Locked format: H.264 + AAC | 720p | 1Mbps | 30fps | GOP 60</div>
 
     <div class="box">
-        <label for="video-upload" class="btn" id="upload-label" style="pointer-events: none; opacity: 0.5;">Loading Engine...</label>
+        <label for="video-upload" class="btn" id="upload-label" style="pointer-events: none; opacity: 0.5;">Connecting...</label>
         <input type="file" id="video-upload" accept="video/*">
         
-        <div id="status">Initializing modules from secure CDN...</div>
+        <div id="status">Preparing tracker pipelines...</div>
         
         <div class="progress-container" id="p-container">
             <div id="progress-bar"></div>
@@ -39,11 +39,8 @@
         <a id="download-link" class="btn" style="display: none; background-color: #00b37e;">Download Compressed Video</a>
     </div>
 
-    <!-- Script loaded as an ES Module to ensure correct local scope evaluation -->
     <script type="module">
-        // Import unified v0.12 components via jsDelivr CDN
         import { FFmpeg } from 'https://jsdelivr.net';
-        import { toBlobURL } from 'https://jsdelivr.net';
 
         const ffmpeg = new FFmpeg();
 
@@ -55,16 +52,59 @@
         const outputPlayer = document.getElementById('output-player');
         const downloadLink = document.getElementById('download-link');
 
+        // Helper function that downloads a file with a live progress bar
+        function downloadWithProgress(url, label) {
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open('GET', url, true);
+                xhr.responseType = 'blob';
+
+                xhr.onprogress = (event) => {
+                    if (event.lengthComputable) {
+                        const loadedMb = (event.loaded / (1024 * 1024)).toFixed(1);
+                        const totalMb = (event.total / (1024 * 1024)).toFixed(1);
+                        const percentage = Math.round((event.loaded / event.total) * 100);
+                        
+                        // Update UI text and slider bar
+                        progressContainer.style.display = "block";
+                        progressBar.style.width = percentage + '%';
+                        statusDiv.innerText = `⏬ Downloading ${label}: ${loadedMb}MB / ${totalMb}MB (${percentage}%)`;
+                    } else {
+                        statusDiv.innerText = `⏬ Downloading ${label}...`;
+                    }
+                };
+
+                xhr.onload = () => {
+                    if (xhr.status === 200) {
+                        const blobUrl = URL.createObjectURL(xhr.response);
+                        resolve(blobUrl);
+                    } else {
+                        reject(new Error(`Failed to load ${label}. Server status: ${xhr.status}`));
+                    }
+                };
+
+                xhr.onerror = () => reject(new Error(`Network error downloading ${label}`));
+                xhr.send();
+            });
+        }
+
         async function init() {
             try {
-                // Using explicit single-thread (ST) fallback files to ignore browser CORS/Isolated header restrictions
                 const baseURL = 'https://jsdelivr.net';
                 
-                statusDiv.innerText = "Downloading virtual core components...";
+                // Track file 1 of 2 (Small interface file)
+                const jsBlobUrl = await downloadWithProgress(`${baseURL}/ffmpeg-core.js`, 'Interface Glue (1/2)');
                 
+                // Track file 2 of 2 (Large core layout engine)
+                const wasmBlobUrl = await downloadWithProgress(`${baseURL}/ffmpeg-core.wasm`, 'WASM Codec Engine (2/2)');
+                
+                statusDiv.innerText = "Assembling local engine structures...";
+                progressContainer.style.display = "none";
+                
+                // Boot up engine directly using our manually captured data packages
                 await ffmpeg.load({
-                    coreJSModulesPath: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-                    coreWasmModulesPath: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm')
+                    coreJSModulesPath: jsBlobUrl,
+                    coreWasmModulesPath: wasmBlobUrl
                 });
 
                 statusDiv.innerText = "Ready to compress! Choose a file above.";
@@ -73,68 +113,58 @@
                 uploadLabel.innerText = "Choose Video File";
             } catch (err) {
                 console.error(err);
-                statusDiv.innerHTML = `❌ Initialization Failed.<br><span style='font-size:12px;color:#f75a68;'>Error details: ${err.message || 'WASM isolation error'}. Try opening via a local development server or using Google Chrome.</span>`;
+                statusDiv.innerHTML = `❌ Download Failed.<br><span style='font-size:12px;color:#f75a68;'>Error: ${err.message}. If stuck, your network connection may have fully timed out. Refresh to retry.</span>`;
             }
         }
         init();
 
-        // Listen for internal framework layout logs
-        ffmpeg.on('log', ({ message }) => {
-            console.log("[FFmpeg Log]", message);
-        });
-
-        // Watch conversion loop execution percentage metrics
+        // Listen for processing completion layout updates
         ffmpeg.on('progress', ({ progress }) => {
             const percentage = Math.min(Math.max(Math.round(progress * 100), 0), 100);
             progressBar.style.width = percentage + '%';
-            statusDiv.innerText = `Compressing video... ${percentage}%`;
+            statusDiv.innerText = `🎬 Compressing video... ${percentage}%`;
         });
 
         uploadInput.addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
 
-            // Reset UI states
             uploadLabel.style.display = "none";
             progressContainer.style.display = "block";
             outputPlayer.style.display = "none";
             downloadLink.style.display = "none";
             progressBar.style.width = '0%';
 
-            statusDiv.innerText = "Loading video array buffer into client filesystem...";
+            statusDiv.innerText = "Loading video file into browser memory sandbox...";
             
-            // Read file standard format array layout safely into WASM space
             const fileData = new Uint8Array(await file.arrayBuffer());
             await ffmpeg.writeFile('input_raw.mp4', fileData);
 
             statusDiv.innerText = "Processing video stream matrix (Running FVIDS specs)...";
 
             try {
-                // EXECUTE STRICT SPECIFICATIONS MAPPED TO YOUR FVIDS CONFIGURATION
                 await ffmpeg.exec([
                     '-i', 'input_raw.mp4',
-                    '-vcodec', 'libx264',         // Force H.264 Video Codec
-                    '-b:v', '1000k',              // Lock video bitrate to exactly 1 Mbps
-                    '-vf', 'scale=1280:720',      // Force resolution to 1280x720 (720p)
-                    '-r', '30',                   // Lock frame rate to 30 FPS
-                    '-g', '60',                   // Set keyframe interval (GOP) to 60 frames (30fps x 2s)
-                    '-keyint_min', '60',          // Force strict minimum keyframe intervals
-                    '-acodec', 'aac',             // Force AAC Audio Codec
-                    '-b:a', '128k',               // Lock audio bitrate to 128 kbps
-                    '-ar', '48000',               // Lock audio sample rate to 48,000 Hz
-                    '-ac', '2',                   // Force Stereo layout (2 channels)
-                    '-preset', 'ultrafast',       // Fast performance preset for browser safety
+                    '-vcodec', 'libx264',         
+                    '-b:v', '1000k',              
+                    '-vf', 'scale=1280:720',      
+                    '-r', '30',                   
+                    '-g', '60',                   
+                    '-keyint_min', '60',          
+                    '-acodec', 'aac',             
+                    '-b:a', '128k',               
+                    '-ar', '48000',               
+                    '-ac', '2',                   
+                    '-preset', 'ultrafast',       
                     'output_compressed.mp4'
                 ]);
 
                 statusDiv.innerText = "Compression complete! Generating local downlinks...";
                 progressContainer.style.display = "none";
 
-                // Extract resulting raw stream components out of virtual storage
                 const data = await ffmpeg.readFile('output_compressed.mp4');
                 const videoUrl = URL.createObjectURL(new Blob([data.buffer], { type: 'video/mp4' }));
                 
-                // Mount payload elements directly back into application layout view
                 outputPlayer.src = videoUrl;
                 outputPlayer.style.display = "block";
                 
