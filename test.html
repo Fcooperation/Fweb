@@ -1,184 +1,154 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FVIDS Video Compressor</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #121214; color: #e1e1e6; max-width: 600px; margin: 40px auto; padding: 20px; text-align: center; }
-        .box { background: #202024; border: 1px solid #323238; border-radius: 8px; padding: 24px; margin-top: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        h1 { color: #00b37e; font-size: 24px; margin-bottom: 5px; }
-        .specs { font-size: 12px; color: #8d8d99; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.05em; }
-        input[type="file"] { display: none; }
-        .btn { display: inline-block; background-color: #00875f; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: bold; margin: 10px 0; transition: background 0.2s; text-decoration: none; }
-        .btn:hover { background-color: #00b37e; }
-        .btn:disabled { background-color: #4d4d56; cursor: not-allowed; opacity: 0.5; }
-        #status { margin-top: 20px; font-weight: 500; font-size: 14px; color: #a9a9b2; word-break: break-word; }
-        #progress-bar { width: 0%; height: 6px; background-color: #00b37e; border-radius: 3px; margin-top: 10px; transition: width 0.1s; }
-        .progress-container { width: 100%; background-color: #323238; border-radius: 3px; display: none; margin-top: 15px; }
-        video { width: 100%; border-radius: 6px; margin-top: 20px; display: none; border: 1px solid #323238; }
-    </style>
+  <title>FVideo Compressor Test</title>
+
+  <style>
+    body {
+      font-family: Arial;
+      background: #111;
+      color: white;
+      padding: 20px;
+    }
+
+    button {
+      padding: 10px 15px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    video {
+      width: 320px;
+      margin-top: 10px;
+      border-radius: 10px;
+      display: block;
+    }
+
+    #log {
+      margin-top: 15px;
+      background: #222;
+      padding: 10px;
+      border-radius: 8px;
+      min-height: 120px;
+      white-space: pre-line;
+    }
+  </style>
 </head>
+
 <body>
 
-    <h1>🎬 FVIDS Video Compressor</h1>
-    <div class="specs">Locked format: H.264 + AAC | 720p | 1Mbps | 30fps | GOP 60</div>
+<h2>🔥 Video Compression Test (720p / 1Mbps)</h2>
 
-    <div class="box">
-        <label for="video-upload" class="btn" id="upload-label" style="pointer-events: none; opacity: 0.5;">Connecting...</label>
-        <input type="file" id="video-upload" accept="video/*">
-        
-        <div id="status">Preparing tracker pipelines...</div>
-        
-        <div class="progress-container" id="p-container">
-            <div id="progress-bar"></div>
-        </div>
+<input type="file" id="file" accept="video/*" />
+<br>
 
-        <video id="output-player" controls></video>
-        <br>
-        <a id="download-link" class="btn" style="display: none; background-color: #00b37e;">Download Compressed Video</a>
-    </div>
+<button onclick="compressVideo()">Compress Video</button>
 
-    <script type="module">
-        import { FFmpeg } from 'https://jsdelivr.net';
+<div id="log">Waiting...</div>
 
-        const ffmpeg = new FFmpeg();
+<h3>Original</h3>
+<video id="original" controls></video>
 
-        const uploadInput = document.getElementById('video-upload');
-        const uploadLabel = document.getElementById('upload-label');
-        const statusDiv = document.getElementById('status');
-        const progressBar = document.getElementById('progress-bar');
-        const progressContainer = document.getElementById('p-container');
-        const outputPlayer = document.getElementById('output-player');
-        const downloadLink = document.getElementById('download-link');
+<h3>Compressed</h3>
+<video id="compressed" controls></video>
 
-        // Helper function that downloads a file with a live progress bar
-        function downloadWithProgress(url, label) {
-            return new Promise((resolve, reject) => {
-                const xhr = new XMLHttpRequest();
-                xhr.open('GET', url, true);
-                xhr.responseType = 'blob';
+<script type="module">
+import { createFFmpeg, fetchFile } from "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/+esm";
 
-                xhr.onprogress = (event) => {
-                    if (event.lengthComputable) {
-                        const loadedMb = (event.loaded / (1024 * 1024)).toFixed(1);
-                        const totalMb = (event.total / (1024 * 1024)).toFixed(1);
-                        const percentage = Math.round((event.loaded / event.total) * 100);
-                        
-                        // Update UI text and slider bar
-                        progressContainer.style.display = "block";
-                        progressBar.style.width = percentage + '%';
-                        statusDiv.innerText = `⏬ Downloading ${label}: ${loadedMb}MB / ${totalMb}MB (${percentage}%)`;
-                    } else {
-                        statusDiv.innerText = `⏬ Downloading ${label}...`;
-                    }
-                };
+const ffmpeg = createFFmpeg({
+  log: false,
+  corePath: "/fcompressor/ffmpeg-core.js"
+});
 
-                xhr.onload = () => {
-                    if (xhr.status === 200) {
-                        const blobUrl = URL.createObjectURL(xhr.response);
-                        resolve(blobUrl);
-                    } else {
-                        reject(new Error(`Failed to load ${label}. Server status: ${xhr.status}`));
-                    }
-                };
+const logBox = document.getElementById("log");
 
-                xhr.onerror = () => reject(new Error(`Network error downloading ${label}`));
-                xhr.send();
-            });
-        }
+function log(msg) {
+  logBox.innerText += "\n" + msg;
+}
 
-        async function init() {
-            try {
-                const baseURL = 'https://jsdelivr.net';
-                
-                // Track file 1 of 2 (Small interface file)
-                const jsBlobUrl = await downloadWithProgress(`${baseURL}/ffmpeg-core.js`, 'Interface Glue (1/2)');
-                
-                // Track file 2 of 2 (Large core layout engine)
-                const wasmBlobUrl = await downloadWithProgress(`${baseURL}/ffmpeg-core.wasm`, 'WASM Codec Engine (2/2)');
-                
-                statusDiv.innerText = "Assembling local engine structures...";
-                progressContainer.style.display = "none";
-                
-                // Boot up engine directly using our manually captured data packages
-                await ffmpeg.load({
-                    coreJSModulesPath: jsBlobUrl,
-                    coreWasmModulesPath: wasmBlobUrl
-                });
+function setLog(msg) {
+  logBox.innerText = msg;
+}
 
-                statusDiv.innerText = "Ready to compress! Choose a file above.";
-                uploadLabel.style.pointerEvents = "auto";
-                uploadLabel.style.opacity = "1";
-                uploadLabel.innerText = "Choose Video File";
-            } catch (err) {
-                console.error(err);
-                statusDiv.innerHTML = `❌ Download Failed.<br><span style='font-size:12px;color:#f75a68;'>Error: ${err.message}. If stuck, your network connection may have fully timed out. Refresh to retry.</span>`;
-            }
-        }
-        init();
+window.compressVideo = async () => {
+  const file = document.getElementById("file").files[0];
 
-        // Listen for processing completion layout updates
-        ffmpeg.on('progress', ({ progress }) => {
-            const percentage = Math.min(Math.max(Math.round(progress * 100), 0), 100);
-            progressBar.style.width = percentage + '%';
-            statusDiv.innerText = `🎬 Compressing video... ${percentage}%`;
-        });
+  if (!file) return alert("Select a video first");
 
-        uploadInput.addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
+  // reset logs
+  logBox.innerText = "";
 
-            uploadLabel.style.display = "none";
-            progressContainer.style.display = "block";
-            outputPlayer.style.display = "none";
-            downloadLink.style.display = "none";
-            progressBar.style.width = '0%';
+  document.getElementById("original").src =
+    URL.createObjectURL(file);
 
-            statusDiv.innerText = "Loading video file into browser memory sandbox...";
-            
-            const fileData = new Uint8Array(await file.arrayBuffer());
-            await ffmpeg.writeFile('input_raw.mp4', fileData);
+  setLog("📦 Preparing compression...");
 
-            statusDiv.innerText = "Processing video stream matrix (Running FVIDS specs)...";
+  const originalSize = file.size / (1024 * 1024);
+  log(`Original size: ${originalSize.toFixed(2)} MB`);
 
-            try {
-                await ffmpeg.exec([
-                    '-i', 'input_raw.mp4',
-                    '-vcodec', 'libx264',         
-                    '-b:v', '1000k',              
-                    '-vf', 'scale=1280:720',      
-                    '-r', '30',                   
-                    '-g', '60',                   
-                    '-keyint_min', '60',          
-                    '-acodec', 'aac',             
-                    '-b:a', '128k',               
-                    '-ar', '48000',               
-                    '-ac', '2',                   
-                    '-preset', 'ultrafast',       
-                    'output_compressed.mp4'
-                ]);
+  if (!ffmpeg.isLoaded()) {
+    log("⚙️ Loading FFmpeg...");
+    await ffmpeg.load();
+  }
 
-                statusDiv.innerText = "Compression complete! Generating local downlinks...";
-                progressContainer.style.display = "none";
+  setLog("⚡ Compressing video...");
 
-                const data = await ffmpeg.readFile('output_compressed.mp4');
-                const videoUrl = URL.createObjectURL(new Blob([data.buffer], { type: 'video/mp4' }));
-                
-                outputPlayer.src = videoUrl;
-                outputPlayer.style.display = "block";
-                
-                downloadLink.href = videoUrl;
-                downloadLink.download = `fvids_${file.name.substring(0, file.name.lastIndexOf('.')) || file.name}.mp4`;
-                downloadLink.style.display = "inline-block";
-            } catch (error) {
-                console.error(error);
-                statusDiv.innerText = "❌ Compression process encountered an error. Check developer console for system parameters.";
-            }
-            
-            uploadLabel.style.display = "inline-block";
-            uploadLabel.innerText = "Compress Another Video";
-        });
-    </script>
+  const input = "input.mp4";
+  const output = "output.mp4";
+
+  ffmpeg.FS("writeFile", input, await fetchFile(file));
+
+  let last = 0;
+
+  ffmpeg.setProgress(({ ratio }) => {
+    const percent = Math.round(ratio * 100);
+
+    if (percent !== last) {
+      last = percent;
+      setLog(`⚡ Compressing... ${percent}%`);
+    }
+  });
+
+  await ffmpeg.run(
+    "-i", input,
+
+    // 🔥 VIDEO SETTINGS (LOCKED)
+    "-vf", "scale=1280:720",
+    "-r", "30",
+    "-b:v", "1000k",
+
+    // H.264 compression
+    "-c:v", "libx264",
+    "-preset", "veryfast",
+    "-crf", "28",
+
+    // AUDIO
+    "-c:a", "aac",
+    "-b:a", "128k",
+
+    output
+  );
+
+  const data = ffmpeg.FS("readFile", output);
+
+  const blob = new Blob([data.buffer], {
+    type: "video/mp4"
+  });
+
+  const compressedSize = blob.size / (1024 * 1024);
+
+  const saved = (
+    ((file.size - blob.size) / file.size) * 100
+  ).toFixed(2);
+
+  setLog("✅ Done!");
+  log(`Compressed size: ${compressedSize.toFixed(2)} MB`);
+  log(`Saved: ${saved}%`);
+
+  const url = URL.createObjectURL(blob);
+  document.getElementById("compressed").src = url;
+};
+</script>
+
 </body>
 </html>
