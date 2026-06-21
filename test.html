@@ -1,122 +1,140 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>FAI Review Debug</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FVIDS Video Compressor</title>
+    <!-- Load the single-threaded FFmpeg library to bypass CORS restrictions -->
+    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #121214; color: #e1e1e6; max-width: 600px; margin: 40px auto; padding: 20px; text-align: center; }
+        .box { background: #202024; border: 1px solid #323238; border-radius: 8px; padding: 24px; margin-top: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        h1 { color: #00b37e; font-size: 24px; margin-bottom: 5px; }
+        .specs { font-size: 12px; color: #8d8d99; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.05em; }
+        input[type="file"] { display: none; }
+        .btn { display: inline-block; background-color: #00875f; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: bold; margin: 10px 0; transition: background 0.2s; }
+        .btn:hover { background-color: #00b37e; }
+        .btn:disabled { background-color: #4d4d56; cursor: not-allowed; }
+        #status { margin-top: 20px; font-weight: 500; font-size: 14px; color: #a9a9b2; }
+        #progress-bar { width: 0%; height: 6px; background-color: #00b37e; border-radius: 3px; margin-top: 10px; transition: width 0.3s; }
+        .progress-container { width: 100%; background-color: #323238; border-radius: 3px; display: none; margin-top: 15px; }
+        video { width: 100%; border-radius: 6px; margin-top: 20px; display: none; border: 1px solid #323238; }
+    </style>
 </head>
 <body>
 
-<h2>FAI Review Debug</h2>
+    <h1>🎬 FVIDS Video Compressor</h1>
+    <div class="specs">Locked format: H.264 + AAC | 720p | 1Mbps | 30fps | GOP 60</div>
 
-<button id="check">Check Storage</button>
-<button id="send">Send To Backend</button>
+    <div class="box">
+        <label for="video-upload" class="btn" id="upload-label">Choose Video File</label>
+        <input type="file" id="video-upload" accept="video/*">
+        
+        <div id="status">FFmpeg engine loading...</div>
+        
+        <div class="progress-container" id="p-container">
+            <div id="progress-bar"></div>
+        </div>
 
-<h3>Stored Review</h3>
-<pre id="output"></pre>
+        <video id="output-player" controls></video>
+        <br>
+        <a id="download-link" class="btn" style="display: none; background-color: #00b37e;">Download Compressed Video</a>
+    </div>
 
-<h3>Backend Response</h3>
-<pre id="response"></pre>
+    <script>
+        const { createFFmpeg, fetchFile } = FFmpeg;
+        
+        // Configuration targeted specifically for standard client environments
+        const ffmpeg = createFFmpeg({ 
+            log: true,
+            corePath: 'https://unpkg.com'
+        });
 
-<script>
+        const uploadInput = document.getElementById('video-upload');
+        const uploadLabel = document.getElementById('upload-label');
+        const statusDiv = document.getElementById('status');
+        const progressBar = document.getElementById('progress-bar');
+        const progressContainer = document.getElementById('p-container');
+        const outputPlayer = document.getElementById('output-player');
+        const downloadLink = document.getElementById('download-link');
 
-const output =
-document.getElementById("output");
+        // Initialize FFmpeg library immediately
+        async function init() {
+            try {
+                await ffmpeg.load();
+                statusDiv.innerText = "Ready to compress. Choose a file above.";
+            } catch (err) {
+                console.error(err);
+                statusDiv.innerHTML = "❌ Library configuration initialization failed.<br><span style='font-size:12px;color:#f75a68;'>Please ensure you are opening this script over an active internet connection so the script dependencies can load.</span>";
+                uploadLabel.style.pointerEvents = "none";
+                uploadLabel.style.opacity = "0.5";
+            }
+        }
+        init();
 
-const responseBox =
-document.getElementById("response");
+        // Listen for conversion progress calculations
+        ffmpeg.setProgress(({ ratio }) => {
+            const percentage = Math.min(Math.max(Math.round(ratio * 100), 0), 100);
+            progressBar.style.width = percentage + '%';
+            statusDiv.innerText = `Compressing video... ${percentage}%`;
+        });
 
-document.getElementById("check").onclick = () => {
+        uploadInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
 
-  const reviewData =
-    localStorage.getItem("fai_review");
+            // Reset UI states
+            uploadLabel.style.display = "none";
+            progressContainer.style.display = "block";
+            outputPlayer.style.display = "none";
+            downloadLink.style.display = "none";
+            progressBar.style.width = '0%';
 
-  const review =
-    JSON.parse(reviewData || "[]");
+            statusDiv.innerText = "Loading file into virtual filesystem...";
+            const { name } = file;
+            
+            // Write local file array buffer to internal WASM filesystem
+            ffmpeg.FS('writeFile', 'input_raw', await fetchFile(file));
 
-  output.textContent =
-    JSON.stringify(review, null, 2);
+            statusDiv.innerText = "Processing video stream matrix...";
 
-  console.log("RAW:", reviewData);
-  console.log("PARSED:", review);
-};
+            // RUN THE LOCKED ENCODING PIPELINE SPECIFICATIONS
+            await ffmpeg.run(
+                '-i', 'input_raw',
+                '-vcodec', 'libx264',         // Force H.264 Video Codec
+                '-b:v', '1000k',              // Lock video bitrate to exactly 1 Mbps
+                '-vf', 'scale=1280:720',      // Force resolution to 1280x720 (720p)
+                '-r', '30',                   // Lock frame rate to 30 FPS
+                '-g', '60',                   // Set keyframe interval (GOP) to 60 frames (30fps x 2s)
+                '-keyint_min', '60',          // Force strict minimum keyframe intervals
+                '-acodec', 'aac',             // Force AAC Audio Codec
+                '-b:a', '128k',               // Lock audio bitrate to 128 kbps
+                '-ar', '48000',               // Lock audio sample rate to 48,000 Hz
+                '-ac', '2',                   // Force Stereo layout (2 channels)
+                '-preset', 'ultrafast',       // Essential for local browser execution speed/stability
+                'output_compressed.mp4'       // Render out wrapper file standard
+            );
 
-document.getElementById("send").onclick = async () => {
+            statusDiv.innerText = "Compression complete! Generating downlinks...";
+            progressContainer.style.display = "none";
 
-  try {
+            // Extract native compressed buffer array from container execution
+            const data = ffmpeg.FS('readFile', 'output_compressed.mp4');
 
-    const reviewData =
-      localStorage.getItem("fai_review");
-
-    const review =
-      JSON.parse(reviewData || "[]");
-
-    console.log("📚 REVIEW:", review);
-
-    const payload = {
-      userId: "debug-user",
-      messages: [],
-      prompt: `
-You are FAI helping a student.
-
-Give short but very clear explanations.
-
-For each question:
-- Correct answer
-- Why it's correct
-- Simple explanation
-
-Quiz Review:
-${JSON.stringify(review, null, 2)}
-      `.trim()
-    };
-
-    console.log("📦 PAYLOAD:", payload);
-
-    responseBox.textContent =
-      "Sending request...";
-
-    const res = await fetch(
-      "https://fweb-backend.onrender.com/fai",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload)
-      }
-    );
-
-    const text =
-      await res.text();
-
-    console.log("📨 RAW RESPONSE:", text);
-
-    try {
-
-      const json =
-        JSON.parse(text);
-
-      responseBox.textContent =
-        JSON.stringify(json, null, 2);
-
-    } catch {
-
-      responseBox.textContent =
-        text;
-
-    }
-
-  } catch (err) {
-
-    console.error(err);
-
-    responseBox.textContent =
-      "ERROR:\n\n" + err.message;
-
-  }
-
-};
-
-</script>
-
+            // Build structural application link
+            const videoUrl = URL.createObjectURL(new Blob([data.buffer], { type: 'video/mp4' }));
+            
+            // Set elements active for browser review and export download
+            outputPlayer.src = videoUrl;
+            outputPlayer.style.display = "block";
+            
+            downloadLink.href = videoUrl;
+            downloadLink.download = `fvids_${name.substring(0, name.lastIndexOf('.')) || name}.mp4`;
+            downloadLink.style.display = "inline-block";
+            
+            uploadLabel.style.display = "inline-block";
+            uploadLabel.innerText = "Compress Another Video";
+        });
+    </script>
 </body>
 </html>
