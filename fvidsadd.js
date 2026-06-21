@@ -1,54 +1,6 @@
 let stream;
 let currentFacingMode = "user";
 
-const ws = new WebSocket("wss://fweb-backend.onrender.com");
-
-let currentUploadBtn = null;
-
-ws.onopen = () => {
-  const user = getCurrentUser();
-
-  if (user) {
-    ws.send(JSON.stringify({
-      type: "register",
-      user_id: user.id || user.user_id
-    }));
-  }
-};
-
-// Handle live WebSocket sync 
-ws.onmessage = (event) => {
-  const data = JSON.parse(event.data);
-
-  if (!currentUploadBtn) return;
-
-  // 1. Compression progress
-  if (data.stage === "compressing") {
-    currentUploadBtn.textContent =
-      `Compressing... ${data.percent}%`;
-  }
-
-  // 2. Uploading to cloud
-  if (data.stage === "uploading_cloud") {
-    currentUploadBtn.textContent =
-      `Uploading... ${data.percent}%`;
-  }
-
-  // 3. Done
-  if (data.stage === "done") {
-    currentUploadBtn.textContent = "Done ✓";
-
-    localStorage.setItem(
-      "last_upload",
-      JSON.stringify(data)
-    );
-
-    setTimeout(() => {
-      window.location.href = "fvids.html";
-    }, 800);
-  }
-};
-
 const video = document.getElementById("camera");
 
 const uploadBtn = document.getElementById("upload-btn");
@@ -244,8 +196,6 @@ document.getElementById("confirm-upload").onclick = async () => {
 
   const btn = document.getElementById("confirm-upload");
 
-  currentUploadBtn = btn;
-  
   const category = document.getElementById("category").value;
   const language = document.getElementById("language").value;
   const selectedHashtags = [...hashtags];
@@ -312,7 +262,7 @@ formData.append(
         );
       }
 
-      btn.textContent = "Waiting for processing...";
+      btn.textContent = "Processing video...";
 
 const uploadData = {
   video_url: data.video_url,
@@ -329,6 +279,20 @@ localStorage.setItem(
   "last_upload",
   JSON.stringify(uploadData)
 );
+
+// STEP STATES (UX FLOW)
+setTimeout(() => {
+  btn.textContent = "Processed ✓";
+}, 800);
+
+setTimeout(() => {
+  btn.textContent = "Done ✓";
+}, 1300);
+
+setTimeout(() => {
+  window.location.href = "fvids.html";
+}, 1800);
+
     } catch (err) {
 
       btn.disabled = false;
