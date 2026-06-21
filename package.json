@@ -1,0 +1,29 @@
+{
+  "name": "fweb",
+  "version": "1.0.0",
+  "description": "",
+  "main": "adminstudy.script.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Fcooperation/Fweb.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Fcooperation/Fweb/issues"
+  },
+  "homepage": "https://github.com/Fcooperation/Fweb#readme",
+  "dependencies": {
+    "@ffmpeg/core": "^0.12.10",
+    "@ffmpeg/ffmpeg": "^0.12.15",
+    "@ffmpeg/util": "^0.12.2"
+  }
+}
