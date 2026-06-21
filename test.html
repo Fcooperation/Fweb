@@ -24,6 +24,8 @@
       padding: 10px;
       border-radius: 8px;
       white-space: pre-wrap;
+      max-height: 250px;
+      overflow-y: auto;
     }
 
     video {
@@ -34,6 +36,12 @@
 
     canvas {
       display: none;
+    }
+
+    a {
+      display: block;
+      margin-top: 10px;
+      color: #4da3ff;
     }
   </style>
 </head>
@@ -55,23 +63,27 @@
 
 <h3>Compressed</h3>
 <video id="compressed" controls></video>
+
 <h3>Temporary Link</h3>
 <a id="tempLink" target="_blank"></a>
-  
+
+<h3>Download</h3>
+<button id="downloadBtn">Download Compressed Video</button>
+
 <canvas id="canvas"></canvas>
 
 <script>
 
 const logBox = document.getElementById("log");
 
+let compressedBlob = null;
+
 function log(msg) {
   console.log(msg);
   logBox.textContent += "\n" + msg;
+  logBox.scrollTop = logBox.scrollHeight;
 }
 
-function sleep(ms) {
-  return new Promise(r => setTimeout(r, ms));
-}
 async function compress() {
 
   const file = document.getElementById("file").files[0];
@@ -87,15 +99,8 @@ async function compress() {
   log("Loading video metadata...");
 
   await new Promise((resolve) => {
-
-    video.onloadedmetadata = () => {
-      resolve();
-    };
-
-    // fallback in case it's already loaded
-    if (video.readyState >= 1) {
-      resolve();
-    }
+    video.onloadedmetadata = () => resolve();
+    if (video.readyState >= 1) resolve();
   });
 
   log("Metadata loaded ✔");
@@ -125,41 +130,34 @@ async function compress() {
 
   recorder.onstop = () => {
 
-  const blob = new Blob(chunks, { type: "video/webm" });
+    compressedBlob = new Blob(chunks, { type: "video/webm" });
 
-  log("Compression complete ✔");
+    log("Compression complete ✔");
 
-  const url = URL.createObjectURL(blob);
+    const outUrl = URL.createObjectURL(compressedBlob);
 
-  const compressedVideo = document.getElementById("compressed");
+    // preview video fix
+    const compressedVideo = document.getElementById("compressed");
+    compressedVideo.pause();
+    compressedVideo.src = outUrl;
 
-  // reset video
-  compressedVideo.pause();
-  compressedVideo.removeAttribute("src");
-  compressedVideo.load();
+    compressedVideo.onloadedmetadata = () => {
+      compressedVideo.play().catch(() => {});
+    };
 
-  compressedVideo.src = url;
+    // temp link
+    const linkBox = document.getElementById("tempLink");
+    linkBox.href = outUrl;
+    linkBox.textContent = "Open compressed video in new tab";
 
-  compressedVideo.onloadedmetadata = () => {
-    compressedVideo.play().catch(() => {});
+    const saved = ((file.size - compressedBlob.size) / file.size * 100).toFixed(1);
+
+    log(`Saved: ${saved}%`);
   };
-
-  // 👉 TEMP LINK DISPLAY
-  const linkBox = document.getElementById("tempLink");
-  linkBox.href = url;
-  linkBox.textContent = "Open compressed video in new tab";
-
-  // optional: open automatically (comment out if annoying)
-  // window.open(url, "_blank");
-
-  const saved = ((file.size - blob.size) / file.size * 100).toFixed(1);
-
-  log(`Saved: ${saved}%`);
-};
 
   recorder.start();
 
-  const duration = video.duration;
+  let duration = video.duration;
   let currentTime = 0;
 
   function draw() {
@@ -185,6 +183,29 @@ async function compress() {
     recorder.stop();
   }, duration * 1000 + 800);
 }
+
+// ---------------- DOWNLOAD BUTTON ----------------
+document.getElementById("downloadBtn").onclick = () => {
+
+  if (!compressedBlob) {
+    alert("No compressed video yet");
+    return;
+  }
+
+  const url = URL.createObjectURL(compressedBlob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "fvids-compressed.webm";
+
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+
+  URL.revokeObjectURL(url);
+
+  log("Download started ✔");
+};
 
 </script>
 
