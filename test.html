@@ -38,6 +38,7 @@
     }
   </style>
 </head>
+
 <body>
 
 <h2>🔥 FCompressor Test</h2>
@@ -56,16 +57,17 @@
 
 <div id="log">Waiting...</div>
 
-<h3>Original Video</h3>
+<h3>Original</h3>
 <video id="originalVideo" controls></video>
 
-<h3>Compressed Video</h3>
+<h3>Compressed</h3>
 <video id="compressedVideo" controls></video>
 
 <script type="module">
 
-import { FFmpeg } from "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js";
-import { fetchFile } from "https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js";
+// ✅ FIXED IMPORT (IMPORTANT)
+import { FFmpeg } from "https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js";
+import { fetchFile } from "https://unpkg.com/@ffmpeg/util@0.12.1/dist/esm/index.js";
 
 const ffmpeg = new FFmpeg();
 
@@ -73,7 +75,7 @@ const logBox = document.getElementById("log");
 const downloadBtn = document.getElementById("downloadBtn");
 const compressBtn = document.getElementById("compressBtn");
 
-let ffmpegReady = false;
+let ready = false;
 
 function log(msg) {
   console.log(msg);
@@ -81,64 +83,56 @@ function log(msg) {
   logBox.scrollTop = logBox.scrollHeight;
 }
 
-/* ---------------- DOWNLOAD ---------------- */
+/* ---------------- DOWNLOAD FFMPEG ---------------- */
 
 downloadBtn.onclick = async () => {
 
-  if (ffmpegReady) return;
+  if (ready) return;
 
   downloadBtn.disabled = true;
-
   logBox.textContent = "";
 
-  log("⏳ Preparing download...");
+  log("⏳ Loading FCompressor core...");
 
   try {
-
-    ffmpeg.on("progress", ({ progress }) => {
-      const percent = Math.round(progress * 100);
-      downloadBtn.textContent = `Downloading ${percent}%`;
-    });
 
     await ffmpeg.load({
       coreURL: "/fcompressor/ffmpeg-core.js",
       wasmURL: "/fcompressor/ffmpeg-core.wasm"
     });
 
-    ffmpegReady = true;
+    ready = true;
 
     downloadBtn.textContent = "Downloaded ✔";
-
     compressBtn.disabled = false;
 
-    log("✔ FCompressor downloaded and cached");
-    log("✔ Ready for compression");
+    log("✔ FCompressor ready (cached in browser)");
+    log("✔ You can now compress videos");
 
   } catch (err) {
 
     console.error(err);
 
     downloadBtn.disabled = false;
-
     downloadBtn.textContent = "Download Failed";
 
     log("ERROR: " + err.message);
   }
 };
 
-/* ---------------- COMPRESS ---------------- */
+/* ---------------- COMPRESS VIDEO ---------------- */
 
 compressBtn.onclick = async () => {
 
-  if (!ffmpegReady) {
-    alert("Please download FCompressor first.");
+  if (!ready) {
+    alert("Download FCompressor first");
     return;
   }
 
   const file = document.getElementById("fileInput").files[0];
 
   if (!file) {
-    alert("Select a video first.");
+    alert("Select a video first");
     return;
   }
 
@@ -151,9 +145,8 @@ compressBtn.onclick = async () => {
 
   try {
 
-    const originalMB = file.size / 1024 / 1024;
-
-    log("Original size: " + originalMB.toFixed(2) + " MB");
+    const sizeMB = file.size / 1024 / 1024;
+    log("Original: " + sizeMB.toFixed(2) + " MB");
 
     await ffmpeg.writeFile(
       "input.mp4",
@@ -178,7 +171,6 @@ compressBtn.onclick = async () => {
       "-maxrate", "1M",
       "-bufsize", "2M",
 
-      "-g", "60",
       "-preset", "veryfast",
 
       "-c:a", "aac",
@@ -193,14 +185,14 @@ compressBtn.onclick = async () => {
       type: "video/mp4"
     });
 
-    const compressedMB = blob.size / 1024 / 1024;
+    const outMB = blob.size / 1024 / 1024;
 
     const saved = (
       ((file.size - blob.size) / file.size) * 100
     ).toFixed(1);
 
-    log("✔ Compression complete");
-    log("Compressed size: " + compressedMB.toFixed(2) + " MB");
+    log("✔ Compression done");
+    log("Compressed: " + outMB.toFixed(2) + " MB");
     log("Saved: " + saved + "%");
 
     document.getElementById("compressedVideo").src =
@@ -219,35 +211,6 @@ compressBtn.onclick = async () => {
 
   compressBtn.disabled = false;
 };
-
-/* ---------------- AUTO CACHE CHECK ---------------- */
-
-(async () => {
-
-  try {
-
-    log("Checking cache...");
-
-    await ffmpeg.load({
-      coreURL: "/fcompressor/ffmpeg-core.js",
-      wasmURL: "/fcompressor/ffmpeg-core.wasm"
-    });
-
-    ffmpegReady = true;
-
-    compressBtn.disabled = false;
-
-    downloadBtn.disabled = true;
-    downloadBtn.textContent = "Already Downloaded ✔";
-
-    log("✔ FFmpeg already cached");
-
-  } catch {
-
-    log("FFmpeg not downloaded yet");
-  }
-
-})();
 
 </script>
 
