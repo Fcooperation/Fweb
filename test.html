@@ -1,140 +1,218 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🔥 FCompressor Test</title>
-    <style>
-        body { font-family: sans-serif; max-width: 600px; margin: 40px auto; padding: 0 20px; line-height: 1.6; }
-        .status-box { background: #f4f4f9; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-        .progress-container { width: 100%; background-color: #ddd; border-radius: 4px; margin-top: 10px; display: none; }
-        .progress-bar { width: 0%; height: 20px; background-color: #4CAF50; text-align: center; line-height: 20px; color: white; border-radius: 4px; font-size: 12px; transition: width 0.1s linear; }
-        .error { color: red; font-weight: bold; }
-        .success { color: green; font-weight: bold; }
-    </style>
+  <meta charset="UTF-8">
+  <title>FCompressor Test</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: white;
+      padding: 20px;
+    }
+
+    button {
+      padding: 12px 18px;
+      margin-top: 12px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+
+    #log {
+      margin-top: 20px;
+      background: #222;
+      border-radius: 10px;
+      padding: 12px;
+      white-space: pre-wrap;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    video {
+      width: 100%;
+      max-width: 350px;
+      margin-top: 15px;
+      border-radius: 12px;
+      display: block;
+    }
+  </style>
 </head>
+
 <body>
 
-    <h1>🔥 FCompressor Test</h1>
-    
-    <div class="status-box">
-        <h3>⏳ Core Engine Status</h3>
-        <p id="status-text">Initializing...</p>
-        
-        <div id="progress-container" class="progress-container">
-            <div id="progress-bar" class="progress-bar">0%</div>
-        </div>
-    </div>
+<h2>🔥 FCompressor Test</h2>
 
-    <!-- Script uses type="module" to allow modern import/export structure -->
-    <script type="module">
-        import { FFmpeg } from 'https://unpkg.com';
+<input type="file" id="fileInput" accept="video/*">
 
-        // Using CDN URLs as source, but we will download and cache them locally
-        const CORE_VERSION = '0.12.10';
-        const FILES_TO_CACHE = {
-            'ffmpeg-core.js': `https://unpkg.com{CORE_VERSION}/dist/esm/ffmpeg-core.js`,
-            'ffmpeg-core.wasm': `https://unpkg.com{CORE_VERSION}/dist/esm/ffmpeg-core.wasm`,
-            'ffmpeg-core.worker.js': `https://unpkg.com{CORE_VERSION}/dist/esm/ffmpeg-core.worker.js`
-        };
+<br>
 
-        const statusText = document.getElementById('status-text');
-        const progressContainer = document.getElementById('progress-container');
-        const progressBar = document.getElementById('progress-bar');
+<button id="downloadBtn">
+  Download FCompressor (~20MB)
+</button>
 
-        // Helper: Download a file with progress tracking
-        async function downloadWithProgress(url, filename) {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            
-            const contentLength = response.headers.get('content-length');
-            if (!contentLength) {
-                console.warn(`No content-length header for ${filename}. Progress bar may not work correctly.`);
-            }
-            
-            const totalBytes = parseInt(contentLength || '0', 10);
-            let downloadedBytes = 0;
+<button id="compressBtn" disabled>
+  Compress to 720p
+</button>
 
-            const reader = response.body.getReader();
-            const chunks = [];
+<div id="log">Waiting...</div>
 
-            while(true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                
-                chunks.push(value);
-                downloadedBytes += value.length;
+<h3>Original</h3>
+<video id="originalVideo" controls></video>
 
-                if (totalBytes > 0) {
-                    const percent = Math.round((downloadedBytes / totalBytes) * 100);
-                    statusText.innerText = `Downloading ${filename}...`;
-                    progressBar.style.width = `${percent}%`;
-                    progressBar.innerText = `${percent}%`;
-                }
-            }
+<h3>Compressed</h3>
+<video id="compressedVideo" controls></video>
 
-            return new Blob(chunks);
-        }
+<script type="module">
 
-        // Helper: Get or save files in the browser's Origin Private File System
-        async function getLocalFileBlob(filename, downloadUrl = null) {
-            const root = await navigator.storage.getDirectory();
-            
-            try {
-                // Check if file already exists locally
-                const fileHandle = await root.getFileHandle(filename);
-                const file = await fileHandle.getFile();
-                console.log(`✨ Loaded ${filename} from local browser cache.`);
-                return file;
-            } catch (e) {
-                // File does not exist, download and cache it now
-                if (!downloadUrl) return null;
-                
-                progressContainer.style.display = 'block';
-                const blob = await downloadWithProgress(downloadUrl, filename);
-                
-                const fileHandle = await root.getFileHandle(filename, { create: true });
-                const writable = await fileHandle.createWritable();
-                await writable.write(blob);
-                await writable.close();
-                
-                console.log(`💾 Saved ${filename} to local browser storage.`);
-                return blob;
-            }
-        }
+// ✅ FIXED IMPORT (IMPORTANT)
+import { FFmpeg } from "https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js";
+import { fetchFile } from "https://unpkg.com/@ffmpeg/util@0.12.1/dist/esm/index.js";
 
-        async function initFCompressor() {
-            try {
-                statusText.innerText = "Checking local application storage...";
-                
-                // 1. Fetch or download files into local storage
-                const jsBlob = await getLocalFileBlob('ffmpeg-core.js', FILES_TO_CACHE['ffmpeg-core.js']);
-                const wasmBlob = await getLocalFileBlob('ffmpeg-core.wasm', FILES_TO_CACHE['ffmpeg-core.wasm']);
-                const workerBlob = await getLocalFileBlob('ffmpeg-core.worker.js', FILES_TO_CACHE['ffmpeg-core.worker.js']);
+const ffmpeg = new FFmpeg();
 
-                statusText.innerText = "Generating local asset URLs...";
-                progressContainer.style.display = 'none'; // Hide progress bar once downloaded
+const logBox = document.getElementById("log");
+const downloadBtn = document.getElementById("downloadBtn");
+const compressBtn = document.getElementById("compressBtn");
 
-                // 2. Convert local Blobs to Object URLs to bypass origin/worker strict policies
-                const coreURL = URL.createObjectURL(new Blob([jsBlob], { type: 'text/javascript' }));
-                const wasmURL = URL.createObjectURL(new Blob([wasmBlob], { type: 'application/wasm' }));
-                const workerURL = URL.createObjectURL(new Blob([workerBlob], { type: 'text/javascript' }));
+let ready = false;
 
-                statusText.innerText = "Booting FFmpeg Web Worker core...";
-                const ffmpeg = new FFmpeg();
-                
-                // 3. Load FFmpeg using your offline local object URLs
-                await ffmpeg.load({ coreURL, wasmURL, workerURL });
+function log(msg) {
+  console.log(msg);
+  logBox.textContent += "\n" + msg;
+  logBox.scrollTop = logBox.scrollHeight;
+}
 
-                statusText.innerHTML = "<span class='success'>✅ FCompressor Core Ready! Running locally from browser storage.</span>";
-            } catch (error) {
-                console.error(error);
-                statusText.innerHTML = `<span class='error'>❌ Initialization Failed: ${error.message}</span>`;
-            }
-        }
+/* ---------------- DOWNLOAD FFMPEG ---------------- */
 
-        // Start initialization process on page load
-        window.addEventListener('DOMContentLoaded', initFCompressor);
-    </script>
+downloadBtn.onclick = async () => {
+
+  if (ready) return;
+
+  downloadBtn.disabled = true;
+  logBox.textContent = "";
+
+  log("⏳ Loading FCompressor core...");
+
+  try {
+
+    await ffmpeg.load({
+      coreURL: "/fcompressor/ffmpeg-core.js",
+      wasmURL: "/fcompressor/ffmpeg-core.wasm"
+    });
+
+    ready = true;
+
+    downloadBtn.textContent = "Downloaded ✔";
+    compressBtn.disabled = false;
+
+    log("✔ FCompressor ready (cached in browser)");
+    log("✔ You can now compress videos");
+
+  } catch (err) {
+
+    console.error(err);
+
+    downloadBtn.disabled = false;
+    downloadBtn.textContent = "Download Failed";
+
+    log("ERROR: " + err.message);
+  }
+};
+
+/* ---------------- COMPRESS VIDEO ---------------- */
+
+compressBtn.onclick = async () => {
+
+  if (!ready) {
+    alert("Download FCompressor first");
+    return;
+  }
+
+  const file = document.getElementById("fileInput").files[0];
+
+  if (!file) {
+    alert("Select a video first");
+    return;
+  }
+
+  compressBtn.disabled = true;
+
+  document.getElementById("originalVideo").src =
+    URL.createObjectURL(file);
+
+  logBox.textContent = "";
+
+  try {
+
+    const sizeMB = file.size / 1024 / 1024;
+    log("Original: " + sizeMB.toFixed(2) + " MB");
+
+    await ffmpeg.writeFile(
+      "input.mp4",
+      await fetchFile(file)
+    );
+
+    log("Starting compression...");
+
+    ffmpeg.on("progress", ({ progress }) => {
+      const percent = Math.round(progress * 100);
+      compressBtn.textContent = `Compressing ${percent}%`;
+    });
+
+    await ffmpeg.exec([
+      "-i", "input.mp4",
+
+      "-vf", "scale=-2:720",
+      "-r", "30",
+
+      "-c:v", "libx264",
+      "-b:v", "1M",
+      "-maxrate", "1M",
+      "-bufsize", "2M",
+
+      "-preset", "veryfast",
+
+      "-c:a", "aac",
+      "-b:a", "128k",
+
+      "output.mp4"
+    ]);
+
+    const data = await ffmpeg.readFile("output.mp4");
+
+    const blob = new Blob([data.buffer], {
+      type: "video/mp4"
+    });
+
+    const outMB = blob.size / 1024 / 1024;
+
+    const saved = (
+      ((file.size - blob.size) / file.size) * 100
+    ).toFixed(1);
+
+    log("✔ Compression done");
+    log("Compressed: " + outMB.toFixed(2) + " MB");
+    log("Saved: " + saved + "%");
+
+    document.getElementById("compressedVideo").src =
+      URL.createObjectURL(blob);
+
+    compressBtn.textContent = "Done ✔";
+
+  } catch (err) {
+
+    console.error(err);
+
+    log("ERROR: " + err.message);
+
+    compressBtn.textContent = "Failed";
+  }
+
+  compressBtn.disabled = false;
+};
+
+</script>
+
 </body>
 </html>
