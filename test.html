@@ -85,6 +85,8 @@ function log(msg) {
 
 /* ---------------- DOWNLOAD FFMPEG ---------------- */
 
+
+
 downloadBtn.onclick = async () => {
 
   if (ready) return;
@@ -98,7 +100,8 @@ downloadBtn.onclick = async () => {
 
     await ffmpeg.load({
       coreURL: "/fcompressor/ffmpeg-core.js",
-      wasmURL: "/fcompressor/ffmpeg-core.wasm"
+      wasmURL: "/fcompressor/ffmpeg-core.wasm",
+      workerURL: "/fcompressor/worker.js" // 👈 ADD THIS LINE HERE!
     });
 
     ready = true;
