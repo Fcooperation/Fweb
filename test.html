@@ -55,7 +55,9 @@
 
 <h3>Compressed</h3>
 <video id="compressed" controls></video>
-
+<h3>Temporary Link</h3>
+<a id="tempLink" target="_blank"></a>
+  
 <canvas id="canvas"></canvas>
 
 <script>
@@ -123,16 +125,37 @@ async function compress() {
 
   recorder.onstop = () => {
 
-    const blob = new Blob(chunks, { type: "video/webm" });
+  const blob = new Blob(chunks, { type: "video/webm" });
 
-    log("Compression complete ✔");
+  log("Compression complete ✔");
 
-    const outUrl = URL.createObjectURL(blob);
-    document.getElementById("compressed").src = outUrl;
+  const url = URL.createObjectURL(blob);
 
-    const saved = ((file.size - blob.size) / file.size * 100).toFixed(1);
-    log(`Saved: ${saved}%`);
+  const compressedVideo = document.getElementById("compressed");
+
+  // reset video
+  compressedVideo.pause();
+  compressedVideo.removeAttribute("src");
+  compressedVideo.load();
+
+  compressedVideo.src = url;
+
+  compressedVideo.onloadedmetadata = () => {
+    compressedVideo.play().catch(() => {});
   };
+
+  // 👉 TEMP LINK DISPLAY
+  const linkBox = document.getElementById("tempLink");
+  linkBox.href = url;
+  linkBox.textContent = "Open compressed video in new tab";
+
+  // optional: open automatically (comment out if annoying)
+  // window.open(url, "_blank");
+
+  const saved = ((file.size - blob.size) / file.size * 100).toFixed(1);
+
+  log(`Saved: ${saved}%`);
+};
 
   recorder.start();
 
