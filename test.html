@@ -2,218 +2,160 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>FCompressor Test</title>
+  <title>FVIDS Canvas Compressor</title>
 
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: Arial;
       background: #111;
       color: white;
       padding: 20px;
     }
 
     button {
-      padding: 12px 18px;
-      margin-top: 12px;
+      padding: 12px 16px;
+      margin-top: 10px;
       cursor: pointer;
-      margin-right: 10px;
     }
 
     #log {
-      margin-top: 20px;
+      margin-top: 15px;
       background: #222;
-      border-radius: 10px;
-      padding: 12px;
+      padding: 10px;
+      border-radius: 8px;
       white-space: pre-wrap;
-      max-height: 300px;
-      overflow-y: auto;
     }
 
     video {
-      width: 100%;
-      max-width: 350px;
-      margin-top: 15px;
-      border-radius: 12px;
-      display: block;
+      width: 300px;
+      margin-top: 10px;
+      border-radius: 10px;
+    }
+
+    canvas {
+      display: none;
     }
   </style>
 </head>
 
 <body>
 
-<h2>🔥 FCompressor Test</h2>
+<h2>🔥 Lightweight Video Compressor (Canvas)</h2>
 
-<input type="file" id="fileInput" accept="video/*">
+<input type="file" id="file" accept="video/*">
 
 <br>
 
-<button id="downloadBtn">
-  Download FCompressor (~20MB)
-</button>
-
-<button id="compressBtn" disabled>
-  Compress to 720p
-</button>
+<button onclick="compress()">Compress Video</button>
 
 <div id="log">Waiting...</div>
 
 <h3>Original</h3>
-<video id="originalVideo" controls></video>
+<video id="original" controls></video>
 
 <h3>Compressed</h3>
-<video id="compressedVideo" controls></video>
+<video id="compressed" controls></video>
 
-<script type="module">
+<canvas id="canvas"></canvas>
 
-// ✅ FIXED IMPORT (IMPORTANT)
-import { FFmpeg } from "https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js";
-import { fetchFile } from "https://unpkg.com/@ffmpeg/util@0.12.1/dist/esm/index.js";
-
-const ffmpeg = new FFmpeg();
+<script>
 
 const logBox = document.getElementById("log");
-const downloadBtn = document.getElementById("downloadBtn");
-const compressBtn = document.getElementById("compressBtn");
-
-let ready = false;
 
 function log(msg) {
   console.log(msg);
   logBox.textContent += "\n" + msg;
-  logBox.scrollTop = logBox.scrollHeight;
 }
 
-/* ---------------- DOWNLOAD FFMPEG ---------------- */
+function sleep(ms) {
+  return new Promise(r => setTimeout(r, ms));
+}
 
+async function compress() {
 
-
-downloadBtn.onclick = async () => {
-
-  if (ready) return;
-
-  downloadBtn.disabled = true;
-  logBox.textContent = "";
-
-  log("⏳ Loading FCompressor core...");
-
-  try {
-
-    await ffmpeg.load({
-      coreURL: "/fcompressor/ffmpeg-core.js",
-      wasmURL: "/fcompressor/ffmpeg-core.wasm",
-      workerURL: "/fcompressor/worker.js" // 👈 ADD THIS LINE HERE!
-    });
-
-    ready = true;
-
-    downloadBtn.textContent = "Downloaded ✔";
-    compressBtn.disabled = false;
-
-    log("✔ FCompressor ready (cached in browser)");
-    log("✔ You can now compress videos");
-
-  } catch (err) {
-
-    console.error(err);
-
-    downloadBtn.disabled = false;
-    downloadBtn.textContent = "Download Failed";
-
-    log("ERROR: " + err.message);
-  }
-};
-
-/* ---------------- COMPRESS VIDEO ---------------- */
-
-compressBtn.onclick = async () => {
-
-  if (!ready) {
-    alert("Download FCompressor first");
-    return;
-  }
-
-  const file = document.getElementById("fileInput").files[0];
-
-  if (!file) {
-    alert("Select a video first");
-    return;
-  }
-
-  compressBtn.disabled = true;
-
-  document.getElementById("originalVideo").src =
-    URL.createObjectURL(file);
+  const file = document.getElementById("file").files[0];
+  if (!file) return alert("Select a video");
 
   logBox.textContent = "";
 
-  try {
+  const video = document.getElementById("original");
+  video.src = URL.createObjectURL(file);
 
-    const sizeMB = file.size / 1024 / 1024;
-    log("Original: " + sizeMB.toFixed(2) + " MB");
+  log("Loading video...");
 
-    await ffmpeg.writeFile(
-      "input.mp4",
-      await fetchFile(file)
-    );
+  await video.play().catch(()=>{});
+  video.pause();
+
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d");
+
+  video.onloadedmetadata = async () => {
+
+    const width = 1280;
+    const height = 720;
+
+    canvas.width = width;
+    canvas.height = height;
 
     log("Starting compression...");
 
-    ffmpeg.on("progress", ({ progress }) => {
-      const percent = Math.round(progress * 100);
-      compressBtn.textContent = `Compressing ${percent}%`;
+    const stream = canvas.captureStream(30);
+    const recorder = new MediaRecorder(stream, {
+      mimeType: "video/webm;codecs=vp9",
+      videoBitsPerSecond: 1000000 // 1Mbps
     });
 
-    await ffmpeg.exec([
-      "-i", "input.mp4",
+    let chunks = [];
 
-      "-vf", "scale=-2:720",
-      "-r", "30",
+    recorder.ondataavailable = e => {
+      if (e.data.size > 0) chunks.push(e.data);
+    };
 
-      "-c:v", "libx264",
-      "-b:v", "1M",
-      "-maxrate", "1M",
-      "-bufsize", "2M",
+    recorder.onstop = () => {
 
-      "-preset", "veryfast",
+      const blob = new Blob(chunks, { type: "video/webm" });
 
-      "-c:a", "aac",
-      "-b:a", "128k",
+      log("Compression complete ✔");
 
-      "output.mp4"
-    ]);
+      const url = URL.createObjectURL(blob);
+      document.getElementById("compressed").src = url;
 
-    const data = await ffmpeg.readFile("output.mp4");
+      const saved = ((file.size - blob.size) / file.size * 100).toFixed(1);
 
-    const blob = new Blob([data.buffer], {
-      type: "video/mp4"
-    });
+      log(`Saved: ${saved}%`);
+    };
 
-    const outMB = blob.size / 1024 / 1024;
+    recorder.start();
 
-    const saved = (
-      ((file.size - blob.size) / file.size) * 100
-    ).toFixed(1);
+    let duration = video.duration;
+    let currentTime = 0;
 
-    log("✔ Compression done");
-    log("Compressed: " + outMB.toFixed(2) + " MB");
-    log("Saved: " + saved + "%");
+    function drawFrame() {
 
-    document.getElementById("compressedVideo").src =
-      URL.createObjectURL(blob);
+      if (currentTime >= duration) {
+        recorder.stop();
+        return;
+      }
 
-    compressBtn.textContent = "Done ✔";
+      video.currentTime = currentTime;
 
-  } catch (err) {
+      video.onseeked = () => {
+        ctx.drawImage(video, 0, 0, width, height);
+      };
 
-    console.error(err);
+      currentTime += 1 / 30;
+    }
 
-    log("ERROR: " + err.message);
+    const interval = setInterval(drawFrame, 1000 / 30);
 
-    compressBtn.textContent = "Failed";
-  }
+    setTimeout(() => {
+      clearInterval(interval);
+      recorder.stop();
+    }, duration * 1000 + 500);
 
-  compressBtn.disabled = false;
-};
+  };
+
+}
 
 </script>
 
