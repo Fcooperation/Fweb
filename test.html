@@ -70,7 +70,6 @@ function log(msg) {
 function sleep(ms) {
   return new Promise(r => setTimeout(r, ms));
 }
-
 async function compress() {
 
   const file = document.getElementById("file").files[0];
@@ -79,82 +78,89 @@ async function compress() {
   logBox.textContent = "";
 
   const video = document.getElementById("original");
-  video.src = URL.createObjectURL(file);
 
-  log("Loading video...");
+  const url = URL.createObjectURL(file);
+  video.src = url;
 
-  await video.play().catch(()=>{});
-  video.pause();
+  log("Loading video metadata...");
+
+  await new Promise((resolve) => {
+
+    video.onloadedmetadata = () => {
+      resolve();
+    };
+
+    // fallback in case it's already loaded
+    if (video.readyState >= 1) {
+      resolve();
+    }
+  });
+
+  log("Metadata loaded ✔");
+  log("Starting compression...");
 
   const canvas = document.getElementById("canvas");
   const ctx = canvas.getContext("2d");
 
-  video.onloadedmetadata = async () => {
+  const width = 1280;
+  const height = 720;
 
-    const width = 1280;
-    const height = 720;
+  canvas.width = width;
+  canvas.height = height;
 
-    canvas.width = width;
-    canvas.height = height;
+  const stream = canvas.captureStream(30);
 
-    log("Starting compression...");
+  const recorder = new MediaRecorder(stream, {
+    mimeType: "video/webm;codecs=vp9",
+    videoBitsPerSecond: 1000000
+  });
 
-    const stream = canvas.captureStream(30);
-    const recorder = new MediaRecorder(stream, {
-      mimeType: "video/webm;codecs=vp9",
-      videoBitsPerSecond: 1000000 // 1Mbps
-    });
+  let chunks = [];
 
-    let chunks = [];
-
-    recorder.ondataavailable = e => {
-      if (e.data.size > 0) chunks.push(e.data);
-    };
-
-    recorder.onstop = () => {
-
-      const blob = new Blob(chunks, { type: "video/webm" });
-
-      log("Compression complete ✔");
-
-      const url = URL.createObjectURL(blob);
-      document.getElementById("compressed").src = url;
-
-      const saved = ((file.size - blob.size) / file.size * 100).toFixed(1);
-
-      log(`Saved: ${saved}%`);
-    };
-
-    recorder.start();
-
-    let duration = video.duration;
-    let currentTime = 0;
-
-    function drawFrame() {
-
-      if (currentTime >= duration) {
-        recorder.stop();
-        return;
-      }
-
-      video.currentTime = currentTime;
-
-      video.onseeked = () => {
-        ctx.drawImage(video, 0, 0, width, height);
-      };
-
-      currentTime += 1 / 30;
-    }
-
-    const interval = setInterval(drawFrame, 1000 / 30);
-
-    setTimeout(() => {
-      clearInterval(interval);
-      recorder.stop();
-    }, duration * 1000 + 500);
-
+  recorder.ondataavailable = (e) => {
+    if (e.data.size > 0) chunks.push(e.data);
   };
 
+  recorder.onstop = () => {
+
+    const blob = new Blob(chunks, { type: "video/webm" });
+
+    log("Compression complete ✔");
+
+    const outUrl = URL.createObjectURL(blob);
+    document.getElementById("compressed").src = outUrl;
+
+    const saved = ((file.size - blob.size) / file.size * 100).toFixed(1);
+    log(`Saved: ${saved}%`);
+  };
+
+  recorder.start();
+
+  const duration = video.duration;
+  let currentTime = 0;
+
+  function draw() {
+
+    if (currentTime >= duration) {
+      recorder.stop();
+      return;
+    }
+
+    video.currentTime = currentTime;
+
+    video.onseeked = () => {
+      ctx.drawImage(video, 0, 0, width, height);
+    };
+
+    currentTime += 1 / 30;
+  }
+
+  const interval = setInterval(draw, 1000 / 30);
+
+  setTimeout(() => {
+    clearInterval(interval);
+    recorder.stop();
+  }, duration * 1000 + 800);
 }
 
 </script>
