@@ -4,19 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FVIDS Video Compressor</title>
-    <!-- Load the single-threaded FFmpeg library to bypass CORS restrictions -->
-    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #121214; color: #e1e1e6; max-width: 600px; margin: 40px auto; padding: 20px; text-align: center; }
         .box { background: #202024; border: 1px solid #323238; border-radius: 8px; padding: 24px; margin-top: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
         h1 { color: #00b37e; font-size: 24px; margin-bottom: 5px; }
         .specs { font-size: 12px; color: #8d8d99; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.05em; }
         input[type="file"] { display: none; }
-        .btn { display: inline-block; background-color: #00875f; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: bold; margin: 10px 0; transition: background 0.2s; }
+        .btn { display: inline-block; background-color: #00875f; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: bold; margin: 10px 0; transition: background 0.2s; text-decoration: none; }
         .btn:hover { background-color: #00b37e; }
-        .btn:disabled { background-color: #4d4d56; cursor: not-allowed; }
-        #status { margin-top: 20px; font-weight: 500; font-size: 14px; color: #a9a9b2; }
-        #progress-bar { width: 0%; height: 6px; background-color: #00b37e; border-radius: 3px; margin-top: 10px; transition: width 0.3s; }
+        .btn:disabled { background-color: #4d4d56; cursor: not-allowed; opacity: 0.5; }
+        #status { margin-top: 20px; font-weight: 500; font-size: 14px; color: #a9a9b2; word-break: break-word; }
+        #progress-bar { width: 0%; height: 6px; background-color: #00b37e; border-radius: 3px; margin-top: 10px; transition: width 0.1s; }
         .progress-container { width: 100%; background-color: #323238; border-radius: 3px; display: none; margin-top: 15px; }
         video { width: 100%; border-radius: 6px; margin-top: 20px; display: none; border: 1px solid #323238; }
     </style>
@@ -27,10 +25,10 @@
     <div class="specs">Locked format: H.264 + AAC | 720p | 1Mbps | 30fps | GOP 60</div>
 
     <div class="box">
-        <label for="video-upload" class="btn" id="upload-label">Choose Video File</label>
+        <label for="video-upload" class="btn" id="upload-label" style="pointer-events: none; opacity: 0.5;">Loading Engine...</label>
         <input type="file" id="video-upload" accept="video/*">
         
-        <div id="status">FFmpeg engine loading...</div>
+        <div id="status">Initializing modules from secure CDN...</div>
         
         <div class="progress-container" id="p-container">
             <div id="progress-bar"></div>
@@ -41,14 +39,13 @@
         <a id="download-link" class="btn" style="display: none; background-color: #00b37e;">Download Compressed Video</a>
     </div>
 
-    <script>
-        const { createFFmpeg, fetchFile } = FFmpeg;
-        
-        // Configuration targeted specifically for standard client environments
-        const ffmpeg = createFFmpeg({ 
-            log: true,
-            corePath: 'https://unpkg.com'
-        });
+    <!-- Script loaded as an ES Module to ensure correct local scope evaluation -->
+    <script type="module">
+        // Import unified v0.12 components via jsDelivr CDN
+        import { FFmpeg } from 'https://jsdelivr.net';
+        import { toBlobURL } from 'https://jsdelivr.net';
+
+        const ffmpeg = new FFmpeg();
 
         const uploadInput = document.getElementById('video-upload');
         const uploadLabel = document.getElementById('upload-label');
@@ -58,23 +55,37 @@
         const outputPlayer = document.getElementById('output-player');
         const downloadLink = document.getElementById('download-link');
 
-        // Initialize FFmpeg library immediately
         async function init() {
             try {
-                await ffmpeg.load();
-                statusDiv.innerText = "Ready to compress. Choose a file above.";
+                // Using explicit single-thread (ST) fallback files to ignore browser CORS/Isolated header restrictions
+                const baseURL = 'https://jsdelivr.net';
+                
+                statusDiv.innerText = "Downloading virtual core components...";
+                
+                await ffmpeg.load({
+                    coreJSModulesPath: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+                    coreWasmModulesPath: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm')
+                });
+
+                statusDiv.innerText = "Ready to compress! Choose a file above.";
+                uploadLabel.style.pointerEvents = "auto";
+                uploadLabel.style.opacity = "1";
+                uploadLabel.innerText = "Choose Video File";
             } catch (err) {
                 console.error(err);
-                statusDiv.innerHTML = "❌ Library configuration initialization failed.<br><span style='font-size:12px;color:#f75a68;'>Please ensure you are opening this script over an active internet connection so the script dependencies can load.</span>";
-                uploadLabel.style.pointerEvents = "none";
-                uploadLabel.style.opacity = "0.5";
+                statusDiv.innerHTML = `❌ Initialization Failed.<br><span style='font-size:12px;color:#f75a68;'>Error details: ${err.message || 'WASM isolation error'}. Try opening via a local development server or using Google Chrome.</span>`;
             }
         }
         init();
 
-        // Listen for conversion progress calculations
-        ffmpeg.setProgress(({ ratio }) => {
-            const percentage = Math.min(Math.max(Math.round(ratio * 100), 0), 100);
+        // Listen for internal framework layout logs
+        ffmpeg.on('log', ({ message }) => {
+            console.log("[FFmpeg Log]", message);
+        });
+
+        // Watch conversion loop execution percentage metrics
+        ffmpeg.on('progress', ({ progress }) => {
+            const percentage = Math.min(Math.max(Math.round(progress * 100), 0), 100);
             progressBar.style.width = percentage + '%';
             statusDiv.innerText = `Compressing video... ${percentage}%`;
         });
@@ -90,47 +101,50 @@
             downloadLink.style.display = "none";
             progressBar.style.width = '0%';
 
-            statusDiv.innerText = "Loading file into virtual filesystem...";
-            const { name } = file;
+            statusDiv.innerText = "Loading video array buffer into client filesystem...";
             
-            // Write local file array buffer to internal WASM filesystem
-            ffmpeg.FS('writeFile', 'input_raw', await fetchFile(file));
+            // Read file standard format array layout safely into WASM space
+            const fileData = new Uint8Array(await file.arrayBuffer());
+            await ffmpeg.writeFile('input_raw.mp4', fileData);
 
-            statusDiv.innerText = "Processing video stream matrix...";
+            statusDiv.innerText = "Processing video stream matrix (Running FVIDS specs)...";
 
-            // RUN THE LOCKED ENCODING PIPELINE SPECIFICATIONS
-            await ffmpeg.run(
-                '-i', 'input_raw',
-                '-vcodec', 'libx264',         // Force H.264 Video Codec
-                '-b:v', '1000k',              // Lock video bitrate to exactly 1 Mbps
-                '-vf', 'scale=1280:720',      // Force resolution to 1280x720 (720p)
-                '-r', '30',                   // Lock frame rate to 30 FPS
-                '-g', '60',                   // Set keyframe interval (GOP) to 60 frames (30fps x 2s)
-                '-keyint_min', '60',          // Force strict minimum keyframe intervals
-                '-acodec', 'aac',             // Force AAC Audio Codec
-                '-b:a', '128k',               // Lock audio bitrate to 128 kbps
-                '-ar', '48000',               // Lock audio sample rate to 48,000 Hz
-                '-ac', '2',                   // Force Stereo layout (2 channels)
-                '-preset', 'ultrafast',       // Essential for local browser execution speed/stability
-                'output_compressed.mp4'       // Render out wrapper file standard
-            );
+            try {
+                // EXECUTE STRICT SPECIFICATIONS MAPPED TO YOUR FVIDS CONFIGURATION
+                await ffmpeg.exec([
+                    '-i', 'input_raw.mp4',
+                    '-vcodec', 'libx264',         // Force H.264 Video Codec
+                    '-b:v', '1000k',              // Lock video bitrate to exactly 1 Mbps
+                    '-vf', 'scale=1280:720',      // Force resolution to 1280x720 (720p)
+                    '-r', '30',                   // Lock frame rate to 30 FPS
+                    '-g', '60',                   // Set keyframe interval (GOP) to 60 frames (30fps x 2s)
+                    '-keyint_min', '60',          // Force strict minimum keyframe intervals
+                    '-acodec', 'aac',             // Force AAC Audio Codec
+                    '-b:a', '128k',               // Lock audio bitrate to 128 kbps
+                    '-ar', '48000',               // Lock audio sample rate to 48,000 Hz
+                    '-ac', '2',                   // Force Stereo layout (2 channels)
+                    '-preset', 'ultrafast',       // Fast performance preset for browser safety
+                    'output_compressed.mp4'
+                ]);
 
-            statusDiv.innerText = "Compression complete! Generating downlinks...";
-            progressContainer.style.display = "none";
+                statusDiv.innerText = "Compression complete! Generating local downlinks...";
+                progressContainer.style.display = "none";
 
-            // Extract native compressed buffer array from container execution
-            const data = ffmpeg.FS('readFile', 'output_compressed.mp4');
-
-            // Build structural application link
-            const videoUrl = URL.createObjectURL(new Blob([data.buffer], { type: 'video/mp4' }));
-            
-            // Set elements active for browser review and export download
-            outputPlayer.src = videoUrl;
-            outputPlayer.style.display = "block";
-            
-            downloadLink.href = videoUrl;
-            downloadLink.download = `fvids_${name.substring(0, name.lastIndexOf('.')) || name}.mp4`;
-            downloadLink.style.display = "inline-block";
+                // Extract resulting raw stream components out of virtual storage
+                const data = await ffmpeg.readFile('output_compressed.mp4');
+                const videoUrl = URL.createObjectURL(new Blob([data.buffer], { type: 'video/mp4' }));
+                
+                // Mount payload elements directly back into application layout view
+                outputPlayer.src = videoUrl;
+                outputPlayer.style.display = "block";
+                
+                downloadLink.href = videoUrl;
+                downloadLink.download = `fvids_${file.name.substring(0, file.name.lastIndexOf('.')) || file.name}.mp4`;
+                downloadLink.style.display = "inline-block";
+            } catch (error) {
+                console.error(error);
+                statusDiv.innerText = "❌ Compression process encountered an error. Check developer console for system parameters.";
+            }
             
             uploadLabel.style.display = "inline-block";
             uploadLabel.innerText = "Compress Another Video";
